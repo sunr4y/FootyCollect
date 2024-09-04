@@ -85,6 +85,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
     "imagekit",
     "taggit",
+    "django_cotton",
 ]
 
 LOCAL_APPS = [
@@ -347,7 +348,3 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": "/api/",
 }
 # ------------------------------------------------------------------------------
-# JAZZMIN
-JAZZMIN_SETTINGS = {
-    "theme": "superhero",
-}
