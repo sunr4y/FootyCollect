@@ -67,7 +67,7 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # "django.contrib.humanize", # Handy template tags
-    "jazzmin",
+    "unfold",
     "django.contrib.admin",
     "django.forms",
 ]
@@ -83,6 +83,8 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
+    "imagekit",
+    "taggit",
 ]
 
 LOCAL_APPS = [
