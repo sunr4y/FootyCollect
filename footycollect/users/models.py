@@ -13,7 +13,7 @@ class User(AbstractUser):
     check forms.SignupForm and forms.SocialSignupForms accordingly.
     """
 
-    name = models.CharField(_("Username"), blank=True, max_length=255)
+    name = models.CharField(_("Name and last name"), blank=True, max_length=255)
     biography = models.TextField(_("Biography"), blank=True)
     location = models.CharField(_("Location"), max_length=100, blank=True)
     avatar = models.ImageField(_("Avatar"), upload_to="avatars/", blank=True)
