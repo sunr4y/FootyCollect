@@ -10,6 +10,18 @@
   <form class="form-horizontal"
         method="post"
         action="{% url 'users:update' %}">
+    <div class="form-group">
+      <label for="id_location">Location:</label>
+      <input type="text"
+             name="location"
+             id="id_location"
+             class="form-control"
+             value="{{ user.location }}" />
+    </div>
+    <div class="form-group">
+      <label for="id_biography">Biography:</label>
+      <textarea name="biography" id="id_biography" class="form-control" rows="4">{{ user.biography }}</textarea>
+    </div>
     {% csrf_token %}
     {{ form|crispy }}
     <div class="control-group">
