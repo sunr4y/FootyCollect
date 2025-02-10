@@ -35,3 +35,7 @@ Pillow==10.4.0  # https://github.com/python-pillow/Pillow
 django-imagekit==5.0.0  # https://github.com/matthewwithanm/django-imagekit
 pillow-avif-plugin==1.4.6  # https://github.com/fdintino/pillow-avif-plugin
 pilkit==3.0  # https://github.com/matthewwithanm/pilkit
+
+# Media Storage
+django-storages==1.14.4  # https://github.com/jschneier/django-storages
+boto3==1.36.16  # https://github.com/boto/boto3

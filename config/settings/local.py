@@ -76,3 +76,18 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # ------------------------------------------------------------------------------
 
 ACCOUNT_EMAIL_VERIFICATION = "none"
+
+# MEDIA
+# ------------------------------------------------------------------------------
+STORAGE_BACKEND = env.str("STORAGE_BACKEND", default="local")
+
+if STORAGE_BACKEND == "r2":
+    # Cloudflare R2 settings
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_ACCESS_KEY_ID = env.str("CLOUDFLARE_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = env.str("CLOUDFLARE_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = env.str("CLOUDFLARE_BUCKET_NAME")
+    AWS_S3_ENDPOINT_URL = "https://storage.developers.cloudflare.com"
+else:
+    # Local storage settings
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"

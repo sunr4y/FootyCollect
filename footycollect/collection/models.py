@@ -1,16 +1,12 @@
-import io
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
-from django.core.files.base import ContentFile
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import models
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
-from PIL import Image
 from taggit.models import Tag
 
 from footycollect.core.models import Brand
@@ -18,6 +14,7 @@ from footycollect.core.models import Club
 from footycollect.core.models import Competition
 from footycollect.core.models import Kit
 from footycollect.core.models import Season
+from footycollect.core.utils.images import optimize_image
 
 
 class Photo(models.Model):
@@ -48,16 +45,15 @@ class Photo(models.Model):
         self.create_avif_version()
 
     def create_avif_version(self):
-        if not self.image_avif:
-            img = Image.open(self.image.path)
-            output = io.BytesIO()
-            img.save(output, format="AVIF", quality=90)
-            self.image_avif.save(
-                f"{self.image.name.split('.')[0]}.avif",
-                ContentFile(output.getvalue()),
-                save=False,
-            )
-            super().save(update_fields=["image_avif"])
+        if not self.image_avif and self.image:
+            optimized = optimize_image(self.image)
+            if optimized:
+                self.image_avif.save(
+                    optimized.name,
+                    optimized,
+                    save=False,
+                )
+                super().save(update_fields=["image_avif"])
 
     def get_image_url(self):
         return self.image_avif.url if self.image_avif else self.image.url
