@@ -39,3 +39,6 @@ pilkit==3.0  # https://github.com/matthewwithanm/pilkit
 # Media Storage
 django-storages==1.14.4  # https://github.com/jschneier/django-storages
 boto3==1.36.16  # https://github.com/boto/boto3
+
+# Countries
+django-countries==7.6.1  # https://github.com/SmileyChris/django-countries
