@@ -2,31 +2,94 @@
 
 {% load static %}
 
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'css/users.css' %}" rel="stylesheet" />
+{% endblock css %}
 {% block title %}
-  User:
   {{ object.username }}
 {% endblock title %}
 {% block content %}
   <div class="container">
     <div class="row">
-      <div class="col-sm-12">
-        <h2>{{ object.username }}</h2>
-        {% if object.name %}<p>{{ object.name }}</p>{% endif %}
+      <div class="col-lg-8 mx-auto">
+        <!-- Profile Header -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              {% if object.avatar %}
+                <img src="{{ object.get_avatar_url }}"
+                     alt="{{ object.username }}'s avatar"
+                     class="rounded-circle me-3 avatar-preview" />
+              {% endif %}
+              <div>
+                <h2 class="mb-1">{{ object.username }}</h2>
+                {% if object.name %}<p class="text-muted mb-0">{{ object.name }}</p>{% endif %}
+                {% if object.location %}
+                  <p class="text-muted mb-0">
+                    <i class="bi bi-geo-alt"></i> {{ object.location }}
+                  </p>
+                {% endif %}
+              </div>
+              {% if object == request.user %}
+                <div class="ms-auto">
+                  <a class="btn btn-primary" href="{% url 'users:update' %}">Edit Profile</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% if show_details %}
+          <!-- Bio Section -->
+          {% if object.biography %}
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="card-title">About</h5>
+                <p class="card-text">{{ object.biography }}</p>
+              </div>
+            </div>
+          {% endif %}
+          <!-- Favorite Teams -->
+          {% if object.favourite_teams.exists %}
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="card-title">Favorite Teams</h5>
+                <div class="d-flex flex-wrap gap-2">
+                  {% for team in object.favourite_teams.all %}<span class="badge bg-primary">{{ team.name }}</span>{% endfor %}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+          <!-- Collection Stats -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Collection Stats</h5>
+              <div class="row text-center">
+                <div class="col">
+                  <h3>0</h3>
+                  <small class="text-muted">Items</small>
+                </div>
+                <div class="col">
+                  <h3>0</h3>
+                  <small class="text-muted">Teams</small>
+                </div>
+                <div class="col">
+                  <h3>0</h3>
+                  <small class="text-muted">Competitions</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="card">
+            <div class="card-body text-center py-5">
+              <i class="bi bi-lock h1 d-block mb-3"></i>
+              <h3>This profile is private</h3>
+              <p class="text-muted">Only {{ object.username }} can see their collection</p>
+            </div>
+          </div>
+        {% endif %}
       </div>
     </div>
-    {% if object == request.user %}
-      <!-- Action buttons -->
-      <div class="row">
-        <div class="col-sm-12">
-          <a class="btn btn-primary" href="{% url 'users:update' %}" role="button">My Info</a>
-          <a class="btn btn-primary"
-             href="{% url 'account_email' %}"
-             role="button">E-Mail</a>
-          <a class="btn btn-primary" href="{% url 'mfa_index' %}" role="button">MFA</a>
-          <!-- Your Stuff: Custom user template urls -->
-        </div>
-      </div>
-      <!-- End Action buttons -->
-    {% endif %}
   </div>
 {% endblock content %}

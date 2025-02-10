@@ -2,6 +2,7 @@ import logging
 from io import BytesIO
 from pathlib import Path
 
+import pillow_avif  # noqa: F401 - needed to register AVIF support
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from PIL import Image
