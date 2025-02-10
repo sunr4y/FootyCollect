@@ -5,6 +5,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import models
+from django_countries.fields import CountryField
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 from taggit.models import Tag
@@ -130,6 +131,11 @@ class BaseItem(models.Model):
         size=3,
         blank=True,
         null=True,
+    )
+    country = CountryField(
+        blank=True,
+        null=True,
+        help_text="The country associated with this item",
     )
 
     photos = GenericRelation(Photo)
