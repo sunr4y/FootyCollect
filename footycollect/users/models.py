@@ -1,3 +1,6 @@
+import uuid
+from pathlib import Path
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.urls import reverse
@@ -6,6 +9,15 @@ from django.utils.translation import gettext_lazy as _
 
 from footycollect.core.models import Club
 from footycollect.core.utils.images import optimize_image
+from footycollect.users.validators import validate_avatar
+
+
+def avatar_file_name(instance, filename):
+    # Get extension
+    ext = Path(filename).suffix
+    # Generate UUID-based filename
+    new_name = f"{uuid.uuid4().hex[:10]}{ext}"
+    return str(Path("avatars") / new_name)
 
 
 class User(AbstractUser):
@@ -18,7 +30,12 @@ class User(AbstractUser):
     name = models.CharField(_("Name and last name"), blank=True, max_length=255)
     biography = models.TextField(_("Biography"), blank=True)
     location = models.CharField(_("Location"), max_length=100, blank=True)
-    avatar = models.ImageField(_("Avatar"), upload_to="avatars/", blank=True)
+    avatar = models.ImageField(
+        _("Avatar"),
+        upload_to=avatar_file_name,
+        blank=True,
+        validators=[validate_avatar],
+    )
     avatar_avif = models.ImageField(upload_to="avatars_avif/", blank=True, null=True)
     favourite_teams = models.ManyToManyField(Club, blank=True)
     is_private = models.BooleanField(default=False)
