@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from footycollect.core.models import Club
@@ -21,8 +22,16 @@ class User(AbstractUser):
     avatar_avif = models.ImageField(upload_to="avatars_avif/", blank=True, null=True)
     favourite_teams = models.ManyToManyField(Club, blank=True)
     is_private = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        _("Created at"),
+        default=timezone.now,
+        editable=False,
+    )
+    updated_at = models.DateTimeField(
+        _("Updated at"),
+        default=timezone.now,
+        editable=False,
+    )
 
     first_name = None  # type: ignore[assignment]
     last_name = None  # type: ignore[assignment]
