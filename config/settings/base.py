@@ -9,8 +9,9 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # footycollect/
 APPS_DIR = BASE_DIR / "footycollect"
 env = environ.Env()
+env.read_env(env.str("ENV_PATH", default=str(BASE_DIR / ".envs/.local/.postgres")))
 
-READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=False)
+READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=True)
 if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(str(BASE_DIR / ".env"))
@@ -312,11 +313,11 @@ ACCOUNT_EMAIL_REQUIRED = True
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_ADAPTER = "footycollect.users.adapters.AccountAdapter"
+ACCOUNT_ADAPTER = "footycollect.users.adapters.CustomAccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html
 ACCOUNT_FORMS = {"signup": "footycollect.users.forms.UserSignupForm"}
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
-SOCIALACCOUNT_ADAPTER = "footycollect.users.adapters.SocialAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "footycollect.users.adapters.CustomSocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "footycollect.users.forms.UserSocialSignupForm"}
 
