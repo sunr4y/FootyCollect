@@ -1,0 +1,73 @@
+{% block content %}
+{% load static %}
+<div class="container py-5">
+
+    <div class="dropzone-container p-4 border rounded">
+        <form class="dropzone" id="demoDropzone" 
+              action="{% url 'collection:handle_dropzone_files' %}"
+              data-delete-url="{% url 'collection:handle_dropzone_files' %}">
+            {% csrf_token %}
+            <div class="dz-message text-center">
+                <i class="bi bi-cloud-upload fs-1 text-primary"></i>
+                <h4 class="mt-3">Arrastra archivos aquí</h4>
+                <p class="text-muted">o haz clic para seleccionar</p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        new Dropzone("#demoDropzone", {
+            paramName: "file",
+            maxFilesize: 5,  // 5MB
+            acceptedFiles: 'image/*',
+            addRemoveLinks: true,
+            dictDefaultMessage: "",
+            dictRemoveFile: "Eliminar",
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            init: function() {
+                this.on("success", function(file, response) {
+                    // Configurar datos para eliminación
+                    file.previewElement.querySelector("[data-dz-name]").innerHTML = response.name;
+                    file._removeUrl = response.deleteUrl + '?fileName=' + encodeURIComponent(response.name);
+                });
+                
+                this.on("error", function(file, message) {
+                    alert("Error: " + (message.error || message));
+                });
+            },
+            // Configuración para eliminación
+            removedfile: function(file) {
+                const deleteUrl = file._removeUrl;
+                
+                // Eliminar del backend
+                fetch(deleteUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({fileName: file.name})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        // Eliminar preview
+                        file.previewElement.remove();
+                    } else {
+                        alert('Error eliminando archivo: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error de conexión: ' + error.message);
+                });
+            }
+        });
+    });
+    </script>
+
+{% endblock %}

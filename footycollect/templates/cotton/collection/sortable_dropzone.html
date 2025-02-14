@@ -1,0 +1,274 @@
+{% load static %}
+<div class="dropzone-container" x-data="sortableDropzone()"
+     @dragover.prevent="isDragging = true"
+     @dragleave.prevent="isDragging = false"
+     @drop.prevent="handleDrop($event)"
+     :class="{'dragover': isDragging}">
+    <div class="dropzone-area">
+        <input type="file" multiple @change="addFiles($event)" class="file-input">
+        
+        <div class="dropzone-message">
+            <i class="upload-icon"></i>
+            <p>Arrastra tus archivos aquí o haz clic para seleccionar</p>
+        </div>
+    </div>
+
+    <div class="previews-container" x-show="files.length > 0">
+        <template x-for="(file, index) in files" :key="index">
+            <div class="file-preview" 
+                 draggable="true"
+                 @dragstart="dragStart(index)"
+                 @dragover.prevent="dragOver(index)"
+                 @dragend="dragEnd()"
+                 @drop.prevent="drop(index)">
+                <img x-show="file.type.startsWith('image/')" 
+                     :src="getFileURL(file)" 
+                     class="preview-image"
+                     draggable="false"
+                     @dragstart.prevent>
+                
+                <div class="file-info">
+                    <span class="file-name" x-text="file.name"></span>
+                    <span class="file-size" x-text="formatFileSize(file.size)"></span>
+                </div>
+                
+                <button class="remove-btn" @click="removeFile(index)">
+                    <svg class="delete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
+            </div>
+        </template>
+    </div>
+</div>
+
+<script>
+function sortableDropzone() {
+    return {
+        files: [],
+        fileHashes: new Set(),
+        isDragging: false,
+        draggedIndex: null,
+        targetIndex: null,
+
+        async isDuplicate(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                const spark = new SparkMD5.ArrayBuffer();
+                
+                reader.onload = (e) => {
+                    spark.append(e.target.result);
+                    const hash = spark.end();
+                    resolve(this.fileHashes.has(hash));
+                };
+                
+                reader.readAsArrayBuffer(file);
+            });
+        },
+
+        async handleDrop(e) {
+            this.isDragging = false;
+            const newFiles = Array.from(e.dataTransfer.files);
+            
+            for (const file of newFiles) {
+                if (await this.isDuplicate(file)) {
+                    alert(`El archivo ${file.name} ya fue agregado`);
+                    continue;
+                }
+                this.files.push(file);
+                this.fileHashes.add(await this.getFileHash(file));
+            }
+        },
+
+        async addFiles(e) {
+            const newFiles = Array.from(e.target.files);
+            
+            for (const file of newFiles) {
+                if (await this.isDuplicate(file)) {
+                    alert(`El archivo ${file.name} ya fue agregado`);
+                    continue;
+                }
+                this.files.push(file);
+                this.fileHashes.add(await this.getFileHash(file));
+            }
+        },
+
+        async getFileHash(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                const spark = new SparkMD5.ArrayBuffer();
+                
+                reader.onload = (e) => {
+                    spark.append(e.target.result);
+                    resolve(spark.end());
+                };
+                
+                reader.readAsArrayBuffer(file);
+            });
+        },
+
+        async removeFile(index) {
+            const file = this.files[index];
+            const hash = await this.getFileHash(file);
+            this.fileHashes.delete(hash);
+            this.files.splice(index, 1);
+        },
+
+        // Funciones de ordenación
+        dragStart(index) {
+            this.draggedIndex = index;
+        },
+
+        dragOver(index) {
+            this.targetIndex = index;
+        },
+
+        drop() {
+            if (this.draggedIndex !== null && this.targetIndex !== null) {
+                const item = this.files[this.draggedIndex];
+                this.files.splice(this.draggedIndex, 1);
+                this.files.splice(this.targetIndex, 0, item);
+            }
+            this.draggedIndex = null;
+            this.targetIndex = null;
+        },
+
+        // Utilidades
+        getFileURL(file) {
+            return URL.createObjectURL(file);
+        },
+
+        formatFileSize(bytes) {
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unitIndex = 0;
+            
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            
+            return `${size.toFixed(2)} ${units[unitIndex]}`;
+        }
+    }
+}
+</script>
+
+<style>
+.dropzone-container {
+    margin: 20px;
+    padding: 20px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropzone-area {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.dropzone-message {
+    text-align: center;
+    color: #666;
+}
+
+.upload-icon {
+    display: block;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 10px;
+    background: url('{% static "images/upload-icon.svg" %}') no-repeat center;
+}
+
+.previews-container {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.file-preview {
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background: #fff;
+    transition: transform 0.2s ease;
+    cursor: move;
+}
+
+.file-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.preview-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.file-info {
+    margin-top: 8px;
+    font-size: 0.9em;
+}
+
+.file-name {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-size {
+    color: #666;
+    font-size: 0.8em;
+}
+
+.remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.remove-btn:hover {
+    background: rgba(255, 0, 0, 0.8);
+}
+
+.delete-icon {
+    width: 16px;
+    height: 16px;
+    stroke: #dc2626;
+}
+
+.remove-btn:hover .delete-icon {
+    stroke: white;
+}
+</style> 

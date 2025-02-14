@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+{{ block.super }}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<div class="container py-4">
+    <h2>Test Brand Select2</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.media }}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+{{ form.media.js }}
+{% endblock %} 

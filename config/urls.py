@@ -24,9 +24,10 @@ urlpatterns = [
     path("users/", include("footycollect.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
     # Your stuff: custom urls includes go here
-    # ...
+    path("collection/", include("footycollect.collection.urls", namespace="collection")),
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
+    path('core/', include('footycollect.core.urls')),
 ]
 if settings.DEBUG:
     # Static file serving when using Gunicorn + Uvicorn for local web socket development

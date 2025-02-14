@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load i18n static %}
+{% load crispy_forms_tags %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>{% trans "Add New Item" %}</h1>
+    
+    <form method="post" enctype="multipart/form-data" id="item-form">
+        {% csrf_token %}
+        
+        <!-- Item Details -->
+        <div class="card mb-4">
+            <div class="card-body">
+                {{ form|crispy }}
+            </div>
+        </div>
+
+        <!-- Photo Manager -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{% trans "Photos" %}</h5>
+            </div>
+            <div class="card-body">
+                <c-collection.photo_manager></c-collection.photo_manager>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <button type="submit" class="btn btn-primary">
+                {% trans "Create Item" %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
+{% endblock %} 

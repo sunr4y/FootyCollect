@@ -68,6 +68,8 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # "django.contrib.humanize", # Handy template tags
+    "dal",
+    "dal_select2",
     "unfold",
     "django.contrib.admin",
     "django.forms",
@@ -88,6 +90,7 @@ THIRD_PARTY_APPS = [
     "imagekit",
     "taggit",
     "django_cotton",
+    "formtools",
 ]
 
 LOCAL_APPS = [
@@ -202,6 +205,8 @@ TEMPLATES = [
         },
     },
 ]
+
+COTTON_BASE_DIR = str(BASE_DIR / "templates/cotton")
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#form-renderer
 FORM_RENDERER = "django.forms.renderers.TemplatesSetting"

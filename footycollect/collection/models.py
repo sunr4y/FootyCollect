@@ -9,6 +9,8 @@ from django_countries.fields import CountryField
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 from taggit.models import Tag
+import hashlib
+from django.utils.html import mark_safe
 
 from footycollect.core.models import Brand
 from footycollect.core.models import Club
@@ -21,11 +23,11 @@ from footycollect.core.utils.images import optimize_image
 class Photo(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    item = GenericForeignKey("content_type", "object_id")
+    content_object = GenericForeignKey('content_type', 'object_id')
     image = models.ImageField(upload_to="item_photos/")
     image_avif = models.ImageField(upload_to="item_photos_avif/", blank=True, null=True)
     caption = models.CharField(max_length=255, blank=True)
-    order = models.PositiveIntegerField()
+    order = models.PositiveIntegerField(default=0)
 
     # Thumbnail
     thumbnail = ImageSpecField(
@@ -39,7 +41,7 @@ class Photo(models.Model):
         ordering = ["order"]
 
     def __str__(self):
-        return f"Photo {self.order} of {self.item}"
+        return f"Photo {self.order} of {self.content_object}"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -58,6 +60,12 @@ class Photo(models.Model):
 
     def get_image_url(self):
         return self.image_avif.url if self.image_avif else self.image.url
+
+    @property
+    def thumbnail_preview(self):
+        if self.thumbnail:
+            return mark_safe(f'<img src="{self.thumbnail.url}" style="max-width: 100px; max-height: 100px;" />')
+        return ""
 
 
 class BaseItem(models.Model):
@@ -102,9 +110,15 @@ class BaseItem(models.Model):
     ]
 
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    club = models.ForeignKey(Club, on_delete=models.CASCADE)
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, null=True, blank=True)
     competition = models.ForeignKey(
         Competition,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    season = models.ForeignKey(
+        Season, 
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -153,19 +167,20 @@ class BaseItem(models.Model):
 
 class Size(models.Model):
     CATEGORY_CHOICES = [
-        ("shirt", "Shirt"),
-        ("shorts", "Shorts"),
-        ("jacket", "Jacket"),
+        ("tops", "Tops"),
+        ("bottoms", "Bottoms"),
+        ("other", "Other"),
     ]
     name = models.CharField(max_length=20)
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES)
+
 
     def __str__(self):
         return f"{self.get_category_display()} - {self.name}"
 
 
 class Jersey(BaseItem):
-    kit = models.ForeignKey(Kit, on_delete=models.CASCADE)
+    kit = models.ForeignKey(Kit, on_delete=models.CASCADE, null=True, blank=True)
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
     is_fan_version = models.BooleanField(default=True)
     is_signed = models.BooleanField(default=False)
@@ -177,7 +192,6 @@ class Jersey(BaseItem):
 
 class Shorts(BaseItem):
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
-    season = models.ForeignKey(Season, on_delete=models.CASCADE)
     number = models.PositiveIntegerField(null=True, blank=True)
     is_fan_version = models.BooleanField(default=True)
 
