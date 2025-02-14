@@ -174,6 +174,10 @@ class JerseyForm(forms.ModelForm):
             attrs={
                 "data-html": True,
                 "data-placeholder": _("Select a country..."),
+                "class": "form-control select2",
+                "data-theme": "bootstrap-5",
+                "data-allow-clear": "true",
+                "data-minimum-input-length": 0,
             },
         ),
     )
@@ -198,6 +202,14 @@ class JerseyForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "placeholder": _("Player Name"),
+                },
+            ),
+            "country_code": autocomplete.Select2(
+                url="core:country-autocomplete",
+                attrs={
+                    "data-html": True,
+                    "data-placeholder": _("Select a country..."),
+                    "class": "form-control select2",
                 },
             ),
         }
