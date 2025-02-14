@@ -1,48 +1,51 @@
-# Create your views here.
-
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect, render
-from django.urls import reverse, reverse_lazy
-from django.views.generic.edit import CreateView
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
-from django.views.decorators.http import require_POST, require_http_methods
-from django.core.files.storage import FileSystemStorage
-from django.contrib.contenttypes.models import ContentType
-from django.views.generic import DetailView
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
-from django.core.files.base import ContentFile
-from django.views.generic import View
-
-from django.views.generic import TemplateView
-from django.utils.translation import gettext as _
-
-from .forms import (
-    BaseItemForm,
-    ItemTypeForm,
-    JerseyForm,
-    OuterwearForm,
-    ShortsForm,
-    TrackSuitForm,
-    PantsForm,
-    OtherItemForm,
-    ItemPhotosForm,
-    TestCountryForm,
-    TestBrandForm,
-)
-from .models import Photo, Jersey, Shorts, Outerwear, Tracksuit, Pants, OtherItem
 import json
+import logging
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.db import Error as DBError
+from django.http import HttpResponse
+from django.http import HttpResponseBadRequest
+from django.http import JsonResponse
+from django.shortcuts import redirect
+from django.shortcuts import render
+from django.urls import reverse
+from django.urls import reverse_lazy
+from django.utils.translation import gettext as _
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_POST
+from django.views.generic import DetailView
+from django.views.generic import TemplateView
+from django.views.generic import View
+from django.views.generic.edit import CreateView
+
+from .forms import JerseyForm
+from .forms import TestBrandForm
+from .forms import TestCountryForm
+from .models import Jersey
+from .models import OtherItem
+from .models import Outerwear
+from .models import Pants
+from .models import Photo
+from .models import Shorts
+from .models import Tracksuit
+
+logger = logging.getLogger(__name__)
 
 
 class PostCreateView(LoginRequiredMixin, View):
-    template_name = 'collection/item_create.html'
+    template_name = "collection/item_create.html"
     form_class = JerseyForm
-    success_url = reverse_lazy('collection:item_list')
-    success_message = _('Item created successfully')
+    success_url = reverse_lazy("collection:item_list")
+    success_message = _("Item created successfully")
 
     def get(self, request, *args, **kwargs):
         form = self.form_class()
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {"form": form})
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
@@ -51,157 +54,228 @@ class PostCreateView(LoginRequiredMixin, View):
             new_item.user = request.user
             new_item.save()
             form.save_m2m()  # For many-to-many fields
-            
+
             # Process uploaded files
-            for file in request.FILES.getlist('images'):
+            for file in request.FILES.getlist("images"):
                 Photo.objects.create(
                     content_type=ContentType.objects.get_for_model(new_item),
                     object_id=new_item.id,
-                    image=file
+                    image=file,
                 )
-            
+
             messages.success(request, self.success_message)
-            return JsonResponse({
-                'url': reverse('collection:item_detail', kwargs={'pk': new_item.pk})
-            })
-        
-        return JsonResponse({
-            'error': form.errors.as_json(),
-            'url': str(self.success_url)
-        }, status=400)
+            return JsonResponse(
+                {
+                    "url": reverse(
+                        "collection:item_detail",
+                        kwargs={"pk": new_item.pk},
+                    ),
+                },
+            )
+
+        return JsonResponse(
+            {
+                "error": form.errors.as_json(),
+                "url": str(self.success_url),
+            },
+            status=400,
+        )
+
 
 @require_POST
 def reorder_photos(request, item_id):
     """Handle photo reordering via AJAX."""
     try:
-        new_order = request.POST.getlist('order[]')
+        new_order = request.POST.getlist("order[]")
         for index, photo_id in enumerate(new_order):
             Photo.objects.filter(id=photo_id).update(order=index)
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
+        return JsonResponse({"status": "success"})
+    except (ValidationError, DBError) as e:
+        logger.exception("Error reordering photos")
+        return JsonResponse({"status": "error", "message": str(e)})
+
 
 def test_country_view(request):
     form = TestCountryForm()
-    return render(request, 'collection/test_country.html', {'form': form})
+    return render(request, "collection/test_country.html", {"form": form})
+
 
 def test_brand_view(request):
     form = TestBrandForm()
-    context = {'form': form}
-    return render(request, 'collection/test_brand.html', context)
+    context = {"form": form}
+    return render(request, "collection/test_brand.html", context)
+
 
 class ItemDetailView(DetailView):
-    template_name = 'collection/item_detail.html'
-    
+    template_name = "collection/item_detail.html"
+
     def get_queryset(self):
         """Return queryset based on item type"""
         model_map = {
-            'jersey': Jersey,
-            'shorts': Shorts,
-            'outerwear': Outerwear,
-            'tracksuit': Tracksuit,
-            'pants': Pants,
-            'other': OtherItem,
+            "jersey": Jersey,
+            "shorts": Shorts,
+            "outerwear": Outerwear,
+            "tracksuit": Tracksuit,
+            "pants": Pants,
+            "other": OtherItem,
         }
         # Get item type from URL or session
-        item_type = self.kwargs.get('item_type', 'jersey')
+        item_type = self.kwargs.get("item_type", "jersey")
         return model_map[item_type].objects.all()
+
 
 def home(request):
     photos = Photo.objects.all()
     context = {
-        'photos': photos
+        "photos": photos,
     }
-    return render(request, 'collection/item_create.html', context)
+    return render(request, "collection/item_create.html", context)
 
-@csrf_exempt 
+
+@csrf_exempt
 def file_upload(request):
-    if request.method == 'POST':
-        my_file = request.FILES.get('file')
+    if request.method == "POST":
+        my_file = request.FILES.get("file")
         Photo.objects.create(image=my_file)
-        return HttpResponse('')
-    return JsonResponse({'post': 'false'})
+        return HttpResponse("")
+    return JsonResponse({"post": "false"})
+
 
 def test_dropzone(request):
-    """Vista de prueba independiente para Dropzone"""
-    return render(request, 'collection/dropzone_test_page.html')
+    """Independent test view for Dropzone"""
+    return render(request, "collection/dropzone_test_page.html")
+
 
 class DropzoneTestView(TemplateView):
-    template_name = 'collection/dropzone_test_page.html'
+    template_name = "collection/dropzone_test_page.html"
+
 
 @require_http_methods(["POST", "DELETE"])
 def handle_dropzone_files(request):
-    """Maneja subida y eliminación de archivos para Dropzone"""
+    """Handles file upload and deletion for Dropzone"""
     if request.method == "POST":
-        # Crear archivo de prueba sin asociar a modelo
-        file = request.FILES.get('file')
+        # Create a test file without associating it with a model
+        file = request.FILES.get("file")
         if not file:
-            return HttpResponseBadRequest("No file provided")
-        
-        # Simular guardado (en realidad no guardamos)
+            return HttpResponseBadRequest(_("No file provided"))
+
+        # Simulate saving (in reality we don't save)
         file_data = {
-            'name': file.name,
-            'size': file.size,
-            'url': '#',  
-            'deleteUrl': reverse('collection:handle_dropzone_files'),
-            'deleteType': "DELETE",
+            "name": file.name,
+            "size": file.size,
+            "url": "#",
+            "deleteUrl": reverse("collection:handle_dropzone_files"),
+            "deleteType": "DELETE",
         }
         return JsonResponse(file_data)
-    
-    elif request.method == "DELETE":
-        # Simular eliminación
-        file_name = request.POST.get('fileName')
-        return JsonResponse({'success': True, 'message': f'Archivo {file_name} eliminado'})
 
-    return HttpResponseBadRequest("Método no permitido")
+    if request.method == "DELETE":
+        # Simulate deletion
+        file_name = request.POST.get("fileName")
+        return JsonResponse(
+            {"success": True, "message": _("File {} deleted").format(file_name)},
+        )
+
+    return HttpResponseBadRequest(_("Method not allowed"))
+
 
 class ItemCreateView(LoginRequiredMixin, CreateView):
     model = Jersey
     form_class = JerseyForm
-    template_name = 'collection/item_create.html'
-    
+    template_name = "collection/item_create.html"
+
     def get_success_url(self):
-        return reverse_lazy('collection:item_detail', kwargs={'pk': self.object.pk})
+        return reverse_lazy("collection:item_detail", kwargs={"pk": self.object.pk})
 
     def form_valid(self, form):
         try:
-            # Guardar el item
             self.object = form.save(commit=False)
             self.object.user = self.request.user
             self.object.save()
             form.save_m2m()
 
-            # Procesar fotos
-            files = self.request.FILES.getlist('photos')
-            print(f"Archivos recibidos: {len(files)}")
-            
-            for idx, photo_file in enumerate(files):
-                print(f"Procesando foto {idx + 1}: {photo_file.name}")
-                Photo.objects.create(
-                    content_object=self.object,
-                    image=photo_file,
-                    order=idx
+            # Get the IDs and order of the photos
+            photo_data = json.loads(self.request.POST.get("photo_ids", "[]"))
+            logger.info("Photo data received: %s", photo_data)
+
+            if photo_data:
+                photos = Photo.objects.filter(
+                    id__in=[p["id"] for p in photo_data],
+                    user=self.request.user,
+                ).select_related("content_type")
+
+                content_type = ContentType.objects.get_for_model(self.object)
+                update_batch = []
+
+                for photo in photos:
+                    photo.content_type = content_type
+                    photo.object_id = self.object.id
+                    photo.order = next(
+                        p["order"] for p in photo_data if p["id"] == photo.id
+                    )
+                    photo.user = None
+                    update_batch.append(photo)
+
+                Photo.objects.bulk_update(
+                    update_batch,
+                    ["content_type", "object_id", "order", "user"],
                 )
 
-            # Construir URL absoluta
-            success_url = self.get_success_url()
-            if not success_url.startswith('/'):
-                success_url = '/' + success_url
-                
-            print(f"Redirigiendo a: {success_url}")
-            
-            return JsonResponse({
-                'url': success_url
-            })
+            messages.success(self.request, _("Item created successfully!"))
+            return redirect(self.get_success_url())
 
-        except Exception as e:
-            print(f"Error al crear item: {str(e)}")
-            return JsonResponse({
-                'error': str(e)
-            }, status=400)
+        except (ValidationError, DBError) as e:
+            logger.exception("Error creating item")
+            messages.error(self.request, _("Error: {}").format(str(e)))
+            return self.form_invalid(form)
+        except OSError:  # For I/O errors
+            logger.exception("System error")
+            messages.error(self.request, _("System error"))
+            return self.form_invalid(form)
 
     def form_invalid(self, form):
-        print("Formulario inválido:", form.errors)
-        return JsonResponse({
-            'error': form.errors
-        }, status=400)
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, _("{}: {}").format(field, error))
+        return super().form_invalid(form)
+
+
+@login_required
+@require_POST
+def upload_photo(request):
+    try:
+        file = request.FILES.get("photo")
+        if not file:
+            return JsonResponse({"error": _("No file received")}, status=400)
+
+        # Server validations
+        if file.size > 15 * 1024 * 1024:
+            return JsonResponse({"error": _("The file exceeds 15MB")}, status=413)
+
+        if file.content_type not in ["image/jpeg", "image/png", "image/webp"]:
+            return JsonResponse({"error": _("File type not supported")}, status=415)
+
+        # Create a photo without associating it with any item yet
+        photo = Photo.objects.create(
+            image=file,
+            order=request.POST.get("order", 0),
+            # Temporarily save the user_id to be able to clean orphan photos later
+            user=request.user,
+        )
+
+        return JsonResponse(
+            {
+                "id": photo.id,
+                "url": photo.get_image_url(),
+                "thumbnail_url": photo.thumbnail.url if photo.thumbnail else None,
+            },
+        )
+
+    except (ValidationError, DBError) as e:
+        logger.exception("Error creating photo")
+        messages.error(request, _("Error: {}").format(str(e)))
+        return JsonResponse({"error": str(e)}, status=500)
+    except OSError:  # For I/O errors
+        logger.exception("System error")
+        messages.error(request, _("System error"))
+        return JsonResponse({"error": _("System error")}, status=500)

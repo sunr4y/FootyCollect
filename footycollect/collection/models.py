@@ -9,8 +9,6 @@ from django_countries.fields import CountryField
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 from taggit.models import Tag
-import hashlib
-from django.utils.html import mark_safe
 
 from footycollect.core.models import Brand
 from footycollect.core.models import Club
@@ -21,13 +19,16 @@ from footycollect.core.utils.images import optimize_image
 
 
 class Photo(models.Model):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content_object = GenericForeignKey("content_type", "object_id")
     image = models.ImageField(upload_to="item_photos/")
     image_avif = models.ImageField(upload_to="item_photos_avif/", blank=True, null=True)
     caption = models.CharField(max_length=255, blank=True)
     order = models.PositiveIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    # Campo temporal para trackear fotos huérfanas
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True)
 
     # Thumbnail
     thumbnail = ImageSpecField(
@@ -60,12 +61,6 @@ class Photo(models.Model):
 
     def get_image_url(self):
         return self.image_avif.url if self.image_avif else self.image.url
-
-    @property
-    def thumbnail_preview(self):
-        if self.thumbnail:
-            return mark_safe(f'<img src="{self.thumbnail.url}" style="max-width: 100px; max-height: 100px;" />')
-        return ""
 
 
 class BaseItem(models.Model):
@@ -118,7 +113,7 @@ class BaseItem(models.Model):
         blank=True,
     )
     season = models.ForeignKey(
-        Season, 
+        Season,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -173,7 +168,6 @@ class Size(models.Model):
     ]
     name = models.CharField(max_length=20)
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES)
-
 
     def __str__(self):
         return f"{self.get_category_display()} - {self.name}"

@@ -3,4 +3,4 @@ document.addEventListener('DOMContentLoaded', function() {
         theme: "bootstrap-5",
         width: '100%'
     });
-}); 
+});

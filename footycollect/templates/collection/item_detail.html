@@ -1,66 +1,75 @@
 {% extends "base.html" %}
+
 {% load i18n %}
 
 {% block content %}
-<div class="container py-4">
+  <div class="container py-4">
     <div class="card">
-        <div class="card-body">
-            <h2 class="card-title">{{ object }}</h2>
-            
-            <!-- Item details -->
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <!-- Photos -->
-                    {% if object.photos.exists %}
-                        <div id="itemPhotos" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner">
-                                {% for photo in object.photos.all %}
-                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                        <img src="{{ photo.image.url }}" class="d-block w-100" alt="">
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            {% if object.photos.count > 1 %}
-                                <button class="carousel-control-prev" type="button" data-bs-target="#itemPhotos" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Previous</span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#itemPhotos" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Next</span>
-                                </button>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+      <div class="card-body">
+        <h2 class="card-title">{{ object }}</h2>
+        <!-- Item details -->
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <!-- Photos -->
+            {% if object.photos.exists %}
+              <div id="itemPhotos" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                  {% for photo in object.photos.all %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                      <img src="{{ photo.image.url }}" class="d-block w-100" alt="" />
+                    </div>
+                  {% endfor %}
                 </div>
-                
-                <div class="col-md-6">
-                    <!-- Item information -->
-                    <dl class="row">
-                        <dt class="col-sm-4">{% trans "Brand" %}</dt>
-                        <dd class="col-sm-8">{{ object.brand }}</dd>
-                        
-                        {% if object.club %}
-                            <dt class="col-sm-4">{% trans "Club" %}</dt>
-                            <dd class="col-sm-8">{{ object.club }}</dd>
-                        {% endif %}
-                        
-                        {% if object.size %}
-                            <dt class="col-sm-4">{% trans "Size" %}</dt>
-                            <dd class="col-sm-8">{{ object.size }}</dd>
-                        {% endif %}
-                        
-                        <dt class="col-sm-4">{% trans "Condition" %}</dt>
-                        <dd class="col-sm-8">{{ object.get_condition_display }}</dd>
-                    </dl>
-                    
-                    {% if object.description %}
-                        <h5>{% trans "Description" %}</h5>
-                        <p>{{ object.description }}</p>
-                    {% endif %}
-                </div>
-            </div>
+                {% if object.photos.count > 1 %}
+                  <button class="carousel-control-prev"
+                          type="button"
+                          data-bs-target="#itemPhotos"
+                          data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                  </button>
+                  <button class="carousel-control-next"
+                          type="button"
+                          data-bs-target="#itemPhotos"
+                          data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                  </button>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <!-- Item information -->
+            <dl class="row">
+              <dt class="col-sm-4">{% trans "Brand" %}</dt>
+              <dd class="col-sm-8">
+                {{ object.brand }}
+              </dd>
+              {% if object.club %}
+                <dt class="col-sm-4">{% trans "Club" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.club }}
+                </dd>
+              {% endif %}
+              {% if object.size %}
+                <dt class="col-sm-4">{% trans "Size" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.size }}
+                </dd>
+              {% endif %}
+              <dt class="col-sm-4">{% trans "Condition" %}</dt>
+              <dd class="col-sm-8">
+                {{ object.get_condition_display }}
+              </dd>
+            </dl>
+            {% if object.description %}
+              <h5>{% trans "Description" %}</h5>
+              <p>{{ object.description }}</p>
+            {% endif %}
+          </div>
         </div>
+      </div>
     </div>
-</div>
-{% endblock %} 
+  </div>
+{% endblock content %}

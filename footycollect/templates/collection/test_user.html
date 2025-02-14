@@ -1,23 +1,22 @@
 {% extends "base.html" %}
+
 {% load static %}
 
 {% block css %}
-{{ block.super }}
-{{ form.media.css }}
-{% endblock %}
-
+  {{ block.super }}
+  {{ form.media.css }}
+{% endblock css %}
 {% block js %}
-{{ block.super }}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-{{ form.media.js }}
-{% endblock %}
-
+  {{ block.super }}
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  {{ form.media.js }}
+{% endblock js %}
 {% block content %}
-<div class="container py-4">
+  <div class="container py-4">
     <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Submit</button>
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-</div>
-{% endblock %} 
+  </div>
+{% endblock content %}
