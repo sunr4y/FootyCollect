@@ -4,6 +4,7 @@
 {% load crispy_forms_tags %}
 
 {% block extra_css %}
+  {{ form.media.css }}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
@@ -66,24 +67,10 @@
   {{ form.media.js }}
   <script>
     $(document).ready(function() {
-      const $countryField = $('#id_country_code');
-
-      $countryField.select2({
+      $('#id_country_code').select2({
         ajax: {
           url: "{% url 'core:country-autocomplete' %}",
-          dataType: 'json',
-          delay: 250,
-          processResults: function(data) {
-            return {
-              results: data.results
-            };
-          }
-        },
-        templateResult: function(result) {
-          return result.html || result.text;
-        },
-        templateSelection: function(selection) {
-          return selection.html || selection.text;
+          dataType: 'json'
         }
       });
     });
