@@ -1,3 +1,5 @@
+import logging
+
 from dal import autocomplete
 from dal_select2 import widgets as select2_widgets
 from django import forms
@@ -178,9 +180,17 @@ class JerseyForm(forms.ModelForm):
                 "data-theme": "bootstrap-5",
                 "data-allow-clear": "true",
                 "data-minimum-input-length": 0,
+                "data-debug": "true",
             },
         ),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        logger = logging.getLogger(__name__)
+        logger.info("JerseyForm Media: %s", self.media.js)
+        self.fields["player_name"].widget.attrs["class"] = "form-control col-md-8"
+        self.fields["number"].widget.attrs["class"] = "form-control col-md-4"
 
     class Meta(BaseItemForm.Meta):
         model = Jersey
@@ -210,14 +220,10 @@ class JerseyForm(forms.ModelForm):
                     "data-html": True,
                     "data-placeholder": _("Select a country..."),
                     "class": "form-control select2",
+                    "data-debug": "true",
                 },
             ),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["player_name"].widget.attrs["class"] = "form-control col-md-8"
-        self.fields["number"].widget.attrs["class"] = "form-control col-md-4"
 
 
 class OuterwearForm(BaseItemForm):

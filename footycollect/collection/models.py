@@ -27,7 +27,7 @@ class Photo(models.Model):
     caption = models.CharField(max_length=255, blank=True)
     order = models.PositiveIntegerField(default=0)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    # Campo temporal para trackear fotos huérfanas
+    # Temporary field to track orphaned photos
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True)
 
     # Thumbnail

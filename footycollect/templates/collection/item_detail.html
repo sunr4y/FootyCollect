@@ -52,15 +52,27 @@
                   {{ object.club }}
                 </dd>
               {% endif %}
+              {% if object.country %}
+                <dt class="col-sm-4">{% trans "Country" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.country }}
+                </dd>
+              {% endif %}
               {% if object.size %}
                 <dt class="col-sm-4">{% trans "Size" %}</dt>
                 <dd class="col-sm-8">
                   {{ object.size }}
                 </dd>
               {% endif %}
+              {% if object.main_color %}
+                <dt class="col-sm-4">{% trans "Main Color" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.main_color }}
+                </dd>
+              {% endif %}
               <dt class="col-sm-4">{% trans "Condition" %}</dt>
               <dd class="col-sm-8">
-                {{ object.get_condition_display }}
+                {{ object.condition }}
               </dd>
             </dl>
             {% if object.description %}

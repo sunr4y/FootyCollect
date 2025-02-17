@@ -21,6 +21,7 @@ class BrandAutocomplete(autocomplete.Select2QuerySetView):
 class CountryAutocomplete(autocomplete.Select2ListView):
     def get_list(self):
         countries_list = list(countries)
+
         if self.q:
             countries_list = [
                 (code, name)
@@ -44,23 +45,7 @@ class CountryAutocomplete(autocomplete.Select2ListView):
         ]
 
     def get_results(self, context):
-        """Convert results to Select2 format"""
-        return [
-            {
-                "id": code,
-                "text": str(name).split(">")[-1].strip(),
-                "html": format_html("{}", escape(str(name))),
-            }
-            for code, name in context["results"]
-        ]
+        return super().get_results(context)
 
     def get(self, request, *args, **kwargs):
-        logger.info("GET request received: %s", request.GET)
-        try:
-            response = super().get(request, *args, **kwargs)
-            logger.info("Response content sample: %s", str(response.content)[:200])
-        except Exception:
-            logger.exception("Error in get")
-            raise
-        else:
-            return response
+        return super().get(request, *args, **kwargs)
