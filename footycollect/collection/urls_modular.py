@@ -1,4 +1,11 @@
 # ruff: noqa: E501
+"""
+Modular URLs for the collection app.
+
+This file uses the new modular views structure while keeping
+the original views.py intact for testing purposes.
+"""
+
 from django.urls import path
 
 from .views import (
@@ -6,7 +13,7 @@ from .views import (
     ItemCreateView,
     ItemDeleteView,
     ItemDetailView,
-    ItemListView,
+    ItemListView,  # Item views
     ItemUpdateView,
     JerseyCreateView,
     JerseyFKAPICreateView,
@@ -16,18 +23,12 @@ from .views import (
     file_upload,
     handle_dropzone_files,
     home,
-    reorder_photos,
+    reorder_photos,  # Photo views
     test_brand_view,
-    test_country_view,
+    test_country_view,  # Test views
     test_dropzone,
     upload_photo,
 )
-
-# Keep original views for fallback
-# Choose which views to use:
-# - Use original views.py: from . import views
-# - Use modular views: from .views import *
-# For testing modular structure:
 
 app_name = "collection"
 
@@ -56,7 +57,4 @@ urlpatterns = [
     path("dropzone/files/", handle_dropzone_files, name="handle_dropzone_files"),
     # Post creation (legacy)
     path("post/create/", PostCreateView.as_view(), name="post_create"),
-    # Fallback to original views if needed
-    # path("jersey/create/details/<int:kit_id>/",
-    # original_views.JerseyDetailsView.as_view(), name="jersey_details"),
 ]

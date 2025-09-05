@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 APPS_DIR = BASE_DIR / "footycollect"
 env = environ.Env()
 env.read_env(env.str("ENV_PATH", default=str(BASE_DIR / ".envs/.local/.postgres")))
+env.read_env(str(BASE_DIR / ".envs/.local/.django"))
 
 READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=True)
 if READ_DOT_ENV_FILE:
@@ -272,6 +273,20 @@ LOGGING = {
         },
     },
     "root": {"level": "INFO", "handlers": ["console"]},
+    "loggers": {
+        "django.db.backends": {
+            "level": "ERROR",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        # Errors logged by the SDK itself
+        "sentry_sdk": {"level": "ERROR", "handlers": ["console"], "propagate": False},
+        "django.security.DisallowedHost": {
+            "level": "ERROR",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+    },
 }
 
 # Celery
@@ -368,3 +383,7 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": "/api/",
 }
 # ------------------------------------------------------------------------------
+
+# Football Kit Archive API Settings
+FKA_API_IP = env("FKA_API_IP")
+API_KEY = env("API_KEY")

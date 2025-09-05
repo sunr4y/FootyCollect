@@ -33,8 +33,14 @@
                  name="details-country_code"
                  id="id_details-country_code"
                  value="{{ wizard.form.country_code.value|default:'' }}" />
-          <!-- Componente Cotton para el selector de país -->
           <c-country-select url="{% url 'core:country-autocomplete' %}" data-selected="{{ wizard.form.country_code.value|default:'' }}"></c-country-select>
+          <c-color-selector name="details-main_color" label="Main Color" data-selected="{{ wizard.form.main_color.value|default:'' }}" :color_choices="color_choices">
+          </c-color-selector>
+          <c-color-selector name="details-secondary_colors" label="Secondary Colors"  data-multiple="true" data-selected="{{ wizard.form.secondary_colors.value|default:'' }}" :color_choices="color_choices">
+          </c-color-selector>
+          <!-- Componente Cotton para el diseño -->
+          <c-design-selector name="details-design" label="Design Pattern" data-selected="{{ wizard.form.design.value|default:'' }}" :design_choices="design_choices">
+          </c-design-selector>
           {{ wizard.form.as_p }}
         {% endif %}
       </div>
@@ -70,4 +76,21 @@
         rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    // Script para cargar colores desde FKAPI
+    document.addEventListener('DOMContentLoaded', function() {
+      const colorSelectors = document.querySelectorAll('[data-fkapi="true"]');
+      if (colorSelectors.length > 0) {
+        fetch('/api/colors/')
+          .then(response => response.json())
+          .then(data => {
+            colorSelectors.forEach(selector => {
+              // Actualizar opciones con datos de la API
+              // Implementación depende de la estructura de datos de FKAPI
+            });
+          })
+          .catch(error => console.error('Error loading colors from FKAPI:', error));
+      }
+    });
+  </script>
 {% endblock js %}

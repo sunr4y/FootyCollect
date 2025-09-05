@@ -6,13 +6,7 @@ from django_countries import countries
 
 from footycollect.core.models import Brand
 
-from .models import Jersey
-from .models import OtherItem
-from .models import Outerwear
-from .models import Pants
-from .models import Shorts
-from .models import Size
-from .models import Tracksuit
+from .models import BaseItem, Color, Jersey, OtherItem, Outerwear, Pants, Shorts, Size, Tracksuit
 
 MAX_PHOTOS = 10
 
@@ -65,13 +59,24 @@ class BaseItemForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
     )
 
+    design = forms.ChoiceField(
+        required=False,
+        choices=[("", _("Select design")), *BaseItem.DESIGN_CHOICES],
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+                "data-component": "design-selector",
+            },
+        ),
+    )
+
     class Meta:
         model = Jersey
         fields = [
             "brand",
             "club",
             "season",
-            "competition",
+            "competitions",
             "condition",
             "detailed_condition",
             "description",
@@ -79,28 +84,57 @@ class BaseItemForm(forms.ModelForm):
             "country_code",
             "main_color",
             "secondary_colors",
+            "design",
         ]
         widgets = {
             "brand": BrandWidget(),
             "club": forms.Select(),
             "season": forms.Select(),
-            "competition": forms.Select(),
+            "competitions": forms.SelectMultiple(),
             "main_color": forms.Select(
                 attrs={
-                    "class": "form-select color-select",
-                    "data-colors": True,
+                    "class": "form-select",
+                    "data-component": "color-selector",
                 },
             ),
-            "secondary_colors": autocomplete.Select2Multiple(
+            "secondary_colors": forms.SelectMultiple(
                 attrs={
-                    "class": "form-select color-select",
-                    "data-colors": True,
+                    "class": "form-select",
+                    "data-component": "color-selector",
+                    "data-multiple": "true",
                 },
             ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Prepare color choices for the color selector component
+        color_choices = [
+            {
+                "value": color.id,
+                "label": color.name,
+                "hex_value": color.hex_value,
+            }
+            for color in Color.objects.all()
+        ]
+
+        # Set choices for color fields
+        self.fields["main_color"].widget.attrs["data-choices"] = color_choices
+        self.fields["secondary_colors"].widget.attrs["data-choices"] = color_choices
+
+        # Prepare design choices
+        design_choices = []
+        for value, label in BaseItem.DESIGN_CHOICES:
+            design_choices.append(
+                {
+                    "value": value,
+                    "label": label,
+                },
+            )
+        self.fields["design"].widget.attrs["data-choices"] = design_choices
+
+        # Add class to all select fields
         for field in self.fields.values():
             if isinstance(field.widget, (forms.Select, forms.SelectMultiple)):
                 field.widget.attrs["class"] = "form-select"
@@ -220,6 +254,126 @@ class JerseyForm(forms.ModelForm):
                 },
             ),
         }
+
+
+class JerseyFKAPIForm(JerseyForm):
+    """Formulario mejorado para crear jerseys con integración de FKAPI"""
+
+    # Campos adicionales para búsqueda (no se guardan en el modelo)
+    kit_search = forms.CharField(
+        required=False,
+        label=_("Search Kit"),
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": _("Start typing to search for kits..."),
+                "x-model": "kitSearch",
+                "x-on:input.debounce.500ms": "searchKits()",
+            },
+        ),
+    )
+
+    kit_id = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    club_search = forms.CharField(
+        required=False,
+        label=_("Search Club"),
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": _("Or search for a club..."),
+                "x-model": "clubSearch",
+                "x-on:input.debounce.500ms": "searchClubs()",
+                "x-show": "showClubSearch",
+            },
+        ),
+    )
+
+    # Hidden fields to store the names of entities to be created
+    brand_name = forms.CharField(required=False, widget=forms.HiddenInput())
+    club_name = forms.CharField(required=False, widget=forms.HiddenInput())
+    season_name = forms.CharField(required=False, widget=forms.HiddenInput())
+    competition_name = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    # Hidden field for the main image URL
+    main_img_url = forms.URLField(required=False, widget=forms.HiddenInput())
+
+    # Campo para almacenar URLs de imágenes externas
+    external_image_urls = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        using_api = False
+        if (
+            "data" in kwargs
+            and kwargs["data"]
+            and kwargs["data"].get("brand_name")
+            or "initial" in kwargs
+            and kwargs["initial"]
+            and kwargs["initial"].get("brand_name")
+        ):
+            using_api = True
+
+        if using_api:
+            self.fields["brand"].required = False
+            self.fields["club"].required = False
+            self.fields["season"].required = False
+            self.fields["competitions"].required = False
+            self.fields["main_color"].required = False
+            self.fields["secondary_colors"].required = False
+
+    def clean_main_color(self):
+        main_color_name = self.data.get("main_color")
+        if not main_color_name:
+            return self.cleaned_data.get("main_color")
+
+        color_obj, _ = Color.objects.get_or_create(
+            name__iexact=main_color_name.strip(),
+            defaults={"name": main_color_name.strip().upper()},
+        )
+        return color_obj
+
+    def clean_secondary_colors(self):
+        secondary_colors_names = self.data.getlist("secondary_colors")
+        if not secondary_colors_names and self.data.get("secondary_colors"):
+            secondary_colors_names = [self.data.get("secondary_colors")]
+
+        if not secondary_colors_names:
+            return self.cleaned_data.get("secondary_colors", [])
+
+        color_objects = []
+        for color_name in secondary_colors_names:
+            if not color_name:
+                continue
+            color_obj, _ = Color.objects.get_or_create(
+                name__iexact=color_name.strip(),
+                defaults={"name": color_name.strip().upper()},
+            )
+            color_objects.append(color_obj)
+        return color_objects
+
+    def clean(self):
+        cleaned_data = super().clean()
+        using_api = bool(self.data.get("brand_name"))
+        # When using the API, ignore validation errors for these fields since
+        # they will be handled in the view. Remove any such errors if present.
+        if using_api:
+            for field in [
+                "brand",
+                "club",
+                "season",
+                "competitions",
+                "main_color",
+                "secondary_colors",
+            ]:
+                if field in self._errors:
+                    del self._errors[field]
+
+        return cleaned_data
 
 
 class OuterwearForm(BaseItemForm):

@@ -27,7 +27,7 @@ urlpatterns = [
     path("collection/", include("footycollect.collection.urls", namespace="collection")),
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
-    path('core/', include('footycollect.core.urls')),
+    path("core/", include("footycollect.core.urls")),
 ]
 if settings.DEBUG:
     # Static file serving when using Gunicorn + Uvicorn for local web socket development
@@ -35,8 +35,10 @@ if settings.DEBUG:
 
 # API URLS
 urlpatterns += [
-    # API base url
+    # DRF API router (internal server APIs)
     path("api/", include("config.api_router")),
+    # FKAPI client (external API calls)
+    path("fkapi/", include("footycollect.api.urls", namespace="footycollect_api")),
     # DRF auth token
     path("api/auth-token/", obtain_auth_token),
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),

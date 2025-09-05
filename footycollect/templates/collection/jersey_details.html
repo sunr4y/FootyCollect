@@ -1,0 +1,698 @@
+{% extends "base.html" %}
+
+{% load i18n static %}
+{% load crispy_forms_tags %}
+{% load cotton %}
+
+{% block extra_css %}
+  {{ form.media.css }}
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+        rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+        rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
+        rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/dropzone.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/photo-manager.css' %}" />
+  <style>
+    .fi {
+      margin-right: 8px;
+      border-radius: 3px;
+      width: 1.3em;
+      height: 1em;
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+      vertical-align: middle;
+    }
+
+    .select2-results__option {
+      line-height: 1.8em;
+    }
+
+    .select2-selection__rendered .fi {
+      margin-right: 5px;
+      vertical-align: -0.1em;
+    }
+
+    /* Styles for color selectors */
+    .color-swatch {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      border-radius: 3px;
+      border: 1px solid #ddd;
+      vertical-align: middle;
+    }
+
+    /* Styles for design selector */
+    .design-option {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+    }
+
+    .design-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+    }
+
+    .selected-kit-container {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .selected-kit-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .selected-kit-image {
+      max-width: 150px;
+      max-height: 150px;
+      object-fit: contain;
+      margin-right: 20px;
+      border: 1px solid #eee;
+      padding: 5px;
+      background-color: white;
+      border-radius: 4px;
+    }
+
+    .selected-kit-details {
+      flex: 1;
+    }
+
+    .selected-kit-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .selected-kit-meta {
+      color: #6c757d;
+      margin-bottom: 10px;
+    }
+
+    .selected-kit-club {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .selected-kit-club img {
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+      object-fit: contain;
+    }
+
+    .competition-badge {
+      display: inline-block;
+      background-color: #e9ecef;
+      color: #495057;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+
+    .form-section {
+      border-top: 1px solid #dee2e6;
+      padding-top: 20px;
+      margin-top: 20px;
+    }
+
+    .form-section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #495057;
+    }
+
+    /* Styles for color selectors */
+    .color-option {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      margin: 3px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #ddd;
+    }
+
+    .color-option.selected {
+      border: 2px solid #000;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .color-selector {
+      margin-bottom: 15px;
+    }
+
+    /* Styles for design selector */
+    .design-option {
+      display: inline-block;
+      width: 60px;
+      height: 60px;
+      margin: 5px;
+      border: 2px solid #ddd;
+      cursor: pointer;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    .design-option.selected {
+      border: 2px solid #000;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .design-icon {
+      font-size: 24px;
+      margin-top: 10px;
+    }
+
+    /* Selected kit display */
+    .selected-kit {
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #dee2e6;
+    }
+
+    .selected-kit img {
+      max-height: 200px;
+      object-fit: contain;
+    }
+
+    .selected-kit h4 {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+
+    .selected-kit p {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    /* Form sections */
+    .form-section {
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #dee2e6;
+    }
+
+    .form-section h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 20px;
+      color: #495057;
+    }
+
+    /* Photo grid styles */
+    .dropzone {
+      min-height: 150px;
+      border: 2px dashed #0087F7;
+      border-radius: 5px;
+      background: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .photo-item {
+      position: relative;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      overflow: hidden;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      aspect-ratio: 1;
+    }
+
+    .photo-thumbnail {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .order-badge {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .remove-photo {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: rgba(255, 0, 0, 0.7);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .remove-photo:hover {
+      background-color: rgba(255, 0, 0, 0.9);
+    }
+
+    /* Custom styles for Country Select2 */
+    #div_id_country_code .select2-container--bootstrap-5 .select2-selection--single {
+      height: calc(1.5em + .75rem + 2px);
+      /* Match Bootstrap input height */
+      padding: .375rem .75rem;
+      display: flex;
+      align-items: center;
+      /* Vertically align content */
+    }
+
+    #div_id_country_code .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+      line-height: 1.5;
+      /* Adjust line height */
+      padding-left: 0;
+      padding-right: 0;
+      display: flex;
+      /* Use flexbox for alignment */
+      align-items: center;
+    }
+
+    #div_id_country_code .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered .fi {
+      margin-right: 8px;
+      /* Space between flag and text */
+      box-shadow: none;
+      /* Remove default shadow if needed */
+      vertical-align: middle;
+      /* Align flag vertically */
+    }
+
+    /* Style the clear button (X) */
+    #div_id_country_code .select2-container--bootstrap-5 .select2-selection__clear {
+      background: none !important;
+      border: none !important;
+      color: #6c757d;
+      /* Bootstrap secondary color */
+      font-size: 1.2em;
+      /* Make it slightly larger */
+      padding: 0;
+      margin: 0;
+      position: absolute;
+      right: 25px;
+      /* Adjust position */
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+    }
+
+    #div_id_country_code .select2-container--bootstrap-5 .select2-selection__clear::before {
+      font-family: 'bootstrap-icons';
+      content: "\f62a";
+      /* Bootstrap Icons 'x-circle-fill' */
+      line-height: 1;
+    }
+
+    #div_id_country_code .select2-container--bootstrap-5 .select2-selection__clear:hover {
+      opacity: 1;
+      color: #dc3545;
+      /* Bootstrap danger color on hover */
+    }
+  </style>
+{% endblock extra_css %}
+{% block content %}
+  {{ form.media }}
+  <div class="container py-4">
+    <h1>{% trans "Add Jersey Details" %}</h1>
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      {% trans "Complete the details for your jersey and add photos. The information from the database has been pre-filled for you." %}
+    </div>
+    {% if messages %}
+      <div class="messages mb-4">
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    {% if kit_data %}
+      <div class="selected-kit">
+        <div class="row">
+          <div class="col-md-4">
+            {% if kit_data.main_img_url %}
+              <img src="{{ kit_data.main_img_url }}"
+                   alt="{{ kit_data.name }}"
+                   class="img-fluid" />
+            {% elif kit_data.image_url %}
+              <img src="{{ kit_data.image_url }}"
+                   alt="{{ kit_data.name }}"
+                   class="img-fluid" />
+            {% else %}
+              <div class="no-image">No image available</div>
+            {% endif %}
+          </div>
+          <div class="col-md-8">
+            <h4>{{ kit_data.name }}</h4>
+            {% if kit_data.brand %}
+              <p>
+                <strong>{% trans "Brand" %}:</strong> {{ kit_data.brand.name }}
+              </p>
+            {% endif %}
+            {% if kit_data.club %}
+              <p>
+                <strong>{% trans "Club" %}:</strong> {{ kit_data.club.name }}
+              </p>
+            {% endif %}
+            {% if kit_data.season %}
+              <p>
+                <strong>{% trans "Season" %}:</strong> {{ kit_data.season.name }}
+              </p>
+            {% endif %}
+            {% if kit_data.competition %}
+              <p>
+                <strong>{% trans "Competition" %}:</strong> {{ kit_data.competition.name }}
+              </p>
+            {% endif %}
+            {% if kit_data.primary_color or kit_data.main_color %}
+              <p>
+                <strong>{% trans "Main Color" %}:</strong>
+                {% if kit_data.primary_color %}
+                  {{ kit_data.primary_color.name }}
+                {% else %}
+                  {{ kit_data.main_color.name }}
+                {% endif %}
+              </p>
+            {% endif %}
+            {% if kit_data.secondary_color %}
+              <p>
+                <strong>{% trans "Secondary Colors" %}:</strong>
+                {% for color in kit_data.secondary_color %}
+                  {{ color.name }}
+                  {% if not forloop.last %},{% endif %}
+                {% endfor %}
+              </p>
+            {% endif %}
+            {% if kit_data.design %}
+              <p>
+                <strong>{% trans "Design" %}:</strong> {{ kit_data.design }}
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" id="jersey-form">
+      {% csrf_token %}
+      <!-- Hidden fields for API data -->
+      {% if kit_data %}
+        <input type="hidden" name="brand" value="{{ form.brand.value|default:'' }}" />
+        <input type="hidden" name="club" value="{{ form.club.value|default:'' }}" />
+        <input type="hidden"
+               name="season"
+               value="{{ form.season.value|default:'' }}" />
+        {% if form.competitions.value %}
+          {% for competition in form.competitions.value %}
+            <input type="hidden" name="competitions" value="{{ competition }}" />
+          {% endfor %}
+        {% endif %}
+      {% endif %}
+      <div class="form-section">
+        <h3>{% trans "Jersey Attributes" %}</h3>
+        <!-- Main color selector -->
+        <c-color-selector name="main_color" label="{% trans 'Main Color' %}" :data-choices="{{ color_choices|safe }}" data-selected="{{ form.main_color.value|default:'' }}"></c-color-selector>
+        <!-- Secondary colors selector -->
+        <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" :data-choices="{{ color_choices|safe }}" data-selected="{{ form.secondary_colors.value|default:'[]' }}" data-multiple="true"></c-color-selector>
+        <!-- Design selector -->
+        <c-design-selector name="design" label="{% trans 'Design Pattern' %}" :data-choices="{{ design_choices|safe }}" data-selected="{{ form.design.value|default:'' }}"></c-design-selector>
+        <!-- Country Selector (Always Visible) -->
+        <div class="mb-3">
+          <label for="id_country_code" class="form-label">{% trans "Country" %}</label>
+          {{ form.country_code }}
+          {% if form.country_code.errors %}
+            <div class="invalid-feedback d-block">{{ form.country_code.errors|first }}</div>
+          {% endif %}
+        </div>
+        <!-- Toggle switches -->
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <!-- Is Replica toggle - default NO -->
+            <c-toggle-switch name="is_replica" label="Is Replica" checked="{{ form.is_replica.value|default:False }}"></c-toggle-switch>
+            <!-- Is Signed toggle - default NO -->
+            <c-toggle-switch name="is_signed" label="Is Signed" checked="{{ form.is_signed.value|default:False }}"></c-toggle-switch>
+          </div>
+          <div class="col-md-6">
+            <!-- Fan/Player version toggle - default Fan Version (true) -->
+            <c-toggle-switch exclusive="true" left_name="is_fan_version" label="Version Type" left_label="Fan Version" right_label="Player Version" checked="{{ form.is_fan_version.value|default:False }}"></c-toggle-switch>
+            <!-- Sleeve type toggle - default Short Sleeve (true) -->
+            <c-toggle-switch exclusive="true" left_name="is_short_sleeve" label="Sleeve Type" left_label="Short Sleeve" right_label="Long Sleeve" checked="{{ form.is_short_sleeve.value|default:False }}"></c-toggle-switch>
+          </div>
+        </div>
+        <!-- Conditional selectors (shown only if no API data) -->
+        {% if not kit_data %}
+          <div class="row mt-4">
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.brand.label_tag }}
+                {{ form.brand }}
+                {% if form.brand.help_text %}<small class="form-text text-muted">{{ form.brand.help_text }}</small>{% endif %}
+                {% if form.brand.errors %}<div class="invalid-feedback d-block">{{ form.brand.errors }}</div>{% endif %}
+              </div>
+              <div class="mb-3">
+                {{ form.club.label_tag }}
+                {{ form.club }}
+                {% if form.club.help_text %}<small class="form-text text-muted">{{ form.club.help_text }}</small>{% endif %}
+                {% if form.club.errors %}<div class="invalid-feedback d-block">{{ form.club.errors }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.season.label_tag }}
+                {{ form.season }}
+                {% if form.season.help_text %}<small class="form-text text-muted">{{ form.season.help_text }}</small>{% endif %}
+                {% if form.season.errors %}<div class="invalid-feedback d-block">{{ form.season.errors }}</div>{% endif %}
+              </div>
+              <div class="mb-3">
+                {{ form.competitions.label_tag }}
+                {{ form.competitions }}
+                {% if form.competitions.help_text %}
+                  <small class="form-text text-muted">{{ form.competitions.help_text }}</small>
+                {% endif %}
+                {% if form.competitions.errors %}
+                  <div class="invalid-feedback d-block">{{ form.competitions.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        <div class="row mb-4">
+          <div class="col-md-6">{{ form.condition|as_crispy_field }}</div>
+          <div class="col-md-6">{{ form.detailed_condition|as_crispy_field }}</div>
+        </div>
+        <div class="row mb-4">
+          <div class="col-md-6">{{ form.size|as_crispy_field }}</div>
+          <div class="col-md-6">{{ form.description|as_crispy_field }}</div>
+        </div>
+        <div class="row mb-4">
+          <div class="col-md-6">{{ form.player_name|as_crispy_field }}</div>
+          <div class="col-md-3">{{ form.number|as_crispy_field }}</div>
+        </div>
+      </div>
+      <!-- Photo Manager -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Photos" %}</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-light mb-3">
+            <i class="bi bi-info-circle me-2"></i>
+            {% trans "The main image from the database will be automatically added. You can add more photos here." %}
+          </div>
+          <c-collection.photo_manager></c-collection.photo_manager>
+          {% if main_img_url %}
+            <div class="mt-3">
+              <p>{% trans "Main image from kit will be automatically downloaded and attached:" %}</p>
+              <img src="{{ main_img_url }}"
+                   alt="Main Image Preview"
+                   class="img-fluid border rounded p-1"
+                   style="max-height: 150px" />
+              <input type="hidden" name="main_img_url" value="{{ main_img_url }}" />
+            </div>
+          {% endif %}
+          {% if kit_id %}<input type="hidden" name="kit_id" value="{{ kit_id }}" />{% endif %}
+        </div>
+      </div>
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-5">
+        <button type="submit" class="btn btn-primary">{% trans "Save Jersey" %}</button>
+      </div>
+    </form>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+  {{ form.media.js }}
+  <script src="{% static 'js/spark-md5.min.js' %}"></script>
+  <script>
+    $(document).ready(function() {
+      // Inicialización de Select2 para país
+      $('#id_country_code').select2({
+        theme: 'bootstrap-5',
+        placeholder: "{% trans 'Select a country...' %}",
+        allowClear: true,
+        // templateSelection y templateResult para asegurar renderizado HTML con bandera
+        templateSelection: formatCountrySelection,
+        templateResult: formatCountryResult,
+        escapeMarkup: function(markup) {
+          return markup;
+        } // Permitir HTML
+      });
+
+      function formatCountrySelection(country) {
+        console.log("Formatting selection:", country); // Log para depuración
+        if (!country.id) {
+          console.log("Selection is placeholder or empty");
+          return country.text;
+        }
+
+        var selectionHtml;
+        // Comprobar si el texto ya contiene el HTML de la bandera
+        if (typeof country.text === 'string' && country.text.includes('<i class="fi')) {
+          console.log("Selection text already contains HTML flag");
+          selectionHtml = country.text;
+        } else {
+          console.log("Selection text needs flag HTML. ID:", country.id, "Text:", country.text);
+          // Si no tiene HTML (probablemente la selección inicial), construirlo
+          var countryCode = country.id.toLowerCase();
+          // Usamos country.text si está disponible, si no, podríamos necesitar buscar el nombre
+          var countryName = country.text || country.id; // Fallback al ID si el texto no está
+          selectionHtml = '<span><i class="fi fi-' + countryCode + '"></i> ' + countryName + '</span>';
+        }
+        // Devolver la cadena HTML directamente
+        return selectionHtml;
+      }
+
+      function formatCountryResult(country) {
+        if (country.loading) {
+          return country.text;
+        }
+        // country.text ya tiene el formato HTML desde la vista
+        return $(country.text);
+      }
+
+      // Log kit data for debugging
+      console.log("Kit data:", {
+          %
+          if kit_data %
+        }
+        JSON.parse('{{ kit_data|escapejs|default:"null" }}') {
+          %
+          else %
+        }
+        null {
+          %
+          endif %
+        });
+      console.log("Kit ID:", {
+          %
+          if kit_id %
+        }
+        "{{ kit_id }}" {
+          %
+          else %
+        }
+        null {
+          %
+          endif %
+        });
+      console.log("Main image URL:", {
+          %
+          if main_img_url %
+        }
+        "{{ main_img_url }}" {
+          %
+          else %
+        }
+        null {
+          %
+          endif %
+        });
+
+      // Ensure the form is properly initialized
+      const jerseyForm = document.getElementById('jersey-form');
+      if (jerseyForm) {
+        console.log("Jersey form found and initialized");
+      } else {
+        console.error("Jersey form not found!");
+      }
+
+      // Add the main image to the photo manager if available
+      {
+        %
+        if main_img_url %
+      }
+      // Wait for Alpine.js to initialize the photo manager
+      setTimeout(function() {
+        // Find the photo manager component
+        const photoManager = document.querySelector('.photo-manager');
+        if (photoManager && photoManager.__x) {
+          console.log("Photo manager found, adding main image");
+
+          // Create a temporary image to check if the URL is valid
+          const img = new Image();
+          img.onload = function() {
+            // URL is valid, add it to the photo manager
+            photoManager.__x.$data.photos.unshift({
+              id: 'main_image',
+              url: '{{ main_img_url }}',
+              thumbnail_url: '{{ main_img_url }}',
+              order: 0,
+              uploading: false
+            });
+            console.log("Main image added to photo manager");
+          };
+          img.onerror = function() {
+            console.error("Failed to load main image from URL: {{ main_img_url }}");
+          };
+          img.src = '{{ main_img_url }}';
+        } else {
+          console.error("Photo manager not found or not initialized");
+        }
+      }, 500);
+      {
+        %
+        endif %
+      }
+    });
+  </script>
+{% endblock extra_js %}

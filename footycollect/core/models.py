@@ -1,5 +1,6 @@
 from django.core.validators import RegexValidator
 from django.db import models
+from django_countries.fields import CountryField
 
 
 class Season(models.Model):
@@ -13,7 +14,6 @@ class Season(models.Model):
 
 
 class TypeK(models.Model):
-    id_fka = models.IntegerField(null=True, blank=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -34,6 +34,11 @@ class Competition(models.Model):
 class Club(models.Model):
     id_fka = models.IntegerField(null=True, blank=True)
     name = models.CharField(max_length=500)
+    country = CountryField(
+        blank=True,
+        null=True,
+        help_text="The country associated with this item",
+    )
     # Custom slug field that allows special characters
     # (The Django default slug field does not allow special characters)
     slug = models.CharField(

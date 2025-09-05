@@ -31,6 +31,30 @@
       margin-right: 5px;
       vertical-align: -0.1em;
     }
+
+    /* Estilos para los selectores de color */
+    .color-swatch {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      border-radius: 3px;
+      border: 1px solid #ddd;
+      vertical-align: middle;
+    }
+
+    /* Estilos para el selector de diseño */
+    .design-option {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+    }
+
+    .design-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+    }
   </style>
 {% endblock extra_css %}
 {% block content %}
@@ -46,7 +70,26 @@
       {% csrf_token %}
       <!-- Item Details -->
       <div class="card mb-4">
-        <div class="card-body">{{ form|crispy }}</div>
+        <div class="card-body">
+          <!-- Componentes Cotton para colores y diseño -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="color_choices">
+              </c-color-selector>
+            </div>
+            <div class="col-md-6">
+              <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" data-multiple="true" data-selected="{{ form.secondary_colors.value|default:'' }}" :color_choices="color_choices">
+              </c-color-selector>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <c-design-selector name="design" label="{% trans 'Design Pattern' %}" data-selected="{{ form.design.value|default:'' }}" :design_choices="design_choices">
+              </c-design-selector>
+            </div>
+          </div>
+          {{ form|crispy }}
+        </div>
       </div>
       <!-- Photo Manager -->
       <div class="card mb-4">
@@ -67,12 +110,43 @@
   {{ form.media.js }}
   <script>
     $(document).ready(function() {
+      // Inicialización de Select2 para país
       $('#id_country_code').select2({
         ajax: {
           url: "{% url 'core:country-autocomplete' %}",
           dataType: 'json'
         }
       });
+
+      // Inicialización para selectores de color con datos de FKAPI
+      $('[data-colors][data-fkapi]').each(function() {
+        const $select = $(this);
+        $.ajax({
+          url: '/api/colors/',
+          dataType: 'json',
+          success: function(data) {
+            // Poblar el selector con datos de la API
+            // La implementación depende de la estructura de datos de FKAPI
+            $select.select2({
+              templateResult: formatColorOption,
+              templateSelection: formatColorSelection,
+              theme: 'bootstrap-5'
+            });
+          }
+        });
+      });
+
+      // Función para formatear opciones de color
+      function formatColorOption(color) {
+        if (!color.id) return color.text;
+        return $(`<span><span class="color-swatch" style="background-color: ${color.code};"></span> ${color.text}</span>`);
+      }
+
+      // Función para formatear selección de color
+      function formatColorSelection(color) {
+        if (!color.id) return color.text;
+        return $(`<span><span class="color-swatch" style="background-color: ${color.code};"></span> ${color.text}</span>`);
+      }
     });
   </script>
 {% endblock extra_js %}

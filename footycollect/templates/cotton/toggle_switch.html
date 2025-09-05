@@ -1,0 +1,103 @@
+<!-- SUPER SIMPLE Toggle switch component -->
+<c-vars exclusive="false" checked="false" left_name="" right_name="" left_label="" right_label="" name="" />
+<div class="mb-3">
+  {% if label %}<label class="form-label fw-bold">{{ label }}</label>{% endif %}
+  {% if exclusive %}
+    <!-- Exclusive toggle (Version Type & Sleeve Type) -->
+    <div class="btn-group w-100" role="group">
+      <input type="radio"
+             class="btn-check"
+             id="option1_{{ left_name }}"
+             name="{{ left_name }}"
+             value="true"
+             {% if not checked %}checked{% endif %} />
+      <label class="btn btn-outline-primary fw-bold btn-half-width"
+             for="option1_{{ left_name }}">{{ left_label }}</label>
+      <input type="radio"
+             class="btn-check"
+             id="option2_{{ left_name }}"
+             name="{{ left_name }}"
+             value="false"
+             {% if checked %}checked{% endif %} />
+      <label class="btn btn-outline-primary fw-bold btn-half-width"
+             for="option2_{{ left_name }}">{{ right_label }}</label>
+    </div>
+  {% else %}
+    <!-- Simple toggle (Is Replica & Is Signed) - Ahora con formato igual a los exclusivos -->
+    <div class="btn-group w-100" role="group">
+      <input type="radio"
+             class="btn-check"
+             id="option1_{{ name }}"
+             name="{{ name }}_radio"
+             value="no"
+             {% if not checked %}checked{% endif %}
+             onclick="document.getElementById('id_{{ name }}').checked = false;" />
+      <label class="btn btn-outline-primary fw-bold btn-half-width"
+             for="option1_{{ name }}">NO</label>
+      <input type="radio"
+             class="btn-check"
+             id="option2_{{ name }}"
+             name="{{ name }}_radio"
+             value="yes"
+             {% if checked %}checked{% endif %}
+             onclick="document.getElementById('id_{{ name }}').checked = true;" />
+      <label class="btn btn-outline-primary fw-bold btn-half-width"
+             for="option2_{{ name }}">YES</label>
+      <!-- Hidden checkbox for form submission -->
+      <input type="checkbox"
+             id="id_{{ name }}"
+             name="{{ name }}"
+             class="d-none"
+             {% if checked %}checked{% endif %} />
+    </div>
+  {% endif %}
+</div>
+<style>
+  /* Estilos consistentes para todos los botones */
+  .btn-check:checked+.btn-outline-primary {
+    background-color: #0d6efd !important;
+    color: white !important;
+    font-weight: bold !important;
+  }
+
+  .btn-outline-primary {
+    color: #6c757d;
+    background-color: white;
+    border-color: #dee2e6;
+  }
+
+  .btn-group {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 0.25rem;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+    border-color: #dee2e6;
+  }
+
+  /* Clase para botones de 50% de ancho */
+  .btn-half-width {
+    width: 50%;
+  }
+</style>
+<script>
+  // Simple toggle logic para actualizar el checkbox oculto
+  document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar los checkboxes ocultos cuando cambian los radio buttons
+    var radioButtons = document.querySelectorAll('input[type="radio"][name$="_radio"]');
+    for (var i = 0; i < radioButtons.length; i++) {
+      radioButtons[i].addEventListener('change', function() {
+        var name = this.name.replace('_radio', '');
+        var checkbox = document.getElementById('id_' + name);
+
+        if (this.value === 'yes') {
+          checkbox.checked = true;
+        } else {
+          checkbox.checked = false;
+        }
+      });
+    }
+  });
+</script>

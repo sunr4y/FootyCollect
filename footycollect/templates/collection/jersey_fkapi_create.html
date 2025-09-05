@@ -1,0 +1,1831 @@
+{% extends "base.html" %}
+
+{% load i18n static %}
+{% load crispy_forms_tags %}
+
+{% block extra_css %}
+  {{ form.media.css }}
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+        rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+        rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
+        rel="stylesheet" />
+  <style>
+    .fi {
+      margin-right: 8px;
+      border-radius: 3px;
+      width: 1.3em;
+      height: 1em;
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+      vertical-align: middle;
+    }
+
+    .select2-results__option {
+      line-height: 1.8em;
+    }
+
+    .select2-selection__rendered .fi {
+      margin-right: 5px;
+      vertical-align: -0.1em;
+    }
+
+    /* Styles for color selectors */
+    .color-swatch {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      border-radius: 3px;
+      border: 1px solid #ddd;
+      vertical-align: middle;
+    }
+
+    /* Styles for design selector */
+    .design-option {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+    }
+
+    .design-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+    }
+
+    /* Styles for search results */
+    .kit-search-results {
+      position: absolute;
+      z-index: 1000;
+      width: 100%;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .kit-search-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    .kit-search-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .kit-search-item-img-container {
+      width: 50px;
+      height: 50px;
+      min-width: 50px;
+      min-height: 50px;
+      margin-right: 10px;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      background-color: #f8f9fa;
+      position: relative;
+    }
+
+    .kit-search-item img {
+      width: 50px !important;
+      height: 50px !important;
+      object-fit: contain;
+      max-width: 50px !important;
+      max-height: 50px !important;
+    }
+
+    .loading-indicator {
+      display: inline-block;
+      margin-left: 10px;
+    }
+
+    .search-timestamp {
+      display: none;
+    }
+
+    .placeholder-img {
+      width: 40px;
+      height: 40px;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 18px;
+    }
+
+    /* Añadir un spinner para imágenes en carga */
+    .img-loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(248, 249, 250, 0.7);
+    }
+
+    .img-loading .spinner-border {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    /* Estilos para la imagen predeterminada */
+    .default-image-preview {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      background-color: #f8f9fa;
+    }
+
+    .default-image-preview h6 {
+      margin-bottom: 10px;
+      color: #495057;
+    }
+
+    .default-image-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 10px auto;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 5px;
+      background-color: white;
+    }
+  </style>
+{% endblock extra_css %}
+{% block inline_javascript %}
+  <script>
+    // Función de debounce para retrasar las búsquedas
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+      };
+    }
+
+    // Verificar el estado del componente photo_manager cuando la página esté cargada
+    document.addEventListener('DOMContentLoaded', function() {
+      // Esperar un momento para que Alpine.js inicialice los componentes
+      setTimeout(function() {
+        console.log('Verificando el estado del componente photo_manager...');
+        const photoManager = document.querySelector('.photo-manager');
+
+        if (photoManager) {
+          console.log('Componente photo_manager encontrado');
+        } else {
+          console.log('No se encontró el componente photo_manager');
+        }
+      }, 1000);
+    });
+
+    // Function to add default image to photos
+    function addDefaultImageToPhotos() {
+      try {
+        // Get the main image URL from the hidden field
+        const mainImgUrl = document.getElementById('id_main_img_url').value;
+
+        if (!mainImgUrl) {
+          alert('{% trans "No default image available. Please select a kit first." %}');
+          return;
+        }
+
+        console.log('Adding default image to photos:', mainImgUrl);
+
+        // Verificar si la imagen ya ha sido añadida
+        const existingImages = document.querySelectorAll('.default-image-preview img');
+        for (let i = 0; i < existingImages.length; i++) {
+          if (existingImages[i].src === mainImgUrl) {
+            console.log('La imagen ya ha sido añadida');
+            alert('{% trans "This image has already been added." %}');
+            return;
+          }
+        }
+
+        // Método 3: Crear un elemento visual sin interferir con el componente
+        try {
+          console.log('Creando un elemento visual para la imagen predeterminada');
+
+          // Crear un campo oculto para almacenar la URL de la imagen
+          const form = document.getElementById('jersey-form');
+          let hiddenInput = form.querySelector('input[name="external_image_urls"]');
+          if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'external_image_urls';
+            form.appendChild(hiddenInput);
+          }
+
+          // Añadir la URL de la imagen al campo oculto
+          const urls = hiddenInput.value ? hiddenInput.value.split(',') : [];
+          if (!urls.includes(mainImgUrl)) {
+            urls.push(mainImgUrl);
+            hiddenInput.value = urls.join(',');
+          }
+
+          // Crear un contenedor para mostrar la imagen
+          const previewContainer = document.createElement('div');
+          previewContainer.className = 'default-image-preview mt-3 mb-3';
+          previewContainer.style.border = '1px solid #ddd';
+          previewContainer.style.borderRadius = '4px';
+          previewContainer.style.padding = '10px';
+
+          // Crear el título
+          const title = document.createElement('h6');
+          title.className = 'mb-2';
+          title.textContent = '{% trans "Default Image (will be processed on submission)" %}';
+
+          // Crear la imagen
+          const img = document.createElement('img');
+          img.src = mainImgUrl;
+          img.alt = 'Default image';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '200px';
+          img.style.objectFit = 'contain';
+
+          // Crear el botón para eliminar la imagen
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'btn btn-sm btn-outline-danger mt-2';
+          removeBtn.innerHTML = '<i class="bi bi-trash"></i> {% trans "Remove" %}';
+          removeBtn.onclick = function() {
+            // Eliminar la URL del campo oculto
+            const urls = hiddenInput.value.split(',');
+            const index = urls.indexOf(mainImgUrl);
+            if (index !== -1) {
+              urls.splice(index, 1);
+              hiddenInput.value = urls.join(',');
+            }
+
+            // Eliminar el contenedor
+            previewContainer.remove();
+
+            // Mostrar el botón de añadir imagen
+            document.getElementById('add-default-image').style.display = 'inline-block';
+          };
+
+          // Añadir los elementos al contenedor
+          previewContainer.appendChild(title);
+          previewContainer.appendChild(img);
+          previewContainer.appendChild(removeBtn);
+
+          // Añadir el contenedor después del botón
+          const buttonContainer = document.getElementById('add-default-image').parentNode;
+          buttonContainer.appendChild(previewContainer);
+
+          // Ocultar el botón después de añadir la imagen
+          document.getElementById('add-default-image').style.display = 'none';
+
+          // Mostrar un mensaje de éxito
+          alert('{% trans "Default image added successfully! It will be processed when you submit the form." %}');
+
+          console.log('Imagen añadida correctamente');
+          return;
+        } catch (error) {
+          console.error('Error al crear el elemento visual:', error);
+        }
+
+        // Si llegamos aquí, ninguno de los métodos ha funcionado
+        alert('{% trans "Could not add the default image. Please try adding it manually." %}');
+      } catch (error) {
+        console.error('Error en addDefaultImageToPhotos:', error);
+        alert('{% trans "Error adding default image. Please try again or add it manually." %}');
+      }
+    }
+
+    // Definir el componente jerseyForm para Alpine.js
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('jerseyForm', () => ({
+        kitSearch: '',
+        kitResults: [],
+        isSearching: false,
+        selectedKit: null,
+        lastSearchTimestamp: 0,
+        debouncedSearchKits: null,
+
+        clubSearch: '',
+        clubResults: [],
+        isSearchingClub: false,
+        selectedClub: null,
+        lastClubSearchTimestamp: 0,
+        debouncedSearchClubs: null,
+
+        seasons: [],
+        selectedSeasonId: '',
+
+        isLoadingFromApi: false,
+        showClubSearch: true,
+
+        kitData: null,
+
+        init() {
+          // Inicializar el formulario
+          this.$watch('kitSearch', (value) => {
+            if (value.length < 3) {
+              this.kitResults = [];
+              return;
+            }
+
+            // Usar la función de búsqueda con debounce
+            if (!this.debouncedSearchKits) {
+              this.debouncedSearchKits = debounce(this.searchKits.bind(this), 500);
+            }
+            this.debouncedSearchKits();
+          });
+
+          this.$watch('clubSearch', (value) => {
+            if (value.length < 3) {
+              this.clubResults = [];
+              return;
+            }
+
+            // Usar la función de búsqueda con debounce
+            if (!this.debouncedSearchClubs) {
+              this.debouncedSearchClubs = debounce(this.searchClubs.bind(this), 500);
+            }
+            this.debouncedSearchClubs();
+          });
+        },
+
+        searchKits() {
+          if (this.kitSearch.length < 3) return;
+
+          // Crear un timestamp para esta búsqueda
+          const searchTimestamp = Date.now();
+          this.lastSearchTimestamp = searchTimestamp;
+
+          this.isSearching = true;
+          const url = `/fkapi/kits/search/?keyword=${encodeURIComponent(this.kitSearch)}`;
+          console.log('Searching kits with URL:', url);
+
+          fetch(url)
+            .then(response => {
+              console.log('Kit search response status:', response.status);
+              if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              // Solo actualizar los resultados si esta es la búsqueda más reciente
+              if (searchTimestamp === this.lastSearchTimestamp) {
+                console.log('Kit search results:', data);
+
+                // Handle different API response formats
+                let resultsArray = [];
+                if (Array.isArray(data)) {
+                  // API returns list directly
+                  resultsArray = data;
+                } else if (data.results && Array.isArray(data.results)) {
+                  // API returns dict with results property
+                  resultsArray = data.results;
+                } else {
+                  // Fallback: empty array
+                  resultsArray = [];
+                  console.warn('Unexpected API response format:', typeof data, data);
+                }
+
+                this.kitResults = resultsArray;
+              } else {
+                console.log('Ignoring outdated search results');
+              }
+              this.isSearching = false;
+            })
+            .catch(error => {
+              console.error('Error searching kits:', error);
+              this.isSearching = false;
+              // Show an error message to the user
+              alert('Error al buscar kits: ' + error.message);
+            });
+        },
+
+        selectKit(kit) {
+          try {
+            this.selectedKit = kit;
+            this.kitResults = [];
+            // Don't update kitSearch to avoid unnecessary API call
+            // this.kitSearch = kit.name;
+            this.showClubSearch = false;
+
+            try {
+              // Show a message that the kit has been selected
+              const searchCardTitle = document.querySelector('.card-header h5.card-title');
+              if (searchCardTitle && searchCardTitle.textContent.includes('Search')) {
+                const searchCard = searchCardTitle.closest('.card');
+                if (searchCard) {
+                  // Show a confirmation message
+                  const confirmationMessage = document.createElement('div');
+                  confirmationMessage.className = 'alert alert-success mt-3';
+                  confirmationMessage.innerHTML = `
+                  <strong><i class="bi bi-check-circle-fill"></i> Kit seleccionado:</strong> ${kit.name}
+                  <p class="mb-0 small">Los datos del kit se están cargando...</p>
+                `;
+
+                  const cardBody = searchCard.querySelector('.card-body');
+                  if (cardBody) {
+                    cardBody.appendChild(confirmationMessage);
+
+                    // Hide the search inputs
+                    const searchInputs = cardBody.querySelectorAll('.input-group, .position-relative');
+                    searchInputs.forEach(input => {
+                      input.style.display = 'none';
+                    });
+
+                    // Hide the "Or" text
+                    const orText = cardBody.querySelector('p.text-center');
+                    if (orText) {
+                      orText.style.display = 'none';
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error al mostrar mensaje de confirmación:', error);
+            }
+
+            // Get full kit details
+            this.isLoadingFromApi = true;
+            const url = `/fkapi/kit/${kit.id}/`;
+            console.log('Getting kit details with URL:', url);
+
+            fetch(url)
+              .then(response => {
+                console.log('Kit details response status:', response.status);
+                if (!response.ok) {
+                  throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log('Kit details:', data);
+                this.populateFormFromKit(data);
+                this.isLoadingFromApi = false;
+
+                // Save the kit ID
+                const kitIdField = document.getElementById('id_kit_id');
+                if (kitIdField) {
+                  kitIdField.value = kit.id;
+                }
+
+                try {
+                  // Update the confirmation message
+                  const confirmationMessage = document.querySelector('.alert.alert-success');
+                  if (confirmationMessage) {
+                    confirmationMessage.innerHTML = `
+                    <strong><i class="bi bi-check-circle-fill"></i> Kit seleccionado:</strong> ${kit.name}
+                    <p class="mb-0 small">Datos cargados correctamente. Puedes continuar con el formulario.</p>
+                  `;
+                  }
+                } catch (error) {
+                  console.error('Error al actualizar mensaje de confirmación:', error);
+                }
+              })
+              .catch(error => {
+                console.error('Error getting kit details:', error);
+                this.isLoadingFromApi = false;
+                // Show an error message to the user
+                alert('Error al obtener los detalles del kit: ' + error.message);
+              });
+          } catch (error) {
+            console.error('Error en selectKit:', error);
+            alert('Error al seleccionar el kit: ' + error.message);
+          }
+        },
+
+        populateFormFromKit(kitData) {
+          this.kitData = kitData;
+          console.log('Populando formulario con datos:', kitData);
+
+          // Log competition data
+          if (kitData.competition) {
+            console.log('Competition data from API:', {
+              raw: kitData.competition,
+              type: typeof kitData.competition,
+              isArray: Array.isArray(kitData.competition)
+            });
+          }
+
+          // Lock all fields that will be populated
+          const fieldsToLock = ['brand', 'club', 'season', 'competition', 'kit_type'];
+          fieldsToLock.forEach(field => {
+            const element = document.getElementById(`id_${field}`);
+            if (element) {
+              // Hide the original element completely
+              const parentDiv = element.closest('.mb-3');
+              if (parentDiv) {
+                // Save the original label
+                const label = parentDiv.querySelector('label');
+                const labelText = label ? label.textContent.trim() : field.charAt(0).toUpperCase() + field.slice(1);
+
+                // Clean the div content
+                parentDiv.innerHTML = '';
+
+                // Recreate only the label
+                const newLabel = document.createElement('label');
+                newLabel.className = 'form-label';
+                newLabel.textContent = labelText;
+                parentDiv.appendChild(newLabel);
+
+                // Add a hidden input to keep the value
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = `id_${field}`;
+                hiddenInput.name = field;
+                parentDiv.appendChild(hiddenInput);
+              }
+            }
+          });
+
+          // Fill form fields with kit data
+          if (kitData.brand) {
+            // Handle the new response format
+            const brandObj = kitData.brand;
+            const brandValue = typeof brandObj === 'object' ? brandObj.name : brandObj;
+
+            // Save the brand name in the hidden input brand_name
+            const brandNameField = document.getElementById('id_brand_name');
+            if (brandNameField) {
+              brandNameField.value = brandValue;
+            }
+
+            // Try to find the brand in the existing options
+            const found = this.setSelectValueByText('id_brand', brandValue);
+
+            // If the brand is not found, show the value in the field
+            if (!found) {
+              this.displayFieldValue('brand', brandValue);
+            }
+
+            // Save additional information if available
+            if (typeof brandObj === 'object' && brandObj.id) {
+              // We could save the API ID for future reference
+              console.log(`Brand ID from API: ${brandObj.id}`);
+            }
+          }
+
+          if (kitData.team || kitData.club) {
+            // Handle the new format where the club can be in team or club
+            const clubObj = kitData.team || kitData.club;
+            const clubValue = typeof clubObj === 'object' ? clubObj.name : clubObj;
+
+            // Save the club name in the hidden input club_name
+            const clubNameField = document.getElementById('id_club_name');
+            if (clubNameField) {
+              clubNameField.value = clubValue;
+            }
+
+            // Try to find the club in the existing options
+            const found = this.setSelectValueByText('id_club', clubValue);
+
+            // If the club is not found, show the value in the field
+            if (!found) {
+              this.displayFieldValue('club', clubValue);
+            }
+
+            // Save additional information if available
+            if (typeof clubObj === 'object' && clubObj.id) {
+              // We could save the API ID for future reference
+              console.log(`Club ID from API: ${clubObj.id}`);
+            }
+          }
+
+          if (kitData.season) {
+            // Handle the new format of season
+            const seasonObj = kitData.season;
+            const seasonValue = typeof seasonObj === 'object' ?
+              seasonObj.year || seasonObj.name :
+              seasonObj;
+
+            // Save the season name in the hidden input season_name
+            const seasonNameField = document.getElementById('id_season_name');
+            if (seasonNameField) {
+              seasonNameField.value = seasonValue;
+            }
+
+            // Try to find the season in the existing options
+            const found = this.setSelectValueByText('id_season', seasonValue);
+
+            // If the season is not found, show the value in the field
+            if (!found) {
+              this.displayFieldValue('season', seasonValue);
+            }
+
+            // Save additional information if available
+            if (typeof seasonObj === 'object' && seasonObj.id) {
+              // We could save the API ID for future reference
+              console.log(`Season ID from API: ${seasonObj.id}`);
+            }
+          }
+
+          if (kitData.competition) {
+            // DEBUG: Log competition processing
+            console.log('Processing competition data:', kitData.competition);
+
+            // Handle the new format of competition (can be an array or an object)
+            let competitionValue = '';
+            let allCompetitions = [];
+
+            if (Array.isArray(kitData.competition) && kitData.competition.length > 0) {
+              console.log('Competition is an array with length:', kitData.competition.length);
+              // If it's an array, use the first competition as the main one
+              const competitionObj = kitData.competition[0];
+              competitionValue = typeof competitionObj === 'object' ? competitionObj.name : competitionObj;
+
+              // Save all competitions
+              allCompetitions = kitData.competition.map(c => typeof c === 'object' ? c.name : c);
+              console.log('Mapped competition names:', allCompetitions);
+
+              // Hide the competition selector and show the competitions as text
+              const competitionDiv = document.getElementById('div_id_competitions');
+              if (competitionDiv) {
+                // Clean the div
+                competitionDiv.innerHTML = '';
+
+                // Create the label
+                const label = document.createElement('label');
+                label.className = 'form-label';
+                label.textContent = 'Competitions';
+                competitionDiv.appendChild(label);
+
+                // Create the list of competitions
+                const competitionList = document.createElement('div');
+                competitionList.className = 'form-control-plaintext';
+                competitionList.innerHTML = allCompetitions.map(comp => `<div>${comp}</div>`).join('');
+                competitionDiv.appendChild(competitionList);
+
+                // Add hidden inputs for each competition
+                allCompetitions.forEach(comp => {
+                  const hiddenInput = document.createElement('input');
+                  hiddenInput.type = 'hidden';
+                  hiddenInput.name = 'competitions';
+                  hiddenInput.value = comp;
+                  competitionDiv.appendChild(hiddenInput);
+                });
+
+                // Save the main competition
+                const competitionNameField = document.getElementById('id_competition_name');
+                if (competitionNameField) {
+                  competitionNameField.value = competitionValue;
+                }
+
+                // Save all competitions
+                const allCompetitionsField = document.createElement('input');
+                allCompetitionsField.type = 'hidden';
+                allCompetitionsField.id = 'id_all_competitions';
+                allCompetitionsField.name = 'all_competitions';
+                allCompetitionsField.value = allCompetitions.join(',');
+                competitionDiv.appendChild(allCompetitionsField);
+              }
+            } else if (typeof kitData.competition === 'object') {
+              console.log('Competition is a single object:', kitData.competition);
+              competitionValue = kitData.competition.name;
+              allCompetitions = [competitionValue];
+            } else {
+              console.log('Competition is a primitive value:', kitData.competition);
+              competitionValue = kitData.competition;
+              allCompetitions = [competitionValue];
+            }
+
+            // DEBUG: Log final competition values
+            console.log('Final competition values:', {
+              main: competitionValue,
+              all: allCompetitions
+            });
+
+            // Save the competition name in the hidden input competition_name
+            const competitionNameField = document.getElementById('id_competition_name');
+            if (competitionNameField) {
+              competitionNameField.value = competitionValue;
+              console.log('Set competition_name field to:', competitionValue);
+            }
+
+            // Try to find the competition in the existing options
+            const found = this.setSelectValueByText('id_competition', competitionValue);
+            console.log('Competition found in select options:', found);
+
+            // If the competition is not found, show the value in the field
+            if (!found) {
+              this.displayFieldValue('competition', competitionValue);
+              console.log('Displayed competition value:', competitionValue);
+            }
+
+            // Show all competitions if there are more than one
+            if (allCompetitions.length > 1) {
+              const competitionDisplay = document.getElementById('div_id_competition');
+              if (competitionDisplay) {
+                const allCompetitionsDisplay = document.createElement('div');
+                allCompetitionsDisplay.className = 'text-muted small mt-1';
+                allCompetitionsDisplay.textContent = `All competitions: ${allCompetitions.join(', ')}`;
+                competitionDisplay.appendChild(allCompetitionsDisplay);
+                console.log('Added all competitions display');
+              }
+            }
+          }
+
+          // Colors
+          if (kitData.primary_color || kitData.main_color) {
+            // Handle both formats
+            const color = kitData.primary_color || kitData.main_color;
+            const colorValue = typeof color === 'object' ? color.name : color;
+
+            // Update the value in the Cotton component
+            this.updateCottonComponent('main_color', colorValue);
+
+            // For colors, we don't create new ones since they are predefined values
+            if (!this.setSelectValueByText('id_main_color', colorValue)) {
+              console.log(`El color principal "${colorValue}" no se encontró en las opciones disponibles. Se usará el valor predeterminado.`);
+            }
+          }
+
+          // Secondary colors
+          const secondaryColors = kitData.secondary_color || kitData.secondary_colors;
+          if (secondaryColors) {
+            let selectedColors = [];
+
+            // Verify if it's an array, an object or a string
+            if (Array.isArray(secondaryColors) && secondaryColors.length > 0) {
+              // It's an array of colors
+              secondaryColors.forEach(color => {
+                const colorValue = typeof color === 'object' ? color.name : color;
+                selectedColors.push(colorValue);
+              });
+            } else if (typeof secondaryColors === 'object' && secondaryColors !== null) {
+              // It's an object with a single color
+              const colorValue = secondaryColors.name || secondaryColors.toString();
+              selectedColors.push(colorValue);
+            } else if (typeof secondaryColors === 'string') {
+              // It's a string
+              selectedColors.push(secondaryColors);
+            }
+
+            // Update the value in the Cotton component
+            if (selectedColors.length > 0) {
+              this.updateCottonComponent('secondary_colors', selectedColors);
+            }
+          }
+
+          // Design
+          if (kitData.design) {
+            const designValue = typeof kitData.design === 'object' ? kitData.design.name : kitData.design;
+
+            // Update the value in the Cotton component
+            this.updateCottonComponent('design', designValue);
+
+            // For designs, we don't create new ones since they are predefined values
+            if (!this.setSelectValueByText('id_design', designValue)) {
+              console.log(`El diseño "${designValue}" no se encontró en las opciones disponibles. Se usará el valor predeterminado.`);
+            }
+          }
+
+          // Type (Home, Away, Third, etc.)
+          if (kitData.type && kitData.type.name) {
+            const typeValue = kitData.type.name;
+            const found = this.setSelectValueByText('id_kit_type', typeValue);
+
+            // For kit types, we don't create new ones since they are predefined values
+            if (!found) {
+              console.log(`El tipo de kit "${typeValue}" no se encontró en las opciones disponibles. Se usará el valor predeterminado.`);
+            }
+
+            // Mostrar el valor en el campo
+            this.displayFieldValue('kit_type', typeValue);
+          }
+
+          // Other fields
+          if (kitData.is_replica !== undefined) {
+            document.getElementById('id_is_replica').checked = kitData.is_replica;
+          }
+
+          if (kitData.country_code) {
+            document.getElementById('id_country_code').value = kitData.country_code;
+          }
+
+          // Save the main image if it exists
+          if (kitData.main_img_url) {
+            // Here you could save the image URL to display it or process it later
+            console.log('Imagen principal del kit:', kitData.main_img_url);
+            // Set the value in the hidden input of the form
+            const imgUrlField = document.getElementById('id_main_img_url');
+            if (imgUrlField) {
+              imgUrlField.value = kitData.main_img_url;
+            }
+
+            // Show the image in the photos section
+            this.displayMainImage(kitData.main_img_url);
+          }
+
+          // Hide the search section after selecting a kit
+          try {
+            const searchCard = document.querySelector('.card-header h5.card-title');
+            if (searchCard && searchCard.closest('.card') && searchCard.textContent.includes('Search')) {
+              searchCard.closest('.card').style.display = 'none';
+            }
+          } catch (error) {
+            console.error('Error al ocultar la tarjeta de búsqueda:', error);
+          }
+        },
+
+        // Method to update the Cotton components
+        updateCottonComponent(fieldName, value) {
+          try {
+            const select = document.getElementById(`id_${fieldName}`);
+            if (!select) {
+              console.warn(`No se encontró el select para el campo ${fieldName}`);
+              return;
+            }
+
+            // Update the value of the select
+            if (Array.isArray(value)) {
+              // For multiple selects
+              if (select.options && select.options.length > 0) {
+                // Deselect all options first
+                for (let i = 0; i < select.options.length; i++) {
+                  select.options[i].selected = false;
+                }
+
+                // Select the corresponding options
+                for (let i = 0; i < select.options.length; i++) {
+                  const optionText = select.options[i].text.trim().toLowerCase();
+                  for (const val of value) {
+                    const valueText = val.toString().trim().toLowerCase();
+                    if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
+                      select.options[i].selected = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            } else {
+              // For simple selects
+              const valueText = value.toString().trim().toLowerCase();
+              let found = false;
+
+              if (select.options && select.options.length > 0) {
+                for (let i = 0; i < select.options.length; i++) {
+                  const optionText = select.options[i].text.trim().toLowerCase();
+                  if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
+                    select.value = select.options[i].value;
+                    found = true;
+                    break;
+                  }
+                }
+              }
+
+              // Trigger change event to update the display
+              const event = new Event('change', {
+                bubbles: true
+              });
+              select.dispatchEvent(event);
+
+              console.log(`Componente Cotton ${fieldName} actualizado con valor:`, value);
+
+              // Update the visual component of Cotton
+              this.updateCottonVisual(fieldName, value);
+            }
+          } catch (error) {
+            console.error(`Error al actualizar el componente Cotton ${fieldName}:`, error);
+          }
+        },
+
+        // New method to update the display of the Cotton components
+        updateCottonVisual(fieldName, value) {
+          try {
+            // Find the container of the Cotton component
+            const cottonContainer = document.getElementById(`div_id_${fieldName}`);
+            if (!cottonContainer) return;
+
+            // Find the Cotton component inside the container
+            const cottonComponent = cottonContainer.querySelector(`c-color-selector, c-design-selector`);
+            if (!cottonComponent) return;
+
+            // Update the data-selected attribute
+            cottonComponent.setAttribute('data-selected', Array.isArray(value) ? value.join(',') : value);
+
+            // For colors, update the display of the selected color
+            if (fieldName === 'main_color' || fieldName === 'secondary_colors') {
+              // Find the element that shows the selected color
+              const selectedDisplay = cottonContainer.querySelector('.selected-color, .selected-colors');
+              if (selectedDisplay) {
+                if (Array.isArray(value)) {
+                  // For multiple colors
+                  selectedDisplay.innerHTML = value.map(color =>
+                    `<span class="color-swatch" style="background-color: ${this.getColorCode(color)};"></span> ${color}`
+                  ).join(', ');
+                } else {
+                  // For a single color
+                  selectedDisplay.innerHTML = `<span class="color-swatch" style="background-color: ${this.getColorCode(value)};"></span> ${value}`;
+                }
+              }
+            }
+
+            // For designs, update the display of the selected design
+            if (fieldName === 'design') {
+              const selectedDisplay = cottonContainer.querySelector('.selected-design');
+              if (selectedDisplay) {
+                selectedDisplay.textContent = value;
+              }
+            }
+
+            console.log(`Visualización de Cotton para ${fieldName} actualizada con:`, value);
+          } catch (error) {
+            console.error(`Error al actualizar la visualización de Cotton para ${fieldName}:`, error);
+          }
+        },
+
+        // Method to show the value of a field
+        displayFieldValue(fieldName, value, isColor = false) {
+          const fieldContainer = document.getElementById(`div_id_${fieldName}`);
+          if (!fieldContainer) {
+            console.warn(`No se encontró el contenedor para el campo ${fieldName}`);
+
+            // For kit_type specifically, try to find it with a different approach
+            if (fieldName === 'kit_type') {
+              // Try to find the field by its input ID instead
+              const inputField = document.getElementById(`id_${fieldName}`);
+              if (inputField) {
+                // If we found the input, get its parent container
+                const parentDiv = inputField.closest('.mb-3');
+                if (parentDiv) {
+                  // Set the value directly on the input
+                  inputField.value = value;
+                  console.log(`Campo ${fieldName} actualizado directamente con valor: ${value}`);
+                  return;
+                }
+              }
+            }
+            return;
+          }
+
+          try {
+            // For the Cotton components (main_color, secondary_colors, design), we don't show the value directly
+            // since the components have their own display
+            if (fieldName === 'main_color' || fieldName === 'secondary_colors' || fieldName === 'design') {
+              // Only update the value of the hidden input
+              const hiddenInput = document.getElementById(`id_${fieldName}`);
+              if (hiddenInput) {
+                if (Array.isArray(value)) {
+                  // For multiple selects, we need to select the options
+                  if (hiddenInput.options && hiddenInput.options.length > 0) {
+                    for (let i = 0; i < hiddenInput.options.length; i++) {
+                      hiddenInput.options[i].selected = value.includes(hiddenInput.options[i].text);
+                    }
+                  } else {
+                    // If it doesn't have options, set the value as a string
+                    hiddenInput.value = value.join(',');
+                  }
+                }
+              }
+              return;
+            }
+
+            // Remove any previous display or confirmation message
+            const existingDisplays = fieldContainer.querySelectorAll('.form-control.p-2.bg-light, .text-success, .form-control.p-2.border');
+            existingDisplays.forEach(el => el.remove());
+
+            // Create the element to show the value
+            const valueDisplay = document.createElement('div');
+            valueDisplay.className = 'form-control p-2 border rounded';
+
+            if (isColor) {
+              // If it's a color, show a swatch
+              if (Array.isArray(value)) {
+                // For multiple colors
+                valueDisplay.innerHTML = value.map(color =>
+                  `<span class="color-swatch" style="background-color: ${this.getColorCode(color)};"></span> ${color}`
+                ).join(', ');
+              } else {
+                // For a single color
+                valueDisplay.innerHTML = `<span class="color-swatch" style="background-color: ${this.getColorCode(value)};"></span> ${value}`;
+              }
+            } else {
+              // For other fields
+              valueDisplay.textContent = value;
+            }
+
+            // Add to the container
+            fieldContainer.appendChild(valueDisplay);
+
+            // Update the value of the hidden input
+            const hiddenInput = document.getElementById(`id_${fieldName}`);
+            if (hiddenInput) {
+              if (Array.isArray(value)) {
+                // For multiple selects, we need to select the options
+                if (hiddenInput.options && hiddenInput.options.length > 0) {
+                  for (let i = 0; i < hiddenInput.options.length; i++) {
+                    hiddenInput.options[i].selected = value.includes(hiddenInput.options[i].text);
+                  }
+                } else {
+                  hiddenInput.value = value;
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Error al mostrar el valor del campo ${fieldName}:`, error);
+          }
+        },
+
+        // Method to get the color code from the name
+        getColorCode(colorName) {
+          // Basic color map
+          const colorMap = {
+            'red': '#ff0000',
+            'blue': '#0000ff',
+            'green': '#008000',
+            'yellow': '#ffff00',
+            'orange': '#ffa500',
+            'purple': '#800080',
+            'pink': '#ffc0cb',
+            'brown': '#a52a2a',
+            'black': '#000000',
+            'white': '#ffffff',
+            'gray': '#808080',
+            'grey': '#808080',
+            'gold': '#ffd700',
+            'silver': '#c0c0c0',
+            'navy': '#000080',
+            'aqua': '#00ffff',
+            'teal': '#008080',
+            'maroon': '#800000',
+            'lime': '#00ff00',
+            'olive': '#808000',
+            'cyan': '#00ffff',
+            'magenta': '#ff00ff',
+            'beige': '#f5f5dc',
+            'ivory': '#fffff0',
+            'lavender': '#e6e6fa',
+            'turquoise': '#40e0d0',
+            'violet': '#ee82ee',
+            'indigo': '#4b0082',
+            'crimson': '#dc143c',
+            'azure': '#f0ffff',
+            'coral': '#ff7f50',
+            'khaki': '#f0e68c',
+            'salmon': '#fa8072',
+            'sienna': '#a0522d',
+            'tan': '#d2b48c',
+            'tomato': '#ff6347',
+            'wheat': '#f5deb3',
+            'plum': '#dda0dd',
+            'orchid': '#da70d6',
+            'thistle': '#d8bfd8',
+            'skyblue': '#87ceeb',
+            'royalblue': '#4169e1',
+            'steelblue': '#4682b4',
+            'darkblue': '#00008b',
+            'darkgreen': '#006400',
+            'darkred': '#8b0000',
+            'darkgray': '#a9a9a9',
+            'darkgrey': '#a9a9a9',
+            'lightblue': '#add8e6',
+            'lightgreen': '#90ee90',
+            'lightred': '#ffcccb',
+            'lightgray': '#d3d3d3',
+            'lightgrey': '#d3d3d3'
+          };
+
+          // Convert to lowercase and search in the map
+          const lowerColorName = colorName.toLowerCase();
+
+          // Search for exact matches first
+          if (colorMap[lowerColorName]) {
+            return colorMap[lowerColorName];
+          }
+
+          // If there is no exact match, search for partial matches
+          for (const [key, value] of Object.entries(colorMap)) {
+            if (lowerColorName.includes(key) || key.includes(lowerColorName)) {
+              return value;
+            }
+          }
+
+          // If there is no match, return a default color
+          return '#cccccc';
+        },
+
+        // Method to create a new option in a selector
+        createNewOption(selectId, text, entityType) {
+          try {
+            const select = document.getElementById(selectId);
+            if (!select) {
+              console.warn(`No se encontró el elemento select con ID ${selectId}`);
+              return false;
+            }
+
+            // Verify if there is already an option "create_new"
+            let createOption = null;
+
+            // Verify if the select has options before iterating
+            if (select.options && select.options.length > 0) {
+              for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === 'create_new') {
+                  createOption = select.options[i];
+                  break;
+                }
+              }
+            }
+
+            // If it doesn't exist, create the option hidden
+            if (!createOption) {
+              createOption = document.createElement('option');
+              createOption.value = 'create_new';
+              createOption.style.display = 'none'; // Hide the option
+              createOption.dataset.entityType = entityType;
+              createOption.dataset.entityName = text;
+              select.appendChild(createOption);
+            } else {
+              // Update the data of the existing option
+              createOption.dataset.entityName = text;
+            }
+
+            // Update the hidden field with the name of the entity
+            const hiddenFieldId = `id_${entityType}_name`;
+            let hiddenField = document.getElementById(hiddenFieldId);
+            if (hiddenField) {
+              hiddenField.value = text;
+            } else {
+              // If it doesn't exist, create the field
+              const newHiddenField = document.createElement('input');
+              newHiddenField.type = 'hidden';
+              newHiddenField.id = hiddenFieldId;
+              newHiddenField.name = `${entityType}_name`;
+              newHiddenField.value = text;
+              document.getElementById('jersey-form').appendChild(newHiddenField);
+            }
+
+            // Select the option "create_new"
+            select.value = 'create_new';
+
+            // Trigger change event
+            const event = new Event('change', {
+              bubbles: true
+            });
+            select.dispatchEvent(event);
+
+            // Show a confirmation message
+            console.log(`Campo ${entityType}_name configurado con valor: ${text}`);
+
+            return true;
+          } catch (error) {
+            console.error(`Error al crear nueva opción para ${entityType}:`, error);
+            return false;
+          }
+        },
+
+        // Method to show the main image in the photos section
+        displayMainImage(imageUrl) {
+          if (!imageUrl) return;
+
+          console.log('Mostrando imagen principal:', imageUrl);
+
+          try {
+            // Remove previous previews
+            const existingPreviews = document.querySelectorAll('.api-image-preview');
+            existingPreviews.forEach(preview => preview.remove());
+
+            // Create an element to show the image
+            const imagePreview = document.createElement('div');
+            imagePreview.className = 'card mb-3 api-image-preview';
+            imagePreview.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+            imagePreview.innerHTML = `
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title mb-0">Imagen del Kit</h5>
+            </div>
+            <div class="card-body text-center">
+              <img src="${imageUrl}" alt="Imagen del kit" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
+              <p class="text-muted mb-0 small">Esta imagen se descargará automáticamente al crear el jersey</p>
+            </div>
+          `;
+
+            // Find the jersey details card
+            let jerseyDetailsCard = null;
+            const cardHeaders = document.querySelectorAll('.card-header');
+
+            // Try to find the jersey details card
+            for (let i = 0; i < cardHeaders.length; i++) {
+              const titleElement = cardHeaders[i].querySelector('h5.card-title');
+              if (titleElement && titleElement.textContent.includes('Jersey Details')) {
+                jerseyDetailsCard = cardHeaders[i].closest('.card');
+                break;
+              }
+            }
+
+            if (jerseyDetailsCard) {
+              // Insert before the details card
+              jerseyDetailsCard.parentNode.insertBefore(imagePreview, jerseyDetailsCard);
+            } else {
+              // As an alternative, insert it after the first card (which should be the search card)
+              const firstCard = document.querySelector('.card');
+              if (firstCard) {
+                firstCard.parentNode.insertBefore(imagePreview, firstCard.nextSibling);
+              } else {
+                // As an alternative, insert it at the beginning of the form
+                const form = document.getElementById('jersey-form');
+                if (form) {
+                  form.insertBefore(imagePreview, form.firstChild);
+                }
+              }
+            }
+
+            // Ensure the image is visible by scrolling to it
+            setTimeout(() => {
+              imagePreview.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              });
+            }, 500);
+          } catch (error) {
+            console.error('Error al mostrar la imagen principal:', error);
+            // As an alternative, insert it at the beginning of the form
+            try {
+              const form = document.getElementById('jersey-form');
+              if (form) {
+                const imagePreview = document.createElement('div');
+                imagePreview.className = 'card mb-3 api-image-preview';
+                imagePreview.innerHTML = `
+                <div class="card-header bg-primary text-white">
+                  <h5 class="card-title mb-0">Imagen del Kit</h5>
+                </div>
+                <div class="card-body text-center">
+                  <img src="${imageUrl}" alt="Imagen del kit" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
+                  <p class="text-muted mb-0 small">Esta imagen se descargará automáticamente al crear el jersey</p>
+                </div>
+              `;
+                form.insertBefore(imagePreview, form.firstChild);
+              }
+            } catch (innerError) {
+              console.error('Error al intentar mostrar la imagen como último recurso:', innerError);
+            }
+          }
+        },
+
+        // Original method to search by exact value
+        setSelectValue(selectId, value) {
+          const select = document.getElementById(selectId);
+          if (select) {
+            // Verify if the value exists in the options
+            let valueExists = false;
+            for (let i = 0; i < select.options.length; i++) {
+              if (select.options[i].value == value) {
+                valueExists = true;
+                break;
+              }
+            }
+
+            if (valueExists) {
+              select.value = value;
+
+              // Trigger change event to activate any listener
+              const event = new Event('change', {
+                bubbles: true
+              });
+              select.dispatchEvent(event);
+            } else {
+              console.warn(`Value ${value} not found in select ${selectId}`);
+            }
+          }
+        },
+
+        // New method to search by text/name
+        setSelectValueByText(selectId, text) {
+          if (!text) return false;
+
+          const select = document.getElementById(selectId);
+          if (!select) return false;
+
+          // First try to find an exact match
+          let found = this.selectOptionByText(select, text);
+
+          // If we don't find an exact match, try a partial match
+          if (!found) {
+            found = this.selectOptionByPartialText(select, text);
+          }
+
+          // If we still don't find, show a message
+          if (!found) {
+            console.warn(`No se encontró ninguna opción que coincida con "${text}" en el selector ${selectId}`);
+          }
+
+          return found;
+        },
+
+        // Method to select an option by text
+        selectOptionByText(select, text) {
+          if (!select || !text) return false;
+
+          try {
+            text = text.toString().trim().toLowerCase();
+            let found = false;
+
+            if (!select.options || select.options.length === 0) {
+              console.warn('El elemento select no tiene opciones');
+              return false;
+            }
+
+            for (let i = 0; i < select.options.length; i++) {
+              const optionText = select.options[i].text.trim().toLowerCase();
+              if (optionText === text) {
+                select.options[i].selected = true;
+                found = true;
+
+                // Trigger change event
+                const event = new Event('change', {
+                  bubbles: true
+                });
+                select.dispatchEvent(event);
+                break;
+              }
+            }
+
+            return found;
+          } catch (error) {
+            console.error(`Error al seleccionar opción por texto "${text}":`, error);
+            return false;
+          }
+        },
+
+        // Method to select an option by partial text
+        selectOptionByPartialText(select, text) {
+          if (!select || !text) return false;
+
+          try {
+            text = text.toString().trim().toLowerCase();
+            let found = false;
+
+            if (!select.options || select.options.length === 0) {
+              console.warn('El elemento select no tiene opciones');
+              return false;
+            }
+
+            // First try to find if the text is contained in any option
+            for (let i = 0; i < select.options.length; i++) {
+              const optionText = select.options[i].text.trim().toLowerCase();
+              if (optionText.includes(text) || text.includes(optionText)) {
+                select.options[i].selected = true;
+                found = true;
+
+                // Trigger change event
+                const event = new Event('change', {
+                  bubbles: true
+                });
+                select.dispatchEvent(event);
+                break;
+              }
+            }
+
+            // If we don't find, try to search for individual words
+            if (!found && text.includes(' ')) {
+              const words = text.split(' ');
+              for (let word of words) {
+                if (word.length < 3) continue; // Ignore very short words
+
+                for (let i = 0; i < select.options.length; i++) {
+                  const optionText = select.options[i].text.trim().toLowerCase();
+                  if (optionText.includes(word)) {
+                    select.options[i].selected = true;
+                    found = true;
+
+                    // Trigger change event
+                    const event = new Event('change', {
+                      bubbles: true
+                    });
+                    select.dispatchEvent(event);
+                    break;
+                  }
+                }
+
+                if (found) break;
+              }
+            }
+
+            return found;
+          } catch (error) {
+            console.error(`Error al seleccionar opción por texto parcial "${text}":`, error);
+            return false;
+          }
+        },
+
+        searchClubs() {
+          if (this.clubSearch.length < 3) return;
+
+          // Create a timestamp for this search
+          const searchTimestamp = Date.now();
+          this.lastClubSearchTimestamp = searchTimestamp;
+
+          this.isSearchingClub = true;
+          const url = `/fkapi/clubs/search/?keyword=${encodeURIComponent(this.clubSearch)}`;
+          console.log('Searching clubs with URL:', url);
+
+          fetch(url)
+            .then(response => {
+              console.log('Club search response status:', response.status);
+              if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              // Only update the results if this is the most recent search
+              if (searchTimestamp === this.lastClubSearchTimestamp) {
+                console.log('Club search results:', data);
+
+                // Ensure the logos are displayed correctly
+                if (data.results && Array.isArray(data.results)) {
+                  data.results.forEach(club => {
+                    // Verify if the club has a logo
+                    if (!club.logo) {
+                      console.log('Club sin logo:', club.name);
+                    }
+                    // Ensure logo_url is available
+                    if (club.logo && !club.logo_url) {
+                      club.logo_url = club.logo;
+                    }
+                  });
+                }
+
+                this.clubResults = data.results || [];
+              } else {
+                console.log('Ignoring outdated search results');
+              }
+              this.isSearchingClub = false;
+            })
+            .catch(error => {
+              console.error('Error searching clubs:', error);
+              this.isSearchingClub = false;
+              // Mostrar un mensaje de error al usuario
+              alert('Error al buscar clubs: ' + error.message);
+            });
+        },
+
+        selectClub(club) {
+          this.selectedClub = club;
+          this.clubResults = [];
+          this.clubSearch = club.name;
+
+          // Guardar la URL del logo para mostrarla en el formulario
+          if (club.logo) {
+            console.log('Logo URL del club seleccionado:', club.logo);
+            // Asegurarse de que el club tenga la propiedad logo_url
+            this.selectedClub.logo_url = club.logo;
+          }
+
+          // Get club seasons
+          const url = `/api/clubs/${club.id}/seasons/`;
+          console.log('Getting club seasons with URL:', url);
+
+          fetch(url)
+            .then(response => {
+              console.log('Club seasons response status:', response.status);
+              return response.json();
+            })
+            .then(data => {
+              console.log('Club seasons:', data);
+              this.seasons = data.results || [];
+            })
+            .catch(error => {
+              console.error('Error getting club seasons:', error);
+            });
+
+          // Update the club field in the form
+          this.setSelectValue('id_club', club.id);
+        },
+
+        seasonChanged() {
+          if (!this.selectedSeasonId || !this.selectedClub) return;
+
+          // Update the season field in the form
+          this.setSelectValueByText('id_season', this.selectedSeasonId);
+
+          // Optionally, load kits from this season
+          const url = `/api/clubs/${this.selectedClub.id}/seasons/${this.selectedSeasonId}/kits/`;
+          console.log('Getting kits for season with URL:', url);
+
+          fetch(url)
+            .then(response => {
+              console.log('Season kits response status:', response.status);
+              if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log('Kits for this season:', data.results);
+            })
+            .catch(error => {
+              console.error('Error getting kits for season:', error);
+              // Mostrar un mensaje de error al usuario
+              alert('Error al obtener kits para la temporada: ' + error.message);
+            });
+        }
+      }));
+    });
+  </script>
+{% endblock inline_javascript %}
+{% block content %}
+  <div class="container py-4" x-data="jerseyForm" x-init="init()">
+    <h1>{% trans "Add New Jersey with FKAPI" %}</h1>
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" id="jersey-form">
+      {% csrf_token %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Search" %}</h5>
+        </div>
+        <div class="card-body">
+          <!-- Kit Search -->
+          <div class="mb-3 position-relative">
+            <label for="id_kit_search" class="form-label">{% trans "Search for a Kit" %}</label>
+            <div class="input-group">
+              <input type="text"
+                     id="id_kit_search"
+                     name="kit_search"
+                     class="form-control"
+                     placeholder="{% trans 'Enter at least 3 characters' %}"
+                     x-model="kitSearch"
+                     autocomplete="off" />
+              <div class="loading-indicator" x-show="isSearching">
+                <span class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"></span>
+              </div>
+            </div>
+            <!-- Kit Search Results -->
+            <div class="kit-search-results" x-show="kitResults.length > 0">
+              <div class="p-2 bg-light border-bottom">
+                <small class="text-muted">{% trans "Results for" %}: <span x-text="kitSearch"></span></small>
+                <button type="button"
+                        class="btn-close float-end"
+                        @click="kitResults = []"
+                        aria-label="Close"></button>
+              </div>
+              <template x-for="kit in kitResults" :key="kit.id">
+                <div class="kit-search-item" @click="selectKit(kit)">
+                  <div class="kit-search-item-img-container">
+                    <template x-if="kit.main_img_url">
+                      <img :src="kit.main_img_url" :alt="kit.name" @error="$el.outerHTML = '
+                        <div class=\'placeholder-img\'>
+                          <i class=\'bi bi-image\'></i>
+                        </div>
+                        '" loading="lazy" style="width: 50px !important; height: 50px !important;" />
+                      </template>
+                      <template x-if="!kit.main_img_url">
+                        <div class="placeholder-img">
+                          <i class="bi bi-image"></i>
+                        </div>
+                      </template>
+                    </div>
+                    <div>
+                      <div x-text="kit.name" class="fw-bold"></div>
+                      <small class="text-muted" x-text="kit.team_name + ' - ' + kit.season_year"></small>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <!-- Or search by club -->
+            <div class="mb-3" x-show="showClubSearch">
+              <p class="text-center">{% trans "Or" %}</p>
+              <label for="id_club_search" class="form-label">{% trans "Search for a Club" %}</label>
+              <div class="input-group">
+                <input type="text"
+                       id="id_club_search"
+                       name="club_search"
+                       class="form-control"
+                       placeholder="{% trans 'Enter at least 3 characters' %}"
+                       x-model="clubSearch"
+                       autocomplete="off" />
+                <div class="loading-indicator" x-show="isSearchingClub">
+                  <span class="spinner-border spinner-border-sm"
+                        role="status"
+                        aria-hidden="true"></span>
+                </div>
+              </div>
+              <!-- Club Search Results -->
+              <div class="kit-search-results" x-show="clubResults.length > 0">
+                <div class="p-2 bg-light border-bottom">
+                  <small class="text-muted">{% trans "Results for" %}: <span x-text="clubSearch"></span></small>
+                  <button type="button"
+                          class="btn-close float-end"
+                          @click="clubResults = []"
+                          aria-label="Close"></button>
+                </div>
+                <template x-for="club in clubResults" :key="club.id">
+                  <div class="kit-search-item" @click="selectClub(club)">
+                    <div class="kit-search-item-img-container">
+                      <template x-if="club.logo_url">
+                        <img :src="club.logo_url" :alt="club.name" @error="$el.outerHTML = '
+                          <div class=\'placeholder-img\'>
+                            <i class=\'bi bi-image\'></i>
+                          </div>
+                          '" loading="lazy" style="width: 50px !important; height: 50px !important;" />
+                        </template>
+                        <template x-if="!club.logo_url">
+                          <div class="placeholder-img">
+                            <i class="bi bi-image"></i>
+                          </div>
+                        </template>
+                      </div>
+                      <div>
+                        <div x-text="club.name" class="fw-bold"></div>
+                        <small class="text-muted" x-text="club.country || ''"></small>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <!-- Season Selection (shows after club is selected) -->
+              <div class="mb-3" x-show="selectedClub && seasons.length > 0">
+                <label for="id_season_select" class="form-label">{% trans "Select Season" %}</label>
+                <div class="d-flex align-items-center mb-2" x-show="selectedClub">
+                  <template x-if="selectedClub && selectedClub.logo_url">
+                    <img :src="selectedClub.logo_url"
+                         :alt="selectedClub.name"
+                         style="width: 30px;
+                                height: 30px;
+                                object-fit: contain;
+                                margin-right: 10px" />
+                  </template>
+                  <span class="fw-bold" x-text="selectedClub ? selectedClub.name : ''"></span>
+                </div>
+                <select id="id_season_select"
+                        class="form-select"
+                        x-model="selectedSeasonId"
+                        @change="seasonChanged()">
+                  <option value="">{% trans "Select a season" %}</option>
+                  <template x-for="season in seasons" :key="season.id">
+                    <option :value="season.id" x-text="season.name"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+          </div>
+          <!-- Form Fields -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="card-title mb-0">{% trans "Jersey Details" %}</h5>
+              <div x-show="isLoadingFromApi" class="text-info">
+                <span class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"></span>
+                {% trans "Loading data from API..." %}
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- Cotton Components for colors and design -->
+              <div class="row mb-3">
+                <div class="col-md-6" id="div_id_main_color">
+                  <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+                  </c-color-selector>
+                </div>
+                <div class="col-md-6" id="div_id_secondary_colors">
+                  <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" data-multiple="true" data-selected="{{ form.secondary_colors.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+                  </c-color-selector>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6" id="div_id_design">
+                  <c-design-selector name="design" label="{% trans 'Design Pattern' %}" data-selected="{{ form.design.value|default:'' }}" :design_choices="{{ design_choices|safe }}">
+                  </c-design-selector>
+                </div>
+              </div>
+              <!-- Renderizar el formulario excluyendo los campos que ya están como componentes Cotton -->
+              {% for field in form %}
+                {% if field.name == 'brand' %}
+                  <!-- Brand field -->
+                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+                  <div class="form-group" x-show="kitData" x-cloak>
+                    <label>{% trans "Brand" %}</label>
+                    <div class="form-control-plaintext"
+                         x-text="kitData?.brand?.name || kitData?.team?.brand?.name"></div>
+                  </div>
+                {% elif field.name == 'club' %}
+                  <!-- Club field -->
+                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+                  <div class="form-group" x-show="kitData" x-cloak>
+                    <label>{% trans "Club" %}</label>
+                    <div class="form-control-plaintext" x-text="kitData?.team?.name"></div>
+                  </div>
+                {% elif field.name == 'season' %}
+                  <!-- Season field -->
+                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+                  <div class="form-group" x-show="kitData" x-cloak>
+                    <label>{% trans "Season" %}</label>
+                    <div class="form-control-plaintext" x-text="kitData?.season?.year"></div>
+                  </div>
+                {% elif field.name == 'competitions' %}
+                  <!-- Competition field -->
+                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+                  <div class="form-group" x-show="kitData" x-cloak>
+                    <label>{% trans "Competitions" %}</label>
+                    <div class="form-control-plaintext">
+                      <template x-for="comp in kitData?.competition" :key="comp.id">
+                        <div x-text="comp.name"></div>
+                      </template>
+                    </div>
+                  </div>
+                {% elif field.name != 'main_color' and field.name != 'secondary_colors' and field.name != 'design' and field.name not in 'kit_search,kit_id,brand_name,brand_id,club_name,club_id,season_name,season_id,competition_name,competition_id,competition_names,main_img_url,external_image_urls' %}
+                  {{ field|as_crispy_field }}
+                {% endif %}
+              {% endfor %}
+              <!-- Campos ocultos para la creación de nuevas entidades -->
+              {{ form.kit_id }}
+              {{ form.brand_name }}
+              {{ form.brand_id }}
+              {{ form.club_name }}
+              {{ form.club_id }}
+              {{ form.season_name }}
+              {{ form.season_id }}
+              {{ form.competition_name }}
+              {{ form.competition_id }}
+              {{ form.competition_names }}
+              {{ form.main_img_url }}
+              {{ form.external_image_urls }}
+            </div>
+          </div>
+          <!-- Photo Manager -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="card-title mb-0">{% trans "Photos" %}</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <button type="button"
+                        id="add-default-image"
+                        class="btn btn-outline-primary mb-3"
+                        onclick="addDefaultImageToPhotos()">
+                  <i class="bi bi-image"></i> {% trans "Add Default Image to Photos" %}
+                </button>
+              </div>
+              <c-collection.photo_manager></c-collection.photo_manager>
+            </div>
+          </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <button type="button"
+                    class="btn btn-outline-secondary me-2"
+                    onclick="verifyFormData()">{% trans "Verify Form Data" %}</button>
+            <button type="submit" class="btn btn-primary">{% trans "Create Jersey" %}</button>
+          </div>
+        </form>
+      </div>
+      <script>
+        // Función para verificar los datos del formulario antes de enviarlo
+        function verifyFormData() {
+          const form = document.getElementById('jersey-form');
+          const formData = new FormData(form);
+
+          console.log('Verificando datos del formulario:');
+
+          // Verificar campos críticos
+          const criticalFields = ['brand', 'club', 'season', 'competition', 'brand_name', 'club_name', 'season_name', 'competition_name'];
+
+          criticalFields.forEach(field => {
+            const value = formData.get(field);
+            console.log(`${field}: ${value || 'No definido'}`);
+          });
+
+          // Verificar si tenemos suficiente información para cada entidad
+          const hasValidBrand = formData.get('brand') || formData.get('brand_name');
+          const hasValidClub = formData.get('club') || formData.get('club_name');
+          const hasValidSeason = formData.get('season') || formData.get('season_name');
+          const hasValidCompetition = formData.get('competition') || formData.get('competition_name');
+
+          console.log('Validación de entidades:');
+          console.log(`Brand: ${hasValidBrand ? 'OK' : 'Falta información'}`);
+          console.log(`Club: ${hasValidClub ? 'OK' : 'Falta información'}`);
+          console.log(`Season: ${hasValidSeason ? 'OK' : 'Falta información'}`);
+          console.log(`Competition: ${hasValidCompetition ? 'OK' : 'Falta información'}`);
+
+          // Mostrar un mensaje al usuario
+          if (hasValidBrand && hasValidClub && hasValidSeason && hasValidCompetition) {
+            alert('Los datos del formulario parecen correctos. Puedes proceder a crear el jersey.');
+          } else {
+            alert('Faltan datos importantes en el formulario. Por favor, verifica la información en la consola.');
+          }
+        }
+      </script>
+    {% endblock content %}
+    {% block extra_js %}
+      {{ form.media.js }}
+    {% endblock extra_js %}

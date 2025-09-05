@@ -3,9 +3,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import DetailView
-from django.views.generic import RedirectView
-from django.views.generic import UpdateView
+from django.views.generic import DetailView, RedirectView, UpdateView
 
 from footycollect.users.forms import UserUpdateForm
 from footycollect.users.models import User
@@ -23,6 +21,25 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         # Only show details if the profile is public or it's the user's own profile
         if not user.is_private or user == self.request.user:
             context["show_details"] = True
+
+            # Calculate collection stats for the user
+            from footycollect.collection.models import Jersey
+
+            # Get user's jerseys directly
+            user_jerseys = Jersey.objects.filter(user=user)
+
+            # Calculate stats
+            context["total_items"] = user_jerseys.count()
+            context["total_teams"] = user_jerseys.filter(club__isnull=False).values("club").distinct().count()
+            context["total_competitions"] = (
+                user_jerseys.filter(competitions__isnull=False).values("competitions").distinct().count()
+            )
+
+            # Get recent items for display
+            context["recent_items"] = user_jerseys.select_related("club", "brand", "season").order_by("-created_at")[
+                :5
+            ]
+
         return context
 
 

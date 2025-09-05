@@ -1,6 +1,8 @@
-from django.urls import path
-from . import autocomplete
 import logging
+
+from django.urls import path
+
+from . import autocomplete
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +20,11 @@ urlpatterns = [
         autocomplete.CountryAutocomplete.as_view(),
         name="country-autocomplete",
     ),
-    # path(
-    #     "club-autocomplete/",
-    #     autocomplete.ClubAutocomplete.as_view(),
-    #     name="club-autocomplete",
-    # ),
+    path(
+        "club-autocomplete/",
+        autocomplete.ClubAutocomplete.as_view(),
+        name="club-autocomplete",
+    ),
 ]
 
-logger.info(f"URLs registered: {[url.pattern for url in urlpatterns]}") 
+logger.info("URLs registered: %s", [url.pattern for url in urlpatterns])

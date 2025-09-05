@@ -1,21 +1,52 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import ArrayField
-from django.core.validators import MaxValueValidator
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from django_countries.fields import CountryField
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 from taggit.models import Tag
 
-from footycollect.core.models import Brand
-from footycollect.core.models import Club
-from footycollect.core.models import Competition
-from footycollect.core.models import Kit
-from footycollect.core.models import Season
+from footycollect.core.models import Brand, Club, Competition, Kit, Season
 from footycollect.core.utils.images import optimize_image
+
+
+class Color(models.Model):
+    """
+    Model to represent colors using hexadecimal values.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    hex_value = models.CharField(
+        max_length=7,
+        default="#FF0000",
+        help_text=_("Hexadecimal color value (e.g., #RRGGBB)."),
+    )
+
+    # Color map for default colors
+    COLOR_MAP = {
+        "WHITE": "#FFFFFF",  # rgb(255, 255, 255)
+        "RED": "#FF0000",  # rgb(255, 0, 0)
+        "BLUE": "#0000FF",  # rgb(0, 0, 255)
+        "BLACK": "#000000",  # rgb(0, 0, 0)
+        "YELLOW": "#FFFF00",  # rgb(255, 255, 0)
+        "GREEN": "#008000",  # rgb(0, 128, 0)
+        "SKY_BLUE": "#87CEEB",  # rgb(135, 206, 235)
+        "NAVY": "#000080",  # rgb(0, 0, 128)
+        "ORANGE": "#FFA500",  # rgb(255, 165, 0)
+        "GRAY": "#808080",  # rgb(128, 128, 128)
+        "CLARET": "#7F1734",  # rgb(127, 23, 52)
+        "PURPLE": "#800080",  # rgb(128, 0, 128)
+        "PINK": "#FFC0CB",  # rgb(255, 192, 203)
+        "BROWN": "#964B00",  # rgb(150, 75, 0)
+        "GOLD": "#BFAB40",  # rgb(191, 171, 64)
+        "SILVER": "#C0C0C0",  # rgb(192, 192, 192)
+        "OFF_WHITE": "#F5F5F5",  # rgb(245, 245, 245)
+    }
+
+    def __str__(self):
+        return self.name
 
 
 class Photo(models.Model):
@@ -35,7 +66,7 @@ class Photo(models.Model):
         source="image",
         processors=[ResizeToFill(100, 100)],
         format="JPEG",
-        options={"quality": 60},
+        options={"quality": 75},
     )
 
     class Meta:
@@ -65,52 +96,59 @@ class Photo(models.Model):
 
 class BaseItem(models.Model):
     COLOR_CHOICES = [
-        ("BLACK", "Black"),
-        ("BROWN", "Brown"),
-        ("GREY", "Grey"),
-        ("BEIGE", "Beige"),
-        ("PINK", "Pink"),
-        ("PURPLE", "Purple"),
-        ("RED", "Red"),
-        ("YELLOW", "Yellow"),
-        ("BLUE", "Blue"),
-        ("GREEN", "Green"),
-        ("ORANGE", "Orange"),
-        ("WHITE", "White"),
-        ("SILVER", "Silver"),
-        ("GOLD", "Gold"),
-        ("VARIOUS", "Various"),
-        ("KHAKI", "Khaki"),
-        ("TURQUOISE", "Turquoise"),
-        ("CREAM", "Cream"),
-        ("APRICOT", "Apricot"),
-        ("CORAL", "Coral"),
-        ("BURGUNDY", "Burgundy"),
-        ("ROSE", "Rose"),
-        ("LILAC", "Lilac"),
-        ("LIGHT_BLUE", "Light Blue"),
-        ("NAVY", "Navy"),
-        ("DARK_GREEN", "Dark Green"),
-        ("MUSTARD", "Mustard"),
-        ("MINT", "Mint"),
+        ("WHITE", _("White")),
+        ("RED", _("Red")),
+        ("BLUE", _("Blue")),
+        ("BLACK", _("Black")),
+        ("YELLOW", _("Yellow")),
+        ("GREEN", _("Green")),
+        ("SKY_BLUE", _("Sky blue")),
+        ("NAVY", _("Navy")),
+        ("ORANGE", _("Orange")),
+        ("GRAY", _("Gray")),
+        ("CLARET", _("Claret")),
+        ("PURPLE", _("Purple")),
+        ("PINK", _("Pink")),
+        ("BROWN", _("Brown")),
+        ("GOLD", _("Gold")),
+        ("SILVER", _("Silver")),
+        ("OFF_WHITE", _("Off-white")),
     ]
     CONDITION_CHOICES = [
-        ("BNWT", "Brand New With Tags"),
-        ("BNWOT", "Brand New Without Tags"),
-        ("EXCELLENT", "Excellent"),
-        ("VERY_GOOD", "Very Good"),
-        ("GOOD", "Good"),
-        ("FAIR", "Fair"),
-        ("POOR", "Poor"),
+        ("BNWT", _("Brand New With Tags")),
+        ("BNWOT", _("Brand New Without Tags")),
+        ("EXCELLENT", _("Excellent")),
+        ("VERY_GOOD", _("Very Good")),
+        ("GOOD", _("Good")),
+        ("FAIR", _("Fair")),
+        ("POOR", _("Poor")),
     ]
-
+    DESIGN_CHOICES = [
+        ("PLAIN", _("Plain")),
+        ("STRIPES", _("Stripes")),
+        ("GRAPHIC", _("Graphic")),
+        ("CHEST_BAND", _("Chest band")),
+        ("CONTRASTING_SLEEVES", _("Contrasting sleeves")),
+        ("PINSTRIPES", _("Pinstripes")),
+        ("HOOPS", _("Hoops")),
+        ("SINGLE_STRIPE", _("Single stripe")),
+        ("HALF_AND_HALF", _("Half-and-half")),
+        ("SASH", _("Sash")),
+        ("CHEVRON", _("Chevron")),
+        ("CHECKERS", _("Checkers")),
+        ("GRADIENT", _("Gradient")),
+        ("DIAGONAL", _("Diagonal")),
+        ("CROSS", _("Cross")),
+        ("QUARTERS", _("Quarters")),
+    ]
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, help_text="User who owns this item")
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
     club = models.ForeignKey(Club, on_delete=models.CASCADE, null=True, blank=True)
-    competition = models.ForeignKey(
+    competitions = models.ManyToManyField(
         Competition,
-        on_delete=models.CASCADE,
-        null=True,
         blank=True,
+        related_name="%(app_label)s_%(class)s_items",
+        help_text="Competitions associated with this item",
     )
     season = models.ForeignKey(
         Season,
@@ -134,12 +172,21 @@ class BaseItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_draft = models.BooleanField(default=True)
-    main_color = models.CharField(max_length=20, choices=COLOR_CHOICES)
-    secondary_colors = ArrayField(
-        models.CharField(max_length=20, choices=COLOR_CHOICES),
-        size=3,
+    design = models.CharField(
+        max_length=20,
+        choices=DESIGN_CHOICES,
         blank=True,
+    )
+    main_color = models.ForeignKey(
+        Color,
+        on_delete=models.CASCADE,
         null=True,
+        blank=True,
+    )
+    secondary_colors = models.ManyToManyField(
+        Color,
+        blank=True,
+        related_name="%(app_label)s_%(class)s_secondary",
     )
     country = CountryField(
         blank=True,
@@ -151,6 +198,7 @@ class BaseItem(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.brand} {self.club} Item"

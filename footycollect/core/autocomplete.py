@@ -1,11 +1,10 @@
 import logging
 
 from dal import autocomplete
-from django.utils.html import escape
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django_countries import countries
 
-from .models import Brand
+from .models import Brand, Club
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +22,7 @@ class CountryAutocomplete(autocomplete.Select2ListView):
         countries_list = list(countries)
 
         if self.q:
-            countries_list = [
-                (code, name)
-                for code, name in countries_list
-                if self.q.lower() in str(name).lower()
-            ]
+            countries_list = [(code, name) for code, name in countries_list if self.q.lower() in str(name).lower()]
 
         return self.get_countries_list(countries_list)
 
@@ -49,3 +44,11 @@ class CountryAutocomplete(autocomplete.Select2ListView):
 
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class ClubAutocomplete(autocomplete.Select2ListView):
+    def get_queryset(self):
+        qs = Club.objects.all()
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs.order_by("name")

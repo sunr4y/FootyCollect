@@ -122,6 +122,28 @@
         }
       },
 
+      // Add an external image (from API)
+      addExternalImage(imageUrl, order = 0) {
+        // Check if the image already exists
+        const exists = this.photos.some(photo => photo.url === imageUrl);
+        if (exists) {
+          console.log('Image already exists in the photo manager');
+          return;
+        }
+
+        // Add the image to the photos array
+        this.photos.push({
+          id: `external_${Date.now()}`,
+          url: imageUrl,
+          thumbnail_url: imageUrl,
+          order: order,
+          uploading: false,
+          external: true
+        });
+
+        console.log('External image added to photo manager');
+      },
+
       async processFiles(files) {
         const validFiles = Array.from(files).filter(file => {
           if (!this.acceptedTypes.includes(file.type)) {
@@ -190,9 +212,11 @@
       getPhotoIds() {
         return this.photos
           .filter(photo => photo.id && !photo.uploading) // Only fully uploaded photos
-          .map(photo => ({
+          .map((photo, index) => ({
             id: photo.id,
-            order: photo.order
+            order: index, // Use the current index as the order
+            external: photo.external || false,
+            url: photo.external ? photo.url : null
           }));
       }
     };
