@@ -84,15 +84,15 @@ class FKAPIClient:
 
     def get_club_seasons(self, club_id: int) -> list[dict]:
         """Get seasons for a club"""
-        return self._get("/seasons", params={"club_id": club_id})
+        return self._get("/seasons", params={"id": club_id})
 
     def get_club_kits(self, club_id: int, season_id: int) -> list[dict]:
         """Get kits for a club for a specific season"""
         return self._get(
             "/kits",
             params={
-                "club_id": club_id,
-                "season_id": season_id,
+                "club": club_id,
+                "season": season_id,
             },
         )
 

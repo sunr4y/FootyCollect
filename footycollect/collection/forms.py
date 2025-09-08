@@ -109,15 +109,19 @@ class BaseItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Prepare color choices for the color selector component
-        color_choices = [
-            {
-                "value": color.id,
-                "label": color.name,
-                "hex_value": color.hex_value,
-            }
-            for color in Color.objects.all()
-        ]
+        # Prepare color choices for the color selector component (lazy loading)
+        try:
+            color_choices = [
+                {
+                    "value": color.id,
+                    "label": color.name,
+                    "hex_value": color.hex_value,
+                }
+                for color in Color.objects.all()
+            ]
+        except (ImportError, RuntimeError):
+            # During tests or when database is not ready, use empty list
+            color_choices = []
 
         # Set choices for color fields
         self.fields["main_color"].widget.attrs["data-choices"] = color_choices
@@ -162,7 +166,7 @@ class ItemTypeForm(forms.Form):
 
 class JerseyForm(forms.ModelForm):
     size = forms.ModelChoiceField(
-        queryset=Size.objects.filter(category="tops"),
+        queryset=Size.objects.none(),  # Will be set in __init__
         label=_("Size"),
         required=True,
         widget=forms.Select(attrs={"class": "form-select"}),
@@ -219,6 +223,14 @@ class JerseyForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Set the size queryset (lazy loading)
+        try:
+            self.fields["size"].queryset = Size.objects.filter(category="tops")
+        except (ImportError, RuntimeError):
+            # During tests or when database is not ready, use empty queryset
+            self.fields["size"].queryset = Size.objects.none()
+
         self.fields["player_name"].widget.attrs["class"] = "form-control col-md-8"
         self.fields["number"].widget.attrs["class"] = "form-control col-md-4"
 
@@ -456,7 +468,7 @@ class TestBrandForm(forms.Form):
     """Form simple para probar Select2 con Brand"""
 
     brand = forms.ModelChoiceField(
-        queryset=Brand.objects.all(),
+        queryset=Brand.objects.none(),  # Will be set in __init__
         widget=autocomplete.ModelSelect2(
             url="core:brand-autocomplete",
             attrs={
@@ -465,3 +477,13 @@ class TestBrandForm(forms.Form):
             },
         ),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Set the brand queryset (lazy loading)
+        try:
+            self.fields["brand"].queryset = Brand.objects.all()
+        except (ImportError, RuntimeError):
+            # During tests or when database is not ready, use empty queryset
+            self.fields["brand"].queryset = Brand.objects.none()

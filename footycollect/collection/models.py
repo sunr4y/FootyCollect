@@ -94,6 +94,18 @@ class Photo(models.Model):
         return self.image_avif.url if self.image_avif else self.image.url
 
 
+# Custom manager for BaseItem
+class BaseItemManager(models.Manager):
+    def public(self):
+        return self.filter(is_private=False, is_draft=False)
+
+    def private(self):
+        return self.filter(is_private=True)
+
+    def drafts(self):
+        return self.filter(is_draft=True)
+
+
 class BaseItem(models.Model):
     COLOR_CHOICES = [
         ("WHITE", _("White")),
@@ -231,6 +243,8 @@ class Jersey(BaseItem):
     number = models.PositiveIntegerField(null=True, blank=True)
     is_short_sleeve = models.BooleanField(default=True)
 
+    objects = BaseItemManager()
+
 
 class Shorts(BaseItem):
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
@@ -268,18 +282,4 @@ class OtherItem(BaseItem):
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
 
 
-# Custom manager for BaseItem
-class BaseItemManager(models.Manager):
-    def public(self):
-        return self.filter(is_private=False, is_draft=False)
-
-    def private(self):
-        return self.filter(is_private=True)
-
-    def drafts(self):
-        return self.filter(is_draft=True)
-
-
-# Apply the custom manager to all models inheriting from BaseItem
-for model in [Jersey, Shorts, Outerwear, Tracksuit, Pants, OtherItem]:
-    model.add_to_class("objects", BaseItemManager())
+# BaseItemManager is now applied directly to each model

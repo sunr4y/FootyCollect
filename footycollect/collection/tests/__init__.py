@@ -1,0 +1,1 @@
+# Collection app tests package

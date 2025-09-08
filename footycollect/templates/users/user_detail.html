@@ -91,9 +91,8 @@
                       <div class="card h-100">
                         {% if item.photos.exists %}
                           <img src="{{ item.photos.first.get_image_url }}"
-                               class="card-img-top"
-                               alt="{{ item.name }}"
-                               style="height: 200px; object-fit: cover" />
+                               class="card-img-top item-photo"
+                               alt="{{ item.name }}" />
                         {% endif %}
                         <div class="card-body">
                           <h6 class="card-title">{{ item.name }}</h6>

@@ -619,8 +619,14 @@
               <div class="kit-card-img-container">
                 <template x-if="kit.main_img_url">
                   <img :src="kit.main_img_url" :alt="kit.name" class="kit-card-img" onerror="this.style.display='none'; this.parentNode.innerHTML='
-                    <div class=\'d-flex align-items-center justify-content-center h-100\'>
-                      <i class=\'bi bi-image fs-1 text-muted\'></i>
+                    <div class
+                         quot
+                         d-flex
+                         align-items-center
+                         justify-content-center
+                         h-100
+                         quot>
+                      <i class=&quot;bi bi-image fs-1 text-muted&quot;></i>
                     </div>
                     '" />
                   </template>
@@ -663,7 +669,18 @@
             </div>
             <div class="selected-kit-header">
               <template x-if="selectedKit && selectedKit.main_img_url">
-                <img :src="selectedKit.main_img_url" :alt="selectedKit ? selectedKit.name : ''" class="selected-kit-image" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'selected-kit-image d-flex align-items-center justify-content-center bg-light\'><i class=\'bi bi-image fs-1 text-muted\'></i></div>'" />
+                <img :src="selectedKit.main_img_url" :alt="selectedKit ? selectedKit.name : ''" class="selected-kit-image" onerror="this.style.display='none'; this.parentNode.innerHTML='
+                  <div class
+                       quot
+                       selected-kit-image
+                       d-flex
+                       align-items-center
+                       justify-content-center
+                       bg-light
+                       quot>
+                    <i class=&quot;bi bi-image fs-1 text-muted&quot;></i>
+                  </div>
+                  '" />
                 </template>
                 <template x-if="selectedKit && !selectedKit.main_img_url">
                   <div class="selected-kit-image d-flex align-items-center justify-content-center bg-light">

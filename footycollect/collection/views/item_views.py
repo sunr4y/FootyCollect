@@ -19,7 +19,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
-from footycollect.collection.models import BaseItem, Jersey, OtherItem, Outerwear, Pants, Photo, Shorts, Tracksuit
+from footycollect.collection.models import Jersey, OtherItem, Outerwear, Pants, Photo, Shorts, Tracksuit
 
 from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemDetailView, BaseItemListView, BaseItemUpdateView
 
@@ -154,8 +154,10 @@ class ItemListView(BaseItemListView):
 
     def get_queryset(self):
         """Get all items for the current user with optimizations."""
+        from footycollect.collection.models import Jersey
+
         return (
-            BaseItem.objects.filter(user=self.request.user)
+            Jersey.objects.filter(user=self.request.user)
             .select_related(
                 "club",
                 "season",
@@ -256,7 +258,7 @@ class JerseyCreateView(BaseItemCreateView):
 
     model = Jersey
     form_class = JerseyForm
-    template_name = "collection/jersey_form.html"
+    template_name = "collection/item_form.html"
     success_url = reverse_lazy("collection:item_list")
 
     def get_context_data(self, **kwargs):
@@ -296,7 +298,7 @@ class JerseyUpdateView(BaseItemUpdateView):
 
     model = Jersey
     form_class = JerseyForm
-    template_name = "collection/jersey_form.html"
+    template_name = "collection/item_form.html"
     success_url = reverse_lazy("collection:item_list")
 
     def get_context_data(self, **kwargs):
