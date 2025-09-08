@@ -183,6 +183,11 @@
       };
     }
 
+    // Handle image loading errors
+    function handleImageError(img) {
+      img.outerHTML = '<div class="placeholder-img"><i class="bi bi-image"></i></div>';
+    }
+
     // Verificar el estado del componente photo_manager cuando la página esté cargada
     document.addEventListener('DOMContentLoaded', function() {
       // Esperar un momento para que Alpine.js inicialice los componentes
@@ -1584,248 +1589,245 @@
                 <div class="kit-search-item" @click="selectKit(kit)">
                   <div class="kit-search-item-img-container">
                     <template x-if="kit.main_img_url">
-                      <img :src="kit.main_img_url" :alt="kit.name" @error="$el.outerHTML = '
-                        <div class=\'placeholder-img\'>
-                          <i class=\'bi bi-image\'></i>
-                        </div>
-                        '" loading="lazy" style="width: 50px !important; height: 50px !important;" />
-                      </template>
-                      <template x-if="!kit.main_img_url">
-                        <div class="placeholder-img">
-                          <i class="bi bi-image"></i>
-                        </div>
-                      </template>
-                    </div>
-                    <div>
-                      <div x-text="kit.name" class="fw-bold"></div>
-                      <small class="text-muted" x-text="kit.team_name + ' - ' + kit.season_year"></small>
-                    </div>
+                      <img :src="kit.main_img_url"
+                           :alt="kit.name"
+                           @error="handleImageError($el)"
+                           loading="lazy"
+                           class="kit-search-img" />
+                    </template>
+                    <template x-if="!kit.main_img_url">
+                      <div class="placeholder-img">
+                        <i class="bi bi-image"></i>
+                      </div>
+                    </template>
                   </div>
-                </template>
-              </div>
-            </div>
-            <!-- Or search by club -->
-            <div class="mb-3" x-show="showClubSearch">
-              <p class="text-center">{% trans "Or" %}</p>
-              <label for="id_club_search" class="form-label">{% trans "Search for a Club" %}</label>
-              <div class="input-group">
-                <input type="text"
-                       id="id_club_search"
-                       name="club_search"
-                       class="form-control"
-                       placeholder="{% trans 'Enter at least 3 characters' %}"
-                       x-model="clubSearch"
-                       autocomplete="off" />
-                <div class="loading-indicator" x-show="isSearchingClub">
-                  <span class="spinner-border spinner-border-sm"
-                        role="status"
-                        aria-hidden="true"></span>
+                  <div>
+                    <div x-text="kit.name" class="fw-bold"></div>
+                    <small class="text-muted" x-text="kit.team_name + ' - ' + kit.season_year"></small>
+                  </div>
                 </div>
-              </div>
-              <!-- Club Search Results -->
-              <div class="kit-search-results" x-show="clubResults.length > 0">
-                <div class="p-2 bg-light border-bottom">
-                  <small class="text-muted">{% trans "Results for" %}: <span x-text="clubSearch"></span></small>
-                  <button type="button"
-                          class="btn-close float-end"
-                          @click="clubResults = []"
-                          aria-label="Close"></button>
-                </div>
-                <template x-for="club in clubResults" :key="club.id">
-                  <div class="kit-search-item" @click="selectClub(club)">
-                    <div class="kit-search-item-img-container">
-                      <template x-if="club.logo_url">
-                        <img :src="club.logo_url" :alt="club.name" @error="$el.outerHTML = '
-                          <div class=\'placeholder-img\'>
-                            <i class=\'bi bi-image\'></i>
-                          </div>
-                          '" loading="lazy" style="width: 50px !important; height: 50px !important;" />
-                        </template>
-                        <template x-if="!club.logo_url">
-                          <div class="placeholder-img">
-                            <i class="bi bi-image"></i>
-                          </div>
-                        </template>
-                      </div>
-                      <div>
-                        <div x-text="club.name" class="fw-bold"></div>
-                        <small class="text-muted" x-text="club.country || ''"></small>
-                      </div>
-                    </div>
-                  </template>
-                </div>
-              </div>
-              <!-- Season Selection (shows after club is selected) -->
-              <div class="mb-3" x-show="selectedClub && seasons.length > 0">
-                <label for="id_season_select" class="form-label">{% trans "Select Season" %}</label>
-                <div class="d-flex align-items-center mb-2" x-show="selectedClub">
-                  <template x-if="selectedClub && selectedClub.logo_url">
-                    <img :src="selectedClub.logo_url"
-                         :alt="selectedClub.name"
-                         style="width: 30px;
-                                height: 30px;
-                                object-fit: contain;
-                                margin-right: 10px" />
-                  </template>
-                  <span class="fw-bold" x-text="selectedClub ? selectedClub.name : ''"></span>
-                </div>
-                <select id="id_season_select"
-                        class="form-select"
-                        x-model="selectedSeasonId"
-                        @change="seasonChanged()">
-                  <option value="">{% trans "Select a season" %}</option>
-                  <template x-for="season in seasons" :key="season.id">
-                    <option :value="season.id" x-text="season.name"></option>
-                  </template>
-                </select>
-              </div>
+              </template>
             </div>
           </div>
-          <!-- Form Fields -->
-          <div class="card mb-4">
-            <div class="card-header">
-              <h5 class="card-title mb-0">{% trans "Jersey Details" %}</h5>
-              <div x-show="isLoadingFromApi" class="text-info">
+          <!-- Or search by club -->
+          <div class="mb-3" x-show="showClubSearch">
+            <p class="text-center">{% trans "Or" %}</p>
+            <label for="id_club_search" class="form-label">{% trans "Search for a Club" %}</label>
+            <div class="input-group">
+              <input type="text"
+                     id="id_club_search"
+                     name="club_search"
+                     class="form-control"
+                     placeholder="{% trans 'Enter at least 3 characters' %}"
+                     x-model="clubSearch"
+                     autocomplete="off" />
+              <div class="loading-indicator" x-show="isSearchingClub">
                 <span class="spinner-border spinner-border-sm"
                       role="status"
                       aria-hidden="true"></span>
-                {% trans "Loading data from API..." %}
               </div>
             </div>
-            <div class="card-body">
-              <!-- Cotton Components for colors and design -->
-              <div class="row mb-3">
-                <div class="col-md-6" id="div_id_main_color">
-                  <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
-                  </c-color-selector>
-                </div>
-                <div class="col-md-6" id="div_id_secondary_colors">
-                  <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" data-multiple="true" data-selected="{{ form.secondary_colors.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
-                  </c-color-selector>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-6" id="div_id_design">
-                  <c-design-selector name="design" label="{% trans 'Design Pattern' %}" data-selected="{{ form.design.value|default:'' }}" :design_choices="{{ design_choices|safe }}">
-                  </c-design-selector>
-                </div>
-              </div>
-              <!-- Renderizar el formulario excluyendo los campos que ya están como componentes Cotton -->
-              {% for field in form %}
-                {% if field.name == 'brand' %}
-                  <!-- Brand field -->
-                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-                  <div class="form-group" x-show="kitData" x-cloak>
-                    <label>{% trans "Brand" %}</label>
-                    <div class="form-control-plaintext"
-                         x-text="kitData?.brand?.name || kitData?.team?.brand?.name"></div>
-                  </div>
-                {% elif field.name == 'club' %}
-                  <!-- Club field -->
-                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-                  <div class="form-group" x-show="kitData" x-cloak>
-                    <label>{% trans "Club" %}</label>
-                    <div class="form-control-plaintext" x-text="kitData?.team?.name"></div>
-                  </div>
-                {% elif field.name == 'season' %}
-                  <!-- Season field -->
-                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-                  <div class="form-group" x-show="kitData" x-cloak>
-                    <label>{% trans "Season" %}</label>
-                    <div class="form-control-plaintext" x-text="kitData?.season?.year"></div>
-                  </div>
-                {% elif field.name == 'competitions' %}
-                  <!-- Competition field -->
-                  <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-                  <div class="form-group" x-show="kitData" x-cloak>
-                    <label>{% trans "Competitions" %}</label>
-                    <div class="form-control-plaintext">
-                      <template x-for="comp in kitData?.competition" :key="comp.id">
-                        <div x-text="comp.name"></div>
-                      </template>
-                    </div>
-                  </div>
-                {% elif field.name != 'main_color' and field.name != 'secondary_colors' and field.name != 'design' and field.name not in 'kit_search,kit_id,brand_name,brand_id,club_name,club_id,season_name,season_id,competition_name,competition_id,competition_names,main_img_url,external_image_urls' %}
-                  {{ field|as_crispy_field }}
-                {% endif %}
-              {% endfor %}
-              <!-- Campos ocultos para la creación de nuevas entidades -->
-              {{ form.kit_id }}
-              {{ form.brand_name }}
-              {{ form.brand_id }}
-              {{ form.club_name }}
-              {{ form.club_id }}
-              {{ form.season_name }}
-              {{ form.season_id }}
-              {{ form.competition_name }}
-              {{ form.competition_id }}
-              {{ form.competition_names }}
-              {{ form.main_img_url }}
-              {{ form.external_image_urls }}
-            </div>
-          </div>
-          <!-- Photo Manager -->
-          <div class="card mb-4">
-            <div class="card-header">
-              <h5 class="card-title mb-0">{% trans "Photos" %}</h5>
-            </div>
-            <div class="card-body">
-              <div class="mb-3">
+            <!-- Club Search Results -->
+            <div class="kit-search-results" x-show="clubResults.length > 0">
+              <div class="p-2 bg-light border-bottom">
+                <small class="text-muted">{% trans "Results for" %}: <span x-text="clubSearch"></span></small>
                 <button type="button"
-                        id="add-default-image"
-                        class="btn btn-outline-primary mb-3"
-                        onclick="addDefaultImageToPhotos()">
-                  <i class="bi bi-image"></i> {% trans "Add Default Image to Photos" %}
-                </button>
+                        class="btn-close float-end"
+                        @click="clubResults = []"
+                        aria-label="Close"></button>
               </div>
-              <c-collection.photo_manager></c-collection.photo_manager>
+              <template x-for="club in clubResults" :key="club.id">
+                <div class="kit-search-item" @click="selectClub(club)">
+                  <div class="kit-search-item-img-container">
+                    <template x-if="club.logo_url">
+                      <img :src="club.logo_url"
+                           :alt="club.name"
+                           @error="handleImageError($el)"
+                           loading="lazy"
+                           class="kit-search-img" />
+                    </template>
+                    <template x-if="!club.logo_url">
+                      <div class="placeholder-img">
+                        <i class="bi bi-image"></i>
+                      </div>
+                    </template>
+                  </div>
+                  <div>
+                    <div x-text="club.name" class="fw-bold"></div>
+                    <small class="text-muted" x-text="club.country || ''"></small>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
-          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <button type="button"
-                    class="btn btn-outline-secondary me-2"
-                    onclick="verifyFormData()">{% trans "Verify Form Data" %}</button>
-            <button type="submit" class="btn btn-primary">{% trans "Create Jersey" %}</button>
+          <!-- Season Selection (shows after club is selected) -->
+          <div class="mb-3" x-show="selectedClub && seasons.length > 0">
+            <label for="id_season_select" class="form-label">{% trans "Select Season" %}</label>
+            <div class="d-flex align-items-center mb-2" x-show="selectedClub">
+              <template x-if="selectedClub && selectedClub.logo_url">
+                <img :src="selectedClub.logo_url"
+                     :alt="selectedClub.name"
+                     class="selected-club-logo" />
+              </template>
+              <span class="fw-bold" x-text="selectedClub ? selectedClub.name : ''"></span>
+            </div>
+            <select id="id_season_select"
+                    class="form-select"
+                    x-model="selectedSeasonId"
+                    @change="seasonChanged()">
+              <option value="">{% trans "Select a season" %}</option>
+              <template x-for="season in seasons" :key="season.id">
+                <option :value="season.id" x-text="season.name"></option>
+              </template>
+            </select>
           </div>
-        </form>
+        </div>
       </div>
-      <script>
-        // Función para verificar los datos del formulario antes de enviarlo
-        function verifyFormData() {
-          const form = document.getElementById('jersey-form');
-          const formData = new FormData(form);
+      <!-- Form Fields -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Jersey Details" %}</h5>
+          <div x-show="isLoadingFromApi" class="text-info">
+            <span class="spinner-border spinner-border-sm"
+                  role="status"
+                  aria-hidden="true"></span>
+            {% trans "Loading data from API..." %}
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Cotton Components for colors and design -->
+          <div class="row mb-3">
+            <div class="col-md-6" id="div_id_main_color">
+              <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+              </c-color-selector>
+            </div>
+            <div class="col-md-6" id="div_id_secondary_colors">
+              <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" data-multiple="true" data-selected="{{ form.secondary_colors.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+              </c-color-selector>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6" id="div_id_design">
+              <c-design-selector name="design" label="{% trans 'Design Pattern' %}" data-selected="{{ form.design.value|default:'' }}" :design_choices="{{ design_choices|safe }}">
+              </c-design-selector>
+            </div>
+          </div>
+          <!-- Renderizar el formulario excluyendo los campos que ya están como componentes Cotton -->
+          {% for field in form %}
+            {% if field.name == 'brand' %}
+              <!-- Brand field -->
+              <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+              <div class="form-group" x-show="kitData" x-cloak>
+                <label>{% trans "Brand" %}</label>
+                <div class="form-control-plaintext"
+                     x-text="kitData?.brand?.name || kitData?.team?.brand?.name"></div>
+              </div>
+            {% elif field.name == 'club' %}
+              <!-- Club field -->
+              <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+              <div class="form-group" x-show="kitData" x-cloak>
+                <label>{% trans "Club" %}</label>
+                <div class="form-control-plaintext" x-text="kitData?.team?.name"></div>
+              </div>
+            {% elif field.name == 'season' %}
+              <!-- Season field -->
+              <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+              <div class="form-group" x-show="kitData" x-cloak>
+                <label>{% trans "Season" %}</label>
+                <div class="form-control-plaintext" x-text="kitData?.season?.year"></div>
+              </div>
+            {% elif field.name == 'competitions' %}
+              <!-- Competition field -->
+              <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
+              <div class="form-group" x-show="kitData" x-cloak>
+                <label>{% trans "Competitions" %}</label>
+                <div class="form-control-plaintext">
+                  <template x-for="comp in kitData?.competition" :key="comp.id">
+                    <div x-text="comp.name"></div>
+                  </template>
+                </div>
+              </div>
+            {% elif field.name != 'main_color' and field.name != 'secondary_colors' and field.name != 'design' and field.name not in 'kit_search,kit_id,brand_name,brand_id,club_name,club_id,season_name,season_id,competition_name,competition_id,competition_names,main_img_url,external_image_urls' %}
+              {{ field|as_crispy_field }}
+            {% endif %}
+          {% endfor %}
+          <!-- Campos ocultos para la creación de nuevas entidades -->
+          {{ form.kit_id }}
+          {{ form.brand_name }}
+          {{ form.brand_id }}
+          {{ form.club_name }}
+          {{ form.club_id }}
+          {{ form.season_name }}
+          {{ form.season_id }}
+          {{ form.competition_name }}
+          {{ form.competition_id }}
+          {{ form.competition_names }}
+          {{ form.main_img_url }}
+          {{ form.external_image_urls }}
+        </div>
+      </div>
+      <!-- Photo Manager -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Photos" %}</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <button type="button"
+                    id="add-default-image"
+                    class="btn btn-outline-primary mb-3"
+                    onclick="addDefaultImageToPhotos()">
+              <i class="bi bi-image"></i> {% trans "Add Default Image to Photos" %}
+            </button>
+          </div>
+          <c-collection.photo_manager></c-collection.photo_manager>
+        </div>
+      </div>
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button type="button"
+                class="btn btn-outline-secondary me-2"
+                onclick="verifyFormData()">{% trans "Verify Form Data" %}</button>
+        <button type="submit" class="btn btn-primary">{% trans "Create Jersey" %}</button>
+      </div>
+    </form>
+  </div>
+  <script>
+    // Función para verificar los datos del formulario antes de enviarlo
+    function verifyFormData() {
+      const form = document.getElementById('jersey-form');
+      const formData = new FormData(form);
 
-          console.log('Verificando datos del formulario:');
+      console.log('Verificando datos del formulario:');
 
-          // Verificar campos críticos
-          const criticalFields = ['brand', 'club', 'season', 'competition', 'brand_name', 'club_name', 'season_name', 'competition_name'];
+      // Verificar campos críticos
+      const criticalFields = ['brand', 'club', 'season', 'competition', 'brand_name', 'club_name', 'season_name', 'competition_name'];
 
-          criticalFields.forEach(field => {
-            const value = formData.get(field);
-            console.log(`${field}: ${value || 'No definido'}`);
-          });
+      criticalFields.forEach(field => {
+        const value = formData.get(field);
+        console.log(`${field}: ${value || 'No definido'}`);
+      });
 
-          // Verificar si tenemos suficiente información para cada entidad
-          const hasValidBrand = formData.get('brand') || formData.get('brand_name');
-          const hasValidClub = formData.get('club') || formData.get('club_name');
-          const hasValidSeason = formData.get('season') || formData.get('season_name');
-          const hasValidCompetition = formData.get('competition') || formData.get('competition_name');
+      // Verificar si tenemos suficiente información para cada entidad
+      const hasValidBrand = formData.get('brand') || formData.get('brand_name');
+      const hasValidClub = formData.get('club') || formData.get('club_name');
+      const hasValidSeason = formData.get('season') || formData.get('season_name');
+      const hasValidCompetition = formData.get('competition') || formData.get('competition_name');
 
-          console.log('Validación de entidades:');
-          console.log(`Brand: ${hasValidBrand ? 'OK' : 'Falta información'}`);
-          console.log(`Club: ${hasValidClub ? 'OK' : 'Falta información'}`);
-          console.log(`Season: ${hasValidSeason ? 'OK' : 'Falta información'}`);
-          console.log(`Competition: ${hasValidCompetition ? 'OK' : 'Falta información'}`);
+      console.log('Validación de entidades:');
+      console.log(`Brand: ${hasValidBrand ? 'OK' : 'Falta información'}`);
+      console.log(`Club: ${hasValidClub ? 'OK' : 'Falta información'}`);
+      console.log(`Season: ${hasValidSeason ? 'OK' : 'Falta información'}`);
+      console.log(`Competition: ${hasValidCompetition ? 'OK' : 'Falta información'}`);
 
-          // Mostrar un mensaje al usuario
-          if (hasValidBrand && hasValidClub && hasValidSeason && hasValidCompetition) {
-            alert('Los datos del formulario parecen correctos. Puedes proceder a crear el jersey.');
-          } else {
-            alert('Faltan datos importantes en el formulario. Por favor, verifica la información en la consola.');
-          }
-        }
-      </script>
-    {% endblock content %}
-    {% block extra_js %}
-      {{ form.media.js }}
-    {% endblock extra_js %}
+      // Mostrar un mensaje al usuario
+      if (hasValidBrand && hasValidClub && hasValidSeason && hasValidCompetition) {
+        alert('Los datos del formulario parecen correctos. Puedes proceder a crear el jersey.');
+      } else {
+        alert('Faltan datos importantes en el formulario. Por favor, verifica la información en la consola.');
+      }
+    }
+  </script>
+{% endblock content %}
+{% block extra_js %}
+  {{ form.media.js }}
+{% endblock extra_js %}

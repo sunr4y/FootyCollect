@@ -270,6 +270,12 @@
       return `http://${url}`;
     }
 
+    // Handle image loading errors
+    function handleImageError(img) {
+      img.style.display = 'none';
+      img.parentNode.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100"><i class="bi bi-image fs-1 text-muted"></i></div>';
+    }
+
     // Definir el componente jerseySelect para Alpine.js
     document.addEventListener('alpine:init', () => {
       Alpine.data('jerseySelect', () => ({
@@ -618,129 +624,114 @@
                  @click="selectKit(kit)">
               <div class="kit-card-img-container">
                 <template x-if="kit.main_img_url">
-                  <img :src="kit.main_img_url" :alt="kit.name" class="kit-card-img" onerror="this.style.display='none'; this.parentNode.innerHTML='
-                    <div class
-                         quot
-                         d-flex
-                         align-items-center
-                         justify-content-center
-                         h-100
-                         quot>
-                      <i class=&quot;bi bi-image fs-1 text-muted&quot;></i>
-                    </div>
-                    '" />
-                  </template>
-                  <template x-if="!kit.main_img_url">
-                    <div class="d-flex align-items-center justify-content-center h-100">
-                      <i class="bi bi-image fs-1 text-muted"></i>
-                    </div>
-                  </template>
-                  <div class="kit-card-badge" x-show="isSelected(kit.id)">
-                    <i class="bi bi-check"></i>
-                  </div>
-                </div>
-                <div class="kit-card-body">
-                  <div class="kit-card-title" x-text="kit.name"></div>
-                  <div class="kit-card-team">
-                    <template x-if="kit.team_logo">
-                      <img :src="kit.team_logo"
-                           class="kit-card-team-logo"
-                           alt="Team logo"
-                           onerror="this.style.display='none'" />
-                    </template>
-                    <span x-text="kit.team_name"></span>
-                  </div>
-                  <div class="kit-card-season" x-text="kit.season_year"></div>
-                </div>
-              </div>
-            </template>
-          </div>
-        </div>
-        <!-- Selected Kit Display -->
-        <div id="selected-kit-section" x-show="selectedKit !== null" x-cloak>
-          <div class="selected-kit-container">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h3 class="mb-0">{% trans "Selected Jersey" %}</h3>
-              <button type="button"
-                      class="btn btn-outline-secondary btn-sm"
-                      @click="resetSelection()">
-                <i class="bi bi-arrow-left"></i> {% trans "Search Again" %}
-              </button>
-            </div>
-            <div class="selected-kit-header">
-              <template x-if="selectedKit && selectedKit.main_img_url">
-                <img :src="selectedKit.main_img_url" :alt="selectedKit ? selectedKit.name : ''" class="selected-kit-image" onerror="this.style.display='none'; this.parentNode.innerHTML='
-                  <div class
-                       quot
-                       selected-kit-image
-                       d-flex
-                       align-items-center
-                       justify-content-center
-                       bg-light
-                       quot>
-                    <i class=&quot;bi bi-image fs-1 text-muted&quot;></i>
-                  </div>
-                  '" />
+                  <img :src="kit.main_img_url"
+                       :alt="kit.name"
+                       class="kit-card-img"
+                       onerror="handleImageError(this)" />
                 </template>
-                <template x-if="selectedKit && !selectedKit.main_img_url">
-                  <div class="selected-kit-image d-flex align-items-center justify-content-center bg-light">
+                <template x-if="!kit.main_img_url">
+                  <div class="d-flex align-items-center justify-content-center h-100">
                     <i class="bi bi-image fs-1 text-muted"></i>
                   </div>
                 </template>
-                <div class="selected-kit-details">
-                  <div class="selected-kit-title"
-                       x-text="selectedKit ? selectedKit.name : ''"></div>
-                  <div class="selected-kit-meta"
-                       x-text="selectedKit && selectedKit.season_year ? selectedKit.season_year : ''"></div>
-                  <div class="selected-kit-club" x-show="selectedKit && selectedKit.team">
-                    <template x-if="selectedKit && selectedKit.team && selectedKit.team.logo">
-                      <img :src="selectedKit.team.logo"
-                           :alt="selectedKit.team ? selectedKit.team.name : ''"
-                           onerror="this.style.display='none'" />
-                    </template>
-                    <span x-text="selectedKit && selectedKit.team ? selectedKit.team.name : ''"></span>
-                  </div>
-                  <div class="mt-3" x-show="selectedKit && selectedKit.competition">
-                    <div class="fw-bold mb-2">{% trans "Competitions" %}:</div>
-                    <div>
-                      <template x-if="selectedKit && Array.isArray(selectedKit.competition)">
-                        <div>
-                          <template x-for="(comp, index) in selectedKit.competition" :key="index">
-                            <span class="competition-badge"
-                                  x-text="typeof comp === 'object' ? comp.name : comp"></span>
-                          </template>
-                        </div>
-                      </template>
-                      <template x-if="selectedKit && !Array.isArray(selectedKit.competition) && selectedKit.competition">
-                        <span class="competition-badge"
-                              x-text="typeof selectedKit.competition === 'object' ? selectedKit.competition.name : selectedKit.competition"></span>
-                      </template>
-                    </div>
-                  </div>
-                  <div class="mt-3" x-show="selectedKit && selectedKit.brand">
-                    <strong>{% trans "Brand" %}:</strong>
-                    <span x-text="selectedKit && selectedKit.brand ? (typeof selectedKit.brand === 'object' ? selectedKit.brand.name : selectedKit.brand) : ''"></span>
-                  </div>
+                <div class="kit-card-badge" x-show="isSelected(kit.id)">
+                  <i class="bi bi-check"></i>
                 </div>
               </div>
-              <div class="alert alert-light mt-4">
-                <i class="bi bi-info-circle me-2"></i>
-                {% trans "In the next step, you'll be able to add more details, specify condition, and upload additional photos." %}
+              <div class="kit-card-body">
+                <div class="kit-card-title" x-text="kit.name"></div>
+                <div class="kit-card-team">
+                  <template x-if="kit.team_logo">
+                    <img :src="kit.team_logo"
+                         class="kit-card-team-logo"
+                         alt="Team logo"
+                         onerror="this.style.display='none'" />
+                  </template>
+                  <span x-text="kit.team_name"></span>
+                </div>
+                <div class="kit-card-season" x-text="kit.season_year"></div>
               </div>
-              <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                <button type="button"
-                        class="btn btn-primary"
-                        @click="proceedToDetails()"
-                        :disabled="isLoadingFromApi">
-                  <span x-show="isLoadingFromApi"
-                        class="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"></span>
-                  {% trans "Continue to Details" %} <i class="bi bi-arrow-right"></i>
-                </button>
+            </div>
+          </template>
+        </div>
+      </div>
+      <!-- Selected Kit Display -->
+      <div id="selected-kit-section" x-show="selectedKit !== null" x-cloak>
+        <div class="selected-kit-container">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">{% trans "Selected Jersey" %}</h3>
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    @click="resetSelection()">
+              <i class="bi bi-arrow-left"></i> {% trans "Search Again" %}
+            </button>
+          </div>
+          <div class="selected-kit-header">
+            <template x-if="selectedKit && selectedKit.main_img_url">
+              <img :src="selectedKit.main_img_url"
+                   :alt="selectedKit ? selectedKit.name : ''"
+                   class="selected-kit-image"
+                   onerror="handleImageError(this)" />
+            </template>
+            <template x-if="selectedKit && !selectedKit.main_img_url">
+              <div class="selected-kit-image d-flex align-items-center justify-content-center bg-light">
+                <i class="bi bi-image fs-1 text-muted"></i>
+              </div>
+            </template>
+            <div class="selected-kit-details">
+              <div class="selected-kit-title"
+                   x-text="selectedKit ? selectedKit.name : ''"></div>
+              <div class="selected-kit-meta"
+                   x-text="selectedKit && selectedKit.season_year ? selectedKit.season_year : ''"></div>
+              <div class="selected-kit-club" x-show="selectedKit && selectedKit.team">
+                <template x-if="selectedKit && selectedKit.team && selectedKit.team.logo">
+                  <img :src="selectedKit.team.logo"
+                       :alt="selectedKit.team ? selectedKit.team.name : ''"
+                       onerror="this.style.display='none'" />
+                </template>
+                <span x-text="selectedKit && selectedKit.team ? selectedKit.team.name : ''"></span>
+              </div>
+              <div class="mt-3" x-show="selectedKit && selectedKit.competition">
+                <div class="fw-bold mb-2">{% trans "Competitions" %}:</div>
+                <div>
+                  <template x-if="selectedKit && Array.isArray(selectedKit.competition)">
+                    <div>
+                      <template x-for="(comp, index) in selectedKit.competition" :key="index">
+                        <span class="competition-badge"
+                              x-text="typeof comp === 'object' ? comp.name : comp"></span>
+                      </template>
+                    </div>
+                  </template>
+                  <template x-if="selectedKit && !Array.isArray(selectedKit.competition) && selectedKit.competition">
+                    <span class="competition-badge"
+                          x-text="typeof selectedKit.competition === 'object' ? selectedKit.competition.name : selectedKit.competition"></span>
+                  </template>
+                </div>
+              </div>
+              <div class="mt-3" x-show="selectedKit && selectedKit.brand">
+                <strong>{% trans "Brand" %}:</strong>
+                <span x-text="selectedKit && selectedKit.brand ? (typeof selectedKit.brand === 'object' ? selectedKit.brand.name : selectedKit.brand) : ''"></span>
               </div>
             </div>
           </div>
+          <div class="alert alert-light mt-4">
+            <i class="bi bi-info-circle me-2"></i>
+            {% trans "In the next step, you'll be able to add more details, specify condition, and upload additional photos." %}
+          </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+            <button type="button"
+                    class="btn btn-primary"
+                    @click="proceedToDetails()"
+                    :disabled="isLoadingFromApi">
+              <span x-show="isLoadingFromApi"
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"></span>
+              {% trans "Continue to Details" %} <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
         </div>
       </div>
-    {% endblock content %}
+    </div>
+  </div>
+{% endblock content %}
