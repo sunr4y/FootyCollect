@@ -36,16 +36,23 @@ class CustomAccountAdapter(DefaultAccountAdapter):
 
         if User.objects.filter(email=email).exists():
             existing_user = User.objects.get(email=email)
+
+            # Check if existing user has social accounts
             if existing_user.socialaccount_set.exists():
                 providers = existing_user.socialaccount_set.values_list(
                     "provider",
                     flat=True,
                 )
                 msg = _(
-                    "This email is already registered with: %(providers)s. "
-                    "Please login using that method.",
+                    "This email is already registered with: %(providers)s. Please login using that method.",
                 )
                 raise ValidationError(msg % {"providers": ", ".join(providers)})
+            # Existing user is a regular account (not social)
+            # This prevents duplicate regular accounts with same email
+            msg = _(
+                "This email is already registered. Please use a different email or try to login.",
+            )
+            raise ValidationError(msg)
 
         if commit:
             user.save()
@@ -61,8 +68,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         if user.socialaccount_set.exists():
             providers = user.socialaccount_set.values_list("provider", flat=True)
             msg = _(
-                "This account was created with: %(providers)s. "
-                "Please use that method to login.",
+                "This account was created with: %(providers)s. Please use that method to login.",
             )
             messages.error(request, msg % {"providers": ", ".join(providers)})
             return
@@ -101,8 +107,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
 
             sociallogin.connect(request, existing_user)
             msg = _(
-                "Social account linked to %(email)s. "
-                "You can now login using both methods.",
+                "Social account linked to %(email)s. You can now login using both methods.",
             )
             messages.success(request, msg % {"email": existing_user.email})
         except User.DoesNotExist:

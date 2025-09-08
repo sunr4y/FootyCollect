@@ -3,3 +3,8 @@
     height: 100px;
     object-fit: cover;
 }
+
+.item-photo {
+    height: 200px;
+    object-fit: cover;
+}

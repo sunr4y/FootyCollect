@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block content %}
+  <div class="container py-4">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title">{{ object }}</h2>
+        <!-- Item details -->
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <!-- Photos -->
+            {% if object.photos.exists %}
+              <div id="itemPhotos" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                  {% for photo in object.photos.all %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                      <img src="{{ photo.get_image_url }}" class="d-block w-100" alt="" />
+                    </div>
+                  {% endfor %}
+                </div>
+                {% if object.photos.count > 1 %}
+                  <button class="carousel-control-prev"
+                          type="button"
+                          data-bs-target="#itemPhotos"
+                          data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                  </button>
+                  <button class="carousel-control-next"
+                          type="button"
+                          data-bs-target="#itemPhotos"
+                          data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                  </button>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <!-- Item information -->
+            <dl class="row">
+              <!-- Base Item fields -->
+              <dt class="col-sm-4">{% trans "Name" %}</dt>
+              <dd class="col-sm-8">
+                {{ object.name }}
+              </dd>
+              <dt class="col-sm-4">{% trans "Brand" %}</dt>
+              <dd class="col-sm-8">
+                {% if object.brand.logo and object.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                  <img src="{{ object.brand.logo }}"
+                       alt="{{ object.brand.name }}"
+                       class="img-fluid me-2"
+                       width="20"
+                       height="20" />
+                {% endif %}
+                {{ object.brand.name }}
+              </dd>
+              <dt class="col-sm-4">{% trans "Condition" %}</dt>
+              <dd class="col-sm-8">
+                {{ object.get_condition_display }}
+              </dd>
+              <dt class="col-sm-4">{% trans "Added on" %}</dt>
+              <dd class="col-sm-8">
+                {{ object.created_at|date:"d M Y" }}
+              </dd>
+              <dt class="col-sm-4">{% trans "Last updated" %}</dt>
+              <dd class="col-sm-8">
+                {{ object.updated_at|date:"d M Y" }}
+              </dd>
+              <!-- Jersey specific fields -->
+              {% if object.club %}
+                <dt class="col-sm-4">{% trans "Team" %}</dt>
+                <dd class="col-sm-8">
+                  {% if object.club.logo and object.club.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                    <img src="{{ object.club.logo }}"
+                         alt="{{ object.club.name }}"
+                         class="img-fluid me-2"
+                         width="20"
+                         height="20" />
+                  {% endif %}
+                  {{ object.club.name }}
+                  {% if object.club.country %}
+                    <br />
+                    <small class="text-muted">
+                      <span class="fi fi-{{ object.club.country.code|lower }}"></span>
+                      {{ object.club.country.name }}
+                    </small>
+                  {% endif %}
+                </dd>
+              {% endif %}
+              {% if object.country %}
+                <dt class="col-sm-4">{% trans "Country" %}</dt>
+                <dd class="col-sm-8">
+                  <span class="fi fi-{{ object.country.code|lower }}"></span>
+                  {{ object.country.name }}
+                </dd>
+              {% endif %}
+              {% if object.season %}
+                <dt class="col-sm-4">{% trans "Season" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.season }}
+                </dd>
+              {% endif %}
+              {% if object.size %}
+                <dt class="col-sm-4">{% trans "Size" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.size }}
+                </dd>
+              {% endif %}
+              {% if object.main_color %}
+                <dt class="col-sm-4">{% trans "Main Color" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.get_main_color_display }}
+                </dd>
+              {% endif %}
+              {% if object.design %}
+                <dt class="col-sm-4">{% trans "Design" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.get_design_display }}
+                </dd>
+              {% endif %}
+              {% if object.competitions.exists %}
+                <dt class="col-sm-4">{% trans "Competitions" %}</dt>
+                <dd class="col-sm-8">
+                  {% for competition in object.competitions.all %}
+                    {% if competition.logo and competition.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                      <img src="{{ competition.logo }}"
+                           alt="{{ competition.name }}"
+                           class="img-fluid me-2"
+                           width="20"
+                           height="20" />
+                    {% endif %}
+                    {{ competition.name }}
+                    {% if not forloop.last %},{% endif %}
+                  {% endfor %}
+                </dd>
+              {% endif %}
+              {% if object.player_name %}
+                <dt class="col-sm-4">{% trans "Player Name" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.player_name }}
+                </dd>
+              {% endif %}
+              {% if object.number %}
+                <dt class="col-sm-4">{% trans "Number" %}</dt>
+                <dd class="col-sm-8">
+                  {{ object.number }}
+                </dd>
+              {% endif %}
+              {% if object.match_worn %}
+                <dt class="col-sm-4">{% trans "Match Worn" %}</dt>
+                <dd class="col-sm-8">
+                  {% if object.match_worn %}
+                    Yes
+                  {% else %}
+                    No
+                  {% endif %}
+                </dd>
+              {% endif %}
+              {% if object.signed %}
+                <dt class="col-sm-4">{% trans "Signed" %}</dt>
+                <dd class="col-sm-8">
+                  {% if object.signed %}
+                    Yes
+                  {% else %}
+                    No
+                  {% endif %}
+                </dd>
+              {% endif %}
+            </dl>
+            {% if object.description %}
+              <h5>{% trans "Description" %}</h5>
+              <p>{{ object.description }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

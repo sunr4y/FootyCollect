@@ -1,0 +1,369 @@
+{% load i18n static %}
+
+<div class="photo-manager"
+     x-data="photoManager({{ initial_photos|default:'[]'|safe }})"
+     @dragover.prevent="isDragging = true"
+     @dragleave.prevent="isDragging = false"
+     @drop.prevent="handleDrop($event)"
+     :class="{'dragover': isDragging}">
+  <!-- Upload Area -->
+  <div class="upload-area">
+    <input type="file"
+           multiple
+           @change="addFiles($event)"
+           accept="image/jpeg,image/png,image/webp,image/gif"
+           class="file-input" />
+    <div class="upload-message">
+      <i class="bi bi-cloud-upload fs-1"></i>
+      <p>{% trans "Drag files here or click to select" %}</p>
+      <small class="text-muted">{% trans "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF" %}</small>
+    </div>
+  </div>
+  <!-- Photo Grid -->
+  <div class="photo-grid" x-show="photos.length > 0">
+    <template x-for="(photo, index) in photos" :key="photo.id || index">
+      <div class="photo-item"
+           :class="{'uploading': photo.uploading}"
+           draggable="true"
+           @dragstart="dragStart(index)"
+           @dragover.prevent="dragOver(index)"
+           @dragend="dragEnd()">
+        <!-- Loading Overlay -->
+        <div class="upload-overlay" x-show="photo.uploading">
+          <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <!-- Preview Image -->
+        <img :src="photo.uploading ? photo.tempUrl : (photo.thumbnail_url || photo.url)"
+             class="preview-image"
+             :class="{'opacity-50': photo.uploading}"
+             :alt="'Photo ' + (index + 1)" />
+        <!-- Order Badge -->
+        <span class="order-badge" x-text="index + 1"></span>
+        <!-- Remove Button -->
+        <button @click="removePhoto(index)" class="remove-btn">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    </template>
+  </div>
+  <input type="hidden" name="photo_ids" :value="JSON.stringify(getPhotoIds())" />
+</div>
+<div class="notifications" x-data="{ messages: [] }">
+  <template x-for="(msg, index) in messages" :key="index">
+    <div class="alert" :class="`alert-${msg.type}`" x-text="msg.text"></div>
+  </template>
+</div>
+<script>
+  function photoManager(initialPhotos = []) {
+    return {
+      photos: initialPhotos,
+      isDragging: false,
+      draggedIndex: null,
+      acceptedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      maxSize: 15 * 1024 * 1024, // 15MB
+
+      showNotification(message, type = 'danger') {
+        this.$dispatch('notify', {
+          message,
+          type
+        });
+      },
+
+      async uploadPhoto(file, order) {
+        // Crear un objeto temporal para la foto mientras se sube
+        const tempPhoto = {
+          file: file,
+          uploading: true,
+          progress: 0,
+          order: order,
+          tempUrl: URL.createObjectURL(file)
+        };
+
+        const photoIndex = this.photos.length;
+        this.photos.push(tempPhoto);
+
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('order', order);
+
+        try {
+          const response = await fetch('{% url "collection:upload_photo" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+          });
+
+          if (!response.ok) throw new Error('Upload failed');
+
+          const data = await response.json();
+
+          // Replace the temporary object with the actual data
+          this.photos[photoIndex] = {
+            id: data.id,
+            url: data.url,
+            thumbnail_url: data.thumbnail_url,
+            order: order,
+            uploading: false
+          };
+
+          // Clean the temporary URL
+          URL.revokeObjectURL(tempPhoto.tempUrl);
+
+        } catch (error) {
+          this.showNotification(error.message);
+          // Remove the temporary photo if it fails
+          this.photos.splice(photoIndex, 1);
+          URL.revokeObjectURL(tempPhoto.tempUrl);
+          throw error;
+        }
+      },
+
+      // Add an external image (from API)
+      addExternalImage(imageUrl, order = 0) {
+        // Check if the image already exists
+        const exists = this.photos.some(photo => photo.url === imageUrl);
+        if (exists) {
+          console.log('Image already exists in the photo manager');
+          return;
+        }
+
+        // Add the image to the photos array
+        this.photos.push({
+          id: `external_${Date.now()}`,
+          url: imageUrl,
+          thumbnail_url: imageUrl,
+          order: order,
+          uploading: false,
+          external: true
+        });
+
+        console.log('External image added to photo manager');
+      },
+
+      async processFiles(files) {
+        const validFiles = Array.from(files).filter(file => {
+          if (!this.acceptedTypes.includes(file.type)) {
+            alert(this.$t('unsupportedFileType', {
+              type: file.type
+            }));
+            return false;
+          }
+          if (file.size > this.maxSize) {
+            alert(this.$t('fileTooBig', {
+              size: (file.size / 1024 / 1024).toFixed(1)
+            }));
+            return false;
+          }
+          return true;
+        });
+
+        for (const file of validFiles) {
+          try {
+            await this.uploadPhoto(file, this.photos.length);
+          } catch (error) {
+            alert(`Error al subir ${file.name}: ${error.message}`);
+          }
+        }
+      },
+
+      // Handle file drops
+      async handleDrop(e) {
+        this.isDragging = false;
+        const files = Array.from(e.dataTransfer.files);
+        await this.processFiles(files);
+      },
+
+      // Handle file input changes
+      async addFiles(e) {
+        const files = Array.from(e.target.files || []);
+        await this.processFiles(files);
+      },
+
+      // Drag and drop ordering
+      dragStart(index) {
+        this.draggedIndex = index;
+      },
+
+      dragOver(index) {
+        if (this.draggedIndex === null) return;
+        if (this.draggedIndex !== index) {
+          const items = [...this.photos];
+          const draggedItem = items[this.draggedIndex];
+          items.splice(this.draggedIndex, 1);
+          items.splice(index, 0, draggedItem);
+          this.photos = items;
+          this.draggedIndex = index;
+        }
+      },
+
+      dragEnd() {
+        this.draggedIndex = null;
+      },
+
+      removePhoto(index) {
+        this.photos.splice(index, 1);
+      },
+
+      // Get photo IDs for form
+      getPhotoIds() {
+        return this.photos
+          .filter(photo => photo.id && !photo.uploading) // Only fully uploaded photos
+          .map((photo, index) => ({
+            id: photo.id,
+            order: index, // Use the current index as the order
+            external: photo.external || false,
+            url: photo.external ? photo.url : null
+          }));
+      }
+    };
+  }
+
+  // Handle global notifications
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('notifications', () => ({
+      messages: [],
+      init() {
+        this.$el.addEventListener('notify', (e) => {
+          this.messages.push(e.detail);
+          setTimeout(() => {
+            this.messages = this.messages.filter(m => m !== e.detail);
+          }, 5000);
+        });
+      }
+    }));
+  });
+</script>
+<style>
+  .photo-manager {
+    border: 2px dashed #0d6efd;
+    border-radius: 8px;
+    padding: 20px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+  }
+
+  .photo-manager.dragover {
+    background: #e9ecef;
+    border-color: #0b5ed7;
+  }
+
+  .upload-area {
+    text-align: center;
+    padding: 40px 20px;
+    position: relative;
+  }
+
+  .file-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .photo-item {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: move;
+    transition: transform 0.2s ease;
+  }
+
+  .photo-item:hover {
+    transform: translateY(-2px);
+  }
+
+  .preview-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .order-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc3545;
+    transition: all 0.2s ease;
+    line-height: 1;
+  }
+
+  .remove-btn:hover {
+    background: #dc3545;
+    color: white;
+  }
+
+  .remove-btn i {
+    margin-top: -1px;
+    /* Fine adjustment to center the X icon */
+  }
+
+  .preview-item {
+    position: relative;
+  }
+
+  .upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+
+  .uploading {
+    opacity: 0.8;
+  }
+
+  .progress {
+    height: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+  }
+</style>

@@ -1,8 +1,7 @@
 from allauth.account.forms import SignupForm
 from allauth.socialaccount.forms import SignupForm as SocialSignupForm
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import HTML
-from crispy_forms.layout import Layout
+from crispy_forms.layout import HTML, Layout
 from django import forms
 from django.contrib.auth import forms as admin_forms
 from django.utils.translation import gettext_lazy as _

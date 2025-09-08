@@ -11,3 +11,19 @@
   background-color: #f2dede;
   border-color: #eed3d7;
 }
+
+.main-image-preview {
+  max-height: 150px;
+}
+
+.kit-search-img {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.selected-club-logo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  margin-right: 10px;
+}

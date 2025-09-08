@@ -1,0 +1,737 @@
+{% extends "base.html" %}
+
+{% load i18n static %}
+
+{% block extra_css %}
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    .kit-search-results {
+      position: absolute;
+      z-index: 1000;
+      width: 100%;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .kit-search-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    .kit-search-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .kit-search-item-img-container {
+      width: 50px;
+      height: 50px;
+      min-width: 50px;
+      min-height: 50px;
+      margin-right: 10px;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      background-color: #f8f9fa;
+      position: relative;
+    }
+
+    .kit-search-item img {
+      width: 50px !important;
+      height: 50px !important;
+      object-fit: contain;
+      max-width: 50px !important;
+      max-height: 50px !important;
+    }
+
+    .loading-indicator {
+      display: inline-block;
+      margin-left: 10px;
+    }
+
+    .placeholder-img {
+      width: 40px;
+      height: 40px;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 18px;
+    }
+
+    /* Kit grid styles */
+    .kit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .kit-card {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      background-color: white;
+      cursor: pointer;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kit-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .kit-card.selected {
+      border: 2px solid #0d6efd;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+
+    .kit-card-img-container {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .kit-card-img {
+      max-width: 100%;
+      max-height: 100px;
+      object-fit: contain;
+    }
+
+    .kit-card-body {
+      padding: 8px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kit-card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .kit-card-team {
+      font-size: 0.75rem;
+      color: #6c757d;
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .kit-card-team-logo {
+      width: 16px;
+      height: 16px;
+      margin-right: 5px;
+      object-fit: contain;
+    }
+
+    .kit-card-season {
+      font-size: 0.7rem;
+      color: #6c757d;
+      margin-top: auto;
+    }
+
+    .kit-card-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background-color: #0d6efd;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .selected-kit-container {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .selected-kit-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .selected-kit-image {
+      max-width: 150px;
+      max-height: 150px;
+      object-fit: contain;
+      margin-right: 20px;
+      border: 1px solid #eee;
+      padding: 5px;
+      background-color: white;
+      border-radius: 4px;
+    }
+
+    .selected-kit-details {
+      flex: 1;
+    }
+
+    .selected-kit-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .selected-kit-meta {
+      color: #6c757d;
+      margin-bottom: 10px;
+    }
+
+    .selected-kit-club {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .selected-kit-club img {
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+      object-fit: contain;
+    }
+
+    .competition-badge {
+      display: inline-block;
+      background-color: #e9ecef;
+      color: #495057;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+
+    /* Loading spinner */
+    .spinner-container {
+      display: flex;
+      justify-content: center;
+      padding: 30px 0;
+    }
+
+    /* No results message */
+    .no-results {
+      text-align: center;
+      padding: 30px;
+      color: #6c757d;
+    }
+  </style>
+{% endblock extra_css %}
+{% block inline_javascript %}
+  <script>
+    // Función de debounce para retrasar las búsquedas
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+      };
+    }
+
+    // Helper function to ensure image URLs are properly formatted
+    function ensureFullUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('http')) return url;
+      console.log('Converting relative URL to absolute:', url);
+      return `http://${url}`;
+    }
+
+    // Handle image loading errors
+    function handleImageError(img) {
+      img.style.display = 'none';
+      img.parentNode.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100"><i class="bi bi-image fs-1 text-muted"></i></div>';
+    }
+
+    // Definir el componente jerseySelect para Alpine.js
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('jerseySelect', () => ({
+        kitSearch: '',
+        kitResults: [],
+        isSearching: false,
+        selectedKit: null,
+        lastSearchTimestamp: 0,
+        debouncedSearchKits: null,
+        showResults: false,
+        isLoadingFromApi: false,
+
+        init() {
+          // Ensure selectedKit is properly initialized
+          this.selectedKit = null;
+
+          // Inicializar el formulario
+          this.$watch('kitSearch', (value) => {
+            if (value.length < 3) {
+              this.kitResults = [];
+              this.showResults = false;
+              return;
+            }
+
+            // Usar la función de búsqueda con debounce
+            if (!this.debouncedSearchKits) {
+              this.debouncedSearchKits = debounce(this.searchKits.bind(this), 500);
+            }
+            this.debouncedSearchKits();
+          });
+        },
+
+        searchKits() {
+          if (this.kitSearch.length < 3) return;
+
+          // Crear un timestamp para esta búsqueda
+          const searchTimestamp = Date.now();
+          this.lastSearchTimestamp = searchTimestamp;
+
+          this.isSearching = true;
+          this.showResults = true;
+          const url = `/fkapi/kits/search/?keyword=${encodeURIComponent(this.kitSearch)}`;
+          console.log('Searching kits with URL:', url);
+
+          fetch(url)
+            .then(response => {
+              console.log('Kit search response status:', response.status);
+              if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              // Solo actualizar los resultados si esta es la búsqueda más reciente
+              if (searchTimestamp === this.lastSearchTimestamp) {
+                console.log('Kit search results:', data);
+
+                // Check if we have any results
+                let resultsArray = [];
+
+                // Handle different API response formats
+                if (Array.isArray(data)) {
+                  // If the API returns an array directly
+                  resultsArray = data;
+                } else if (data.results && Array.isArray(data.results)) {
+                  // If the API returns a results property with an array
+                  resultsArray = data.results;
+                } else if (typeof data === 'object') {
+                  // If the API returns an object with no results property
+                  resultsArray = [data];
+                }
+
+                // Log a sample kit if available
+                if (resultsArray.length > 0) {
+                  const sampleKit = resultsArray[0];
+                  console.log('Sample kit image URL:', sampleKit.main_img_url);
+                  if (sampleKit.team_logo) {
+                    console.log('Sample team logo URL:', sampleKit.team_logo);
+                  }
+                }
+
+                // Process the results to ensure we have the correct image URLs
+                const processedResults = resultsArray.map(kit => {
+                  // Ensure we have the correct image URL format
+                  if (kit.main_img_url) {
+                    kit.main_img_url = ensureFullUrl(kit.main_img_url);
+                  }
+
+                  // Ensure we have the correct team logo URL format
+                  if (kit.team_logo) {
+                    kit.team_logo = ensureFullUrl(kit.team_logo);
+                  }
+
+                  return kit;
+                });
+
+                this.kitResults = processedResults;
+              } else {
+                console.log('Ignoring outdated search results');
+              }
+              this.isSearching = false;
+            })
+            .catch(error => {
+              console.error('Error searching kits:', error);
+              this.isSearching = false;
+              // Mostrar un mensaje de error al usuario
+              alert('Error al buscar kits: ' + error.message);
+            });
+        },
+
+        selectKit(kit) {
+          try {
+            // Si ya está seleccionado, deseleccionar
+            if (this.selectedKit && this.selectedKit.id === kit.id) {
+              console.log('Deselecting kit:', kit.id);
+              this.selectedKit = null;
+              return;
+            }
+
+            console.log('Selecting kit:', kit.id, kit.name);
+            this.selectedKit = kit;
+
+            // Hide search results
+            this.showResults = false;
+
+            // Get full kit details
+            this.isLoadingFromApi = true;
+            const url = `/fkapi/kit/${kit.id}/`;
+            console.log('Getting kit details with URL:', url);
+
+            fetch(url)
+              .then(response => {
+                console.log('Kit details response status:', response.status);
+                if (!response.ok) {
+                  throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log('Kit details:', data);
+
+                // Check if the response is valid
+                if (!data || typeof data !== 'object') {
+                  console.error('Invalid kit details response:', data);
+                  alert('Error: Respuesta de detalles de kit inválida');
+                  this.isLoadingFromApi = false;
+                  return;
+                }
+
+                // Check if the kit ID is present
+                if (!data.id) {
+                  console.error('Kit details response missing ID:', data);
+                  // Try to use the ID from the URL
+                  data.id = kit.id;
+                  console.log('Using ID from URL:', data.id);
+                }
+
+                // Check the image URLs in the kit details
+                console.log('Kit details image URL:', data.main_img_url);
+                if (data.team && data.team.logo) {
+                  console.log('Kit details team logo URL:', data.team.logo);
+                }
+
+                // Process the kit details to ensure we have the correct image URLs
+                if (data.main_img_url) {
+                  data.main_img_url = ensureFullUrl(data.main_img_url);
+                }
+
+                // Process team logo if it exists
+                if (data.team && data.team.logo) {
+                  data.team.logo = ensureFullUrl(data.team.logo);
+                }
+
+                console.log('Setting selectedKit with processed data:', data.id, data.name);
+                this.selectedKit = data;
+
+                // Verify that selectedKit was properly set
+                if (!this.selectedKit) {
+                  console.error('Failed to set selectedKit');
+                } else {
+                  console.log('selectedKit successfully set:', this.selectedKit.id, this.selectedKit.name);
+                }
+
+                this.isLoadingFromApi = false;
+
+                // Scroll to the selected kit section
+                setTimeout(() => {
+                  const selectedKitSection = document.getElementById('selected-kit-section');
+                  if (selectedKitSection) {
+                    selectedKitSection.scrollIntoView({
+                      behavior: 'smooth'
+                    });
+                  }
+                }, 100);
+              })
+              .catch(error => {
+                console.error('Error getting kit details:', error);
+                this.isLoadingFromApi = false;
+                alert('Error al obtener los detalles del kit: ' + error.message);
+              });
+          } catch (error) {
+            console.error('Error en selectKit:', error);
+            alert('Error al seleccionar el kit: ' + error.message);
+          }
+        },
+
+        isSelected(kitId) {
+          return this.selectedKit && this.selectedKit.id === kitId;
+        },
+
+        resetSelection() {
+          this.selectedKit = null;
+
+          // Show search results again if we have any
+          if (this.kitResults.length > 0) {
+            this.showResults = true;
+          }
+
+          // Scroll back to search
+          setTimeout(() => {
+            const searchSection = document.getElementById('search-section');
+            if (searchSection) {
+              searchSection.scrollIntoView({
+                behavior: 'smooth'
+              });
+            }
+          }, 100);
+        },
+
+        clearSearch() {
+          this.kitSearch = '';
+          this.kitResults = [];
+          this.showResults = false;
+        },
+
+        proceedToDetails() {
+          if (!this.selectedKit) {
+            console.error('No kit selected');
+            alert('Por favor, selecciona un kit primero');
+            return;
+          }
+
+          if (!this.selectedKit.id) {
+            console.error('Selected kit has no ID:', this.selectedKit);
+            alert('Error: El kit seleccionado no tiene ID');
+            return;
+          }
+
+          // Ensure the ID is a valid number
+          const kitId = parseInt(this.selectedKit.id);
+          if (isNaN(kitId) || kitId <= 0) {
+            console.error('Invalid kit ID:', this.selectedKit.id);
+            alert('Error: ID de kit inválido');
+            return;
+          }
+
+          console.log('Proceeding to details with kit ID:', kitId);
+
+          // Redirect to the details form with the kit ID
+          window.location.href = `/collection/jersey/create/details/${kitId}/`;
+        }
+      }));
+    });
+  </script>
+{% endblock inline_javascript %}
+{% block content %}
+  <div class="container mt-4">
+    <h1>{% trans "Select Jersey" %}</h1>
+    {% if messages %}
+      <div class="messages mt-3">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+               role="alert">
+            {{ message }}
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="container py-4" x-data="jerseySelect" x-init="init()">
+      <h1>{% trans "Add Jersey from Database" %}</h1>
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        {% trans "First, select a jersey from our database. You'll be able to add more details and photos in the next step." %}
+      </div>
+      <div class="card mb-4" id="search-section">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Search for a Jersey" %}</h5>
+        </div>
+        <div class="card-body">
+          <!-- Kit Search -->
+          <div class="mb-3 position-relative">
+            <label for="id_kit_search" class="form-label">{% trans "Search by team, season, or competition" %}</label>
+            <div class="input-group">
+              <input type="text"
+                     id="id_kit_search"
+                     name="kit_search"
+                     class="form-control"
+                     placeholder="{% trans 'Enter at least 3 characters' %}"
+                     x-model="kitSearch"
+                     autocomplete="off" />
+              <button class="btn btn-outline-secondary"
+                      type="button"
+                      @click="clearSearch()"
+                      x-show="kitSearch.length > 0">
+                <i class="bi bi-x-lg"></i>
+              </button>
+              <div class="loading-indicator" x-show="isSearching">
+                <span class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Kit Search Results Grid -->
+      <div x-show="showResults" x-cloak>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">{% trans "Search Results" %}</h5>
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="clearSearch()">
+            <i class="bi bi-x"></i> {% trans "Clear Results" %}
+          </button>
+        </div>
+        <!-- Loading spinner -->
+        <div class="spinner-container" x-show="isSearching">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <!-- No results message -->
+        <div class="no-results" x-show="!isSearching && kitResults.length === 0">
+          <i class="bi bi-search fs-1"></i>
+          <p class="mt-3">{% trans "No jerseys found. Try searching for a team name, season, or competition." %}</p>
+        </div>
+        <!-- Results grid -->
+        <div class="kit-grid" x-show="!isSearching && kitResults.length > 0">
+          <template x-for="kit in kitResults" :key="kit.id">
+            <div class="kit-card position-relative"
+                 :class="{ 'selected': isSelected(kit.id) }"
+                 @click="selectKit(kit)">
+              <div class="kit-card-img-container">
+                <template x-if="kit.main_img_url">
+                  <img :src="kit.main_img_url"
+                       :alt="kit.name"
+                       class="kit-card-img"
+                       onerror="handleImageError(this)" />
+                </template>
+                <template x-if="!kit.main_img_url">
+                  <div class="d-flex align-items-center justify-content-center h-100">
+                    <i class="bi bi-image fs-1 text-muted"></i>
+                  </div>
+                </template>
+                <div class="kit-card-badge" x-show="isSelected(kit.id)">
+                  <i class="bi bi-check"></i>
+                </div>
+              </div>
+              <div class="kit-card-body">
+                <div class="kit-card-title" x-text="kit.name"></div>
+                <div class="kit-card-team">
+                  <template x-if="kit.team_logo">
+                    <img :src="kit.team_logo"
+                         class="kit-card-team-logo"
+                         alt="Team logo"
+                         onerror="this.style.display='none'" />
+                  </template>
+                  <span x-text="kit.team_name"></span>
+                </div>
+                <div class="kit-card-season" x-text="kit.season_year"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+      <!-- Selected Kit Display -->
+      <div id="selected-kit-section" x-show="selectedKit !== null" x-cloak>
+        <div class="selected-kit-container">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">{% trans "Selected Jersey" %}</h3>
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    @click="resetSelection()">
+              <i class="bi bi-arrow-left"></i> {% trans "Search Again" %}
+            </button>
+          </div>
+          <div class="selected-kit-header">
+            <template x-if="selectedKit && selectedKit.main_img_url">
+              <img :src="selectedKit.main_img_url"
+                   :alt="selectedKit ? selectedKit.name : ''"
+                   class="selected-kit-image"
+                   onerror="handleImageError(this)" />
+            </template>
+            <template x-if="selectedKit && !selectedKit.main_img_url">
+              <div class="selected-kit-image d-flex align-items-center justify-content-center bg-light">
+                <i class="bi bi-image fs-1 text-muted"></i>
+              </div>
+            </template>
+            <div class="selected-kit-details">
+              <div class="selected-kit-title"
+                   x-text="selectedKit ? selectedKit.name : ''"></div>
+              <div class="selected-kit-meta"
+                   x-text="selectedKit && selectedKit.season_year ? selectedKit.season_year : ''"></div>
+              <div class="selected-kit-club" x-show="selectedKit && selectedKit.team">
+                <template x-if="selectedKit && selectedKit.team && selectedKit.team.logo">
+                  <img :src="selectedKit.team.logo"
+                       :alt="selectedKit.team ? selectedKit.team.name : ''"
+                       onerror="this.style.display='none'" />
+                </template>
+                <span x-text="selectedKit && selectedKit.team ? selectedKit.team.name : ''"></span>
+              </div>
+              <div class="mt-3" x-show="selectedKit && selectedKit.competition">
+                <div class="fw-bold mb-2">{% trans "Competitions" %}:</div>
+                <div>
+                  <template x-if="selectedKit && Array.isArray(selectedKit.competition)">
+                    <div>
+                      <template x-for="(comp, index) in selectedKit.competition" :key="index">
+                        <span class="competition-badge"
+                              x-text="typeof comp === 'object' ? comp.name : comp"></span>
+                      </template>
+                    </div>
+                  </template>
+                  <template x-if="selectedKit && !Array.isArray(selectedKit.competition) && selectedKit.competition">
+                    <span class="competition-badge"
+                          x-text="typeof selectedKit.competition === 'object' ? selectedKit.competition.name : selectedKit.competition"></span>
+                  </template>
+                </div>
+              </div>
+              <div class="mt-3" x-show="selectedKit && selectedKit.brand">
+                <strong>{% trans "Brand" %}:</strong>
+                <span x-text="selectedKit && selectedKit.brand ? (typeof selectedKit.brand === 'object' ? selectedKit.brand.name : selectedKit.brand) : ''"></span>
+              </div>
+            </div>
+          </div>
+          <div class="alert alert-light mt-4">
+            <i class="bi bi-info-circle me-2"></i>
+            {% trans "In the next step, you'll be able to add more details, specify condition, and upload additional photos." %}
+          </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+            <button type="button"
+                    class="btn btn-primary"
+                    @click="proceedToDetails()"
+                    :disabled="isLoadingFromApi">
+              <span x-show="isLoadingFromApi"
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"></span>
+              {% trans "Continue to Details" %} <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

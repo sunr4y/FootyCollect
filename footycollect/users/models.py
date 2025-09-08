@@ -27,6 +27,9 @@ class User(AbstractUser):
     check forms.SignupForm and forms.SocialSignupForms accordingly.
     """
 
+    # Override email field to make it unique
+    email = models.EmailField(_("email address"), unique=True, blank=False)
+
     name = models.CharField(_("Name and last name"), blank=True, max_length=255)
     biography = models.TextField(_("Biography"), blank=True)
     location = models.CharField(_("Location"), max_length=100, blank=True)

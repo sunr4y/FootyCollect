@@ -1,0 +1,115 @@
+<c-vars name url selected />
+<div class="mb-3">
+  <label class="form-label">País</label>
+  <select class="form-select select2-country"
+          name="{{ name }}"
+          data-placeholder="Selecciona un país..."
+          data-minimum-input-length="0"
+          data-html="true"
+          data-url="{{ url }}"
+          {% if selected %}data-selected="{{ selected }}"{% endif %}></select>
+</div>
+<style>
+  /* Estilos mínimos necesarios para las banderas */
+  .fi {
+    margin-right: 8px;
+    width: 1.3em;
+    height: 1em;
+    vertical-align: middle;
+  }
+
+  /* Estilos mínimos para el select2 con bootstrap5 */
+  .select2-container--bootstrap5 .select2-selection {
+    min-height: 38px;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+  }
+
+  .select2-container--bootstrap5 .select2-selection--single {
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+  }
+</style>
+<script>
+  console.log('Cotton component loaded');
+  $(document).ready(function() {
+    console.log('jQuery ready in Cotton component');
+    $('.select2-country').select2({
+      theme: 'bootstrap5',
+      width: '100%',
+      ajax: {
+        url: $('.select2-country').data('url'),
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+          console.log('Searching for:', params.term);
+          return {
+            q: params.term,
+            page: params.page || 1
+          };
+        },
+        processResults: function(data) {
+          console.log('Received data:', data);
+          // Transformar los resultados al formato que espera Select2
+          const results = data.results.map(item => ({
+            id: item.id,
+            text: item.text,
+            html: item.html
+          }));
+          return {
+            results: results,
+            pagination: {
+              more: data.pagination?.more
+            }
+          };
+        },
+        cache: true
+      },
+      escapeMarkup: function(markup) {
+        return markup;
+      },
+      templateResult: function(data) {
+        if (data.loading) return data.text;
+        // Asegurarnos de que el HTML de la bandera se renderiza correctamente
+        if (data.html) {
+          return $(data.html);
+        }
+        return data.text;
+      },
+      templateSelection: function(data) {
+        // Asegurarnos de que el HTML de la bandera se renderiza correctamente
+        if (data.html) {
+          return $(data.html);
+        }
+        return data.text;
+      },
+      // Configuración adicional para mejorar la experiencia
+      minimumInputLength: 0,
+      allowClear: true,
+      placeholder: 'Selecciona un país...',
+    }).on('change', function() {
+      const selectedValue = $(this).val();
+      console.log('Selected value:', selectedValue);
+      $('#id_details-country_code').val(selectedValue);
+    });
+
+    // Establecer valor inicial si existe
+    const selected = $('.select2-country').data('selected');
+    if (selected) {
+      console.log('Initial value:', selected);
+      // Hacer una llamada AJAX inicial para obtener los datos del país seleccionado
+      $.ajax({
+        url: $('.select2-country').data('url'),
+        data: {
+          id: selected
+        },
+        dataType: 'json'
+      }).then(function(data) {
+        if (data.results && data.results.length) {
+          const option = new Option(data.results[0].text, selected, true, true);
+          $(option).html(data.results[0].html);
+          $('.select2-country').append(option).trigger('change');
+        }
+      });
+    }
+  });
+</script>

@@ -20,6 +20,8 @@ django-crispy-forms==2.3  # https://github.com/django-crispy-forms/django-crispy
 crispy-bootstrap5==2024.2  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.5.1  # https://github.com/django-compressor/django-compressor
 django-redis==5.4.0  # https://github.com/jazzband/django-redis
+django-formtools==2.5.1  # https://github.com/jazzband/django-formtools
+django-autocomplete-light==3.11.0  # https://github.com/yourlabs/django-autocomplete-light
 # Django REST Framework
 djangorestframework==3.15.2  # https://github.com/encode/django-rest-framework
 django-cors-headers==4.4.0  # https://github.com/adamchainz/django-cors-headers
@@ -39,3 +41,6 @@ pilkit==3.0  # https://github.com/matthewwithanm/pilkit
 # Media Storage
 django-storages==1.14.4  # https://github.com/jschneier/django-storages
 boto3==1.36.16  # https://github.com/boto/boto3
+
+# Countries
+django-countries==7.6.1  # https://github.com/SmileyChris/django-countries

@@ -1,0 +1,19 @@
+/* Estilos personalizados para Dropzone */
+.dropzone-container {
+    border: 2px dashed #007bff;
+    background: rgba(0, 123, 255, 0.05);
+    min-height: 200px;
+    transition: all 0.3s ease;
+}
+
+.dropzone .dz-preview {
+    margin: 0.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dropzone .dz-remove {
+    color: #dc3545;
+    font-weight: 500;
+    text-decoration: none;
+}

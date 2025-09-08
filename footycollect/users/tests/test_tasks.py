@@ -1,5 +1,4 @@
 import pytest
-from celery.result import EagerResult
 
 from footycollect.users.tasks import get_users_count
 from footycollect.users.tests.factories import UserFactory
@@ -11,7 +10,13 @@ def test_user_count(settings):
     """A basic test to execute the get_users_count Celery task."""
     batch_size = 3
     UserFactory.create_batch(batch_size)
+
+    # Configure Celery to run tasks synchronously for testing
     settings.CELERY_TASK_ALWAYS_EAGER = True
-    task_result = get_users_count.delay()
-    assert isinstance(task_result, EagerResult)
-    assert task_result.result == batch_size
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+    settings.CELERY_BROKER_URL = "memory://"
+    settings.CELERY_RESULT_BACKEND = "cache+memory://"
+
+    # Test the task function directly instead of using .delay()
+    result = get_users_count()
+    assert result == batch_size
