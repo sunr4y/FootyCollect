@@ -44,5 +44,3 @@ boto3==1.36.16  # https://github.com/boto/boto3
 
 # Countries
 django-countries==7.6.1  # https://github.com/SmileyChris/django-countries
-
-
