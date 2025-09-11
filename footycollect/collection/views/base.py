@@ -12,7 +12,7 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from footycollect.collection.models import Jersey
+from footycollect.collection.models import BaseItem
 
 
 class CollectionLoginRequiredMixin(LoginRequiredMixin):
@@ -33,18 +33,19 @@ class CollectionSuccessMessageMixin(SuccessMessageMixin):
 class BaseItemListView(CollectionLoginRequiredMixin, ListView):
     """Base list view for items in the collection."""
 
-    model = Jersey
+    model = BaseItem
     template_name = "collection/item_list.html"
     context_object_name = "items"
     paginate_by = 20
 
     def get_queryset(self):
-        """Get all jerseys with optimizations."""
-        return Jersey.objects.select_related(
+        """Get all items with optimizations."""
+        return BaseItem.objects.select_related(
             "club",
             "season",
             "brand",
-        ).prefetch_related("competitions")
+            "user",
+        ).prefetch_related("competitions", "photos")
 
     def get_context_data(self, **kwargs):
         """Add additional context data."""
@@ -56,22 +57,25 @@ class BaseItemListView(CollectionLoginRequiredMixin, ListView):
 class BaseItemDetailView(CollectionLoginRequiredMixin, DetailView):
     """Base detail view for items in the collection."""
 
-    model = Jersey
+    model = BaseItem
     template_name = "collection/item_detail.html"
     context_object_name = "item"
 
     def get_queryset(self):
-        """Get all jerseys with optimizations."""
-        return Jersey.objects.select_related(
+        """Get all items with optimizations."""
+        return BaseItem.objects.select_related(
             "club",
             "season",
             "brand",
+            "user",
         ).prefetch_related("competitions", "photos")
 
     def get_context_data(self, **kwargs):
         """Add additional context data."""
         context = super().get_context_data(**kwargs)
         context["photos"] = self.object.photos.all().order_by("order")
+        # Get the specific item instance (Jersey, Shorts, etc.)
+        context["specific_item"] = self.object.get_specific_item()
         return context
 
 
@@ -82,7 +86,7 @@ class BaseItemCreateView(
 ):
     """Base create view for items in the collection."""
 
-    model = Jersey
+    model = BaseItem
     template_name = "collection/item_form.html"
     success_url = reverse_lazy("collection:item_list")
 
@@ -98,13 +102,13 @@ class BaseItemUpdateView(
 ):
     """Base update view for items in the collection."""
 
-    model = Jersey
+    model = BaseItem
     template_name = "collection/item_form.html"
     success_url = reverse_lazy("collection:item_list")
 
     def get_queryset(self):
-        """Get all jerseys."""
-        return Jersey.objects.all()
+        """Get all items."""
+        return BaseItem.objects.all()
 
 
 class BaseItemDeleteView(
@@ -114,13 +118,13 @@ class BaseItemDeleteView(
 ):
     """Base delete view for items in the collection."""
 
-    model = Jersey
+    model = BaseItem
     template_name = "collection/item_confirm_delete.html"
     success_url = reverse_lazy("collection:item_list")
 
     def get_queryset(self):
-        """Get all jerseys."""
-        return Jersey.objects.all()
+        """Get all items."""
+        return BaseItem.objects.all()
 
     def delete(self, request, *args, **kwargs):
         """Override delete to add custom success message."""

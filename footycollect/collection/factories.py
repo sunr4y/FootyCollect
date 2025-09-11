@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from factory.django import DjangoModelFactory
 
 from footycollect.collection.models import (
+    BaseItem,
     Brand,
     Club,
     Competition,
@@ -88,23 +89,43 @@ class SizeFactory(DjangoModelFactory):
     category = factory.Iterator(["tops", "bottoms", "accessories"])
 
 
+class BaseItemFactory(DjangoModelFactory):
+    """Factory for creating test base items."""
+
+    class Meta:
+        model = BaseItem
+
+    name = factory.LazyAttribute(lambda obj: f"{obj.brand.name} {obj.club.name} Jersey")
+    item_type = "jersey"
+    user = factory.SubFactory(UserFactory)
+    brand = factory.SubFactory(BrandFactory)
+    club = factory.SubFactory(ClubFactory)
+    season = factory.SubFactory(SeasonFactory)
+    condition = factory.Faker("random_int", min=1, max=10)
+    detailed_condition = "EXCELLENT"
+    description = factory.Faker("text", max_nb_chars=200)
+    is_replica = False
+    is_private = False
+    is_draft = False
+    design = ""
+    main_color = None
+    country = ""
+
+
 class JerseyFactory(DjangoModelFactory):
     """Factory for creating test jerseys."""
 
     class Meta:
         model = Jersey
 
-    user = factory.SubFactory(UserFactory)
-    brand = factory.SubFactory(BrandFactory)
-    club = factory.SubFactory(ClubFactory)
-    season = factory.SubFactory(SeasonFactory)
+    base_item = factory.SubFactory(BaseItemFactory)
     size = factory.SubFactory(SizeFactory)
-    condition = factory.Faker("random_int", min=1, max=10)
-    description = factory.Faker("text", max_nb_chars=200)
-    is_replica = False
+    kit = None
+    is_fan_version = True
     is_signed = False
     has_nameset = False
-    is_fan_version = True
+    player_name = ""
+    number = None
     is_short_sleeve = True
 
     @factory.post_generation
@@ -116,11 +137,11 @@ class JerseyFactory(DjangoModelFactory):
         if extracted:
             # If competitions are provided, use them
             for competition in extracted:
-                self.competitions.add(competition)
+                self.base_item.competitions.add(competition)
         else:
             # Otherwise, add a random competition
             competition = CompetitionFactory()
-            self.competitions.add(competition)
+            self.base_item.competitions.add(competition)
 
 
 class PhotoFactory(DjangoModelFactory):

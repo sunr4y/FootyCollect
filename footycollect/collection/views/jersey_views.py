@@ -65,7 +65,13 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse_lazy("collection:item_detail", kwargs={"pk": self.object.pk})
+        return reverse_lazy("collection:item_detail", kwargs={"pk": self.object.base_item.pk})
+
+    def get_form_kwargs(self):
+        """Add user to form kwargs."""
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -108,8 +114,8 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
                 self._process_photo_ids(photo_ids)
 
             # Mark as not draft
-            self.object.is_draft = False
-            self.object.save()
+            self.object.base_item.is_draft = False
+            self.object.base_item.save()
             logger.info("Jersey marked as not draft")
 
             messages.success(
@@ -127,8 +133,22 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
 
     def _setup_form_instance(self, form):
         """Setup basic form instance attributes."""
-        # Assign the current user
-        form.instance.user = self.request.user
+        # For MTI structure, we need to create BaseItem first
+        # The form will handle creating both BaseItem and Jersey
+
+        # Ensure form has an instance
+        if form.instance is None:
+            # Check if form is a ModelForm
+            if hasattr(form, "_meta") and hasattr(form._meta, "model"):  # noqa: SLF001
+                form.instance = form._meta.model()  # noqa: SLF001
+            else:
+                # For non-ModelForm, create a BaseItem instance
+                from footycollect.collection.models import BaseItem
+
+                form.instance = BaseItem()
+
+        # Set item_type for BaseItem
+        form.instance.item_type = "jersey"
 
         # Assign country if selected
         if form.cleaned_data.get("country_code"):
@@ -325,7 +345,7 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         """Save the jersey and finalize related assignments."""
         # Save the jersey
         response = super().form_valid(form)
-        logger.info("Jersey saved with ID: %s", self.object.id)
+        logger.info("Jersey saved with ID: %s", self.object.base_item.pk)
 
         # Si tenemos un kit con competiciones, asignarlas al jersey
         if hasattr(self, "kit") and self.kit and self.kit.competition.exists():

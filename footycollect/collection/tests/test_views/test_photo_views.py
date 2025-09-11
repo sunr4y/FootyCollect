@@ -61,12 +61,12 @@ class PhotoViewsTest(TestCase):
         """Test photo upload view for authenticated user."""
         size = SizeFactory(name="M", category="tops")
         JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
+            base_item__condition=8,
             size=size,
-            condition=8,
         )
 
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
@@ -96,10 +96,10 @@ class PhotoViewsComprehensiveTest(TestCase):
         self.season = SeasonFactory()
         self.size = SizeFactory()
         self.jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
             size=self.size,
         )
 
@@ -124,7 +124,7 @@ class PhotoViewsComprehensiveTest(TestCase):
 
         # Note: reorder_photos doesn't require login according to the decorator
         response = self.client.post(
-            reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.id}),
+            reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.base_item.pk}),
             {"order[]": [str(photo2.id), str(photo1.id)]},
             content_type="application/x-www-form-urlencoded",
         )
@@ -135,7 +135,7 @@ class PhotoViewsComprehensiveTest(TestCase):
     def test_reorder_photos_invalid_data(self):
         """Test photo reordering with invalid data."""
         response = self.client.post(
-            reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.id}),
+            reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.base_item.pk}),
             {"order[]": ["invalid_id"]},
             content_type="application/x-www-form-urlencoded",
         )
@@ -147,7 +147,7 @@ class PhotoViewsComprehensiveTest(TestCase):
     def test_reorder_photos_no_login_required(self):
         """Test that reorder_photos doesn't require login (based on decorator)."""
         response = self.client.post(
-            reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.id}),
+            reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.base_item.pk}),
             {"order[]": ["1", "2"]},
             content_type="application/x-www-form-urlencoded",
         )
@@ -165,7 +165,7 @@ class PhotoViewsComprehensiveTest(TestCase):
         response = self.client.post(
             reverse("collection:upload_photo"),
             {
-                "item_id": self.jersey.id,
+                "item_id": self.jersey.base_item.pk,
                 "image": test_image,
                 "caption": "Test photo",
             },
@@ -198,7 +198,7 @@ class PhotoViewsComprehensiveTest(TestCase):
         response = self.client.post(
             reverse("collection:upload_photo"),
             {
-                "item_id": self.jersey.id,
+                "item_id": self.jersey.base_item.pk,
                 "image": test_image,
                 "caption": "Test photo",
             },
@@ -216,7 +216,7 @@ class PhotoViewsComprehensiveTest(TestCase):
         response = self.client.post(
             reverse("collection:file_upload"),
             {
-                "item_id": self.jersey.id,
+                "item_id": self.jersey.base_item.pk,
                 "file": test_image,
             },
         )
@@ -230,7 +230,7 @@ class PhotoViewsComprehensiveTest(TestCase):
         response = self.client.post(
             reverse("collection:file_upload"),
             {
-                "item_id": self.jersey.id,
+                "item_id": self.jersey.base_item.pk,
                 "file": test_image,
             },
         )
@@ -247,7 +247,7 @@ class PhotoViewsComprehensiveTest(TestCase):
         response = self.client.post(
             reverse("collection:handle_dropzone_files"),
             {
-                "item_id": self.jersey.id,
+                "item_id": self.jersey.base_item.pk,
                 "file": test_image,
             },
         )

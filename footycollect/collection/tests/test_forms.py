@@ -35,6 +35,7 @@ class JerseyFormTest(TestCase):
         size = SizeFactory(name="M", category="tops")
 
         form_data = {
+            "name": "Test Jersey",
             "brand": self.brand.id,
             "club": self.club.id,
             "season": self.season.id,
@@ -54,6 +55,7 @@ class JerseyFormTest(TestCase):
         size = SizeFactory(name="M", category="tops")
 
         form_data = {
+            "name": "Test Jersey",
             "brand": self.brand.id,
             "condition": 15,  # Invalid: > 10
             "size": size.id,
@@ -73,6 +75,7 @@ class JerseyFormTest(TestCase):
         size = Size.objects.create(name="L", category="tops")
 
         form_data = {
+            "name": "Test Jersey",
             "brand": self.brand.id,
             "condition": 7,  # Integer between 1-10
             "size": size.id,
@@ -90,6 +93,7 @@ class JerseyFormTest(TestCase):
         size = SizeFactory(name="M", category="tops")
 
         form_data = {
+            "name": "Test Jersey",
             "brand": self.brand.id,
             "condition": 5,  # Valid condition
             "size": size.id,
@@ -107,6 +111,7 @@ class JerseyFormTest(TestCase):
         SizeFactory(name="L", category="tops")
 
         form_data = {
+            "name": "Test Jersey",
             "brand": self.brand.id,
             "condition": 8,
             "size": size_m.id,
@@ -133,6 +138,7 @@ class JerseyFKAPIFormTest(TestCase):
         brand = BrandFactory(name="Nike")
 
         form_data = {
+            "name": "Test Jersey",
             "brand": brand.id,  # Real Brand ID
             "condition": 8,  # Integer between 1-10
             "size": size.id,
@@ -154,6 +160,7 @@ class JerseyFKAPIFormTest(TestCase):
         size = Size.objects.create(name="M", category="tops")
 
         form_data = {
+            "name": "Test Jersey",
             "condition": 15,  # Invalid: > 10
             "size": size.id,
             "is_replica": False,
@@ -173,6 +180,7 @@ class JerseyFKAPIFormTest(TestCase):
         brand = BrandFactory(name="Adidas")
 
         form_data = {
+            "name": "Test Jersey",
             "brand": brand.id,  # Real Brand ID
             "condition": 7,  # Integer between 1-10
             "size": size.id,
@@ -194,6 +202,7 @@ class JerseyFKAPIFormTest(TestCase):
 
         # Valid condition
         form_data = {
+            "name": "Test Jersey",
             "brand": brand.id,  # Real Brand ID
             "condition": 8,  # Valid condition
             "size": size.id,
@@ -214,6 +223,7 @@ class JerseyFKAPIFormTest(TestCase):
 
         # Valid condition
         form_data = {
+            "name": "Test Jersey",
             "brand": brand.id,  # Real Brand ID
             "condition": 8,  # Valid condition
             "size": size.id,

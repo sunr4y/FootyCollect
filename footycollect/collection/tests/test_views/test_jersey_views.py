@@ -46,12 +46,12 @@ class JerseyViewsTest(TestCase):
         # Create test jerseys using factory
         size = SizeFactory(name="M", category="tops")
         JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
+            base_item__condition=8,
             size=size,
-            condition=8,
         )
 
         # Test authenticated access
@@ -69,16 +69,16 @@ class JerseyViewsTest(TestCase):
         """Test Jersey detail view."""
         size = SizeFactory(name="L", category="tops")
         jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
             size=size,
-            condition=9,
+            base_item__condition=9,
         )
 
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
-        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": jersey.pk}))
+        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": jersey.base_item.pk}))
         assert response.status_code == HTTP_OK
         self.assertContains(response, "Nike")
         self.assertContains(response, "Barcelona")
@@ -122,63 +122,63 @@ class JerseyViewsTest(TestCase):
         """Test Jersey update view requires login."""
         size = SizeFactory(name="M", category="tops")
         jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
             size=size,
-            condition=8,
+            base_item__condition=8,
         )
 
-        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": jersey.pk}))
+        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": jersey.base_item.pk}))
         assert response.status_code == HTTP_FOUND  # Redirect to login
 
     def test_jersey_update_view_authenticated(self):
         """Test Jersey update view for authenticated user."""
         size = SizeFactory(name="L", category="tops")
         jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
             size=size,
-            condition=9,
+            base_item__condition=9,
         )
 
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
-        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": jersey.pk}))
+        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": jersey.base_item.pk}))
         assert response.status_code == HTTP_OK
 
     def test_jersey_delete_view_requires_login(self):
         """Test Jersey delete view requires login."""
         size = SizeFactory(name="M", category="tops")
         jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
             size=size,
-            condition=8,
+            base_item__condition=8,
         )
 
-        response = self.client.get(reverse("collection:item_delete", kwargs={"pk": jersey.pk}))
+        response = self.client.get(reverse("collection:item_delete", kwargs={"pk": jersey.base_item.pk}))
         assert response.status_code == HTTP_FOUND  # Redirect to login
 
     def test_jersey_delete_view_authenticated(self):
         """Test Jersey delete view for authenticated user."""
         size = SizeFactory(name="L", category="tops")
         jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
             size=size,
-            condition=9,
+            base_item__condition=9,
         )
 
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
         try:
-            response = self.client.get(reverse("collection:item_delete", kwargs={"pk": jersey.pk}))
+            response = self.client.get(reverse("collection:item_delete", kwargs={"pk": jersey.base_item.pk}))
             # If no exception, check status code
             assert response.status_code in [HTTP_OK, HTTP_FOUND, HTTP_INTERNAL_SERVER_ERROR]
         except (TemplateDoesNotExist, Exception) as e:
@@ -237,6 +237,7 @@ class JerseyFKAPICreateViewTest(TestCase):
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
         form_data = {
+            "name": "Test Jersey with Competitions",
             "brand": self.brand.id,
             "club": self.club.id,
             "season": self.season.id,

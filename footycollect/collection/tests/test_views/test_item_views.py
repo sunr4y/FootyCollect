@@ -44,28 +44,28 @@ class ItemViewsTest(TestCase):
         """Test generic item detail view."""
         size = SizeFactory(name="M", category="tops")
         jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
+            base_item__condition=8,
             size=size,
-            condition=8,
         )
 
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
-        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": jersey.pk}))
+        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": jersey.base_item.pk}))
         assert response.status_code == HTTP_OK
 
     def test_item_list_view(self):
         """Test generic item list view."""
         size = SizeFactory(name="L", category="tops")
         JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
+            base_item__condition=9,
             size=size,
-            condition=9,
         )
 
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
@@ -94,10 +94,10 @@ class ItemViewsComprehensiveTest(TestCase):
         self.season = SeasonFactory()
         self.size = SizeFactory()
         self.jersey = JerseyFactory(
-            user=self.user,
-            brand=self.brand,
-            club=self.club,
-            season=self.season,
+            base_item__user=self.user,
+            base_item__brand=self.brand,
+            base_item__club=self.club,
+            base_item__season=self.season,
             size=self.size,
         )
 
@@ -131,6 +131,7 @@ class ItemViewsComprehensiveTest(TestCase):
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
         form_data = {
+            "name": "Test Jersey",
             "brand": self.brand.id,
             "club": self.club.id,
             "season": self.season.id,
@@ -154,6 +155,7 @@ class ItemViewsComprehensiveTest(TestCase):
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
         form_data = {
+            "name": "Test Jersey",
             "brand": "invalid_id",
             "club": self.club.id,
             "season": self.season.id,
@@ -217,7 +219,7 @@ class ItemViewsComprehensiveTest(TestCase):
         """Test ItemDetailView."""
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
-        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": self.jersey.id}))
+        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": self.jersey.base_item.pk}))
 
         assert response.status_code == HTTP_OK
         assert "object" in response.context
@@ -225,7 +227,7 @@ class ItemViewsComprehensiveTest(TestCase):
 
     def test_item_detail_view_requires_login(self):
         """Test that ItemDetailView requires login."""
-        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": self.jersey.id}))
+        response = self.client.get(reverse("collection:item_detail", kwargs={"pk": self.jersey.base_item.pk}))
 
         # Should redirect to login
         assert response.status_code == HTTP_FOUND
@@ -259,7 +261,7 @@ class ItemViewsComprehensiveTest(TestCase):
         """Test ItemUpdateView GET method."""
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
-        response = self.client.get(reverse("collection:item_update", kwargs={"pk": self.jersey.id}))
+        response = self.client.get(reverse("collection:item_update", kwargs={"pk": self.jersey.base_item.pk}))
 
         assert response.status_code == HTTP_OK
         assert "form" in response.context
@@ -267,7 +269,7 @@ class ItemViewsComprehensiveTest(TestCase):
 
     def test_item_update_view_requires_login(self):
         """Test that ItemUpdateView requires login."""
-        response = self.client.get(reverse("collection:item_update", kwargs={"pk": self.jersey.id}))
+        response = self.client.get(reverse("collection:item_update", kwargs={"pk": self.jersey.base_item.pk}))
 
         # Should redirect to login
         assert response.status_code == HTTP_FOUND
@@ -277,7 +279,7 @@ class ItemViewsComprehensiveTest(TestCase):
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
         try:
-            response = self.client.get(reverse("collection:item_delete", kwargs={"pk": self.jersey.id}))
+            response = self.client.get(reverse("collection:item_delete", kwargs={"pk": self.jersey.base_item.pk}))
             assert response.status_code in [HTTP_OK, HTTP_INTERNAL_SERVER_ERROR]
             if response.status_code == HTTP_OK:
                 assert "object" in response.context
@@ -292,14 +294,14 @@ class ItemViewsComprehensiveTest(TestCase):
         # Create a photo for the jersey
         PhotoFactory(content_object=self.jersey, user=self.user)
 
-        response = self.client.post(reverse("collection:item_delete", kwargs={"pk": self.jersey.id}))
+        response = self.client.post(reverse("collection:item_delete", kwargs={"pk": self.jersey.base_item.pk}))
 
         # Should redirect after successful deletion
         assert response.status_code == HTTP_FOUND
 
     def test_item_delete_view_requires_login(self):
         """Test that ItemDeleteView requires login."""
-        response = self.client.get(reverse("collection:item_delete", kwargs={"pk": self.jersey.id}))
+        response = self.client.get(reverse("collection:item_delete", kwargs={"pk": self.jersey.base_item.pk}))
 
         # Should redirect to login
         assert response.status_code == HTTP_FOUND
@@ -320,6 +322,7 @@ class ItemViewsComprehensiveTest(TestCase):
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
         form_data = {
+            "name": "Test Jersey",
             "brand": self.brand.id,
             "club": self.club.id,
             "season": self.season.id,
@@ -346,7 +349,7 @@ class ItemViewsComprehensiveTest(TestCase):
         """Test JerseyUpdateView GET method."""
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
-        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": self.jersey.id}))
+        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": self.jersey.base_item.pk}))
 
         assert response.status_code == HTTP_OK
         assert "form" in response.context
@@ -361,6 +364,7 @@ class ItemViewsComprehensiveTest(TestCase):
         self.client.login(username=self.user.username, password="testpass123")  # noqa: S106
 
         form_data = {
+            "name": "Updated Jersey",
             "brand": self.brand.id,
             "club": self.club.id,
             "season": self.season.id,
@@ -371,14 +375,17 @@ class ItemViewsComprehensiveTest(TestCase):
             "is_short_sleeve": False,
         }
 
-        response = self.client.post(reverse("collection:jersey_update", kwargs={"pk": self.jersey.id}), form_data)
+        response = self.client.post(
+            reverse("collection:jersey_update", kwargs={"pk": self.jersey.base_item.pk}),
+            form_data,
+        )
 
         # JerseyUpdateView might return 200 if there are form errors, or 302 if successful
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_update_view_requires_login(self):
         """Test that JerseyUpdateView requires login."""
-        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": self.jersey.id}))
+        response = self.client.get(reverse("collection:jersey_update", kwargs={"pk": self.jersey.base_item.pk}))
 
         # Should redirect to login
         assert response.status_code == HTTP_FOUND
