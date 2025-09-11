@@ -106,6 +106,18 @@ class BaseItemManager(models.Manager):
         return self.filter(is_draft=True)
 
 
+# Custom manager for MTI models (Jersey, Shorts, etc.)
+class MTIManager(models.Manager):
+    def public(self):
+        return self.filter(base_item__is_private=False, base_item__is_draft=False)
+
+    def private(self):
+        return self.filter(base_item__is_private=True)
+
+    def drafts(self):
+        return self.filter(base_item__is_draft=True)
+
+
 class BaseItem(models.Model):
     COLOR_CHOICES = [
         ("WHITE", _("White")),
@@ -125,6 +137,16 @@ class BaseItem(models.Model):
         ("GOLD", _("Gold")),
         ("SILVER", _("Silver")),
         ("OFF_WHITE", _("Off-white")),
+    ]
+
+    # Item type choices for MTI
+    ITEM_TYPE_CHOICES = [
+        ("jersey", _("Jersey")),
+        ("shorts", _("Shorts")),
+        ("outerwear", _("Outerwear")),
+        ("tracksuit", _("Tracksuit")),
+        ("pants", _("Pants")),
+        ("other", _("Other")),
     ]
     CONDITION_CHOICES = [
         ("BNWT", _("Brand New With Tags")),
@@ -153,6 +175,18 @@ class BaseItem(models.Model):
         ("CROSS", _("Cross")),
         ("QUARTERS", _("Quarters")),
     ]
+
+    # Core fields for MTI
+    item_type = models.CharField(
+        max_length=20,
+        choices=ITEM_TYPE_CHOICES,
+        help_text=_("Type of item"),
+    )
+    name = models.CharField(
+        max_length=200,
+        help_text=_("Name or title of the item"),
+    )
+
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, help_text="User who owns this item")
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
     club = models.ForeignKey(Club, on_delete=models.CASCADE, null=True, blank=True)
@@ -208,16 +242,44 @@ class BaseItem(models.Model):
 
     photos = GenericRelation(Photo)
 
+    # Manager
+    objects = BaseItemManager()
+
     class Meta:
-        abstract = True
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["item_type"]),
+            models.Index(fields=["club"]),
+            models.Index(fields=["brand"]),
+            models.Index(fields=["created_at"]),
+        ]
 
     def __str__(self):
-        return f"{self.brand} {self.club} Item"
+        return f"{self.brand} {self.club} {self.get_item_type_display()}"
 
     def get_main_photo(self):
         main_photo = self.photos.order_by("order").first()
         return main_photo.get_image_url() if main_photo else "path/to/placeholder.jpg"
+
+    def get_specific_item(self):
+        """
+        Get the specific item instance (Jersey, Shorts, etc.) associated with this BaseItem.
+        """
+        # Use a mapping to reduce return statements
+        item_mappings = {
+            "jersey": "jersey",
+            "shorts": "shorts",
+            "outerwear": "outerwear",
+            "tracksuit": "tracksuit",
+            "pants": "pants",
+            "other": "otheritem",
+        }
+
+        attr_name = item_mappings.get(self.item_type)
+        if attr_name and hasattr(self, attr_name):
+            return getattr(self, attr_name)
+        return None
 
 
 class Size(models.Model):
@@ -233,7 +295,22 @@ class Size(models.Model):
         return f"{self.get_category_display()} - {self.name}"
 
 
-class Jersey(BaseItem):
+class Jersey(models.Model):
+    """
+    Jersey model using Multi-Table Inheritance.
+
+    This model has a OneToOneField relationship with BaseItem,
+    containing only Jersey-specific fields.
+    """
+
+    base_item = models.OneToOneField(
+        BaseItem,
+        on_delete=models.CASCADE,
+        related_name="jersey",
+        primary_key=True,
+    )
+
+    # Jersey-specific fields
     kit = models.ForeignKey(Kit, on_delete=models.CASCADE, null=True, blank=True)
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
     is_fan_version = models.BooleanField(default=True)
@@ -243,35 +320,134 @@ class Jersey(BaseItem):
     number = models.PositiveIntegerField(null=True, blank=True)
     is_short_sleeve = models.BooleanField(default=True)
 
-    objects = BaseItemManager()
+    objects = MTIManager()
+
+    def __str__(self):
+        return f"Jersey: {self.base_item}"
+
+    def save(self, *args, **kwargs):
+        # Ensure the base_item has the correct item_type
+        if not self.base_item.item_type:
+            self.base_item.item_type = "jersey"
+            self.base_item.save()
+        super().save(*args, **kwargs)
 
 
-class Shorts(BaseItem):
+class Shorts(models.Model):
+    """
+    Shorts model using Multi-Table Inheritance.
+    """
+
+    base_item = models.OneToOneField(
+        BaseItem,
+        on_delete=models.CASCADE,
+        related_name="shorts",
+        primary_key=True,
+    )
+
+    # Shorts-specific fields
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
     number = models.PositiveIntegerField(null=True, blank=True)
     is_fan_version = models.BooleanField(default=True)
 
+    def __str__(self):
+        return f"Shorts: {self.base_item}"
 
-class Outerwear(BaseItem):
+    def save(self, *args, **kwargs):
+        if not self.base_item.item_type:
+            self.base_item.item_type = "shorts"
+            self.base_item.save()
+        super().save(*args, **kwargs)
+
+
+class Outerwear(models.Model):
+    """
+    Outerwear model using Multi-Table Inheritance.
+    """
+
     TYPE_CHOICES = [
         ("hoodie", "Hoodie"),
         ("jacket", "Jacket"),
         ("windbreaker", "Windbreaker"),
         ("crewneck", "Crewneck"),
     ]
+
+    base_item = models.OneToOneField(
+        BaseItem,
+        on_delete=models.CASCADE,
+        related_name="outerwear",
+        primary_key=True,
+    )
+
+    # Outerwear-specific fields
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return f"Outerwear: {self.base_item}"
 
-class Tracksuit(BaseItem):
+    def save(self, *args, **kwargs):
+        if not self.base_item.item_type:
+            self.base_item.item_type = "outerwear"
+            self.base_item.save()
+        super().save(*args, **kwargs)
+
+
+class Tracksuit(models.Model):
+    """
+    Tracksuit model using Multi-Table Inheritance.
+    """
+
+    base_item = models.OneToOneField(
+        BaseItem,
+        on_delete=models.CASCADE,
+        related_name="tracksuit",
+        primary_key=True,
+    )
+
+    # Tracksuit-specific fields
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return f"Tracksuit: {self.base_item}"
 
-class Pants(BaseItem):
+    def save(self, *args, **kwargs):
+        if not self.base_item.item_type:
+            self.base_item.item_type = "tracksuit"
+            self.base_item.save()
+        super().save(*args, **kwargs)
+
+
+class Pants(models.Model):
+    """
+    Pants model using Multi-Table Inheritance.
+    """
+
+    base_item = models.OneToOneField(
+        BaseItem,
+        on_delete=models.CASCADE,
+        related_name="pants",
+        primary_key=True,
+    )
+
+    # Pants-specific fields
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return f"Pants: {self.base_item}"
 
-class OtherItem(BaseItem):
+    def save(self, *args, **kwargs):
+        if not self.base_item.item_type:
+            self.base_item.item_type = "pants"
+            self.base_item.save()
+        super().save(*args, **kwargs)
+
+
+class OtherItem(models.Model):
+    """
+    OtherItem model using Multi-Table Inheritance.
+    """
+
     TYPE_CHOICES = [
         ("pin", "Pin"),
         ("hat", "Hat"),
@@ -279,7 +455,22 @@ class OtherItem(BaseItem):
         ("socks", "Socks"),
         ("other", "Other"),
     ]
+
+    base_item = models.OneToOneField(
+        BaseItem,
+        on_delete=models.CASCADE,
+        related_name="otheritem",
+        primary_key=True,
+    )
+
+    # OtherItem-specific fields
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
 
+    def __str__(self):
+        return f"Other Item: {self.base_item}"
 
-# BaseItemManager is now applied directly to each model
+    def save(self, *args, **kwargs):
+        if not self.base_item.item_type:
+            self.base_item.item_type = "other"
+            self.base_item.save()
+        super().save(*args, **kwargs)

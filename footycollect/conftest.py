@@ -85,13 +85,21 @@ def size(db):
 @pytest.fixture
 def jersey(db, user, brand, club, season, size):  # noqa: PLR0913
     """Create a test jersey."""
-    from footycollect.collection.models import Jersey
+    from footycollect.collection.models import BaseItem, Jersey
 
-    return Jersey.objects.create(
+    # Create BaseItem first
+    base_item = BaseItem.objects.create(
+        name=f"{brand.name} {club.name} Jersey",
+        item_type="jersey",
         user=user,
         brand=brand,
         club=club,
         season=season,
-        size=size,
         condition=10,
+    )
+
+    # Create Jersey linked to BaseItem
+    return Jersey.objects.create(
+        base_item=base_item,
+        size=size,
     )

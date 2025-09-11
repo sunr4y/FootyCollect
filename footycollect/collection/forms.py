@@ -4,9 +4,9 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from django_countries import countries
 
-from footycollect.core.models import Brand
+from footycollect.core.models import Brand, Club, Season
 
-from .models import BaseItem, Color, Jersey, OtherItem, Outerwear, Pants, Shorts, Size, Tracksuit
+from .models import BaseItem, Color, Jersey, Size
 
 MAX_PHOTOS = 10
 
@@ -49,11 +49,6 @@ class BrandWidget(select2_widgets.ModelSelect2):
 class BaseItemForm(forms.ModelForm):
     """Base form for common fields across all item types."""
 
-    country_code = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput(),
-    )
-
     is_replica = forms.BooleanField(
         required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
@@ -71,8 +66,10 @@ class BaseItemForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Jersey
+        model = BaseItem
         fields = [
+            "name",
+            "item_type",
             "brand",
             "club",
             "season",
@@ -81,7 +78,6 @@ class BaseItemForm(forms.ModelForm):
             "detailed_condition",
             "description",
             "is_replica",
-            "country_code",
             "main_color",
             "secondary_colors",
             "design",
@@ -164,43 +160,73 @@ class ItemTypeForm(forms.Form):
     )
 
 
-class JerseyForm(forms.ModelForm):
-    size = forms.ModelChoiceField(
-        queryset=Size.objects.none(),  # Will be set in __init__
-        label=_("Size"),
+class JerseyForm(forms.Form):
+    """Form for Jersey items using MTI structure."""
+
+    # BaseItem fields
+    name = forms.CharField(
+        max_length=200,
         required=True,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+
+    brand = forms.ModelChoiceField(
+        queryset=Brand.objects.all(),
+        required=True,
+        widget=BrandWidget(),
+    )
+
+    club = forms.ModelChoiceField(
+        queryset=Club.objects.all(),
+        required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
     )
 
-    is_fan_version = forms.BooleanField(
+    season = forms.ModelChoiceField(
+        queryset=Season.objects.all(),
         required=False,
-        label=_("Fan Version"),
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
-    is_player_version = forms.BooleanField(
-        required=False,
-        label=_("Player Version"),
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
-    )
-
-    is_signed = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
-    )
-
-    is_short_sleeve = forms.BooleanField(
-        required=False,
-        initial=True,
-        label=_("Short Sleeve"),
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
-    )
-
-    number = forms.IntegerField(
-        min_value=0,
-        max_value=99,
-        required=False,
+    condition = forms.IntegerField(
+        min_value=1,
+        max_value=10,
+        initial=10,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+
+    detailed_condition = forms.ChoiceField(
+        choices=BaseItem.CONDITION_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    is_replica = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+    )
+
+    main_color = forms.ModelChoiceField(
+        queryset=Color.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    secondary_colors = forms.ModelMultipleChoiceField(
+        queryset=Color.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-select"}),
+    )
+
+    design = forms.ChoiceField(
+        choices=BaseItem.DESIGN_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
     country_code = forms.ChoiceField(
@@ -221,8 +247,56 @@ class JerseyForm(forms.ModelForm):
         ),
     )
 
+    # Jersey-specific fields
+    size = forms.ModelChoiceField(
+        queryset=Size.objects.none(),  # Will be set in __init__
+        label=_("Size"),
+        required=True,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    is_fan_version = forms.BooleanField(
+        required=False,
+        label=_("Fan Version"),
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+    )
+
+    is_signed = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+    )
+
+    has_nameset = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+    )
+
+    player_name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+
+    is_short_sleeve = forms.BooleanField(
+        required=False,
+        initial=True,
+        label=_("Short Sleeve"),
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+    )
+
+    number = forms.IntegerField(
+        min_value=0,
+        max_value=99,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+
     def __init__(self, *args, **kwargs):
+        # Remove instance and user from kwargs for BaseForm
+        instance = kwargs.pop("instance", None)
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+        self.instance = instance
 
         # Set the size queryset (lazy loading)
         try:
@@ -234,38 +308,97 @@ class JerseyForm(forms.ModelForm):
         self.fields["player_name"].widget.attrs["class"] = "form-control col-md-8"
         self.fields["number"].widget.attrs["class"] = "form-control col-md-4"
 
-    class Meta(BaseItemForm.Meta):
-        model = Jersey
-        fields = [
-            *BaseItemForm.Meta.fields,
+    def _extract_base_item_data(self):
+        """Extract data for BaseItem creation."""
+        base_item_fields = [
+            "name",
+            "item_type",
+            "user",
+            "brand",
+            "club",
+            "season",
+            "condition",
+            "detailed_condition",
+            "description",
+            "is_replica",
+            "main_color",
+            "design",
+            "country",
+        ]
+
+        base_item_data = {}
+        for field in base_item_fields:
+            if field in self.cleaned_data:
+                base_item_data[field] = self.cleaned_data[field]
+
+        # Ensure user is set
+        if self.user:
+            base_item_data["user"] = self.user
+
+        # Handle country_code mapping
+        country_code = self.cleaned_data.get("country_code")
+        if country_code:
+            base_item_data["country"] = country_code
+
+        # Set item_type
+        base_item_data["item_type"] = "jersey"
+
+        return base_item_data
+
+    def _extract_jersey_data(self):
+        """Extract data for Jersey creation."""
+        jersey_fields = [
             "size",
+            "kit",
             "is_fan_version",
-            "is_player_version",
             "is_signed",
+            "has_nameset",
             "player_name",
             "number",
             "is_short_sleeve",
-            "country_code",
         ]
 
-        widgets = {
-            **BaseItemForm.Meta.widgets,
-            "player_name": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": _("Player Name"),
-                },
-            ),
-            "country_code": autocomplete.Select2(
-                url="core:country-autocomplete",
-                attrs={
-                    "data-html": True,
-                    "data-placeholder": _("Select a country..."),
-                    "class": "form-control select2",
-                    "data-debug": "true",
-                },
-            ),
-        }
+        jersey_data = {}
+        for field in jersey_fields:
+            if field in self.cleaned_data:
+                jersey_data[field] = self.cleaned_data[field]
+
+        return jersey_data
+
+    def _extract_many_to_many_data(self):
+        """Extract ManyToMany fields data."""
+        many_to_many_fields = ["competitions", "secondary_colors"]
+        many_to_many_data = {}
+        for field in many_to_many_fields:
+            if field in self.cleaned_data:
+                many_to_many_data[field] = self.cleaned_data[field]
+        return many_to_many_data
+
+    def save(self, *, commit=True):
+        """Save the form data using MTI structure."""
+        base_item_data = self._extract_base_item_data()
+        jersey_data = self._extract_jersey_data()
+        many_to_many_data = self._extract_many_to_many_data()
+
+        if commit:
+            # Create BaseItem first
+            base_item = BaseItem.objects.create(**base_item_data)
+
+            # Create Jersey linked to BaseItem
+            jersey_data["base_item"] = base_item
+            jersey = Jersey.objects.create(**jersey_data)
+
+            # Handle ManyToMany fields
+            if "competitions" in many_to_many_data:
+                base_item.competitions.set(many_to_many_data["competitions"])
+            if "secondary_colors" in many_to_many_data:
+                base_item.secondary_colors.set(many_to_many_data["secondary_colors"])
+
+            return jersey
+        # For non-commit case, create instances but don't save
+        base_item = BaseItem(**base_item_data)
+        jersey_data["base_item"] = base_item
+        return Jersey(**jersey_data)
 
 
 class JerseyFKAPIForm(JerseyForm):
@@ -317,7 +450,10 @@ class JerseyFKAPIForm(JerseyForm):
     external_image_urls = forms.CharField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
+        # Remove instance from kwargs for BaseForm
+        instance = kwargs.pop("instance", None)
         super().__init__(*args, **kwargs)
+        self.instance = instance
 
         using_api = False
         if (
@@ -388,34 +524,29 @@ class JerseyFKAPIForm(JerseyForm):
         return cleaned_data
 
 
-class OuterwearForm(BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Outerwear
-        fields = [*BaseItemForm.Meta.fields, "type"]
+# TODO: Implement OuterwearForm with MTI structure
+# class OuterwearForm(forms.Form):
+#     pass
 
 
-class ShortsForm(BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Shorts
-        fields = [*BaseItemForm.Meta.fields, "number", "is_fan_version"]
+# TODO: Implement ShortsForm with MTI structure
+# class ShortsForm(forms.Form):
+#     pass
 
 
-class TrackSuitForm(BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Tracksuit
-        fields = [*BaseItemForm.Meta.fields]
+# TODO: Implement TrackSuitForm with MTI structure
+# class TrackSuitForm(forms.Form):
+#     pass
 
 
-class PantsForm(BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Pants
-        fields = [*BaseItemForm.Meta.fields]
+# TODO: Implement PantsForm with MTI structure
+# class PantsForm(forms.Form):
+#     pass
 
 
-class OtherItemForm(BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = OtherItem
-        fields = [*BaseItemForm.Meta.fields, "type"]
+# TODO: Implement OtherItemForm with MTI structure
+# class OtherItemForm(forms.Form):
+#     pass
 
 
 class ItemPhotosForm(forms.Form):

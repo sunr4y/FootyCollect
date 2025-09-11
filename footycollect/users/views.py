@@ -23,22 +23,20 @@ class UserDetailView(LoginRequiredMixin, DetailView):
             context["show_details"] = True
 
             # Calculate collection stats for the user
-            from footycollect.collection.models import Jersey
+            from footycollect.collection.models import BaseItem
 
-            # Get user's jerseys directly
-            user_jerseys = Jersey.objects.filter(user=user)
+            # Get user's items directly
+            user_items = BaseItem.objects.filter(user=user)
 
             # Calculate stats
-            context["total_items"] = user_jerseys.count()
-            context["total_teams"] = user_jerseys.filter(club__isnull=False).values("club").distinct().count()
+            context["total_items"] = user_items.count()
+            context["total_teams"] = user_items.filter(club__isnull=False).values("club").distinct().count()
             context["total_competitions"] = (
-                user_jerseys.filter(competitions__isnull=False).values("competitions").distinct().count()
+                user_items.filter(competitions__isnull=False).values("competitions").distinct().count()
             )
 
             # Get recent items for display
-            context["recent_items"] = user_jerseys.select_related("club", "brand", "season").order_by("-created_at")[
-                :5
-            ]
+            context["recent_items"] = user_items.select_related("club", "brand", "season").order_by("-created_at")[:5]
 
         return context
 

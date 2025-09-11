@@ -192,9 +192,16 @@ class ItemDetailView(BaseItemDetailView):
         # Get items from each model type
         for model in item_models:
             try:
-                items = model.objects.filter(
-                    club=self.object.club,
-                ).exclude(id=self.object.id)
+                if hasattr(model, "base_item"):
+                    # For MTI models, filter through base_item
+                    items = model.objects.filter(
+                        base_item__club=self.object.club,
+                    ).exclude(base_item__id=self.object.id)
+                else:
+                    # For BaseItem itself
+                    items = model.objects.filter(
+                        club=self.object.club,
+                    ).exclude(id=self.object.id)
                 related_items.extend(items)
             except (AttributeError, ValueError) as e:
                 # Skip if model doesn't have required fields
