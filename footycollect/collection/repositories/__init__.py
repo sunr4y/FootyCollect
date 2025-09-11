@@ -7,12 +7,8 @@ and provide a clean interface for database operations.
 
 from .base_repository import BaseRepository
 from .item_repository import ItemRepository
-from .jersey_repository import JerseyRepository
-from .photo_repository import PhotoRepository
 
 __all__ = [
     "BaseRepository",
     "ItemRepository",
-    "JerseyRepository",
-    "PhotoRepository",
 ]
