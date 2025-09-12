@@ -9,7 +9,6 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -19,7 +18,8 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
-from footycollect.collection.models import Jersey, OtherItem, Outerwear, Pants, Photo, Shorts, Tracksuit
+from footycollect.collection.models import Jersey, OtherItem, Outerwear, Pants, Shorts, Tracksuit
+from footycollect.collection.services import get_photo_service
 
 from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemDetailView, BaseItemListView, BaseItemUpdateView
 
@@ -46,7 +46,8 @@ def test_brand_view(request):
 
 def home(request):
     """Home view showing all photos."""
-    photos = Photo.objects.all()
+    photo_service = get_photo_service()
+    photos = photo_service.photo_repository.get_all()
     context = {"photos": photos}
     return render(request, "collection/item_create.html", context)
 
@@ -89,18 +90,19 @@ class PostCreateView(LoginRequiredMixin, View):
 
         form = self.form_class(request.POST)
         if form.is_valid():
+            # Use service to create item with photos
+            photo_service = get_photo_service()
+
+            # Create item
             new_item = form.save(commit=False)
             new_item.user = request.user
             new_item.save()
             form.save_m2m()  # For many-to-many fields
 
-            # Process uploaded files
-            for file in request.FILES.getlist("images"):
-                Photo.objects.create(
-                    content_type=ContentType.objects.get_for_model(new_item),
-                    object_id=new_item.id,
-                    image=file,
-                )
+            # Process uploaded files using service
+            photo_files = request.FILES.getlist("images")
+            if photo_files:
+                photo_service.create_photos_for_item(new_item, photo_files)
 
             messages.success(request, self.success_message)
             return JsonResponse(

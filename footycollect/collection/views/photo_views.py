@@ -27,6 +27,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
 from footycollect.collection.models import Photo
+from footycollect.collection.services import get_photo_service
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,18 @@ logger = logging.getLogger(__name__)
 def reorder_photos(request, item_id):
     """Handle photo reordering via AJAX."""
     try:
+        from footycollect.collection.models import Jersey
+
+        # Get the item
+        item = Jersey.objects.get(pk=item_id)
+
+        photo_service = get_photo_service()
         new_order = request.POST.getlist("order[]")
-        for index, photo_id in enumerate(new_order):
-            Photo.objects.filter(id=photo_id).update(order=index)
+
+        # Convert to list of tuples (photo_id, new_order)
+        photo_orders = [(int(photo_id), index) for index, photo_id in enumerate(new_order)]
+
+        photo_service.reorder_photos(item, photo_orders)
         return JsonResponse({"status": "success"})
     except (ValidationError, DBError) as e:
         logger.exception("Error reordering photos")
@@ -49,23 +59,16 @@ def reorder_photos(request, item_id):
 def upload_photo(request):
     """Upload a single photo without associating it with an item yet."""
     try:
+        photo_service = get_photo_service()
         file = request.FILES.get("photo")
         if not file:
             return JsonResponse({"error": _("No file received")}, status=400)
 
-        # Server validations
-        if file.size > 15 * 1024 * 1024:
-            return JsonResponse({"error": _("The file exceeds 15MB")}, status=413)
-
-        if file.content_type not in ["image/jpeg", "image/png", "image/webp"]:
-            return JsonResponse({"error": _("File type not supported")}, status=415)
-
-        # Create a photo without associating it with any item yet
-        photo = Photo.objects.create(
-            image=file,
-            order=request.POST.get("order", 0),
-            # Temporarily save the user_id to be able to clean orphan photos later
+        # Use service to create photo
+        photo = photo_service.create_photo_with_validation(
+            file=file,
             user=request.user,
+            order=request.POST.get("order", 0),
         )
 
         return JsonResponse(

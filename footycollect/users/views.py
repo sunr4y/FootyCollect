@@ -7,6 +7,7 @@ from django.views.generic import DetailView, RedirectView, UpdateView
 
 from footycollect.users.forms import UserUpdateForm
 from footycollect.users.models import User
+from footycollect.users.services import UserService
 
 
 class UserDetailView(LoginRequiredMixin, DetailView):
@@ -18,25 +19,12 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         user = self.get_object()
 
-        # Only show details if the profile is public or it's the user's own profile
-        if not user.is_private or user == self.request.user:
-            context["show_details"] = True
+        # Use service to get profile data with MTI structure
+        user_service = UserService()
+        profile_data = user_service.get_user_profile_data(user, self.request.user)
 
-            # Calculate collection stats for the user
-            from footycollect.collection.models import BaseItem
-
-            # Get user's items directly
-            user_items = BaseItem.objects.filter(user=user)
-
-            # Calculate stats
-            context["total_items"] = user_items.count()
-            context["total_teams"] = user_items.filter(club__isnull=False).values("club").distinct().count()
-            context["total_competitions"] = (
-                user_items.filter(competitions__isnull=False).values("competitions").distinct().count()
-            )
-
-            # Get recent items for display
-            context["recent_items"] = user_items.select_related("club", "brand", "season").order_by("-created_at")[:5]
+        # Add profile data to context
+        context.update(profile_data)
 
         return context
 
