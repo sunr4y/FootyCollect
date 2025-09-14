@@ -13,6 +13,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from footycollect.collection.models import BaseItem
+from footycollect.collection.services import get_item_service, get_photo_service
 
 
 class CollectionLoginRequiredMixin(LoginRequiredMixin):
@@ -39,13 +40,9 @@ class BaseItemListView(CollectionLoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        """Get all items with optimizations."""
-        return BaseItem.objects.select_related(
-            "club",
-            "season",
-            "brand",
-            "user",
-        ).prefetch_related("competitions", "photos")
+        """Get all items using service layer with MTI structure."""
+        item_service = get_item_service()
+        return item_service.get_user_items(self.request.user)
 
     def get_context_data(self, **kwargs):
         """Add additional context data."""
@@ -62,19 +59,16 @@ class BaseItemDetailView(CollectionLoginRequiredMixin, DetailView):
     context_object_name = "item"
 
     def get_queryset(self):
-        """Get all items with optimizations."""
-        return BaseItem.objects.select_related(
-            "club",
-            "season",
-            "brand",
-            "user",
-        ).prefetch_related("competitions", "photos")
+        """Get all items using service layer with MTI structure."""
+        item_service = get_item_service()
+        return item_service.get_user_items(self.request.user)
 
     def get_context_data(self, **kwargs):
         """Add additional context data."""
         context = super().get_context_data(**kwargs)
-        context["photos"] = self.object.photos.all().order_by("order")
-        # Get the specific item instance (Jersey, Shorts, etc.)
+        photo_service = get_photo_service()
+        context["photos"] = photo_service.get_item_photos(self.object)
+        # Get the specific item instance (Jersey, Shorts, etc.) for MTI
         context["specific_item"] = self.object.get_specific_item()
         return context
 

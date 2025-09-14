@@ -20,6 +20,7 @@ from django.views.generic import CreateView
 from footycollect.api.client import FKAPIClient
 from footycollect.collection.forms import JerseyFKAPIForm
 from footycollect.collection.models import BaseItem, Brand, Club, Competition, Jersey, Kit, Photo, Season
+from footycollect.collection.services import get_collection_service
 
 from .photo_views import PhotoProcessorMixin
 
@@ -75,8 +76,10 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Add options for Cotton components
-        context["color_choices"] = [{"value": c[0], "label": c[1]} for c in BaseItem.COLOR_CHOICES]
+        # Add options for Cotton components using services
+        collection_service = get_collection_service()
+        form_data = collection_service.get_form_data()
+        context["color_choices"] = form_data["colors"]["main_colors"]
         context["design_choices"] = [{"value": d[0], "label": d[1]} for d in BaseItem.DESIGN_CHOICES]
         return context
 

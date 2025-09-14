@@ -4,6 +4,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from django_countries import countries
 
+from footycollect.collection.services import FormService
 from footycollect.core.models import Brand, Club, Season
 
 from .models import BaseItem, Color, Jersey, Size
@@ -105,39 +106,52 @@ class BaseItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Prepare color choices for the color selector component (lazy loading)
+        # Use FormService to get all form data
         try:
-            color_choices = [
-                {
-                    "value": color.id,
-                    "label": color.name,
-                    "hex_value": color.hex_value,
-                }
-                for color in Color.objects.all()
-            ]
+            form_service = FormService()
+            form_data = form_service.get_common_form_data()
+
+            # Set choices for color fields
+            self.fields["main_color"].widget.attrs["data-choices"] = form_data["colors"]["main_colors"]
+            self.fields["secondary_colors"].widget.attrs["data-choices"] = form_data["colors"]["secondary_colors"]
+
+            # Set design choices
+            self.fields["design"].widget.attrs["data-choices"] = form_data["designs"]
+
         except (ImportError, RuntimeError):
-            # During tests or when database is not ready, use empty list
-            color_choices = []
-
-        # Set choices for color fields
-        self.fields["main_color"].widget.attrs["data-choices"] = color_choices
-        self.fields["secondary_colors"].widget.attrs["data-choices"] = color_choices
-
-        # Prepare design choices
-        design_choices = []
-        for value, label in BaseItem.DESIGN_CHOICES:
-            design_choices.append(
-                {
-                    "value": value,
-                    "label": label,
-                },
-            )
-        self.fields["design"].widget.attrs["data-choices"] = design_choices
+            # During tests or when database is not ready, use empty lists
+            self.fields["main_color"].widget.attrs["data-choices"] = []
+            self.fields["secondary_colors"].widget.attrs["data-choices"] = []
+            self.fields["design"].widget.attrs["data-choices"] = []
 
         # Add class to all select fields
         for field in self.fields.values():
             if isinstance(field.widget, (forms.Select, forms.SelectMultiple)):
                 field.widget.attrs["class"] = "form-select"
+
+
+class ItemTypeSpecificFormMixin:
+    """Mixin for forms that need item type specific data."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Get item type from the form's Meta class
+        item_type = getattr(self.Meta, "item_type", "jersey")
+
+        # Use FormService to get item type specific data
+        try:
+            form_service = FormService()
+            item_data = form_service.get_item_type_specific_data(item_type)
+
+            # Set size choices if size field exists
+            if "size" in self.fields:
+                self.fields["size"].widget.attrs["data-choices"] = item_data["sizes"]
+
+        except (ImportError, RuntimeError):
+            # During tests or when database is not ready, use empty list
+            if "size" in self.fields:
+                self.fields["size"].widget.attrs["data-choices"] = []
 
 
 class ItemTypeForm(forms.Form):
@@ -160,12 +174,26 @@ class ItemTypeForm(forms.Form):
     )
 
 
-class JerseyForm(forms.Form):
-    """Form for Jersey items using MTI structure."""
+class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    """Form for Jersey items using Service Layer with STI structure."""
 
-    # BaseItem fields
-    name = forms.CharField(
-        max_length=200,
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
+
+    size = forms.ModelChoiceField(
+        queryset=Size.objects.none(),  # Will be set in __init__
+        label=_("Size"),
         required=True,
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
@@ -248,12 +276,6 @@ class JerseyForm(forms.Form):
     )
 
     # Jersey-specific fields
-    size = forms.ModelChoiceField(
-        queryset=Size.objects.none(),  # Will be set in __init__
-        label=_("Size"),
-        required=True,
-        widget=forms.Select(attrs={"class": "form-select"}),
-    )
 
     is_fan_version = forms.BooleanField(
         required=False,
@@ -307,72 +329,6 @@ class JerseyForm(forms.Form):
 
         self.fields["player_name"].widget.attrs["class"] = "form-control col-md-8"
         self.fields["number"].widget.attrs["class"] = "form-control col-md-4"
-
-    def _extract_base_item_data(self):
-        """Extract data for BaseItem creation."""
-        base_item_fields = [
-            "name",
-            "item_type",
-            "user",
-            "brand",
-            "club",
-            "season",
-            "condition",
-            "detailed_condition",
-            "description",
-            "is_replica",
-            "main_color",
-            "design",
-            "country",
-        ]
-
-        base_item_data = {}
-        for field in base_item_fields:
-            if field in self.cleaned_data:
-                base_item_data[field] = self.cleaned_data[field]
-
-        # Ensure user is set
-        if self.user:
-            base_item_data["user"] = self.user
-
-        # Handle country_code mapping
-        country_code = self.cleaned_data.get("country_code")
-        if country_code:
-            base_item_data["country"] = country_code
-
-        # Set item_type
-        base_item_data["item_type"] = "jersey"
-
-        return base_item_data
-
-    def _extract_jersey_data(self):
-        """Extract data for Jersey creation."""
-        jersey_fields = [
-            "size",
-            "kit",
-            "is_fan_version",
-            "is_signed",
-            "has_nameset",
-            "player_name",
-            "number",
-            "is_short_sleeve",
-        ]
-
-        jersey_data = {}
-        for field in jersey_fields:
-            if field in self.cleaned_data:
-                jersey_data[field] = self.cleaned_data[field]
-
-        return jersey_data
-
-    def _extract_many_to_many_data(self):
-        """Extract ManyToMany fields data."""
-        many_to_many_fields = ["competitions", "secondary_colors"]
-        many_to_many_data = {}
-        for field in many_to_many_fields:
-            if field in self.cleaned_data:
-                many_to_many_data[field] = self.cleaned_data[field]
-        return many_to_many_data
 
     def save(self, *, commit=True):
         """Save the form data using MTI structure."""
@@ -524,29 +480,84 @@ class JerseyFKAPIForm(JerseyForm):
         return cleaned_data
 
 
-# TODO: Implement OuterwearForm with MTI structure
-# class OuterwearForm(forms.Form):
-#     pass
+class OuterwearForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-# TODO: Implement ShortsForm with MTI structure
-# class ShortsForm(forms.Form):
-#     pass
+class ShortsForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-# TODO: Implement TrackSuitForm with MTI structure
-# class TrackSuitForm(forms.Form):
-#     pass
+class TrackSuitForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-# TODO: Implement PantsForm with MTI structure
-# class PantsForm(forms.Form):
-#     pass
+class PantsForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-# TODO: Implement OtherItemForm with MTI structure
-# class OtherItemForm(forms.Form):
-#     pass
+class OtherItemForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
 class ItemPhotosForm(forms.Form):
