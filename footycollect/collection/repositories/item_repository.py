@@ -8,7 +8,7 @@ including jerseys, shorts, outerwear, and other item types.
 from django.contrib.auth import get_user_model
 from django.db.models import Q, QuerySet
 
-from footycollect.collection.models import Jersey, OtherItem, Outerwear, Pants, Shorts, Tracksuit
+from footycollect.collection.models import BaseItem
 
 from .base_repository import BaseRepository
 
@@ -24,9 +24,9 @@ class ItemRepository(BaseRepository):
     """
 
     def __init__(self):
-        super().__init__(Jersey)
+        super().__init__(BaseItem)
 
-    def get_user_items(self, user: User, item_type: str | None = None) -> QuerySet[Jersey]:
+    def get_user_items(self, user: User, item_type: str | None = None) -> QuerySet[BaseItem]:
         """
         Get all items belonging to a specific user.
 
@@ -39,13 +39,12 @@ class ItemRepository(BaseRepository):
         """
         queryset = self.model.objects.filter(user=user)
 
-        if item_type and item_type != "jersey":
-            # For now, only support jerseys in this repository
-            return self.model.objects.none()
+        if item_type:
+            queryset = queryset.filter(item_type=item_type)
 
         return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
 
-    def get_public_items(self, item_type: str | None = None) -> QuerySet[Jersey]:
+    def get_public_items(self, item_type: str | None = None) -> QuerySet[BaseItem]:
         """
         Get all public (non-draft, non-private) items.
 
@@ -63,7 +62,7 @@ class ItemRepository(BaseRepository):
 
         return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
 
-    def search_items(self, query: str, user: User | None = None) -> QuerySet[Jersey]:
+    def search_items(self, query: str, user: User | None = None) -> QuerySet[BaseItem]:
         """
         Search items by name, description, or related fields.
 
@@ -85,7 +84,7 @@ class ItemRepository(BaseRepository):
             queryset.filter(search_filter).select_related("user", "club", "season", "brand").prefetch_related("photos")
         )
 
-    def get_items_by_club(self, club_id: int, user: User | None = None) -> QuerySet[Jersey]:
+    def get_items_by_club(self, club_id: int, user: User | None = None) -> QuerySet[BaseItem]:
         """
         Get items by club ID.
 
@@ -101,7 +100,7 @@ class ItemRepository(BaseRepository):
 
         return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
 
-    def get_items_by_season(self, season_id: int, user: User | None = None) -> QuerySet[Jersey]:
+    def get_items_by_season(self, season_id: int, user: User | None = None) -> QuerySet[BaseItem]:
         """
         Get items by season ID.
 
@@ -117,7 +116,7 @@ class ItemRepository(BaseRepository):
 
         return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
 
-    def get_items_by_brand(self, brand_id: int, user: User | None = None) -> QuerySet[Jersey]:
+    def get_items_by_brand(self, brand_id: int, user: User | None = None) -> QuerySet[BaseItem]:
         """
         Get items by brand ID.
 
@@ -133,7 +132,7 @@ class ItemRepository(BaseRepository):
 
         return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
 
-    def get_recent_items(self, limit: int = 10, user: User | None = None) -> QuerySet[Jersey]:
+    def get_recent_items(self, limit: int = 10, user: User | None = None) -> QuerySet[BaseItem]:
         """
         Get the most recently created items.
 
@@ -177,12 +176,12 @@ class ItemRepository(BaseRepository):
         """
         counts = {}
 
-        # Count each item type using STI structure (direct inheritance)
-        counts["jersey"] = Jersey.objects.filter(user=user).count()
-        counts["shorts"] = Shorts.objects.filter(user=user).count()
-        counts["outerwear"] = Outerwear.objects.filter(user=user).count()
-        counts["tracksuit"] = Tracksuit.objects.filter(user=user).count()
-        counts["pants"] = Pants.objects.filter(user=user).count()
-        counts["other"] = OtherItem.objects.filter(user=user).count()
+        # Count each item type using STI structure (all items in BaseItem table)
+        counts["jersey"] = BaseItem.objects.filter(user=user, item_type="jersey").count()
+        counts["shorts"] = BaseItem.objects.filter(user=user, item_type="shorts").count()
+        counts["outerwear"] = BaseItem.objects.filter(user=user, item_type="outerwear").count()
+        counts["tracksuit"] = BaseItem.objects.filter(user=user, item_type="tracksuit").count()
+        counts["pants"] = BaseItem.objects.filter(user=user, item_type="pants").count()
+        counts["other"] = BaseItem.objects.filter(user=user, item_type="other").count()
 
         return counts

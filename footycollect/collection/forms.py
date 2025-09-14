@@ -175,8 +175,22 @@ class ItemTypeForm(forms.Form):
 
 
 class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
-    """Form for Jersey items using Service Layer with MTI structure."""
-    
+    """Form for Jersey items using Service Layer with STI structure."""
+
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
+
     size = forms.ModelChoiceField(
         queryset=Size.objects.none(),  # Will be set in __init__
         label=_("Size"),
@@ -262,12 +276,6 @@ class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
     )
 
     # Jersey-specific fields
-    size = forms.ModelChoiceField(
-        queryset=Size.objects.none(),  # Will be set in __init__
-        label=_("Size"),
-        required=True,
-        widget=forms.Select(attrs={"class": "form-select"}),
-    )
 
     is_fan_version = forms.BooleanField(
         required=False,
@@ -321,21 +329,6 @@ class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
 
         self.fields["player_name"].widget.attrs["class"] = "form-control col-md-8"
         self.fields["number"].widget.attrs["class"] = "form-control col-md-4"
-
-    class Meta(BaseItemForm.Meta):
-        model = Jersey
-        item_type = "jersey"
-        fields = [
-            *BaseItemForm.Meta.fields,
-            "size",
-            "kit",
-            "is_fan_version",
-            "is_signed",
-            "has_nameset",
-            "player_name",
-            "number",
-            "is_short_sleeve",
-        ]
 
     def save(self, *, commit=True):
         """Save the form data using MTI structure."""
@@ -487,39 +480,84 @@ class JerseyFKAPIForm(JerseyForm):
         return cleaned_data
 
 
-class OuterwearForm(ItemTypeSpecificFormMixin, BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Outerwear
-        item_type = "outerwear"
-        fields = [*BaseItemForm.Meta.fields, "type"]
+class OuterwearForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-class ShortsForm(ItemTypeSpecificFormMixin, BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Shorts
-        item_type = "shorts"
-        fields = [*BaseItemForm.Meta.fields, "number", "is_fan_version"]
+class ShortsForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-class TrackSuitForm(ItemTypeSpecificFormMixin, BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Tracksuit
-        item_type = "tracksuit"
-        fields = [*BaseItemForm.Meta.fields]
+class TrackSuitForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-class PantsForm(ItemTypeSpecificFormMixin, BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = Pants
-        item_type = "pants"
-        fields = [*BaseItemForm.Meta.fields]
+class PantsForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
-class OtherItemForm(ItemTypeSpecificFormMixin, BaseItemForm):
-    class Meta(BaseItemForm.Meta):
-        model = OtherItem
-        item_type = "other"
-        fields = [*BaseItemForm.Meta.fields, "type"]
+class OtherItemForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+    class Meta:
+        model = BaseItem
+        fields = [
+            "name",
+            "club",
+            "season",
+            "brand",
+            "condition",
+            "description",
+            "competitions",
+            "main_color",
+            "secondary_colors",
+        ]
 
 
 class ItemPhotosForm(forms.Form):

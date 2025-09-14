@@ -5,7 +5,7 @@ Tests for repository classes.
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from footycollect.collection.models import Brand, Club, Jersey, Season, Size
+from footycollect.collection.models import BaseItem, Brand, Club, Jersey, Season, Size
 from footycollect.collection.repositories.item_repository import ItemRepository
 
 User = get_user_model()
@@ -29,7 +29,7 @@ class TestItemRepository(TestCase):
 
         # Create test data
         self.brand = Brand.objects.create(name="Nike")
-        self.club = Club.objects.create(name="FC Barcelona", country="Spain")
+        self.club = Club.objects.create(name="FC Barcelona", country="ES")
         self.season = Season.objects.create(year="2023-24", first_year="2023", second_year="24")
 
         # Create test items using MTI structure
@@ -52,20 +52,27 @@ class TestItemRepository(TestCase):
         self.repository = ItemRepository()
 
     def _create_jersey_with_mti(self, user, name, brand, club, season, **kwargs):
-        """Helper method to create jersey with MTI structure."""
+        """Helper method to create jersey with STI structure."""
         # Create Size first (required for Jersey)
         size = Size.objects.create(name="M", category="tops")
 
-        # Create Jersey directly - it will handle BaseItem creation
-        return Jersey.objects.create(
+        # Create BaseItem first with all the common fields
+        base_item = BaseItem.objects.create(
+            item_type="jersey",
+            name=name,
             user=user,
             brand=brand,
             club=club,
             season=season,
-            size=size,
             condition=5,
             design="PLAIN",
             country="ES",
+        )
+
+        # Create Jersey with specific fields
+        return Jersey.objects.create(
+            base_item=base_item,
+            size=size,
         )
 
     def test_get_user_items(self):
