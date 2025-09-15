@@ -181,8 +181,11 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
     def _fill_form_with_api_data(self, form):
         """Fill form fields with data from API."""
         # Create a mutable copy of form.data
-        if not hasattr(form.data, "copy"):
+        try:
             form.data = form.data.copy()
+        except AttributeError:
+            # If copy doesn't exist, create a mutable dict
+            form.data = dict(form.data)
 
         # Fill name field if empty
         if not form.data.get("name") and form.instance.name:
@@ -225,13 +228,22 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         from footycollect.core.models import Club
 
         country = "ES"  # Default fallback
+        logo = ""  # Default empty logo
+
         if hasattr(self, "kit") and self.kit and "team" in self.kit:
             country = self.kit["team"].get("country", "ES")
+            logo = self.kit["team"].get("logo", "")
+
+        # Also check fkapi_data for logo
+        if hasattr(self, "fkapi_data") and "team_logo" in self.fkapi_data:
+            logo = self.fkapi_data["team_logo"]
+            logger.info("Using team logo from fkapi_data: %s", logo)
 
         return Club.objects.create(
             name=form.data["club_name"],
             country=country,
             slug=form.data["club_name"].lower().replace(" ", "-"),
+            logo=logo,
         )
 
     def _fill_brand_field(self, form):
@@ -678,6 +690,8 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         if hasattr(self, "fkapi_data"):
             logger.info("fkapi_data keys: %s", list(self.fkapi_data.keys()))
             logger.info("fkapi_data content: %s", self.fkapi_data)
+        else:
+            logger.warning("No fkapi_data found - this might be the issue!")
 
         if hasattr(self, "fkapi_data"):
             if "team_logo" in self.fkapi_data:
