@@ -18,7 +18,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
-from footycollect.collection.models import Jersey, OtherItem, Outerwear, Pants, Shorts, Tracksuit
+from footycollect.collection.models import BaseItem, Jersey, OtherItem, Outerwear, Pants, Shorts, Tracksuit
 from footycollect.collection.services import get_photo_service
 
 from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemDetailView, BaseItemListView, BaseItemUpdateView
@@ -88,16 +88,13 @@ class PostCreateView(LoginRequiredMixin, View):
             if key != "csrfmiddlewaretoken":
                 logger.info("POST %s: %s", key, value)
 
-        form = self.form_class(request.POST)
+        form = self.form_class(request.POST, instance=BaseItem(), user=request.user)
         if form.is_valid():
             # Use service to create item with photos
             photo_service = get_photo_service()
 
-            # Create item
-            new_item = form.save(commit=False)
-            new_item.user = request.user
-            new_item.save()
-            form.save_m2m()  # For many-to-many fields
+            # Create item - form.save() already handles the BaseItem creation
+            new_item = form.save()
 
             # Process uploaded files using service
             photo_files = request.FILES.getlist("images")
@@ -156,10 +153,10 @@ class ItemListView(BaseItemListView):
 
     def get_queryset(self):
         """Get all items for the current user with optimizations."""
-        from footycollect.collection.models import Jersey
+        from footycollect.collection.models import BaseItem
 
         return (
-            Jersey.objects.filter(user=self.request.user)
+            BaseItem.objects.filter(user=self.request.user, item_type="jersey")
             .select_related(
                 "club",
                 "season",
@@ -211,7 +208,18 @@ class ItemDetailView(BaseItemDetailView):
                 continue
 
         # Sort by creation date and return
-        return sorted(related_items, key=lambda x: x.created_at, reverse=True)
+        # Handle both BaseItem and MTI models
+        def get_created_at(item):
+            if hasattr(item, "created_at"):
+                return item.created_at
+            if hasattr(item, "base_item") and hasattr(item.base_item, "created_at"):
+                return item.base_item.created_at
+            # Fallback to current time if no created_at found
+            from django.utils import timezone
+
+            return timezone.now()
+
+        return sorted(related_items, key=get_created_at, reverse=True)
 
 
 class ItemCreateView(BaseItemCreateView):

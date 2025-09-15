@@ -14,6 +14,7 @@ from footycollect.collection.factories import (
     UserFactory,
 )
 from footycollect.collection.forms import JerseyFKAPIForm, JerseyForm
+from footycollect.collection.models import BaseItem
 
 User = get_user_model()
 
@@ -46,7 +47,7 @@ class JerseyFormTest(TestCase):
             "description": "Beautiful jersey in excellent condition",
         }
 
-        form = JerseyForm(data=form_data)
+        form = JerseyForm(data=form_data, instance=BaseItem())
         assert form.is_valid()
 
     def test_jersey_form_invalid_data(self):
@@ -63,7 +64,7 @@ class JerseyFormTest(TestCase):
             "is_signed": False,
         }
 
-        form = JerseyForm(data=form_data)
+        form = JerseyForm(data=form_data, instance=BaseItem())
         assert not form.is_valid()
         assert "condition" in form.errors
 
@@ -84,7 +85,7 @@ class JerseyFormTest(TestCase):
             # club and season are optional
         }
 
-        form = JerseyForm(data=form_data)
+        form = JerseyForm(data=form_data, instance=BaseItem())
         assert form.is_valid()
 
     def test_jersey_form_condition_choices(self):
@@ -101,7 +102,7 @@ class JerseyFormTest(TestCase):
             "is_signed": False,
         }
 
-        form = JerseyForm(data=form_data)
+        form = JerseyForm(data=form_data, instance=BaseItem())
         assert form.is_valid()
 
     def test_jersey_form_size_choices(self):
@@ -119,7 +120,7 @@ class JerseyFormTest(TestCase):
             "is_signed": False,
         }
 
-        form = JerseyForm(data=form_data)
+        form = JerseyForm(data=form_data, instance=BaseItem())
         assert form.is_valid()
 
 

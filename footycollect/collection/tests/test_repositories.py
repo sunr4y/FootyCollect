@@ -5,7 +5,7 @@ Tests for repository classes.
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from footycollect.collection.models import BaseItem, Brand, Club, Jersey, Season, Size
+from footycollect.collection.models import BaseItem, Brand, Club, Season
 from footycollect.collection.repositories.item_repository import ItemRepository
 
 User = get_user_model()
@@ -53,11 +53,8 @@ class TestItemRepository(TestCase):
 
     def _create_jersey_with_mti(self, user, name, brand, club, season, **kwargs):
         """Helper method to create jersey with STI structure."""
-        # Create Size first (required for Jersey)
-        size = Size.objects.create(name="M", category="tops")
-
-        # Create BaseItem first with all the common fields
-        base_item = BaseItem.objects.create(
+        # Create BaseItem with item_type="jersey" (MTI structure)
+        return BaseItem.objects.create(
             item_type="jersey",
             name=name,
             user=user,
@@ -67,12 +64,7 @@ class TestItemRepository(TestCase):
             condition=5,
             design="PLAIN",
             country="ES",
-        )
-
-        # Create Jersey with specific fields
-        return Jersey.objects.create(
-            base_item=base_item,
-            size=size,
+            **kwargs,
         )
 
     def test_get_user_items(self):

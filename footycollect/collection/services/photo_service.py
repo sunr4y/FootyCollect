@@ -268,5 +268,5 @@ class PhotoService:
         return self.photo_repository.create(
             image=file,
             order=order,
-            uploaded_by=user,
+            user=user,
         )

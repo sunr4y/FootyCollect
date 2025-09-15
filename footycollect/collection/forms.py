@@ -174,7 +174,7 @@ class ItemTypeForm(forms.Form):
     )
 
 
-class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
+class JerseyForm(forms.ModelForm):
     """Form for Jersey items using Service Layer with STI structure."""
 
     class Meta:
@@ -191,11 +191,20 @@ class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
             "secondary_colors",
         ]
 
+    def __init__(self, *args, **kwargs):
+        # Extract user from kwargs
+        self.user = kwargs.pop("user", None)
+
+        # Ensure we always have an instance before calling parent
+        if "instance" not in kwargs:
+            kwargs["instance"] = BaseItem()
+        super().__init__(*args, **kwargs)
+
     size = forms.ModelChoiceField(
-        queryset=Size.objects.none(),  # Will be set in __init__
+        queryset=Size.objects.all(),
         label=_("Size"),
         required=True,
-        widget=forms.TextInput(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
     brand = forms.ModelChoiceField(
@@ -313,22 +322,40 @@ class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
 
-    def __init__(self, *args, **kwargs):
-        # Remove instance and user from kwargs for BaseForm
-        instance = kwargs.pop("instance", None)
-        self.user = kwargs.pop("user", None)
-        super().__init__(*args, **kwargs)
-        self.instance = instance
+    def _extract_base_item_data(self):
+        """Extract data for BaseItem creation."""
+        return {
+            "name": self.cleaned_data.get("name", ""),
+            "club": self.cleaned_data.get("club"),
+            "season": self.cleaned_data.get("season"),
+            "brand": self.cleaned_data.get("brand"),
+            "condition": self.cleaned_data.get("condition"),
+            "detailed_condition": self.cleaned_data.get("detailed_condition"),
+            "is_replica": self.cleaned_data.get("is_replica", False),
+            "description": self.cleaned_data.get("description", ""),
+            "main_color": self.cleaned_data.get("main_color"),
+            "design": self.cleaned_data.get("design"),
+            "user": self.user,
+            "item_type": "jersey",
+        }
 
-        # Set the size queryset (lazy loading)
-        try:
-            self.fields["size"].queryset = Size.objects.filter(category="tops")
-        except (ImportError, RuntimeError):
-            # During tests or when database is not ready, use empty queryset
-            self.fields["size"].queryset = Size.objects.none()
+    def _extract_jersey_data(self):
+        """Extract data for Jersey creation."""
+        return {
+            "size": self.cleaned_data.get("size"),
+            "is_fan_version": self.cleaned_data.get("is_fan_version", False),
+            "is_signed": self.cleaned_data.get("is_signed", False),
+            "has_nameset": self.cleaned_data.get("has_nameset", False),
+            "player_name": self.cleaned_data.get("player_name", ""),
+            "is_short_sleeve": self.cleaned_data.get("is_short_sleeve", False),
+            "number": self.cleaned_data.get("number", ""),
+        }
 
-        self.fields["player_name"].widget.attrs["class"] = "form-control col-md-8"
-        self.fields["number"].widget.attrs["class"] = "form-control col-md-4"
+    def _extract_many_to_many_data(self):
+        """Extract ManyToMany field data."""
+        return {
+            "competitions": self.cleaned_data.get("competitions", ""),
+        }
 
     def save(self, *, commit=True):
         """Save the form data using MTI structure."""
@@ -342,15 +369,18 @@ class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
 
             # Create Jersey linked to BaseItem
             jersey_data["base_item"] = base_item
-            jersey = Jersey.objects.create(**jersey_data)
+            Jersey.objects.create(**jersey_data)
 
             # Handle ManyToMany fields
-            if "competitions" in many_to_many_data:
+            if many_to_many_data.get("competitions"):
                 base_item.competitions.set(many_to_many_data["competitions"])
-            if "secondary_colors" in many_to_many_data:
-                base_item.secondary_colors.set(many_to_many_data["secondary_colors"])
 
-            return jersey
+            # Handle secondary_colors from cleaned_data
+            secondary_colors = self.cleaned_data.get("secondary_colors", [])
+            if secondary_colors:
+                base_item.secondary_colors.set(secondary_colors)
+
+            return base_item
         # For non-commit case, create instances but don't save
         base_item = BaseItem(**base_item_data)
         jersey_data["base_item"] = base_item
@@ -359,6 +389,9 @@ class JerseyForm(ItemTypeSpecificFormMixin, forms.ModelForm):
 
 class JerseyFKAPIForm(JerseyForm):
     """Formulario mejorado para crear jerseys con integración de FKAPI"""
+
+    class Meta(JerseyForm.Meta):
+        """Meta class for JerseyFKAPIForm - inherits from JerseyForm.Meta"""
 
     # Campos adicionales para búsqueda (no se guardan en el modelo)
     kit_search = forms.CharField(
@@ -406,10 +439,19 @@ class JerseyFKAPIForm(JerseyForm):
     external_image_urls = forms.CharField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
-        # Remove instance from kwargs for BaseForm
-        instance = kwargs.pop("instance", None)
+        # Ensure we always have a valid instance
+        if "instance" not in kwargs or kwargs["instance"] is None:
+            from footycollect.collection.models import BaseItem
+
+            kwargs["instance"] = BaseItem()
+
         super().__init__(*args, **kwargs)
-        self.instance = instance
+
+        # Ensure instance is properly set
+        if self.instance is None:
+            from footycollect.collection.models import BaseItem
+
+            self.instance = BaseItem()
 
         using_api = False
         if (
@@ -442,9 +484,15 @@ class JerseyFKAPIForm(JerseyForm):
         return color_obj
 
     def clean_secondary_colors(self):
-        secondary_colors_names = self.data.getlist("secondary_colors")
-        if not secondary_colors_names and self.data.get("secondary_colors"):
-            secondary_colors_names = [self.data.get("secondary_colors")]
+        # Handle both QueryDict and regular dict
+        if hasattr(self.data, "getlist"):
+            secondary_colors_names = self.data.getlist("secondary_colors")
+        else:
+            secondary_colors = self.data.get("secondary_colors")
+            if secondary_colors:
+                secondary_colors_names = [secondary_colors] if isinstance(secondary_colors, str) else secondary_colors
+            else:
+                secondary_colors_names = []
 
         if not secondary_colors_names:
             return self.cleaned_data.get("secondary_colors", [])

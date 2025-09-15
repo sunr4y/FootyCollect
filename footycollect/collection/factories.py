@@ -86,7 +86,7 @@ class SizeFactory(DjangoModelFactory):
         model = Size
 
     name = factory.Iterator(["XS", "S", "M", "L", "XL", "XXL"])
-    category = factory.Iterator(["tops", "bottoms", "accessories"])
+    category = factory.Iterator(["tops", "bottoms", "other"])
 
 
 class BaseItemFactory(DjangoModelFactory):

@@ -27,7 +27,7 @@ from .photo_views import PhotoProcessorMixin
 logger = logging.getLogger(__name__)
 
 
-class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin):
+class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView):
     """View for creating jerseys with FKAPI integration."""
 
     model = Jersey
@@ -50,7 +50,7 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        """Override post to log POST requests."""
+        """Override post to log POST requests and pre-process form data."""
         logger.info("=== POST METHOD CALLED ===")
         logger.info("POST data keys: %s", list(request.POST.keys()))
         logger.info("FILES data keys: %s", list(request.FILES.keys()))
@@ -63,10 +63,38 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
             if key != "csrfmiddlewaretoken":
                 logger.info("POST %s: %s", key, value)
 
-        return super().post(request, *args, **kwargs)
+        # Get the form and pre-process it before validation
+        form = self.get_form()
+
+        # Pre-process form data from API
+        self._preprocess_form_data(form)
+
+        # Check if form is valid after preprocessing
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse_lazy("collection:item_detail", kwargs={"pk": self.object.base_item.pk})
+        return reverse_lazy("collection:item_detail", kwargs={"pk": self.object.pk})
+
+    def get_form(self, form_class=None):
+        """Get form instance with proper initialization."""
+        if form_class is None:
+            form_class = self.get_form_class()
+
+        # Initialize form with proper kwargs
+        kwargs = self.get_form_kwargs()
+        form = form_class(**kwargs)
+
+        # Log form initialization for debugging
+        logger.info(
+            "Form initialized: %s, instance: %s, has _meta: %s",
+            form_class.__name__,
+            form.instance,
+            hasattr(form, "_meta"),
+        )
+
+        return form
 
     def get_form_kwargs(self):
         """Add user to form kwargs."""
@@ -75,12 +103,23 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        # For CreateView, we don't call super() to avoid DetailView's get_context_data
+        context = {}
+
+        # Add the form to context
+        if hasattr(self, "form_class"):
+            context["form"] = self.get_form()
+
         # Add options for Cotton components using services
-        collection_service = get_collection_service()
-        form_data = collection_service.get_form_data()
-        context["color_choices"] = form_data["colors"]["main_colors"]
-        context["design_choices"] = [{"value": d[0], "label": d[1]} for d in BaseItem.DESIGN_CHOICES]
+        try:
+            collection_service = get_collection_service()
+            form_data = collection_service.get_form_data()
+            context["color_choices"] = form_data["colors"]["main_colors"]
+            context["design_choices"] = [{"value": d[0], "label": d[1]} for d in BaseItem.DESIGN_CHOICES]
+        except (KeyError, AttributeError, ImportError) as e:
+            logger.warning("Error getting form data: %s", str(e))
+            context["color_choices"] = []
+            context["design_choices"] = []
         return context
 
     def form_valid(self, form):
@@ -94,14 +133,6 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         logger.info("Form errors: %s", form.errors)
 
         try:
-            # Setup form instance
-            self._setup_form_instance(form)
-
-            # Process kit data if available
-            kit_id = form.cleaned_data.get("kit_id")
-            if kit_id:
-                self._process_kit_data(form, kit_id)
-
             # Process related entities from the API
             self._process_new_entities(form)
 
@@ -117,8 +148,8 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
                 self._process_photo_ids(photo_ids)
 
             # Mark as not draft
-            self.object.base_item.is_draft = False
-            self.object.base_item.save()
+            self.object.is_draft = False
+            self.object.save()
             logger.info("Jersey marked as not draft")
 
             messages.success(
@@ -134,18 +165,122 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
 
         return response
 
+    def _preprocess_form_data(self, form):
+        """Pre-process form data from API before validation."""
+        # Setup form instance
+        self._setup_form_instance(form)
+
+        # Process kit data if available
+        kit_id = form.data.get("kit_id")
+        if kit_id:
+            self._process_kit_data(form, kit_id)
+
+        # Fill form fields with API data
+        self._fill_form_with_api_data(form)
+
+    def _fill_form_with_api_data(self, form):
+        """Fill form fields with data from API."""
+        # Create a mutable copy of form.data
+        if not hasattr(form.data, "copy"):
+            form.data = form.data.copy()
+
+        # Fill name field if empty
+        if not form.data.get("name") and form.instance.name:
+            form.data["name"] = form.instance.name
+
+        # Fill other fields from API data
+        self._fill_club_field(form)
+        self._fill_brand_field(form)
+        self._fill_season_field(form)
+
+    def _fill_club_field(self, form):
+        """Fill club field from API data."""
+        if not form.data.get("club_name") or form.data.get("club"):
+            return
+
+        from footycollect.core.models import Club
+
+        try:
+            club = Club.objects.get(name=form.data["club_name"])
+            self._update_club_country(club)
+            form.data["club"] = club.id
+        except Club.DoesNotExist:
+            club = self._create_club_from_api_data(form)
+            form.data["club"] = club.id
+
+    def _update_club_country(self, club):
+        """Update club country from API data if different."""
+        if not (hasattr(self, "kit") and self.kit and "team" in self.kit):
+            return
+
+        api_country = self.kit["team"].get("country", "ES")
+        if club.country != api_country:
+            old_country = club.country
+            club.country = api_country
+            club.save()
+            logger.info("Updated club %s country from %s to %s", club.name, old_country, api_country)
+
+    def _create_club_from_api_data(self, form):
+        """Create club from API data."""
+        from footycollect.core.models import Club
+
+        country = "ES"  # Default fallback
+        if hasattr(self, "kit") and self.kit and "team" in self.kit:
+            country = self.kit["team"].get("country", "ES")
+
+        return Club.objects.create(
+            name=form.data["club_name"],
+            country=country,
+            slug=form.data["club_name"].lower().replace(" ", "-"),
+        )
+
+    def _fill_brand_field(self, form):
+        """Fill brand field from API data."""
+        if not form.data.get("brand_name") or form.data.get("brand"):
+            return
+
+        from footycollect.core.models import Brand
+
+        try:
+            brand = Brand.objects.get(name=form.data["brand_name"])
+            form.data["brand"] = brand.id
+        except Brand.DoesNotExist:
+            brand = Brand.objects.create(
+                name=form.data["brand_name"],
+                slug=form.data["brand_name"].lower().replace(" ", "-"),
+            )
+            form.data["brand"] = brand.id
+
+    def _fill_season_field(self, form):
+        """Fill season field from API data."""
+        if not form.data.get("season_name") or form.data.get("season"):
+            return
+
+        from footycollect.core.models import Season
+
+        try:
+            season = Season.objects.get(year=form.data["season_name"])
+            form.data["season"] = season.id
+        except Season.DoesNotExist:
+            season = Season.objects.create(
+                year=form.data["season_name"],
+                first_year=form.data["season_name"][:4],
+                second_year=form.data["season_name"][-2:],
+            )
+            form.data["season"] = season.id
+
     def _setup_form_instance(self, form):
         """Setup basic form instance attributes."""
-        # For MTI structure, we need to create BaseItem first
+        # For STI structure, we need to create BaseItem first
         # The form will handle creating both BaseItem and Jersey
 
         # Ensure form has an instance
         if form.instance is None:
-            # Check if form is a ModelForm
-            if hasattr(form, "_meta") and hasattr(form._meta, "model"):  # noqa: SLF001
+            # Check if form is a ModelForm and has _meta
+            if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):  # noqa: SLF001
                 form.instance = form._meta.model()  # noqa: SLF001
             else:
-                # For non-ModelForm, create a BaseItem instance
+                # For non-ModelForm or if _meta is None, create a BaseItem instance
                 from footycollect.collection.models import BaseItem
 
                 form.instance = BaseItem()
@@ -153,10 +288,33 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         # Set item_type for BaseItem
         form.instance.item_type = "jersey"
 
+        # Fill required fields from form data (use form.data before validation)
+        if not form.instance.name:
+            # Try to get name from form data
+            name = form.data.get("name")
+            if not name:
+                # Generate name from API data
+                club_name = form.data.get("club_name", "")
+                season_name = form.data.get("season_name", "")
+                if club_name and season_name:
+                    form.instance.name = f"{club_name} {season_name}"
+                else:
+                    form.instance.name = "Jersey"
+            else:
+                form.instance.name = name
+
+        # Also set the form field value
+        if not form.data.get("name") and form.instance.name:
+            form.data = form.data.copy()
+            form.data["name"] = form.instance.name
+
+        # Set user
+        form.instance.user = self.request.user
+
         # Assign country if selected
-        if form.cleaned_data.get("country_code"):
-            form.instance.country = form.cleaned_data["country_code"]
-            logger.info("Set country to %s", form.cleaned_data["country_code"])
+        if form.data.get("country_code"):
+            form.instance.country = form.data["country_code"]
+            logger.info("Set country to %s", form.data["country_code"])
 
     def _process_kit_data(self, form, kit_id):
         """Process kit data from FKAPI and update form instance."""
@@ -228,8 +386,12 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
 
     def _extract_team_data(self, kit_data):
         """Extract team logo and country from kit data."""
+        logger.info("=== DEBUGGING _extract_team_data ===")
+        logger.info("Kit data: %s", kit_data)
+
         team_data = kit_data.get("team")
         if team_data:
+            logger.info("Team data found: %s", team_data)
             # Extract team logo
             if "logo" in team_data:
                 team_logo_url = team_data["logo"]
@@ -249,6 +411,9 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
                     if not hasattr(self, "fkapi_data"):
                         self.fkapi_data = {}
                     self.fkapi_data["team_country"] = team_country
+                    logger.info("Stored team_country in fkapi_data: %s", self.fkapi_data)
+        else:
+            logger.warning("No team data found in kit_data")
 
     def _extract_competition_logos(self, kit_data):
         """Extract competition logos from kit data."""
@@ -348,7 +513,7 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         """Save the jersey and finalize related assignments."""
         # Save the jersey
         response = super().form_valid(form)
-        logger.info("Jersey saved with ID: %s", self.object.base_item.pk)
+        logger.info("Jersey saved with ID: %s", self.object.pk)
 
         # Si tenemos un kit con competiciones, asignarlas al jersey
         if hasattr(self, "kit") and self.kit and self.kit.competition.exists():
@@ -475,11 +640,27 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         club = Club.objects.filter(name=club_name).first()
         if club:
             logger.info("Found existing club with exact name: %s (ID: %s)", club.name, club.id)
+            # Update country if we have API data and it's different
+            if hasattr(self, "fkapi_data") and "team_country" in self.fkapi_data:
+                api_country = self.fkapi_data["team_country"]
+                if club.country != api_country:
+                    old_country = club.country
+                    club.country = api_country
+                    club.save()
+                    logger.info("Updated club %s country from %s to %s", club.name, old_country, api_country)
         else:
             # If not found, search by similar name (case insensitive)
             club = Club.objects.filter(name__iexact=club_name).first()
             if club:
                 logger.info("Found existing club with case-insensitive name: %s (ID: %s)", club.name, club.id)
+                # Update country if we have API data and it's different
+                if hasattr(self, "fkapi_data") and "team_country" in self.fkapi_data:
+                    api_country = self.fkapi_data["team_country"]
+                    if club.country != api_country:
+                        old_country = club.country
+                        club.country = api_country
+                        club.save()
+                        logger.info("Updated club %s country from %s to %s", club.name, old_country, api_country)
             else:
                 # If still not found, create it
                 club = self._create_new_club(club_name, cleaned_data)
@@ -490,6 +671,14 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
         # Get logo and country from FKAPI data if available
         team_logo = ""
         team_country = None
+
+        logger.info("=== DEBUGGING _create_new_club ===")
+        logger.info("Club name: %s", club_name)
+        logger.info("Has fkapi_data: %s", hasattr(self, "fkapi_data"))
+        if hasattr(self, "fkapi_data"):
+            logger.info("fkapi_data keys: %s", list(self.fkapi_data.keys()))
+            logger.info("fkapi_data content: %s", self.fkapi_data)
+
         if hasattr(self, "fkapi_data"):
             if "team_logo" in self.fkapi_data:
                 team_logo = self.fkapi_data["team_logo"]
@@ -503,6 +692,16 @@ class JerseyFKAPICreateView(LoginRequiredMixin, CreateView, PhotoProcessorMixin)
             team_logo = cleaned_data.get("logo", "")
         if not team_country:
             team_country = cleaned_data.get("country_code")
+
+        # Final fallback - if still no country, try to get it from kit data
+        if not team_country and hasattr(self, "kit") and self.kit and "team" in self.kit:
+            team_country = self.kit["team"].get("country")
+            logger.info("Using country from kit data as final fallback: %s", team_country)
+
+        # Ultimate fallback
+        if not team_country:
+            team_country = "ES"  # Default fallback
+            logger.warning("No country found, using default: %s", team_country)
 
         club = Club.objects.create(
             name=club_name,

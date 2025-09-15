@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import QuerySet
 
-from footycollect.collection.models import Jersey
+from footycollect.collection.models import BaseItem, Jersey
 from footycollect.collection.repositories import ColorRepository, ItemRepository, PhotoRepository
 
 User = get_user_model()
@@ -110,7 +110,7 @@ class ItemService:
             # Delete the item
             return self.item_repository.delete(item_id)
 
-    def get_user_items(self, user: User) -> QuerySet[Jersey]:
+    def get_user_items(self, user: User) -> QuerySet[BaseItem]:
         """
         Get all items for a user.
 
