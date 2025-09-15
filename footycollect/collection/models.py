@@ -256,7 +256,17 @@ class BaseItem(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.brand} {self.club} {self.get_item_type_display()}"
+        try:
+            brand_name = self.brand.name if self.brand else "Unknown Brand"
+        except (AttributeError, ValueError):
+            brand_name = "Unknown Brand"
+
+        try:
+            club_name = self.club.name if self.club else "Unknown Club"
+        except (AttributeError, ValueError):
+            club_name = "Unknown Club"
+
+        return f"{brand_name} {club_name} {self.get_item_type_display()}"
 
     def get_main_photo(self):
         main_photo = self.photos.order_by("order").first()

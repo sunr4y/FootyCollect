@@ -84,6 +84,15 @@ class BaseItemCreateView(
     template_name = "collection/item_form.html"
     success_url = reverse_lazy("collection:item_list")
 
+    def get_form_kwargs(self):
+        """Add user to form kwargs."""
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        # Ensure we have an instance for the form
+        if "instance" not in kwargs:
+            kwargs["instance"] = self.model()
+        return kwargs
+
     def form_valid(self, form):
         """Process the form when it is valid."""
         return super().form_valid(form)
