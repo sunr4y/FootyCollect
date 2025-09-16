@@ -257,11 +257,17 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             brand = Brand.objects.get(name=form.data["brand_name"])
             form.data["brand"] = brand.id
         except Brand.DoesNotExist:
-            brand = Brand.objects.create(
-                name=form.data["brand_name"],
-                slug=form.data["brand_name"].lower().replace(" ", "-"),
-            )
-            form.data["brand"] = brand.id
+            # Check if brand with same slug already exists
+            slug = form.data["brand_name"].lower().replace(" ", "-")
+            try:
+                brand = Brand.objects.get(slug=slug)
+                form.data["brand"] = brand.id
+            except Brand.DoesNotExist:
+                brand = Brand.objects.create(
+                    name=form.data["brand_name"],
+                    slug=slug,
+                )
+                form.data["brand"] = brand.id
 
     def _fill_season_field(self, form):
         """Fill season field from API data."""

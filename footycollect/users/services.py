@@ -53,7 +53,7 @@ class UserService:
         total_competitions = user_items.filter(competitions__isnull=False).values("competitions").distinct().count()
 
         # Get recent items for display
-        recent_items = user_items.select_related("club", "brand", "season").order_by("-created_at")[:5]
+        recent_items = user_items.select_related("club", "brand", "season").order_by("-created_at")[:10]
 
         return {
             "show_details": True,
