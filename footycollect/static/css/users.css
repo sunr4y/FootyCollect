@@ -129,3 +129,12 @@
 .brand-icon-fallback {
     font-size: 12px;
 }
+
+/* Collection page icon styles */
+.item-placeholder-icon {
+    font-size: 3rem;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+}
