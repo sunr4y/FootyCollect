@@ -15,7 +15,19 @@
     <meta name="description"
           content="Manage your inventory of football memorabilia collection" />
     <meta name="author" content="sunr4y" />
-    <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
+    <!-- Animated favicons for different devices and sizes -->
+    <link rel="icon"
+          type="image/gif"
+          sizes="16x16"
+          href="{% static 'images/favicons/favicon-16x16.gif' %}" />
+    <link rel="icon"
+          type="image/gif"
+          sizes="32x32"
+          href="{% static 'images/favicons/favicon-32x32.gif' %}" />
+    <link rel="apple-touch-icon"
+          sizes="180x180"
+          href="{% static 'images/favicons/favicon-32x32.gif' %}" />
+    <meta name="theme-color" content="#0d6efd" />
     {% block css %}
       <!-- Latest compiled and minified Bootstrap CSS -->
       <link rel="stylesheet"
