@@ -18,7 +18,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
-from footycollect.collection.models import BaseItem, Jersey, OtherItem, Outerwear, Pants, Shorts, Tracksuit
+from footycollect.collection.models import Jersey, OtherItem, Outerwear, Pants, Shorts, Tracksuit
 from footycollect.collection.services import get_photo_service
 
 from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemDetailView, BaseItemListView, BaseItemUpdateView
@@ -88,13 +88,17 @@ class PostCreateView(LoginRequiredMixin, View):
             if key != "csrfmiddlewaretoken":
                 logger.info("POST %s: %s", key, value)
 
-        form = self.form_class(request.POST, instance=BaseItem(), user=request.user)
+        form = self.form_class(request.POST)
         if form.is_valid():
             # Use service to create item with photos
             photo_service = get_photo_service()
 
-            # Create item - form.save() already handles the BaseItem creation
-            new_item = form.save()
+            # Create item
+            new_item = form.save(commit=False)
+            new_item.base_item.user = request.user
+            new_item.base_item.save()
+            new_item.save()
+            # No need for save_m2m() as JerseyForm doesn't have many-to-many fields
 
             # Process uploaded files using service
             photo_files = request.FILES.getlist("images")
@@ -153,17 +157,17 @@ class ItemListView(BaseItemListView):
 
     def get_queryset(self):
         """Get all items for the current user with optimizations."""
-        from footycollect.collection.models import BaseItem
+        from footycollect.collection.models import Jersey
 
         return (
-            BaseItem.objects.filter(user=self.request.user, item_type="jersey")
+            Jersey.objects.filter(base_item__user=self.request.user)
             .select_related(
-                "club",
-                "season",
-                "brand",
+                "base_item__club",
+                "base_item__season",
+                "base_item__brand",
             )
             .prefetch_related("competitions", "photos")
-            .order_by("-created_at")
+            .order_by("-base_item__created_at")
         )
 
 
@@ -208,18 +212,7 @@ class ItemDetailView(BaseItemDetailView):
                 continue
 
         # Sort by creation date and return
-        # Handle both BaseItem and MTI models
-        def get_created_at(item):
-            if hasattr(item, "created_at"):
-                return item.created_at
-            if hasattr(item, "base_item") and hasattr(item.base_item, "created_at"):
-                return item.base_item.created_at
-            # Fallback to current time if no created_at found
-            from django.utils import timezone
-
-            return timezone.now()
-
-        return sorted(related_items, key=get_created_at, reverse=True)
+        return sorted(related_items, key=lambda x: x.base_item.created_at, reverse=True)
 
 
 class ItemCreateView(BaseItemCreateView):

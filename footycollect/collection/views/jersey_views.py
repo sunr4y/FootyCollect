@@ -112,14 +112,20 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
         # Add options for Cotton components using services
         try:
+            import json
+
             collection_service = get_collection_service()
             form_data = collection_service.get_form_data()
-            context["color_choices"] = form_data["colors"]["main_colors"]
-            context["design_choices"] = [{"value": d[0], "label": d[1]} for d in BaseItem.DESIGN_CHOICES]
+            logger.info("Form data from service: %s", form_data)
+            context["color_choices"] = json.dumps(form_data["colors"]["main_colors"])
+            context["design_choices"] = json.dumps(
+                [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
+            )
+            logger.info("Color choices set to: %s", context["color_choices"])
         except (KeyError, AttributeError, ImportError) as e:
             logger.warning("Error getting form data: %s", str(e))
-            context["color_choices"] = []
-            context["design_choices"] = []
+            context["color_choices"] = "[]"
+            context["design_choices"] = "[]"
         return context
 
     def form_valid(self, form):

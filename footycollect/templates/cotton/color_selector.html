@@ -42,9 +42,9 @@
 </div>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // No need for complex JS initialization if Django template handles it
-    // Initialize visual state based on the template-rendered 'selected' class
-    // console.log('Color selector initialized for:', '{{ name }}');
+    // Initialize color selectors when page loads
+    console.log('Color selector initialized for:', '{{ name }}');
+    initializeColorSelectors();
   });
 
   function initializeColorSelectors() {
@@ -62,6 +62,9 @@
           const option = select.closest('.mb-3').querySelector(`.color-option[data-value="${value}"]`);
           if (option) {
             option.classList.add('selected');
+            console.log('Added selected class to:', value);
+          } else {
+            console.log('Option not found for value:', value);
           }
         });
       } else if (select.value) {
@@ -69,8 +72,13 @@
         const option = select.closest('.mb-3').querySelector(`.color-option[data-value="${select.value}"]`);
         if (option) {
           option.classList.add('selected');
+          console.log('Added selected class to single value:', select.value);
+        } else {
+          console.log('Option not found for single value:', select.value);
         }
       }
+    } else {
+      console.log('Select element not found for id_{{ name }}');
     }
   }
 
