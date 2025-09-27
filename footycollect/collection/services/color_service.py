@@ -41,8 +41,12 @@ class ColorService:
         default_colors = self.color_repository.get_default_colors()
 
         return {
-            "main_colors": [{"name": color.name, "hex_value": color.hex_value} for color in default_colors],
-            "secondary_colors": [{"name": color.name, "hex_value": color.hex_value} for color in default_colors],
+            "main_colors": [
+                {"value": color.name, "label": color.name, "hex_value": color.hex_value} for color in default_colors
+            ],
+            "secondary_colors": [
+                {"value": color.name, "label": color.name, "hex_value": color.hex_value} for color in default_colors
+            ],
         }
 
     def get_color_statistics(self) -> dict[str, any]:

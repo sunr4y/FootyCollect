@@ -1,3 +1,6 @@
+from contextlib import suppress
+from pathlib import Path
+
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -92,6 +95,24 @@ class Photo(models.Model):
 
     def get_image_url(self):
         return self.image_avif.url if self.image_avif else self.image.url
+
+    def delete(self, *args, **kwargs):
+        """Override delete to remove files from filesystem."""
+        # Store file paths before deletion
+        image_path = self.image.path if self.image else None
+        avif_path = self.image_avif.path if self.image_avif else None
+
+        # Call parent delete to remove from database
+        super().delete(*args, **kwargs)
+
+        # Remove files from filesystem
+        if image_path and Path(image_path).exists():
+            with suppress(OSError):
+                Path(image_path).unlink()
+
+        if avif_path and Path(avif_path).exists():
+            with suppress(OSError):
+                Path(avif_path).unlink()
 
 
 # Custom manager for BaseItem

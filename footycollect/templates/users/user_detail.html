@@ -84,11 +84,38 @@
           {% if recent_items %}
             <div class="card">
               <div class="card-body">
-                <h5 class="card-title">Recent Items</h5>
+                <h5 class="card-title recent-items-title">Recent Items</h5>
                 <div class="row">
                   {% for item in recent_items %}
                     <div class="col-md-6 col-lg-4 mb-3">
                       <div class="card h-100 item-card">
+                        <!-- Logo row above photo -->
+                        <div class="item-logos-above-photo">
+                          <div class="d-flex align-items-center w-100 position-relative">
+                            <div class="d-flex align-items-center justify-content-center brand-logo-container">
+                              {% if item.brand and item.brand.logo %}
+                                <img src="{{ item.brand.logo }}"
+                                     alt="{{ item.brand.name }}"
+                                     class="item-logo-small"
+                                     onerror="this.style.display='none'" />
+                              {% endif %}
+                            </div>
+                            <div>
+                              {% if item.club and item.club.logo %}
+                                <img src="{{ item.club.logo }}"
+                                     alt="{{ item.club.name }}"
+                                     class="item-club-shield"
+                                     onerror="this.style.display='none'" />
+                              {% endif %}
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center flag-logo-container">
+                              {% if item.club and item.club.country %}
+                                <span class="fi fi-{{ item.club.country|lower }}"
+                                      title="{{ item.club.country }}"></span>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </div>
                         {% if item.photos.exists %}
                           <img src="{{ item.photos.first.get_image_url }}"
                                class="card-img-top item-photo"
@@ -99,14 +126,19 @@
                           </div>
                         {% endif %}
                         <div class="card-body d-flex flex-column">
-                          <h6 class="card-title item-title">{{ item.name|truncatechars:30 }}</h6>
+                          <h6 class="card-title item-title">{{ item.name }}</h6>
                           <div class="item-meta">
                             {% if item.club %}
                               <div class="d-flex align-items-center">
                                 {% if item.club.logo %}
                                   <img src="{{ item.club.logo.url }}"
                                        alt="{{ item.club.name }}"
-                                       class="club-logo" />
+                                       class="club-logo"
+                                       onerror="this.style.display='none'" />
+                                {% else %}
+                                  <div class="club-logo d-flex align-items-center justify-content-center bg-light">
+                                    <i class="bi bi-shield text-muted club-icon-fallback"></i>
+                                  </div>
                                 {% endif %}
                                 <span class="item-details">{{ item.club.name }}</span>
                               </div>
@@ -116,7 +148,12 @@
                                 {% if item.brand.logo %}
                                   <img src="{{ item.brand.logo.url }}"
                                        alt="{{ item.brand.name }}"
-                                       class="brand-logo" />
+                                       class="brand-logo"
+                                       onerror="this.style.display='none'" />
+                                {% else %}
+                                  <div class="brand-logo d-flex align-items-center justify-content-center bg-light">
+                                    <i class="bi bi-tag text-muted brand-icon-fallback"></i>
+                                  </div>
                                 {% endif %}
                                 <span class="item-details">{{ item.brand.name }}</span>
                               </div>

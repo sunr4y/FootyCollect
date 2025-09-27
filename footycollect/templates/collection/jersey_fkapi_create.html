@@ -14,6 +14,40 @@
   <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
         rel="stylesheet" />
   <style>
+    /* Ensure country dropdown looks empty by default */
+    #id_country_code {
+      background-color: white !important;
+    }
+
+    #id_country_code:empty {
+      background-color: white !important;
+    }
+
+    .select2-container--bootstrap5 .select2-selection--single {
+      background-color: white !important;
+    }
+
+    /* Ensure flag icons render properly in select2 */
+    .select2-results__option .fi {
+      margin-right: 8px;
+      border-radius: 3px;
+      width: 1.3em;
+      height: 1em;
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+      vertical-align: middle;
+      display: inline-block;
+    }
+
+    .select2-selection__rendered .fi {
+      margin-right: 8px;
+      border-radius: 3px;
+      width: 1.3em;
+      height: 1em;
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+      vertical-align: middle;
+      display: inline-block;
+    }
+
     .fi {
       margin-right: 8px;
       border-radius: 3px;
@@ -317,6 +351,242 @@
       }
     }
 
+    // Global function to update Cotton components
+    function updateCottonComponent(fieldName, value) {
+      try {
+        console.log(`🚀 updateCottonComponent called for ${fieldName} with:`, value);
+        console.log(`🚀 updateCottonComponent - fieldName type: ${typeof fieldName}, value: ${fieldName}`);
+        const select = document.getElementById(`id_${fieldName}`);
+        if (!select) {
+          console.warn(`No se encontró el select para el campo ${fieldName}`);
+          return;
+        }
+
+        // Update the value of the select
+        if (Array.isArray(value)) {
+          // For multiple selects
+          if (select.options && select.options.length > 0) {
+            // Deselect all options first
+            for (let i = 0; i < select.options.length; i++) {
+              select.options[i].selected = false;
+            }
+
+            // Select the corresponding options
+            for (let i = 0; i < select.options.length; i++) {
+              const optionText = select.options[i].text.trim().toLowerCase();
+              for (const val of value) {
+                const valueText = val.toString().trim().toLowerCase();
+                if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
+                  select.options[i].selected = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          // Update the visual component of Cotton for arrays too
+          updateCottonVisual(fieldName, value);
+        } else {
+          // For simple selects
+          const valueText = value.toString().trim().toLowerCase();
+          let found = false;
+
+          if (select.options && select.options.length > 0) {
+            for (let i = 0; i < select.options.length; i++) {
+              const optionText = select.options[i].text.trim().toLowerCase();
+              if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
+                select.value = select.options[i].value;
+                found = true;
+                break;
+              }
+            }
+          }
+
+          // Trigger change event to update the display
+          const event = new Event('change', {
+            bubbles: true
+          });
+          select.dispatchEvent(event);
+
+          console.log(`Cotton component ${fieldName} updated with value:`, value);
+
+          // Update the visual component of Cotton
+          console.log(`🎯 Calling updateCottonVisual for ${fieldName} with value:`, value);
+          updateCottonVisual(fieldName, value);
+        }
+      } catch (error) {
+        console.error(`Error al actualizar el componente Cotton ${fieldName}:`, error);
+      }
+    }
+
+    // Global function to update the visual display of Cotton components
+    function updateCottonVisual(fieldName, value) {
+      try {
+        console.log(`🎨 updateCottonVisual called for ${fieldName} with value:`, value);
+        console.log(`🎨 updateCottonVisual - fieldName type: ${typeof fieldName}, value: ${fieldName}`);
+        // Find the container of the Cotton component
+        const cottonContainer = document.getElementById(`div_id_${fieldName}`);
+        console.log(`🔍 Looking for container div_id_${fieldName}:`, cottonContainer);
+        if (!cottonContainer) {
+          console.log(`❌ No container found for ${fieldName}`);
+          return;
+        }
+
+        // Find the Cotton component inside the container
+        // Cotton processes the components, so we look for the rendered elements
+        const cottonComponent = cottonContainer.querySelector(`.color-selector-container, .design-selector-container`);
+        console.log(`🔍 Looking for Cotton component in container:`, cottonComponent);
+        if (!cottonComponent) {
+          console.log(`❌ No Cotton component found in container for ${fieldName}`);
+          return;
+        }
+
+        // Update the data-selected attribute
+        cottonComponent.setAttribute('data-selected', Array.isArray(value) ? value.join(',') : value);
+
+        // For colors, trigger the color selector functions
+        console.log(`🔍 Checking fieldName for color processing: ${fieldName}`);
+        if (fieldName === 'main_color' || fieldName === 'secondary_colors') {
+          console.log(`🎨 COLOR SELECTION: Processing ${fieldName} with value:`, value);
+          console.log(`🎨 COLOR SELECTION: fieldName check - main_color: ${fieldName === 'main_color'}, secondary_colors: ${fieldName === 'secondary_colors'}`);
+          // Wait a bit for the component to be ready
+          setTimeout(() => {
+            console.log(`🔍 Looking for color selector in container:`, cottonContainer);
+
+            // Find the color selector component (rendered by Cotton)
+            const colorSelector = cottonContainer.querySelector('.color-selector-container');
+            console.log(`Color selector found:`, colorSelector);
+
+            if (colorSelector) {
+              // Find the color circles (rendered by Cotton)
+              const colorCircles = colorSelector.querySelectorAll('.color-option');
+              console.log(`Found ${colorCircles.length} color circles for ${fieldName}`);
+
+              // Debug: log all available color values
+              const availableColors = Array.from(colorCircles).map(circle => circle.getAttribute('data-value'));
+              console.log(`Available colors:`, availableColors);
+
+              if (fieldName === 'main_color' && !Array.isArray(value)) {
+                // Single color selection
+                console.log(`Looking for main color: ${value}`);
+                colorCircles.forEach((circle, index) => {
+                  const circleValue = circle.getAttribute('data-value');
+                  console.log(`Circle ${index}: ${circleValue} (looking for: ${value})`);
+                  if (circleValue.toUpperCase() === value.toUpperCase()) {
+                    console.log(`✅ MATCH! Selecting color circle for ${value}`);
+                    // Remove selected from all circles first
+                    colorCircles.forEach(c => c.classList.remove('selected'));
+                    // Add selected to this circle
+                    circle.classList.add('selected');
+                    // Update the hidden field
+                    const hiddenField = document.getElementById('id_main_color');
+                    if (hiddenField) {
+                      hiddenField.value = value;
+                      console.log(`Updated hidden field id_main_color to: ${value}`);
+
+                      // Also update the select options
+                      const selectOptions = hiddenField.options;
+                      for (let i = 0; i < selectOptions.length; i++) {
+                        selectOptions[i].selected = (selectOptions[i].value === value);
+                      }
+                      console.log(`Updated select options for main_color`);
+                    }
+                  }
+                });
+              } else if (fieldName === 'secondary_colors' && Array.isArray(value)) {
+                // Multiple color selection
+                console.log(`Looking for secondary colors:`, value);
+                value.forEach(val => {
+                  colorCircles.forEach(circle => {
+                    const circleValue = circle.getAttribute('data-value');
+                    if (circleValue.toUpperCase() === val.toUpperCase()) {
+                      console.log(`✅ MATCH! Selecting secondary color circle for ${val}`);
+                      circle.classList.add('selected');
+                      // Update the hidden field (for secondary colors, we need to handle multiple values)
+                      const hiddenField = document.getElementById('id_secondary_colors');
+                      if (hiddenField) {
+                        // Get current values and add this one
+                        const currentValues = hiddenField.value ? hiddenField.value.split(',') : [];
+                        if (!currentValues.includes(val)) {
+                          currentValues.push(val);
+                          hiddenField.value = currentValues.join(',');
+                          console.log(`Updated hidden field id_secondary_colors to: ${hiddenField.value}`);
+
+                          // Also update the select options
+                          const selectOptions = hiddenField.options;
+                          for (let i = 0; i < selectOptions.length; i++) {
+                            selectOptions[i].selected = currentValues.includes(selectOptions[i].value);
+                          }
+                          console.log(`Updated select options for secondary_colors`);
+                        }
+                      }
+                    }
+                  });
+                });
+              }
+            } else {
+              console.log(`❌ No color selector found in container`);
+            }
+          }, 500);
+        }
+
+        // For designs, trigger the design selector functions
+        if (fieldName === 'design') {
+          console.log(`🎨 DESIGN SELECTION: Processing ${fieldName} with value:`, value);
+          // Wait a bit for the component to be ready
+          setTimeout(() => {
+            console.log(`🔍 Looking for design selector in container:`, cottonContainer);
+
+            // Find the design selector component (rendered by Cotton)
+            const designSelector = cottonContainer.querySelector('.design-selector-container');
+            console.log(`Design selector found:`, designSelector);
+
+            if (designSelector) {
+              // Find the design options (rendered by Cotton)
+              const designOptions = designSelector.querySelectorAll('.design-option');
+              console.log(`Found ${designOptions.length} design options for ${fieldName}`);
+
+              // Debug: log all available design values
+              const availableDesigns = Array.from(designOptions).map(option => option.getAttribute('data-value'));
+              console.log(`Available designs:`, availableDesigns);
+
+              console.log(`Looking for design: ${value}`);
+              designOptions.forEach((option, index) => {
+                const optionValue = option.getAttribute('data-value');
+                console.log(`Design option ${index}: ${optionValue} (looking for: ${value})`);
+                if (optionValue === value) {
+                  console.log(`✅ MATCH! Selecting design option for ${value}`);
+                  // Remove selected from all options first
+                  designOptions.forEach(o => o.classList.remove('selected'));
+                  // Add selected to this option
+                  option.classList.add('selected');
+                  // Update the hidden field
+                  const hiddenField = document.getElementById('id_design');
+                  if (hiddenField) {
+                    hiddenField.value = value;
+                    console.log(`Updated hidden field id_design to: ${value}`);
+
+                    // Also update the select options
+                    const selectOptions = hiddenField.options;
+                    for (let i = 0; i < selectOptions.length; i++) {
+                      selectOptions[i].selected = (selectOptions[i].value === value);
+                    }
+                    console.log(`Updated select options for design`);
+                  }
+                }
+              });
+            } else {
+              console.log(`❌ No design selector found in container`);
+            }
+          }, 500);
+        }
+
+        console.log(`Cotton visualization for ${fieldName} updated with:`, value);
+      } catch (error) {
+        console.error(`Error updating Cotton visualization for ${fieldName}:`, error);
+      }
+    }
+
     // Definir el componente jerseyForm para Alpine.js
     document.addEventListener('alpine:init', () => {
       Alpine.data('jerseyForm', () => ({
@@ -369,6 +639,66 @@
             }
             this.debouncedSearchClubs();
           });
+
+          // Load all countries by default
+          this.loadAllCountries();
+        },
+
+        // Load all countries by default
+        loadAllCountries() {
+          console.log('Loading all countries by default...');
+          const countrySelect = $('#id_country_code');
+          if (countrySelect.length) {
+            fetch('/core/country-autocomplete/')
+              .then(response => response.json())
+              .then(data => {
+                // Clear existing options
+                countrySelect.empty();
+
+                // Add all countries to the dropdown
+                data.results.forEach(country => {
+                  // Create option element manually to avoid HTML escaping
+                  const option = document.createElement('option');
+                  option.value = country.id;
+                  option.innerHTML = country.text; // Use innerHTML to render HTML
+                  countrySelect.append(option);
+                });
+
+                // Re-initialize select2 with proper template functions using django.jQuery
+                if (countrySelect.hasClass('select2-hidden-accessible')) {
+                  countrySelect.select2('destroy');
+                }
+
+                countrySelect.select2({
+                  theme: 'bootstrap5',
+                  width: '100%',
+                  placeholder: 'Select a country...',
+                  allowClear: true,
+                  templateResult: function(country) {
+                    if (!country.id) return country.text;
+                    // Return the HTML as a jQuery object
+                    return $('<span>' + country.text + '</span>');
+                  },
+                  templateSelection: function(country) {
+                    if (!country.id) return country.text;
+                    // Return the HTML as a jQuery object
+                    return $('<span>' + country.text + '</span>');
+                  },
+                  escapeMarkup: function(markup) {
+                    // Don't escape HTML, allow it to render
+                    return markup;
+                  }
+                });
+
+                // Clear any default selection
+                countrySelect.val(null).trigger('change');
+
+                console.log('All countries loaded with proper rendering:', data.results.length);
+              })
+              .catch(error => {
+                console.error('Error loading countries:', error);
+              });
+          }
         },
 
         searchKits() {
@@ -519,6 +849,9 @@
         populateFormFromKit(kitData) {
           this.kitData = kitData;
           console.log('Populando formulario con datos:', kitData);
+          console.log('🎯 populateFormFromKit - main_color:', kitData?.primary_color);
+          console.log('🎯 populateFormFromKit - secondary_colors:', kitData?.secondary_colors);
+          console.log('🎯 populateFormFromKit - Starting color processing...');
 
           // Log competition data
           if (kitData.competition) {
@@ -747,57 +1080,160 @@
           }
 
           // Colors
+          console.log('Debugging color data:', {
+            primary_color: kitData.primary_color,
+            main_color: kitData.main_color,
+            secondary_color: kitData.secondary_color
+          });
+
           if (kitData.primary_color || kitData.main_color) {
             // Handle both formats
             const color = kitData.primary_color || kitData.main_color;
-            const colorValue = typeof color === 'object' ? color.name : color;
+            let colorValue = typeof color === 'object' ? color.name : color;
+
+            // Map API color names to our color values (UPPERCASE)
+            const colorMapping = {
+              'red': 'RED',
+              'blue': 'BLUE',
+              'white': 'WHITE',
+              'black': 'BLACK',
+              'yellow': 'YELLOW',
+              'green': 'GREEN',
+              'orange': 'ORANGE',
+              'purple': 'PURPLE',
+              'pink': 'PINK',
+              'brown': 'BROWN',
+              'grey': 'GRAY',
+              'gray': 'GRAY',
+              'maroon': 'CLARET',
+              'gold': 'GOLD',
+              'light blue': 'SKY_BLUE',
+              'light-blue': 'SKY_BLUE',
+              'dark blue': 'NAVY',
+              'dark-blue': 'NAVY',
+              'light grey': 'GRAY',
+              'light-grey': 'GRAY'
+            };
+
+            // Normalize the color value
+            colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
+
+            console.log('Processing main color:', colorValue);
 
             // Update the value in the Cotton component
-            this.updateCottonComponent('main_color', colorValue);
+            updateCottonComponent('main_color', colorValue);
 
             // For colors, we don't create new ones since they are predefined values
             if (!this.setSelectValueByText('id_main_color', colorValue)) {
-              console.log(`El color principal "${colorValue}" no se encontró en las opciones disponibles. Se usará el valor predeterminado.`);
+              console.log(`Main color "${colorValue}" not found in available options. Using default value.`);
             }
           }
 
           // Secondary colors
           const secondaryColors = kitData.secondary_color || kitData.secondary_colors;
+          console.log('Debugging secondary colors:', secondaryColors);
+
           if (secondaryColors) {
             let selectedColors = [];
+
+            // Map API color names to our color values (UPPERCASE)
+            const colorMapping = {
+              'red': 'RED',
+              'blue': 'BLUE',
+              'white': 'WHITE',
+              'black': 'BLACK',
+              'yellow': 'YELLOW',
+              'green': 'GREEN',
+              'orange': 'ORANGE',
+              'purple': 'PURPLE',
+              'pink': 'PINK',
+              'brown': 'BROWN',
+              'grey': 'GRAY',
+              'gray': 'GRAY',
+              'maroon': 'CLARET',
+              'gold': 'GOLD',
+              'light blue': 'SKY_BLUE',
+              'light-blue': 'SKY_BLUE',
+              'dark blue': 'NAVY',
+              'dark-blue': 'NAVY',
+              'light grey': 'GRAY',
+              'light-grey': 'GRAY'
+            };
 
             // Verify if it's an array, an object or a string
             if (Array.isArray(secondaryColors) && secondaryColors.length > 0) {
               // It's an array of colors
               secondaryColors.forEach(color => {
-                const colorValue = typeof color === 'object' ? color.name : color;
+                let colorValue = typeof color === 'object' ? color.name : color;
+                // Normalize the color value
+                colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
                 selectedColors.push(colorValue);
               });
             } else if (typeof secondaryColors === 'object' && secondaryColors !== null) {
               // It's an object with a single color
-              const colorValue = secondaryColors.name || secondaryColors.toString();
+              let colorValue = secondaryColors.name || secondaryColors.toString();
+              // Normalize the color value
+              colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
               selectedColors.push(colorValue);
             } else if (typeof secondaryColors === 'string') {
               // It's a string
-              selectedColors.push(secondaryColors);
+              let colorValue = secondaryColors;
+              // Normalize the color value
+              colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
+              selectedColors.push(colorValue);
             }
 
             // Update the value in the Cotton component
             if (selectedColors.length > 0) {
-              this.updateCottonComponent('secondary_colors', selectedColors);
+              updateCottonComponent('secondary_colors', selectedColors);
             }
           }
 
           // Design
+          console.log('Debugging design data:', kitData.design);
+
           if (kitData.design) {
-            const designValue = typeof kitData.design === 'object' ? kitData.design.name : kitData.design;
+            let designValue = typeof kitData.design === 'object' ? kitData.design.name : kitData.design;
+
+            // Map API design names to our design values
+            const designMapping = {
+              'plain': 'PLAIN',
+              'stripes': 'STRIPES',
+              'graphic': 'GRAPHIC',
+              'chest band': 'CHEST_BAND',
+              'chest-band': 'CHEST_BAND',
+              'chest_band': 'CHEST_BAND',
+              'contrasting sleeves': 'CONTRASTING_SLEEVES',
+              'contrasting-sleeves': 'CONTRASTING_SLEEVES',
+              'contrasting_sleeves': 'CONTRASTING_SLEEVES',
+              'pinstripes': 'PINSTRIPES',
+              'hoops': 'HOOPS',
+              'single stripe': 'SINGLE_STRIPE',
+              'single-stripe': 'SINGLE_STRIPE',
+              'single_stripe': 'SINGLE_STRIPE',
+              'half and half': 'HALF_AND_HALF',
+              'half-and-half': 'HALF_AND_HALF',
+              'half_and_half': 'HALF_AND_HALF',
+              'sash': 'SASH',
+              'chevron': 'CHEVRON',
+              'checkers': 'CHECKERS',
+              'gradient': 'GRADIENT',
+              'diagonal': 'DIAGONAL',
+              'cross': 'CROSS',
+              'quarters': 'QUARTERS'
+            };
+
+            // Normalize the design value
+            designValue = designMapping[designValue.toLowerCase()] || designValue.toUpperCase();
+
+            console.log('Processing design:', designValue);
 
             // Update the value in the Cotton component
-            this.updateCottonComponent('design', designValue);
+            updateCottonComponent('design', designValue);
 
             // For designs, we don't create new ones since they are predefined values
             if (!this.setSelectValueByText('id_design', designValue)) {
-              console.log(`El diseño "${designValue}" no se encontró en las opciones disponibles. Se usará el valor predeterminado.`);
+              console.log(`Design "${designValue}" not found in available options. Using default value.`);
             }
           }
 
@@ -820,8 +1256,67 @@
             document.getElementById('id_is_replica').checked = kitData.is_replica;
           }
 
-          if (kitData.country_code) {
-            document.getElementById('id_country_code').value = kitData.country_code;
+          if (kitData.team && kitData.team.country) {
+            console.log('Setting country code to:', kitData.team.country);
+
+            // Update the select2 dropdown with proper country data
+            const countrySelect = $('#id_country_code');
+            if (countrySelect.length) {
+              // First, fetch ALL countries to populate the dropdown
+              fetch('/core/country-autocomplete/')
+                .then(response => response.json())
+                .then(data => {
+                  // Clear existing options
+                  countrySelect.empty();
+
+                  // Add all countries to the dropdown
+                  data.results.forEach(country => {
+                    // Create option element manually to avoid HTML escaping
+                    const option = document.createElement('option');
+                    option.value = country.id;
+                    option.innerHTML = country.text; // Use innerHTML to render HTML
+                    countrySelect.append(option);
+                  });
+
+                  // Re-initialize select2 with proper template functions using django.jQuery
+                  if (countrySelect.hasClass('select2-hidden-accessible')) {
+                    countrySelect.select2('destroy');
+                  }
+
+                  countrySelect.select2({
+                    theme: 'bootstrap5',
+                    width: '100%',
+                    placeholder: 'Select a country...',
+                    allowClear: true,
+                    templateResult: function(country) {
+                      if (!country.id) return country.text;
+                      // Return the HTML as a jQuery object
+                      return $('<span>' + country.text + '</span>');
+                    },
+                    templateSelection: function(country) {
+                      if (!country.id) return country.text;
+                      // Return the HTML as a jQuery object
+                      return $('<span>' + country.text + '</span>');
+                    },
+                    escapeMarkup: function(markup) {
+                      // Don't escape HTML, allow it to render
+                      return markup;
+                    }
+                  });
+
+                  // Clear any default selection
+                  countrySelect.val(null).trigger('change');
+
+                  // Select the country from the API
+                  countrySelect.val(kitData.team.country).trigger('change');
+                  console.log('All countries loaded and selected with proper rendering:', kitData.team.country);
+                })
+                .catch(error => {
+                  console.error('Error fetching countries:', error);
+                  // Fallback: just set the value
+                  countrySelect.val(kitData.team.country).trigger('change');
+                });
+            }
           }
 
           // Save the main image if it exists
@@ -849,112 +1344,6 @@
           }
         },
 
-        // Method to update the Cotton components
-        updateCottonComponent(fieldName, value) {
-          try {
-            const select = document.getElementById(`id_${fieldName}`);
-            if (!select) {
-              console.warn(`No se encontró el select para el campo ${fieldName}`);
-              return;
-            }
-
-            // Update the value of the select
-            if (Array.isArray(value)) {
-              // For multiple selects
-              if (select.options && select.options.length > 0) {
-                // Deselect all options first
-                for (let i = 0; i < select.options.length; i++) {
-                  select.options[i].selected = false;
-                }
-
-                // Select the corresponding options
-                for (let i = 0; i < select.options.length; i++) {
-                  const optionText = select.options[i].text.trim().toLowerCase();
-                  for (const val of value) {
-                    const valueText = val.toString().trim().toLowerCase();
-                    if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
-                      select.options[i].selected = true;
-                      break;
-                    }
-                  }
-                }
-              }
-            } else {
-              // For simple selects
-              const valueText = value.toString().trim().toLowerCase();
-              let found = false;
-
-              if (select.options && select.options.length > 0) {
-                for (let i = 0; i < select.options.length; i++) {
-                  const optionText = select.options[i].text.trim().toLowerCase();
-                  if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
-                    select.value = select.options[i].value;
-                    found = true;
-                    break;
-                  }
-                }
-              }
-
-              // Trigger change event to update the display
-              const event = new Event('change', {
-                bubbles: true
-              });
-              select.dispatchEvent(event);
-
-              console.log(`Componente Cotton ${fieldName} actualizado con valor:`, value);
-
-              // Update the visual component of Cotton
-              this.updateCottonVisual(fieldName, value);
-            }
-          } catch (error) {
-            console.error(`Error al actualizar el componente Cotton ${fieldName}:`, error);
-          }
-        },
-
-        // New method to update the display of the Cotton components
-        updateCottonVisual(fieldName, value) {
-          try {
-            // Find the container of the Cotton component
-            const cottonContainer = document.getElementById(`div_id_${fieldName}`);
-            if (!cottonContainer) return;
-
-            // Find the Cotton component inside the container
-            const cottonComponent = cottonContainer.querySelector(`c-color-selector, c-design-selector`);
-            if (!cottonComponent) return;
-
-            // Update the data-selected attribute
-            cottonComponent.setAttribute('data-selected', Array.isArray(value) ? value.join(',') : value);
-
-            // For colors, update the display of the selected color
-            if (fieldName === 'main_color' || fieldName === 'secondary_colors') {
-              // Find the element that shows the selected color
-              const selectedDisplay = cottonContainer.querySelector('.selected-color, .selected-colors');
-              if (selectedDisplay) {
-                if (Array.isArray(value)) {
-                  // For multiple colors
-                  selectedDisplay.innerHTML = value.map(color =>
-                    `<span class="color-swatch" style="background-color: ${this.getColorCode(color)};"></span> ${color}`
-                  ).join(', ');
-                } else {
-                  // For a single color
-                  selectedDisplay.innerHTML = `<span class="color-swatch" style="background-color: ${this.getColorCode(value)};"></span> ${value}`;
-                }
-              }
-            }
-
-            // For designs, update the display of the selected design
-            if (fieldName === 'design') {
-              const selectedDisplay = cottonContainer.querySelector('.selected-design');
-              if (selectedDisplay) {
-                selectedDisplay.textContent = value;
-              }
-            }
-
-            console.log(`Visualización de Cotton para ${fieldName} actualizada con:`, value);
-          } catch (error) {
-            console.error(`Error al actualizar la visualización de Cotton para ${fieldName}:`, error);
-          }
-        },
 
         // Method to show the value of a field
         displayFieldValue(fieldName, value, isColor = false) {
@@ -1747,6 +2136,9 @@
                   </template>
                 </div>
               </div>
+            {% elif field.name == 'country_code' %}
+              <!-- Country field with custom select2 initialization -->
+              {{ field|as_crispy_field }}
             {% elif field.name != 'main_color' and field.name != 'secondary_colors' and field.name != 'design' and field.name not in 'kit_search,kit_id,brand_name,brand_id,club_name,club_id,season_name,season_id,competition_name,competition_id,competition_names,main_img_url,external_image_urls' %}
               {{ field|as_crispy_field }}
             {% endif %}
@@ -1792,19 +2184,19 @@
     </form>
   </div>
   <script>
-    // Función para verificar los datos del formulario antes de enviarlo
+    // Function to verify form data before submitting
     function verifyFormData() {
       const form = document.getElementById('jersey-form');
       const formData = new FormData(form);
 
-      console.log('Verificando datos del formulario:');
+      console.log('Verifying form data:');
 
-      // Verificar campos críticos
+      // Check critical fields
       const criticalFields = ['brand', 'club', 'season', 'competition', 'brand_name', 'club_name', 'season_name', 'competition_name'];
 
       criticalFields.forEach(field => {
         const value = formData.get(field);
-        console.log(`${field}: ${value || 'No definido'}`);
+        console.log(`${field}: ${value || 'Not defined'}`);
       });
 
       // Verificar si tenemos suficiente información para cada entidad
@@ -1813,17 +2205,17 @@
       const hasValidSeason = formData.get('season') || formData.get('season_name');
       const hasValidCompetition = formData.get('competition') || formData.get('competition_name');
 
-      console.log('Validación de entidades:');
-      console.log(`Brand: ${hasValidBrand ? 'OK' : 'Falta información'}`);
-      console.log(`Club: ${hasValidClub ? 'OK' : 'Falta información'}`);
-      console.log(`Season: ${hasValidSeason ? 'OK' : 'Falta información'}`);
-      console.log(`Competition: ${hasValidCompetition ? 'OK' : 'Falta información'}`);
+      console.log('Entity validation:');
+      console.log(`Brand: ${hasValidBrand ? 'OK' : 'Missing information'}`);
+      console.log(`Club: ${hasValidClub ? 'OK' : 'Missing information'}`);
+      console.log(`Season: ${hasValidSeason ? 'OK' : 'Missing information'}`);
+      console.log(`Competition: ${hasValidCompetition ? 'OK' : 'Missing information'}`);
 
       // Mostrar un mensaje al usuario
       if (hasValidBrand && hasValidClub && hasValidSeason && hasValidCompetition) {
-        alert('Los datos del formulario parecen correctos. Puedes proceder a crear el jersey.');
+        alert('Form data appears correct. You can proceed to create the jersey.');
       } else {
-        alert('Faltan datos importantes en el formulario. Por favor, verifica la información en la consola.');
+        alert('Important data is missing from the form. Please check the information in the console.');
       }
     }
   </script>

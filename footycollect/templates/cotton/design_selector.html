@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load static %}
 
 <!-- Cotton design selector component -->
 <div class="mb-3">
@@ -26,7 +27,73 @@
            title="{{ design.label }}"
            onclick="selectDesign('{{ name }}', '{{ design.value }}')">
         <div class="jersey-container">
-          <div class="design-icon design-{{ design.value|lower }}"></div>
+          <div class="design-icon">
+            {% if design.value == "PLAIN" %}
+              <img src="{% static 'images/design_type/plain.svg' %}"
+                   alt="Plain"
+                   class="design-image" />
+            {% elif design.value == "STRIPES" %}
+              <img src="{% static 'images/design_type/stripes.svg' %}"
+                   alt="Stripes"
+                   class="design-image" />
+            {% elif design.value == "GRAPHIC" %}
+              <img src="{% static 'images/design_type/graphic.svg' %}"
+                   alt="Graphic"
+                   class="design-image" />
+            {% elif design.value == "CHEST_BAND" %}
+              <img src="{% static 'images/design_type/chest-band.svg' %}"
+                   alt="Chest Band"
+                   class="design-image" />
+            {% elif design.value == "CONTRASTING_SLEEVES" %}
+              <img src="{% static 'images/design_type/contrasting-sleeves.svg' %}"
+                   alt="Contrasting Sleeves"
+                   class="design-image" />
+            {% elif design.value == "PINSTRIPES" %}
+              <img src="{% static 'images/design_type/pinstripes.svg' %}"
+                   alt="Pinstripes"
+                   class="design-image" />
+            {% elif design.value == "HOOPS" %}
+              <img src="{% static 'images/design_type/hoops.svg' %}"
+                   alt="Hoops"
+                   class="design-image" />
+            {% elif design.value == "SINGLE_STRIPE" %}
+              <img src="{% static 'images/design_type/single-stripe.svg' %}"
+                   alt="Single Stripe"
+                   class="design-image" />
+            {% elif design.value == "HALF_AND_HALF" %}
+              <img src="{% static 'images/design_type/half-and-half.svg' %}"
+                   alt="Half and Half"
+                   class="design-image" />
+            {% elif design.value == "SASH" %}
+              <img src="{% static 'images/design_type/sash.svg' %}"
+                   alt="Sash"
+                   class="design-image" />
+            {% elif design.value == "CHEVRON" %}
+              <img src="{% static 'images/design_type/chevron.svg' %}"
+                   alt="Chevron"
+                   class="design-image" />
+            {% elif design.value == "CHECKERS" %}
+              <img src="{% static 'images/design_type/checkers.svg' %}"
+                   alt="Checkers"
+                   class="design-image" />
+            {% elif design.value == "GRADIENT" %}
+              <img src="{% static 'images/design_type/gradient.svg' %}"
+                   alt="Gradient"
+                   class="design-image" />
+            {% elif design.value == "DIAGONAL" %}
+              <img src="{% static 'images/design_type/diagonal.svg' %}"
+                   alt="Diagonal"
+                   class="design-image" />
+            {% elif design.value == "CROSS" %}
+              <img src="{% static 'images/design_type/cross.svg' %}"
+                   alt="Cross"
+                   class="design-image" />
+            {% elif design.value == "QUARTERS" %}
+              <img src="{% static 'images/design_type/quarters.svg' %}"
+                   alt="Quarters"
+                   class="design-image" />
+            {% endif %}
+          </div>
         </div>
         <span class="design-label">{{ design.label }}</span>
       </div>
@@ -113,94 +180,22 @@
   .design-icon {
     width: 100%;
     height: 100%;
-    background-size: 100% 100%;
+    background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    -webkit-clip-path: url(#jersey-shape);
-    clip-path: url(#jersey-shape);
     position: relative;
   }
 
-  .design-icon::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
+  .design-image {
     width: 100%;
     height: 100%;
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M25,0 H75 C80,0 82,5 85,15 L95,40 C95,45 95,50 90,50 L85,50 L85,100 H15 L15,50 L10,50 C5,50 5,45 5,40 L15,15 C18,5 20,0 25,0 Z" fill="none" stroke="%23333" stroke-width="1.5" /></svg>');
-    background-size: 100% 100%;
-    pointer-events: none;
+    object-fit: contain;
   }
+
 
   .design-label {
     font-size: 12px;
     text-align: center;
     color: #333;
-  }
-
-  /* Design icons - ahora con fondo más visible para la forma de camiseta */
-  .design-plain {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23ddd" /></svg>');
-  }
-
-  .design-stripes {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><rect width="20" height="100" x="20" fill="%23ddd" /><rect width="20" height="100" x="60" fill="%23ddd" /></svg>');
-  }
-
-  .design-graphic {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><circle cx="50" cy="40" r="20" fill="%23ddd" /></svg>');
-  }
-
-  .design-chest_band {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><rect width="100" height="25" y="30" fill="%23ddd" /></svg>');
-  }
-
-  .design-contrasting_sleeves {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><path d="M0,0 L25,0 C30,0 32,5 35,15 L40,30 L40,100 L0,100 Z" fill="%23ddd" /><path d="M100,0 L75,0 C70,0 68,5 65,15 L60,30 L60,100 L100,100 Z" fill="%23ddd" /></svg>');
-  }
-
-  .design-pinstripes {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><path d="M10,0 L10,100 M20,0 L20,100 M30,0 L30,100 M40,0 L40,100 M50,0 L50,100 M60,0 L60,100 M70,0 L70,100 M80,0 L80,100 M90,0 L90,100" stroke="%23ddd" stroke-width="2" /></svg>');
-  }
-
-  .design-hoops {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><rect width="100" height="10" y="10" fill="%23ddd" /><rect width="100" height="10" y="30" fill="%23ddd" /><rect width="100" height="10" y="50" fill="%23ddd" /><rect width="100" height="10" y="70" fill="%23ddd" /><rect width="100" height="10" y="90" fill="%23ddd" /></svg>');
-  }
-
-  .design-single_stripe {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><rect width="10" height="100" x="45" fill="%23ddd" /></svg>');
-  }
-
-  .design-half_and_half {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="50" height="100" fill="%23fff" /><rect width="50" height="100" x="50" fill="%23ddd" /></svg>');
-  }
-
-  .design-sash {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><path d="M0 30L100 70" stroke="%23ddd" stroke-width="15" /></svg>');
-  }
-
-  .design-chevron {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><path d="M50 40L10 70L0 60L50 20L100 60L90 70L50 40Z" fill="%23ddd" /></svg>');
-  }
-
-  .design-checkers {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><rect width="20" height="20" x="0" y="0" fill="%23ddd" /><rect width="20" height="20" x="40" y="0" fill="%23ddd" /><rect width="20" height="20" x="80" y="0" fill="%23ddd" /><rect width="20" height="20" x="20" y="20" fill="%23ddd" /><rect width="20" height="20" x="60" y="20" fill="%23ddd" /><rect width="20" height="20" x="0" y="40" fill="%23ddd" /><rect width="20" height="20" x="40" y="40" fill="%23ddd" /><rect width="20" height="20" x="80" y="40" fill="%23ddd" /><rect width="20" height="20" x="20" y="60" fill="%23ddd" /><rect width="20" height="20" x="60" y="60" fill="%23ddd" /><rect width="20" height="20" x="0" y="80" fill="%23ddd" /><rect width="20" height="20" x="40" y="80" fill="%23ddd" /><rect width="20" height="20" x="80" y="80" fill="%23ddd" /></svg>');
-  }
-
-  .design-gradient {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:%23fff" /><stop offset="100%" style="stop-color:%23aaa" /></linearGradient></defs><rect width="100" height="100" fill="url(%23grad)" /></svg>');
-  }
-
-  .design-diagonal {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><path d="M0 0L100 100" stroke="%23ddd" stroke-width="15" /></svg>');
-  }
-
-  .design-cross {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><path d="M50 0v100M0 50h100" stroke="%23ddd" stroke-width="10" /></svg>');
-  }
-
-  .design-quarters {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff" /><rect width="50" height="50" x="0" y="0" fill="%23ddd" /><rect width="50" height="50" x="50" y="50" fill="%23ddd" /></svg>');
   }
 </style>
