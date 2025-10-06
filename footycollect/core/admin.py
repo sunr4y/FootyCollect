@@ -17,7 +17,6 @@ class ClubAdmin(ModelAdmin):
     list_display = ("name", "country", "show_logo")
     list_filter = ("country",)
     search_fields = ("name", "country")
-    actions = ["delete_clubs"]
     list_per_page = 25
 
     @admin.display(
