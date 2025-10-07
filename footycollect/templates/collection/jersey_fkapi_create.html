@@ -159,7 +159,7 @@
       font-size: 18px;
     }
 
-    /* Añadir un spinner para imágenes en carga */
+    /* Add a spinner for images in loading */
     .img-loading {
       position: absolute;
       top: 0;
@@ -177,7 +177,7 @@
       height: 1rem;
     }
 
-    /* Estilos para la imagen predeterminada */
+    /* Styles for the default image */
     .default-image-preview {
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -203,11 +203,31 @@
       padding: 5px;
       background-color: white;
     }
+
+    /* Improve switch/checkbox hierarchy and sizing */
+    .form-switch .form-check-input {
+      width: 3rem;
+      height: 1.5rem;
+    }
+
+    .form-switch .form-check-label {
+      margin-left: 0.5rem;
+      font-weight: 500;
+    }
+
+    /* Button groups visual feedback */
+    .btn-group .btn.btn-primary {
+      box-shadow: 0 0.25rem 0.5rem rgba(13, 110, 253, 0.25);
+    }
+
+    .btn-group .btn {
+      transition: all 120ms ease-in-out;
+    }
   </style>
 {% endblock extra_css %}
 {% block inline_javascript %}
   <script>
-    // Función de debounce para retrasar las búsquedas
+    // Function to debounce the searches
     function debounce(func, wait) {
       let timeout;
       return function(...args) {
@@ -222,9 +242,9 @@
       img.outerHTML = '<div class="placeholder-img"><i class="bi bi-image"></i></div>';
     }
 
-    // Verificar el estado del componente photo_manager cuando la página esté cargada
+    // Verify the state of the photo_manager when the page is loaded
     document.addEventListener('DOMContentLoaded', function() {
-      // Esperar un momento para que Alpine.js inicialice los componentes
+      // Wait a moment for Alpine.js to initialize the components
       setTimeout(function() {
         console.log('Verificando el estado del componente photo_manager...');
         const photoManager = document.querySelector('.photo-manager');
@@ -250,21 +270,21 @@
 
         console.log('Adding default image to photos:', mainImgUrl);
 
-        // Verificar si la imagen ya ha sido añadida
+        // Verify if the image has already been added
         const existingImages = document.querySelectorAll('.default-image-preview img');
         for (let i = 0; i < existingImages.length; i++) {
           if (existingImages[i].src === mainImgUrl) {
-            console.log('La imagen ya ha sido añadida');
+            console.log('The image has already been added');
             alert('{% trans "This image has already been added." %}');
             return;
           }
         }
 
-        // Método 3: Crear un elemento visual sin interferir con el componente
+        // Method 3: Create a visual element without interfering with the component
         try {
-          console.log('Creando un elemento visual para la imagen predeterminada');
+          console.log('Creating a visual element for the default image');
 
-          // Crear un campo oculto para almacenar la URL de la imagen
+          // Create a hidden field to store the image URL
           const form = document.getElementById('jersey-form');
           let hiddenInput = form.querySelector('input[name="external_image_urls"]');
           if (!hiddenInput) {
@@ -274,26 +294,26 @@
             form.appendChild(hiddenInput);
           }
 
-          // Añadir la URL de la imagen al campo oculto
+          // Add the image URL to the hidden field
           const urls = hiddenInput.value ? hiddenInput.value.split(',') : [];
           if (!urls.includes(mainImgUrl)) {
             urls.push(mainImgUrl);
             hiddenInput.value = urls.join(',');
           }
 
-          // Crear un contenedor para mostrar la imagen
+          // Create a container to show the image
           const previewContainer = document.createElement('div');
           previewContainer.className = 'default-image-preview mt-3 mb-3';
           previewContainer.style.border = '1px solid #ddd';
           previewContainer.style.borderRadius = '4px';
           previewContainer.style.padding = '10px';
 
-          // Crear el título
+          // Create the title
           const title = document.createElement('h6');
           title.className = 'mb-2';
           title.textContent = '{% trans "Default Image (will be processed on submission)" %}';
 
-          // Crear la imagen
+          // Create the image
           const img = document.createElement('img');
           img.src = mainImgUrl;
           img.alt = 'Default image';
@@ -301,13 +321,13 @@
           img.style.maxHeight = '200px';
           img.style.objectFit = 'contain';
 
-          // Crear el botón para eliminar la imagen
+          // Create the button to remove the image
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.className = 'btn btn-sm btn-outline-danger mt-2';
           removeBtn.innerHTML = '<i class="bi bi-trash"></i> {% trans "Remove" %}';
           removeBtn.onclick = function() {
-            // Eliminar la URL del campo oculto
+            // Remove the URL from the hidden field
             const urls = hiddenInput.value.split(',');
             const index = urls.indexOf(mainImgUrl);
             if (index !== -1) {
@@ -315,35 +335,35 @@
               hiddenInput.value = urls.join(',');
             }
 
-            // Eliminar el contenedor
+            // Remove the container
             previewContainer.remove();
 
-            // Mostrar el botón de añadir imagen
+            // Show the add image button
             document.getElementById('add-default-image').style.display = 'inline-block';
           };
 
-          // Añadir los elementos al contenedor
+          // Add the elements to the container
           previewContainer.appendChild(title);
           previewContainer.appendChild(img);
           previewContainer.appendChild(removeBtn);
 
-          // Añadir el contenedor después del botón
+          // Add the container after the button
           const buttonContainer = document.getElementById('add-default-image').parentNode;
           buttonContainer.appendChild(previewContainer);
 
-          // Ocultar el botón después de añadir la imagen
+          // Hide the add image button after adding the image
           document.getElementById('add-default-image').style.display = 'none';
 
-          // Mostrar un mensaje de éxito
+          // Show a success message
           alert('{% trans "Default image added successfully! It will be processed when you submit the form." %}');
 
           console.log('Imagen añadida correctamente');
           return;
         } catch (error) {
-          console.error('Error al crear el elemento visual:', error);
+          console.error('Error creating the visual element:', error);
         }
 
-        // Si llegamos aquí, ninguno de los métodos ha funcionado
+        // If we get here, none of the methods have worked
         alert('{% trans "Could not add the default image. Please try adding it manually." %}');
       } catch (error) {
         console.error('Error en addDefaultImageToPhotos:', error);
@@ -587,7 +607,7 @@
       }
     }
 
-    // Definir el componente jerseyForm para Alpine.js
+    // Define the jerseyForm component for Alpine.js
     document.addEventListener('alpine:init', () => {
       Alpine.data('jerseyForm', () => ({
         kitSearch: '',
@@ -596,6 +616,11 @@
         selectedKit: null,
         lastSearchTimestamp: 0,
         debouncedSearchKits: null,
+
+        // UI state for version toggle and nameset
+        isFanVersion: true,
+        hasNameset: false,
+        isShortSleeve: true,
 
         clubSearch: '',
         clubResults: [],
@@ -614,6 +639,28 @@
 
         init() {
           // Inicializar el formulario
+          // Initialize version toggle (default to Fan Version)
+          const fanInput = document.getElementById('id_is_fan_version');
+          this.isFanVersion = true;
+          if (fanInput) {
+            fanInput.checked = true;
+          }
+          const hasNamesetInput = document.getElementById('id_has_nameset');
+          if (hasNamesetInput) {
+            this.hasNameset = !!hasNamesetInput.checked;
+          }
+          const shortSleeveInput = document.getElementById('id_is_short_sleeve');
+          if (shortSleeveInput) {
+            this.isShortSleeve = !!shortSleeveInput.checked;
+          }
+
+          // Hide original fan/version and nameset checkboxes containers (we provide custom UI)
+          const fanDiv = document.getElementById('div_id_is_fan_version');
+          if (fanDiv) fanDiv.style.display = 'none';
+          const namesetDiv = document.getElementById('div_id_has_nameset');
+          if (namesetDiv) namesetDiv.style.display = 'none';
+          const shortSleeveDiv = document.getElementById('div_id_is_short_sleeve');
+          if (shortSleeveDiv) shortSleeveDiv.style.display = 'none';
           this.$watch('kitSearch', (value) => {
             if (value.length < 3) {
               this.kitResults = [];
@@ -642,6 +689,66 @@
 
           // Load all countries by default
           this.loadAllCountries();
+        },
+
+        // Mutually exclusive version toggle handlers
+        setVersion(version) {
+          const fanInput = document.getElementById('id_is_fan_version');
+          if (!fanInput) return;
+          if (version === 'fan') {
+            this.isFanVersion = true;
+            fanInput.checked = true;
+          } else {
+            this.isFanVersion = false;
+            fanInput.checked = false;
+          }
+          // Trigger change in case any listener depends on it
+          fanInput.dispatchEvent(new Event('change', {
+            bubbles: true
+          }));
+        },
+
+        // Nameset UI
+        enableNameset() {
+          this.hasNameset = true;
+          const hasNamesetInput = document.getElementById('id_has_nameset');
+          if (hasNamesetInput) {
+            hasNamesetInput.checked = true;
+            hasNamesetInput.dispatchEvent(new Event('change', {
+              bubbles: true
+            }));
+          }
+        },
+        disableNameset() {
+          this.hasNameset = false;
+          const hasNamesetInput = document.getElementById('id_has_nameset');
+          if (hasNamesetInput) {
+            hasNamesetInput.checked = false;
+            hasNamesetInput.dispatchEvent(new Event('change', {
+              bubbles: true
+            }));
+          }
+          // Clear player fields if present
+          const playerName = document.getElementById('id_player_name');
+          const playerNumber = document.getElementById('id_number');
+          if (playerName) playerName.value = '';
+          if (playerNumber) playerNumber.value = '';
+        },
+
+        // Sleeve toggle maps to is_short_sleeve boolean
+        setSleeve(type) {
+          const input = document.getElementById('id_is_short_sleeve');
+          if (!input) return;
+          if (type === 'short') {
+            this.isShortSleeve = true;
+            input.checked = true;
+          } else {
+            this.isShortSleeve = false;
+            input.checked = false;
+          }
+          input.dispatchEvent(new Event('change', {
+            bubbles: true
+          }));
         },
 
         // Load all countries by default
@@ -1874,10 +1981,10 @@
           this.clubResults = [];
           this.clubSearch = club.name;
 
-          // Guardar la URL del logo para mostrarla en el formulario
+          // Save the logo URL to display in the form
           if (club.logo) {
             console.log('Logo URL del club seleccionado:', club.logo);
-            // Asegurarse de que el club tenga la propiedad logo_url
+            // Ensure the club has the logo_url property
             this.selectedClub.logo_url = club.logo;
           }
 
@@ -2050,7 +2157,8 @@
             </div>
           </div>
           <!-- Season Selection (shows after club is selected) -->
-          <div class="mb-3" x-show="selectedClub && seasons.length > 0">
+          <div class="mb-3"
+               x-show="showClubSearch && selectedClub && seasons.length > 0">
             <label for="id_season_select" class="form-label">{% trans "Select Season" %}</label>
             <div class="d-flex align-items-center mb-2" x-show="selectedClub">
               <template x-if="selectedClub && selectedClub.logo_url">
@@ -2139,11 +2247,92 @@
             {% elif field.name == 'country_code' %}
               <!-- Country field with custom select2 initialization -->
               {{ field|as_crispy_field }}
+              <!-- Version Toggle: Fan vs Player (mutually exclusive) -->
+              <div class="row mb-3 mt-2">
+                <div class="col-md-6">
+                  <div class="fw-semibold mb-1">{% trans "Jersey Version" %}</div>
+                  <div class="btn-group w-100" role="group" aria-label="Version toggle">
+                    <button type="button"
+                            class="btn"
+                            :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                            @click="setVersion('fan')">{% trans "Fan Version" %}</button>
+                    <button type="button"
+                            class="btn"
+                            :class="!isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                            @click="setVersion('player')">{% trans "Player Version" %}</button>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="fw-semibold mb-1">{% trans "Sleeve Type" %}</div>
+                  <div class="btn-group w-100" role="group" aria-label="Sleeve toggle">
+                    <button type="button"
+                            class="btn"
+                            :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                            @click="setSleeve('short')">{% trans "Short Sleeve" %}</button>
+                    <button type="button"
+                            class="btn"
+                            :class="!isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                            @click="setSleeve('long')">{% trans "Long Sleeve" %}</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Binary options row (clear alignment) -->
+              <div class="row mb-3 mt-3">
+                <div class="col-md-6">
+                  <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="id_is_signed"
+                           name="is_signed"
+                           {% if form.is_signed.value %}checked{% endif %} />
+                    <label class="form-check-label" for="id_is_signed">{% trans "Include Player Signature" %}</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="id_is_replica"
+                           name="is_replica"
+                           {% if form.is_replica.value %}checked{% endif %} />
+                    <label class="form-check-label" for="id_is_replica">{% trans "Is replica" %}</label>
+                  </div>
+                </div>
+              </div>
+            {% elif field.name == 'club_search' %}
+              <!-- Hidden duplicate club search field -->
+            {% elif field.name == 'is_fan_version' %}
+              <!-- Hidden by JS; custom toggle above controls this -->
+              <div class="d-none">{{ field|as_crispy_field }}</div>
+            {% elif field.name == 'is_signed' or field.name == 'is_replica' %}
+              <!-- Hidden; custom switches rendered near toggles -->
+              <div class="d-none">{{ field|as_crispy_field }}</div>
+            {% elif field.name == 'has_nameset' %}
+              <!-- Hidden by JS; custom nameset UI below controls this -->
+              <div class="d-none">{{ field|as_crispy_field }}</div>
+            {% elif field.name == 'player_name' or field.name == 'number' %}
+              <!-- Nameset fields: hidden by default, toggled via button -->
+              <div x-show="hasNameset" x-cloak>{{ field|as_crispy_field }}</div>
             {% elif field.name != 'main_color' and field.name != 'secondary_colors' and field.name != 'design' and field.name not in 'kit_search,kit_id,brand_name,brand_id,club_name,club_id,season_name,season_id,competition_name,competition_id,competition_names,main_img_url,external_image_urls' %}
               {{ field|as_crispy_field }}
             {% endif %}
           {% endfor %}
-          <!-- Campos ocultos para la creación de nuevas entidades -->
+          <!-- Nameset toggle button -->
+          <div class="mb-3">
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    x-show="!hasNameset"
+                    @click="enableNameset()">
+              <i class="bi bi-person-badge"></i> Add Nameset
+            </button>
+            <button type="button"
+                    class="btn btn-outline-danger"
+                    x-show="hasNameset"
+                    @click="disableNameset()">
+              <i class="bi bi-x-circle"></i> Remove Nameset
+            </button>
+          </div>
+          <!-- Hidden fields for creating new entities -->
           {{ form.kit_id }}
           {{ form.brand_name }}
           {{ form.brand_id }}
@@ -2199,7 +2388,7 @@
         console.log(`${field}: ${value || 'Not defined'}`);
       });
 
-      // Verificar si tenemos suficiente información para cada entidad
+      // Check if we have enough information for each entity
       const hasValidBrand = formData.get('brand') || formData.get('brand_name');
       const hasValidClub = formData.get('club') || formData.get('club_name');
       const hasValidSeason = formData.get('season') || formData.get('season_name');
@@ -2211,7 +2400,7 @@
       console.log(`Season: ${hasValidSeason ? 'OK' : 'Missing information'}`);
       console.log(`Competition: ${hasValidCompetition ? 'OK' : 'Missing information'}`);
 
-      // Mostrar un mensaje al usuario
+      // Show a message to the user
       if (hasValidBrand && hasValidClub && hasValidSeason && hasValidCompetition) {
         alert('Form data appears correct. You can proceed to create the jersey.');
       } else {
