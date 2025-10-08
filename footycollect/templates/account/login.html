@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Login - FootyCollect{% endblock title %}
+{% block extra_head %}
+  <!-- Google One Tap Sign-In -->
+  <script src="//accounts.google.com/gsi/client" async></script>
+{% endblock extra_head %}
+{% block content %}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-center">Sign In to FootyCollect</h3>
+          </div>
+          <div class="card-body">
+            <!-- Google One Tap Sign-In -->
+            <div id="g_id_onload"
+                 data-client_id="760797752753-f6gbapdqtfucb4u1s4ifq2heamdaflug.apps.googleusercontent.com"
+                 data-login_uri="{% url 'google_login_by_token' %}">
+            </div>
+            <!-- Traditional Login Form -->
+            <form method="post" class="mb-4">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="{{ form.login.id_for_label }}" class="form-label">Username or Email</label>
+                {{ form.login }}
+                {% if form.login.errors %}<div class="text-danger">{{ form.login.errors }}</div>{% endif %}
+              </div>
+              <div class="mb-3">
+                <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="text-danger">{{ form.password.errors }}</div>{% endif %}
+              </div>
+              {% if form.remember %}
+                <div class="mb-3 form-check">
+                  {{ form.remember }}
+                  <label class="form-check-label" for="{{ form.remember.id_for_label }}">Remember me</label>
+                </div>
+              {% endif %}
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Sign In</button>
+              </div>
+            </form>
+            <!-- Social Login Options -->
+            <div class="text-center">
+              <p class="text-muted">Or sign in with:</p>
+              <a href="{% url 'google_login' %}" class="btn btn-outline-danger">
+                <i class="fab fa-google"></i> Google
+              </a>
+            </div>
+            <!-- Additional Links -->
+            <div class="text-center mt-3">
+              <a href="{% url 'account_reset_password' %}"
+                 class="text-decoration-none">Forgot password?</a>
+              <span class="mx-2">|</span>
+              <a href="{% url 'account_signup' %}" class="text-decoration-none">Create account</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+    /* Google One Tap styling */
+    #g_id_onload {
+      margin-bottom: 1rem;
+    }
+
+    /* Social login button styling */
+    .btn-outline-danger {
+      border-color: #db4437;
+      color: #db4437;
+    }
+
+    .btn-outline-danger:hover {
+      background-color: #db4437;
+      border-color: #db4437;
+      color: white;
+    }
+  </style>
+{% endblock content %}
