@@ -1231,7 +1231,7 @@
             updateCottonComponent('main_color', colorValue);
 
             // For colors, we don't create new ones since they are predefined values
-            if (!this.setSelectValueByText('id_main_color', colorValue)) {
+            if (!this.setSelectValue('id_main_color', colorValue)) {
               console.log(`Main color "${colorValue}" not found in available options. Using default value.`);
             }
           }
@@ -1339,7 +1339,7 @@
             updateCottonComponent('design', designValue);
 
             // For designs, we don't create new ones since they are predefined values
-            if (!this.setSelectValueByText('id_design', designValue)) {
+            if (!this.setSelectValue('id_design', designValue)) {
               console.log(`Design "${designValue}" not found in available options. Using default value.`);
             }
           }

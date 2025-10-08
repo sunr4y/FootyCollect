@@ -60,6 +60,7 @@ line-length = 119
 extend-exclude = [
     "*/migrations/*.py",
     "staticfiles/*",
+    "*/templates/*",
 ]
 
 [tool.ruff.lint]

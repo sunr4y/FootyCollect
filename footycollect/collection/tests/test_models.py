@@ -243,14 +243,14 @@ class TestSizeModel:
 
         assert size.name == "M"
         assert size.category == "tops"
-        assert str(size) == "Tops - M"
+        assert str(size) == "M"
 
     def test_size_str_representation(self):
         """Test size string representation."""
         from footycollect.collection.models import Size
 
         size = Size.objects.create(name="L", category="bottoms")
-        assert str(size) == "Bottoms - L"
+        assert str(size) == "L"
 
     def test_size_category_choices(self):
         """Test size category choices."""
