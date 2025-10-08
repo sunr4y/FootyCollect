@@ -19,9 +19,11 @@
           </div>
           <div class="card-body">
             <!-- Google One Tap Sign-In -->
+            <!-- djlint:off H037 -->
             <div id="g_id_onload"
                  data-client_id="760797752753-f6gbapdqtfucb4u1s4ifq2heamdaflug.apps.googleusercontent.com"
                  data-login_uri="{% url 'google_login_by_token' %}"></div>
+            <!-- djlint:on -->
             <!-- Traditional Login Form -->
             <form method="post" class="mb-4">
               {% csrf_token %}
