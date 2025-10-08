@@ -2,7 +2,9 @@
 
 {% load static %}
 
-{% block title %}Login - FootyCollect{% endblock title %}
+{% block title %}
+  Login - FootyCollect
+{% endblock title %}
 {% block extra_head %}
   <!-- Google One Tap Sign-In -->
   <script src="//accounts.google.com/gsi/client" async></script>
@@ -19,8 +21,7 @@
             <!-- Google One Tap Sign-In -->
             <div id="g_id_onload"
                  data-client_id="760797752753-f6gbapdqtfucb4u1s4ifq2heamdaflug.apps.googleusercontent.com"
-                 data-login_uri="{% url 'google_login_by_token' %}">
-            </div>
+                 data-login_uri="{% url 'google_login_by_token' %}"></div>
             <!-- Traditional Login Form -->
             <form method="post" class="mb-4">
               {% csrf_token %}
