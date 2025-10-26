@@ -13,12 +13,12 @@ from .views import (
     JerseySelectView,
     JerseyUpdateView,
     PostCreateView,
+    demo_brand_view,
+    demo_country_view,
     file_upload,
     handle_dropzone_files,
     home,
     reorder_photos,
-    test_brand_view,
-    test_country_view,
     test_dropzone,
     upload_photo,
 )
@@ -34,8 +34,8 @@ app_name = "collection"
 urlpatterns = [
     # Home and test views
     path("", home, name="home"),
-    path("test/country/", test_country_view, name="test_country"),
-    path("test/brand/", test_brand_view, name="test_brand"),
+    path("test/country/", demo_country_view, name="test_country"),
+    path("test/brand/", demo_brand_view, name="test_brand"),
     path("test/dropzone/", test_dropzone, name="test_dropzone"),
     path("test/dropzone-page/", DropzoneTestView.as_view(), name="dropzone_test_page"),
     # Item CRUD operations

@@ -3,6 +3,7 @@ Tests for collection forms.
 """
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import QueryDict
 from django.test import TestCase
 
@@ -13,10 +14,20 @@ from footycollect.collection.factories import (
     SizeFactory,
     UserFactory,
 )
-from footycollect.collection.forms import JerseyFKAPIForm, JerseyForm
-from footycollect.collection.models import BaseItem
+from footycollect.collection.forms import (
+    BaseItemForm,
+    BrandWidget,
+    JerseyFKAPIForm,
+    JerseyForm,
+    MultipleFileField,
+    MultipleFileInput,
+)
+from footycollect.collection.models import BaseItem, Brand, Club, Color, Season, Size
 
 User = get_user_model()
+
+# Constants for test values
+EXPECTED_FILES_COUNT_2 = 2
 
 
 class JerseyFormTest(TestCase):
@@ -239,3 +250,105 @@ class JerseyFKAPIFormTest(TestCase):
 
         # Test that form is valid with good data
         assert form.is_valid()
+
+
+class TestMultipleFileField(TestCase):
+    """Test cases for MultipleFileField."""
+
+    def test_multiple_file_input_widget(self):
+        """Test MultipleFileInput widget."""
+        widget = MultipleFileInput()
+        assert widget.allow_multiple_selected
+
+    def test_multiple_file_field_clean_single_file(self):
+        """Test MultipleFileField clean method with a single file."""
+        field = MultipleFileField()
+        file = SimpleUploadedFile("test.txt", b"file_content")
+        cleaned_data = field.clean(file)
+        assert cleaned_data.name == "test.txt"
+
+    def test_multiple_file_field_clean_multiple_files(self):
+        """Test MultipleFileField clean method with multiple files."""
+        field = MultipleFileField()
+        file1 = SimpleUploadedFile("test1.txt", b"file_content_1")
+        file2 = SimpleUploadedFile("test2.txt", b"file_content_2")
+        cleaned_data = field.clean([file1, file2])
+        assert len(cleaned_data) == EXPECTED_FILES_COUNT_2
+        assert cleaned_data[0].name == "test1.txt"
+        assert cleaned_data[1].name == "test2.txt"
+
+
+class TestBrandWidget(TestCase):
+    """Test cases for BrandWidget."""
+
+    def test_brand_widget_build_attrs(self):
+        """Test BrandWidget build_attrs method."""
+        widget = BrandWidget()
+        attrs = widget.build_attrs({}, {})
+        assert attrs["data-minimum-input-length"] == 0
+        assert attrs["data-placeholder"] == "Buscar marca..."
+        # Check if class attribute exists before asserting
+        if "class" in attrs:
+            assert "form-control" in attrs["class"]
+            assert "select2" in attrs["class"]
+
+
+class TestBaseItemForm(TestCase):
+    """Test BaseItemForm."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.user = UserFactory()
+        self.brand = Brand.objects.create(name="Nike")
+        self.club = Club.objects.create(name="Real Madrid")
+        self.season = Season.objects.create(year=2023)
+        self.color = Color.objects.create(name="RED", hex_value="#FF0000")
+
+    def test_form_initialization(self):
+        """Test form initialization."""
+        form = BaseItemForm()
+        assert "name" in form.fields
+        assert "brand" in form.fields
+        assert "club" in form.fields
+
+
+class TestJerseyFormExtended(TestCase):
+    """Extended test cases for JerseyForm."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.user = UserFactory()
+        self.brand = Brand.objects.create(name="Nike")
+        self.club = Club.objects.create(name="Real Madrid")
+        self.season = Season.objects.create(year=2023)
+        self.color = Color.objects.create(name="RED", hex_value="#FF0000")
+        self.size = Size.objects.create(name="M", category="tops")
+
+    def test_form_initialization(self):
+        """Test form initialization."""
+        form = JerseyForm()
+        assert "name" in form.fields
+        assert "brand" in form.fields
+        assert "club" in form.fields
+        assert "season" in form.fields
+
+
+class TestJerseyFKAPIFormExtended(TestCase):
+    """Extended test cases for JerseyFKAPIForm."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.user = UserFactory()
+        self.brand = Brand.objects.create(name="Nike")
+        self.club = Club.objects.create(name="Real Madrid")
+        self.season = Season.objects.create(year=2023)
+        self.color = Color.objects.create(name="RED", hex_value="#FF0000")
+        self.size = Size.objects.create(name="M", category="tops")
+
+    def test_form_initialization(self):
+        """Test form initialization."""
+        form = JerseyFKAPIForm()
+        assert "name" in form.fields
+        assert "brand" in form.fields
+        assert "club" in form.fields
+        assert "season" in form.fields

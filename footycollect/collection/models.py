@@ -323,7 +323,7 @@ class Size(models.Model):
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES)
 
     def __str__(self):
-        return f"{self.get_category_display()} - {self.name}"
+        return self.name
 
 
 class Jersey(models.Model):

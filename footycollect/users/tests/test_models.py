@@ -17,6 +17,9 @@ from footycollect.users.tests.factories import (
 
 User = get_user_model()
 
+# Constants for test values
+TEST_PASSWORD = "password"
+
 
 @pytest.mark.django_db
 class TestUserModel:
@@ -124,7 +127,7 @@ class TestUserModel:
         user = UserFactory()
 
         # Password should be hashed, not plain text
-        assert user.password != "testpass123"  # noqa: S105
+        assert user.password != "testpass123"
         assert user.check_password("testpass123")
 
     def test_user_is_active_default(self):
@@ -179,7 +182,7 @@ class TestUserValidation:
             User.objects.create_user(
                 username="",
                 email="test@example.com",
-                password="testpass123",  # noqa: S106
+                password=TEST_PASSWORD,
             )
 
     def test_user_email_required(self):
@@ -189,7 +192,7 @@ class TestUserValidation:
         user = User.objects.create_user(
             username="testuser",
             email="",
-            password="testpass123",  # noqa: S106
+            password=TEST_PASSWORD,
         )
         assert user.email == ""
 
@@ -216,7 +219,7 @@ class TestUserValidation:
             User.objects.create_user(
                 username="testuser",
                 email="test2@example.com",
-                password="testpass123",  # noqa: S106
+                password=TEST_PASSWORD,
             )
 
     def test_user_email_unique_in_registration(self):

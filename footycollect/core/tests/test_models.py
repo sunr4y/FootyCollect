@@ -186,11 +186,12 @@ class TestClubModel:
         assert club.slug == "stabaek-jk"
 
         # Invalid slug should raise ValidationError
-        with pytest.raises(ValidationError):  # noqa: PT012
-            club = Club()
-            club.name = "Test Club"
-            club.slug = "invalid@slug!"
-            club.country = "ES"
+        club = Club()
+        club.name = "Test Club"
+        club.slug = "invalid@slug!"
+        club.country = "ES"
+
+        with pytest.raises(ValidationError):
             club.full_clean()
 
 

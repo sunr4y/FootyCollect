@@ -4,6 +4,7 @@ Manage your inventory of football memorabilia collection
 
 [![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![codecov](https://codecov.io/gh/sunr4y/footycollect/branch/main/graph/badge.svg)](https://codecov.io/gh/sunr4y/footycollect)
 
 License: MIT
 

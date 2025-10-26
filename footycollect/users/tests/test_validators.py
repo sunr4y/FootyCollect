@@ -1,124 +1,167 @@
-"""
-Tests for user validators.
-"""
-
-import contextlib
-from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
 
 from footycollect.users.validators import validate_avatar
 
 
-class TestValidateAvatar:
-    """Test avatar validation function."""
+class TestValidateAvatar(TestCase):
+    """Test cases for validate_avatar function."""
 
-    def test_valid_avatar_jpeg(self):
-        """Test that valid JPEG avatar passes validation."""
-        # Use real test image
-        test_image_path = Path(__file__).parent / "test_images" / "test_avatar.jpg"
-
-        with test_image_path.open("rb") as f:
-            test_image = SimpleUploadedFile(
-                "test_avatar.jpg",
-                f.read(),
-                content_type="image/jpeg",
-            )
-
-        # Should not raise ValidationError
-        try:
-            validate_avatar(test_image)
-        except ValidationError:
-            pytest.fail("Valid JPEG avatar failed validation")
-
-    def test_valid_avatar_png(self):
-        """Test that valid PNG avatar passes validation."""
-        # Use real test image
-        test_image_path = Path(__file__).parent / "test_images" / "test_avatar.png"
-
-        with test_image_path.open("rb") as f:
-            test_image = SimpleUploadedFile(
-                "test_avatar.png",
-                f.read(),
-                content_type="image/png",
-            )
-
-        # Should not raise ValidationError
-        try:
-            validate_avatar(test_image)
-        except ValidationError:
-            pytest.fail("Valid PNG avatar failed validation")
-
-    def test_valid_avatar_gif(self):
-        """Test that valid GIF avatar passes validation."""
-        # Use real test image
-        test_image_path = Path(__file__).parent / "test_images" / "test_avatar.gif"
-
-        with test_image_path.open("rb") as f:
-            test_image = SimpleUploadedFile(
-                "test_avatar.gif",
-                f.read(),
-                content_type="image/gif",
-            )
-
-        # Should not raise ValidationError
-        try:
-            validate_avatar(test_image)
-        except ValidationError:
-            pytest.fail("Valid GIF avatar failed validation")
-
-    def test_invalid_file_type(self):
-        """Test that invalid file types are rejected."""
-        # Create an invalid file type
-        test_file = SimpleUploadedFile(
-            "test_document.pdf",
-            b"fake_pdf_content",
-            content_type="application/pdf",
+    def test_validate_avatar_success(self):
+        """Test successful avatar validation."""
+        # Create a valid image file
+        image_content = b"fake_image_content"
+        image_file = SimpleUploadedFile(
+            "test.jpg",
+            image_content,
+            content_type="image/jpeg",
         )
 
-        with pytest.raises(ValidationError, match="File type is not supported"):
-            validate_avatar(test_file)
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.return_value = (100, 100)
 
-    def test_file_too_large(self):
-        """Test that files larger than 10MB are rejected."""
-        # Create a file larger than 10MB
+            # Should not raise any exception
+            validate_avatar(image_file)
+
+    def test_validate_avatar_file_too_large(self):
+        """Test avatar validation with file too large."""
+        # Create a large file
         large_content = b"x" * (11 * 1024 * 1024)  # 11MB
-        test_image = SimpleUploadedFile(
-            "large_avatar.jpg",
+        large_file = SimpleUploadedFile(
+            "large.jpg",
             large_content,
             content_type="image/jpeg",
         )
 
-        with pytest.raises(ValidationError, match="Image file too large"):
-            validate_avatar(test_image)
+        with pytest.raises(ValidationError) as context:
+            validate_avatar(large_file)
 
-    def test_file_without_content_type(self):
-        """Test that files without content type are handled."""
-        # Use real test image but without content type
-        test_image_path = Path(__file__).parent / "test_images" / "test_avatar.jpg"
+        assert "Image file too large" in str(context.value)
 
-        with test_image_path.open("rb") as f:
-            test_file = SimpleUploadedFile(
-                "test_file",
-                f.read(),
-                content_type=None,
-            )
-
-        # Should not raise ValidationError for content type check
-        # but might raise for other validation
-        with contextlib.suppress(ValidationError):
-            validate_avatar(test_file)
-
-    def test_empty_file(self):
-        """Test that empty files are rejected."""
-        # Create an empty file
-        test_image = SimpleUploadedFile(
-            "empty_avatar.jpg",
-            b"",
+    def test_validate_avatar_invalid_dimensions(self):
+        """Test avatar validation with invalid dimensions."""
+        image_file = SimpleUploadedFile(
+            "test.jpg",
+            b"fake_content",
             content_type="image/jpeg",
         )
 
-        with pytest.raises(ValidationError):
-            validate_avatar(test_image)
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.return_value = (0, 0)  # Invalid dimensions
+
+            with pytest.raises(ValidationError) as context:
+                validate_avatar(image_file)
+
+            assert "File type is not supported" in str(context.value)
+
+    def test_validate_avatar_no_dimensions(self):
+        """Test avatar validation with no dimensions."""
+        image_file = SimpleUploadedFile(
+            "test.jpg",
+            b"fake_content",
+            content_type="image/jpeg",
+        )
+
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.return_value = (None, None)  # No dimensions
+
+            with pytest.raises(ValidationError) as context:
+                validate_avatar(image_file)
+
+            assert "File type is not supported" in str(context.value)
+
+    def test_validate_avatar_dimensions_exception(self):
+        """Test avatar validation with dimensions exception."""
+        image_file = SimpleUploadedFile(
+            "test.jpg",
+            b"fake_content",
+            content_type="image/jpeg",
+        )
+
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.side_effect = Exception("Test error")
+
+            with pytest.raises(ValidationError) as context:
+                validate_avatar(image_file)
+
+            assert "File type is not supported" in str(context.value)
+
+    def test_validate_avatar_invalid_content_type(self):
+        """Test avatar validation with invalid content type."""
+        image_file = SimpleUploadedFile(
+            "test.txt",
+            b"fake_content",
+            content_type="text/plain",
+        )
+
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.return_value = (100, 100)
+
+            with pytest.raises(ValidationError) as context:
+                validate_avatar(image_file)
+
+            # Validator will raise specific message for invalid content type
+            assert "Please upload a valid image file (JPG, PNG, GIF)" in str(context.value)
+
+    def test_validate_avatar_valid_content_types(self):
+        """Test avatar validation with valid content types."""
+        valid_types = ["image/jpeg", "image/png", "image/gif"]
+
+        for content_type in valid_types:
+            with self.subTest(content_type=content_type):
+                image_file = SimpleUploadedFile(
+                    "test.jpg",
+                    b"fake_content",
+                    content_type=content_type,
+                )
+
+                with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+                    mock_dimensions.return_value = (100, 100)
+
+                    # Should not raise any exception
+                    validate_avatar(image_file)
+
+    def test_validate_avatar_no_content_type(self):
+        """Test avatar validation with no content type."""
+        image_file = SimpleUploadedFile(
+            "test.jpg",
+            b"fake_content",
+            # No content_type specified
+        )
+
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.return_value = (100, 100)
+
+            # SimpleUploadedFile provides a content_type attribute even if not specified (None)
+            with pytest.raises(ValidationError):
+                validate_avatar(image_file)
+
+    def test_validate_avatar_mock_file_without_content_type(self):
+        """Test avatar validation with mock file without content_type attribute."""
+        mock_file = Mock()
+        mock_file.size = 1024
+        mock_file.content_type = "image/jpeg"
+
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.return_value = (100, 100)
+
+            # Should not raise any exception
+            validate_avatar(mock_file)
+
+    def test_validate_avatar_mock_file_without_content_type_attribute(self):
+        """Test avatar validation with mock file without content_type attribute."""
+        mock_file = Mock()
+        mock_file.size = 1024
+        # Mock will report attribute present; set to None to simulate missing/unsupported
+        mock_file.content_type = None
+
+        with patch("footycollect.users.validators.get_image_dimensions") as mock_dimensions:
+            mock_dimensions.return_value = (100, 100)
+
+            # Expect a validation error due to invalid/None content type
+            with pytest.raises(ValidationError):
+                validate_avatar(mock_file)

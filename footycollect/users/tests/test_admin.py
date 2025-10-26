@@ -10,6 +10,9 @@ from pytest_django.asserts import assertRedirects
 
 from footycollect.users.models import User
 
+# Constants for test values
+TEST_PASSWORD = "test_password_123"
+
 
 class TestUserAdmin:
     def test_changelist(self, admin_client):
@@ -27,7 +30,7 @@ class TestUserAdmin:
         user = User.objects.create_user(
             username="test",
             email="test@example.com",
-            password="test_password_123",  # noqa: S106
+            password=TEST_PASSWORD,
             name="Test User",
         )
         assert User.objects.filter(username="test").exists()

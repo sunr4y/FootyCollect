@@ -83,7 +83,7 @@ def size(db):
 
 
 @pytest.fixture
-def jersey(db, user, brand, club, season, size):  # noqa: PLR0913
+def jersey(db, user, brand, club, season, size, **kwargs):  # noqa: PLR0913
     """Create a test jersey."""
     from footycollect.collection.models import BaseItem, Jersey
 

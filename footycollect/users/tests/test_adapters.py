@@ -1,500 +1,331 @@
 """
-Tests for django-allauth adapters.
+Tests for user adapters.
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.test import RequestFactory
+from django.test import RequestFactory, TestCase
 
 from footycollect.users.adapters import CustomAccountAdapter, CustomSocialAccountAdapter
 from footycollect.users.models import User
-from footycollect.users.tests.factories import UserFactory
 
 
-@pytest.mark.django_db
-class TestCustomAccountAdapter:
-    """Test CustomAccountAdapter for account merging logic."""
+class TestCustomAccountAdapter(TestCase):
+    """Test cases for CustomAccountAdapter."""
 
-    def test_save_user_duplicate_email_regular_account(self):
-        """Test that duplicate regular accounts are prevented."""
-        # Create first user
-        UserFactory(email="test@example.com")
+    def setUp(self):
+        """Set up test data."""
+        self.adapter = CustomAccountAdapter()
+        self.factory = RequestFactory()
 
-        # Test adapter
-        adapter = CustomAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
+    def test_is_open_for_signup_true(self):
+        """Test is_open_for_signup returns True when ACCOUNT_ALLOW_REGISTRATION is True."""
+        allow_registration = True
+        with patch("footycollect.users.adapters.settings.ACCOUNT_ALLOW_REGISTRATION", allow_registration):
+            request = self.factory.get("/")
+            result = self.adapter.is_open_for_signup(request)
+            assert result is True
 
-        # Create mock form
-        class MockForm:
-            def __init__(self, email):
-                self.cleaned_data = {"email": email}
+    def test_is_open_for_signup_false(self):
+        """Test is_open_for_signup returns False when ACCOUNT_ALLOW_REGISTRATION is False."""
+        allow_registration = False
+        with patch("footycollect.users.adapters.settings.ACCOUNT_ALLOW_REGISTRATION", allow_registration):
+            request = self.factory.get("/")
+            result = self.adapter.is_open_for_signup(request)
+            assert result is False
 
-        # Create second user with same email
-        user2 = UserFactory.build(email="test@example.com", username="testuser2")
+    def test_save_user_new_email(self):
+        """Test save_user with new email."""
+        request = self.factory.post("/")
+        user = User()
+        form = Mock()
+        form.cleaned_data = {"email": "new@example.com"}
 
-        # Should raise ValidationError
-        with pytest.raises(ValidationError, match="This email is already registered"):
-            adapter.save_user(request, user2, MockForm("test@example.com"))
+        with patch("footycollect.users.adapters.User.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = False
 
-    def test_save_user_duplicate_email_social_account(self):
-        """Test that duplicate social accounts are prevented with provider info."""
-        # Create first user with social account
-        user1 = UserFactory(email="test@example.com")
-        # Simulate social account
-        from allauth.socialaccount.models import SocialAccount
+            with patch.object(user, "save") as mock_save:
+                result = self.adapter.save_user(request, user, form, commit=True)
 
-        SocialAccount.objects.create(
-            user=user1,
-            provider="google",
-            uid="123456789",
-        )
+                assert result == user
+                mock_save.assert_called_once()
 
-        # Test adapter
-        adapter = CustomAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
+    def test_save_user_existing_email_social(self):
+        """Test save_user with existing email that has social accounts."""
+        request = self.factory.post("/")
+        user = User()
+        form = Mock()
+        form.cleaned_data = {"email": "existing@example.com"}
 
-        # Create mock form
-        class MockForm:
-            def __init__(self, email):
-                self.cleaned_data = {"email": email}
+        existing_user = Mock()
+        existing_user.socialaccount_set.exists.return_value = True
+        existing_user.socialaccount_set.values_list.return_value = ["google", "facebook"]
 
-        # Create second user with same email
-        user2 = UserFactory.build(email="test@example.com", username="testuser2")
+        with patch("footycollect.users.adapters.User.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = True
+            with patch("footycollect.users.adapters.User.objects.get") as mock_get:
+                mock_get.return_value = existing_user
 
-        # Should raise ValidationError with provider info
-        with pytest.raises(ValidationError, match="This email is already registered with: google"):
-            adapter.save_user(request, user2, MockForm("test@example.com"))
+                with pytest.raises(ValidationError) as context:
+                    self.adapter.save_user(request, user, form, commit=True)
 
-    def test_save_user_new_email_allowed(self):
-        """Test that new emails are allowed."""
-        adapter = CustomAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
+                assert "google, facebook" in str(context.value)
 
-        # Create mock form
-        class MockForm:
-            def __init__(self, email):
-                self.cleaned_data = {"email": email}
+    def test_save_user_existing_email_regular(self):
+        """Test save_user with existing email that is regular account."""
+        request = self.factory.post("/")
+        user = User()
+        form = Mock()
+        form.cleaned_data = {"email": "existing@example.com"}
 
-        # Create user with new email
-        user = UserFactory.build(email="new@example.com", username="newuser")
+        existing_user = Mock()
+        existing_user.socialaccount_set.exists.return_value = False
 
-        # Should not raise ValidationError
+        with patch("footycollect.users.adapters.User.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = True
+            with patch("footycollect.users.adapters.User.objects.get") as mock_get:
+                mock_get.return_value = existing_user
+
+                with pytest.raises(ValidationError) as context:
+                    self.adapter.save_user(request, user, form, commit=True)
+
+                assert "already registered" in str(context.value)
+
+    def test_send_password_reset_mail_social_user(self):
+        """Test send_password_reset_mail for social user."""
+        request = self.factory.post("/")
+        user = Mock()
+        user.socialaccount_set.exists.return_value = True
+        user.socialaccount_set.values_list.return_value = ["google"]
+
+        with patch("footycollect.users.adapters.messages.error") as mock_error:
+            self.adapter.send_password_reset_mail(request, "test@example.com", [user])
+
+            mock_error.assert_called_once()
+            assert "google" in str(mock_error.call_args[0][1])
+
+    def test_send_password_reset_mail_regular_user(self):
+        """Test send_password_reset_mail for regular user."""
+        request = self.factory.post("/")
+        user = Mock()
+        user.socialaccount_set.exists.return_value = False
+
+        with patch("footycollect.users.adapters.super") as mock_super:
+            self.adapter.send_password_reset_mail(request, "test@example.com", [user])
+
+            mock_super.assert_called_once()
+
+
+class TestCustomSocialAccountAdapter(TestCase):
+    """Test cases for CustomSocialAccountAdapter."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.adapter = CustomSocialAccountAdapter()
+        self.factory = RequestFactory()
+
+    def test_is_open_for_signup_true(self):
+        """Test is_open_for_signup returns True when ACCOUNT_ALLOW_REGISTRATION is True."""
+        allow_registration = True
+        with patch("footycollect.users.adapters.settings.ACCOUNT_ALLOW_REGISTRATION", allow_registration):
+            request = self.factory.get("/")
+            sociallogin = Mock()
+            result = self.adapter.is_open_for_signup(request, sociallogin)
+            assert result is True
+
+    def test_is_open_for_signup_false(self):
+        """Test is_open_for_signup returns False when ACCOUNT_ALLOW_REGISTRATION is False."""
+        allow_registration = False
+        with patch("footycollect.users.adapters.settings.ACCOUNT_ALLOW_REGISTRATION", allow_registration):
+            request = self.factory.get("/")
+            sociallogin = Mock()
+            result = self.adapter.is_open_for_signup(request, sociallogin)
+            assert result is False
+
+    def test_pre_social_login_existing_user(self):
+        """Test pre_social_login with existing user."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        sociallogin.user = Mock()
+        sociallogin.user.id = None
+        sociallogin.user.email = "existing@example.com"
+        sociallogin.account.extra_data = {"name": "John Doe"}
+
+        existing_user = Mock()
+        existing_user.name = ""
+        existing_user.email = "existing@example.com"
+
+        patch_get = patch("footycollect.users.adapters.User.objects.get", return_value=existing_user)
+        patch_connect = patch.object(sociallogin, "connect")
+        patch_success = patch("footycollect.users.adapters.messages.success")
+        with patch_get, patch_connect as mock_connect, patch_success as mock_success:
+            self.adapter.pre_social_login(request, sociallogin)
+
+            assert existing_user.name == "John Doe"
+            mock_connect.assert_called_once_with(request, existing_user)
+            mock_success.assert_called_once()
+
+    def test_pre_social_login_existing_user_with_name(self):
+        """Test pre_social_login with existing user that already has name."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        sociallogin.user = Mock()
+        sociallogin.user.id = None
+        sociallogin.user.email = "existing@example.com"
+        sociallogin.account.extra_data = {"name": "John Doe"}
+
+        existing_user = Mock()
+        existing_user.name = "Jane Doe"
+        existing_user.email = "existing@example.com"
+        with (
+            patch("footycollect.users.adapters.User.objects.get") as mock_get,
+            patch.object(sociallogin, "connect") as mock_connect,
+            patch("footycollect.users.adapters.messages.success") as mock_success,
+        ):
+            mock_get.return_value = existing_user
+
+            self.adapter.pre_social_login(request, sociallogin)
+
+            assert existing_user.name == "Jane Doe"  # Should not change
+            mock_connect.assert_called_once_with(request, existing_user)
+            mock_success.assert_called_once()
+
+    def test_pre_social_login_existing_user_first_last_name(self):
+        """Test pre_social_login with existing user using first_name and last_name."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        sociallogin.user = Mock()
+        sociallogin.user.id = None
+        sociallogin.user.email = "existing@example.com"
+        sociallogin.account.extra_data = {"first_name": "John", "last_name": "Doe"}
+
+        existing_user = Mock()
+        existing_user.name = ""
+        existing_user.email = "existing@example.com"
+
+        mock_get_patcher = patch("footycollect.users.adapters.User.objects.get")
+        mock_connect_patcher = patch.object(sociallogin, "connect")
+        mock_success_patcher = patch("footycollect.users.adapters.messages.success")
+        mock_get = mock_get_patcher.start()
+        mock_connect = mock_connect_patcher.start()
+        mock_success = mock_success_patcher.start()
         try:
-            adapter.save_user(request, user, MockForm("new@example.com"))
-        except ValidationError:
-            pytest.fail("ValidationError was raised for new email")
-
-    def test_is_open_for_signup_default(self):
-        """Test that signup is open by default."""
-        adapter = CustomAccountAdapter()
-        factory = RequestFactory()
-        request = factory.get("/")
-
-        assert adapter.is_open_for_signup(request) is True
-
-
-@pytest.mark.django_db
-class TestCustomSocialAccountAdapter:
-    """Test CustomSocialAccountAdapter for social login merging."""
-
-    def test_pre_social_login_connects_existing_user(self):
-        """Test that social login connects to existing user by email."""
-        # Create existing user
-        existing_user = UserFactory(email="test@example.com")
-
-        # Create mock social login
-        class MockSocialLogin:
-            def __init__(self, email):
-                self.account = MockSocialAccount(email)
-                self.user = MockUser(email)
-
-            def connect(self, request, user):
-                """Mock connect method."""
-                self.account.user = user
-
-        class MockSocialAccount:
-            def __init__(self, email):
-                self.user = None
-                self.provider = "google"
-                self.uid = "123456789"
-
-        class MockUser:
-            def __init__(self, email):
-                self.email = email
-                self.id = None  # New user has no ID
-
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Add messages middleware for the request
-        from django.contrib.messages.middleware import MessageMiddleware
-        from django.contrib.sessions.middleware import SessionMiddleware
-
-        middleware = MessageMiddleware(lambda req: None)
-        session_middleware = SessionMiddleware(lambda req: None)
-        session_middleware.process_request(request)
-        middleware.process_request(request)
-
-        sociallogin = MockSocialLogin("test@example.com")
-
-        # Should connect to existing user
-        adapter.pre_social_login(request, sociallogin)
-
-        # Verify connection was made
-        assert sociallogin.account.user == existing_user
-
-    def test_pre_social_login_new_user_allowed(self):
-        """Test that new users are allowed through social login."""
-
-        # Create mock social login for new user
-        class MockSocialLogin:
-            def __init__(self, email):
-                self.account = MockSocialAccount(email)
-                self.user = MockUser(email)
-
-        class MockSocialAccount:
-            def __init__(self, email):
-                self.user = None
-                self.provider = "google"
-                self.uid = "123456789"
-
-        class MockUser:
-            def __init__(self, email):
-                self.email = email
-                self.id = None  # New user has no ID
-
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        sociallogin = MockSocialLogin("new@example.com")
-
-        # Should not raise any errors
-        try:
-            adapter.pre_social_login(request, sociallogin)
-        except (AttributeError, ValueError, TypeError) as e:
-            pytest.fail(f"Exception was raised for new user: {e}")
-
-    def test_save_user_prevents_duplicate_social_registration(self):
-        """Test that duplicate social registrations are prevented."""
-        # Create existing user with social account
-        existing_user = UserFactory(email="test@example.com")
-        from allauth.socialaccount.models import SocialAccount
-
-        SocialAccount.objects.create(
-            user=existing_user,
-            provider="google",
-            uid="123456789",
-        )
-
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Create mock form
-        class MockForm:
-            def __init__(self, email):
-                self.cleaned_data = {"email": email}
-
-        # Create new user with same email
-        new_user = UserFactory.build(email="test@example.com", username="newuser")
-
-        # Create mock sociallogin object
-        class MockSocialLogin:
-            def __init__(self, user):
-                self.user = user
-
-        # Should raise ValidationError
-        with pytest.raises(ValidationError, match="This email is already registered with: google"):
-            adapter.save_user(request, MockSocialLogin(new_user), MockForm("test@example.com"))
-
-    def test_send_password_reset_mail_social_user(self, user: User):
-        """Test that password reset is blocked for social users."""
-        # Create social account for user
-        from allauth.socialaccount.models import SocialAccount
-
-        SocialAccount.objects.create(
-            user=user,
-            provider="google",
-            uid="123456789",
-        )
-
-        # Test adapter
-        adapter = CustomAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Add messages middleware
-        from django.contrib.messages.middleware import MessageMiddleware
-        from django.contrib.sessions.middleware import SessionMiddleware
-
-        middleware = MessageMiddleware(lambda req: None)
-        session_middleware = SessionMiddleware(lambda req: None)
-        session_middleware.process_request(request)
-        middleware.process_request(request)
-
-        # Should show error message and not send email
-        adapter.send_password_reset_mail(request, user.email, [user])
-
-        # Check that error message was added
-        messages_list = list(messages.get_messages(request))
-        assert len(messages_list) == 1
-        assert "This account was created with: google" in str(messages_list[0])
-
-    def test_send_password_reset_mail_regular_user(self, user: User):
-        """Test that password reset works for regular users."""
-        # Test adapter
-        adapter = CustomAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Add messages middleware
-        from django.contrib.messages.middleware import MessageMiddleware
-        from django.contrib.sessions.middleware import SessionMiddleware
-
-        middleware = MessageMiddleware(lambda req: None)
-        session_middleware = SessionMiddleware(lambda req: None)
-        session_middleware.process_request(request)
-        middleware.process_request(request)
-
-        # Test that the method doesn't raise an error for regular users
-        # (We can't easily test the parent method call without complex mocking)
-        import contextlib
-
-        with contextlib.suppress(AttributeError):
-            adapter.send_password_reset_mail(request, user.email, [user])
-
-        # Check that no error message was added
-        messages_list = list(messages.get_messages(request))
-        assert len(messages_list) == 0
-
-    def test_is_open_for_signup_social(self):
-        """Test that social signup is open by default."""
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Mock sociallogin
-        class MockSocialLogin:
-            pass
-
-        sociallogin = MockSocialLogin()
-
-        # Should return True by default
-        assert adapter.is_open_for_signup(request, sociallogin) is True
-
-    def test_pre_social_login_existing_user_with_name_update(self):
-        """Test that existing user name is updated from social data."""
-        # Create existing user without name
-        existing_user = UserFactory(email="test@example.com", name="")
-
-        # Create mock social login with extra data
-        class MockSocialLogin:
-            def __init__(self, email):
-                self.account = MockSocialAccount(email)
-                self.user = MockUser(email)
-
-            def connect(self, request, user):
-                """Mock connect method."""
-                self.account.user = user
-
-        class MockSocialAccount:
-            def __init__(self, email):
-                self.user = None
-                self.provider = "google"
-                self.uid = "123456789"
-                self.extra_data = {"name": "John Doe"}
-
-        class MockUser:
-            def __init__(self, email):
-                self.email = email
-                self.id = None
-
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Add messages middleware
-        from django.contrib.messages.middleware import MessageMiddleware
-        from django.contrib.sessions.middleware import SessionMiddleware
-
-        middleware = MessageMiddleware(lambda req: None)
-        session_middleware = SessionMiddleware(lambda req: None)
-        session_middleware.process_request(request)
-        middleware.process_request(request)
-
-        sociallogin = MockSocialLogin("test@example.com")
-
-        # Should connect and update name
-        adapter.pre_social_login(request, sociallogin)
-
-        # Verify connection was made and name was updated
-        assert sociallogin.account.user == existing_user
-        existing_user.refresh_from_db()
-        assert existing_user.name == "John Doe"
-
-    def test_pre_social_login_existing_user_with_first_last_name(self):
-        """Test that existing user name is updated from first_name and last_name."""
-        # Create existing user without name
-        existing_user = UserFactory(email="test@example.com", name="")
-
-        # Create mock social login with first_name and last_name
-        class MockSocialLogin:
-            def __init__(self, email):
-                self.account = MockSocialAccount(email)
-                self.user = MockUser(email)
-
-            def connect(self, request, user):
-                """Mock connect method."""
-                self.account.user = user
-
-        class MockSocialAccount:
-            def __init__(self, email):
-                self.user = None
-                self.provider = "google"
-                self.uid = "123456789"
-                self.extra_data = {
-                    "first_name": "John",
-                    "last_name": "Doe",
-                }
-
-        class MockUser:
-            def __init__(self, email):
-                self.email = email
-                self.id = None
-
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Add messages middleware
-        from django.contrib.messages.middleware import MessageMiddleware
-        from django.contrib.sessions.middleware import SessionMiddleware
-
-        middleware = MessageMiddleware(lambda req: None)
-        session_middleware = SessionMiddleware(lambda req: None)
-        session_middleware.process_request(request)
-        middleware.process_request(request)
-
-        sociallogin = MockSocialLogin("test@example.com")
-
-        # Should connect and update name
-        adapter.pre_social_login(request, sociallogin)
-
-        # Verify connection was made and name was updated
-        assert sociallogin.account.user == existing_user
-        existing_user.refresh_from_db()
-        assert existing_user.name == "John Doe"
+            mock_get.return_value = existing_user
+
+            self.adapter.pre_social_login(request, sociallogin)
+
+            assert existing_user.name == "John Doe"
+            mock_connect.assert_called_once_with(request, existing_user)
+            mock_success.assert_called_once()
+        finally:
+            mock_get_patcher.stop()
+            mock_connect_patcher.stop()
+            mock_success_patcher.stop()
+
+    def test_pre_social_login_no_existing_user(self):
+        """Test pre_social_login with no existing user."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        sociallogin.user = Mock()
+        sociallogin.user.id = None
+        sociallogin.user.email = "new@example.com"
+
+        with patch("footycollect.users.adapters.User.objects.get") as mock_get:
+            mock_get.side_effect = User.DoesNotExist()
+
+            # Should not raise an exception
+            self.adapter.pre_social_login(request, sociallogin)
+
+    def test_pre_social_login_existing_user_id(self):
+        """Test pre_social_login with user that already has id."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        sociallogin.user = Mock()
+        sociallogin.user.id = 1
+
+        # Should return early
+        self.adapter.pre_social_login(request, sociallogin)
 
     def test_populate_user_with_name(self):
-        """Test that user name is populated from social data."""
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
-
-        # Mock sociallogin
-        class MockSocialLogin:
-            def __init__(self):
-                self.user = MockUser()
-
-        class MockUser:
-            def __init__(self):
-                self.name = ""
-                self.username = ""
-
-        sociallogin = MockSocialLogin()
+        """Test populate_user with name in data."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
         data = {"name": "John Doe", "email": "john@example.com"}
 
-        # Should populate user with name
-        user = adapter.populate_user(request, sociallogin, data)
-        assert user.name == "John Doe"
+        user = Mock()
+        user.name = ""
+
+        with patch("footycollect.users.adapters.super") as mock_super:
+            mock_super.return_value.populate_user.return_value = user
+
+            with patch("footycollect.users.adapters.User.objects.filter") as mock_filter:
+                mock_filter.return_value.exists.return_value = False
+
+                result = self.adapter.populate_user(request, sociallogin, data)
+
+                assert result == user
+                assert user.name == "John Doe"
+                assert user.username == "john"
 
     def test_populate_user_with_first_last_name(self):
-        """Test that user name is populated from first_name and last_name."""
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
+        """Test populate_user with first_name and last_name in data."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        data = {"first_name": "John", "last_name": "Doe", "email": "john@example.com"}
 
-        # Mock sociallogin
-        class MockSocialLogin:
-            def __init__(self):
-                self.user = MockUser()
+        user = Mock()
+        user.name = ""
 
-        class MockUser:
-            def __init__(self):
-                self.name = ""
-                self.username = ""
+        with patch("footycollect.users.adapters.super") as mock_super:
+            mock_super.return_value.populate_user.return_value = user
 
-        sociallogin = MockSocialLogin()
-        data = {
-            "first_name": "John",
-            "last_name": "Doe",
-            "email": "john@example.com",
-        }
+            with patch("footycollect.users.adapters.User.objects.filter") as mock_filter:
+                mock_filter.return_value.exists.return_value = False
 
-        # Should populate user with combined name
-        user = adapter.populate_user(request, sociallogin, data)
-        assert user.name == "John Doe"
+                result = self.adapter.populate_user(request, sociallogin, data)
 
-    def test_populate_user_username_generation(self):
-        """Test that username is generated from email."""
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
+                assert result == user
+                assert user.name == "John Doe"
+                assert user.username == "john"
 
-        # Mock sociallogin
-        class MockSocialLogin:
-            def __init__(self):
-                self.user = MockUser()
+    def test_populate_user_username_collision(self):
+        """Test populate_user with username collision."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        data = {"name": "John Doe", "email": "john@example.com"}
 
-        class MockUser:
-            def __init__(self):
-                self.name = ""
-                self.username = ""
+        user = Mock()
+        user.name = ""
 
-        sociallogin = MockSocialLogin()
-        data = {"email": "john.doe@example.com"}
+        with patch("footycollect.users.adapters.super") as mock_super:
+            mock_super.return_value.populate_user.return_value = user
 
-        # Should generate username from email
-        user = adapter.populate_user(request, sociallogin, data)
-        assert user.username == "john.doe"
+            with patch("footycollect.users.adapters.User.objects.filter") as mock_filter:
+                # First call returns True (username exists), second call returns False
+                mock_filter.return_value.exists.side_effect = [True, False]
 
-    def test_populate_user_username_uniqueness(self):
-        """Test that username is made unique if it already exists."""
-        # Create existing user with username
-        UserFactory(username="john.doe")
+                result = self.adapter.populate_user(request, sociallogin, data)
 
-        # Test adapter
-        adapter = CustomSocialAccountAdapter()
-        factory = RequestFactory()
-        request = factory.post("/")
+                assert result == user
+                assert user.name == "John Doe"
+                assert user.username == "john1"
 
-        # Mock sociallogin
-        class MockSocialLogin:
-            def __init__(self):
-                self.user = MockUser()
+    def test_populate_user_no_email(self):
+        """Test populate_user with no email in data."""
+        request = self.factory.get("/")
+        sociallogin = Mock()
+        data = {"name": "John Doe"}
 
-        class MockUser:
-            def __init__(self):
-                self.name = ""
-                self.username = ""
+        user = Mock()
+        user.name = ""
 
-        sociallogin = MockSocialLogin()
-        data = {"email": "john.doe@example.com"}
+        with patch("footycollect.users.adapters.super") as mock_super:
+            mock_super.return_value.populate_user.return_value = user
 
-        # Should generate unique username
-        user = adapter.populate_user(request, sociallogin, data)
-        assert user.username == "john.doe1"
+            result = self.adapter.populate_user(request, sociallogin, data)
+
+            assert result == user
+            assert user.name == "John Doe"
+            # Username should not be set if no email

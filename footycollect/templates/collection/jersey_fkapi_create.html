@@ -1216,6 +1216,10 @@
               'gold': 'GOLD',
               'light blue': 'SKY_BLUE',
               'light-blue': 'SKY_BLUE',
+              'sky blue': 'SKY_BLUE',
+              'sky-blue': 'SKY_BLUE',
+              'off white': 'OFF_WHITE',
+              'off-white': 'OFF_WHITE',
               'dark blue': 'NAVY',
               'dark-blue': 'NAVY',
               'light grey': 'GRAY',
@@ -1223,9 +1227,9 @@
             };
 
             // Normalize the color value
+            console.log('Original color value:', colorValue);
             colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
-
-            console.log('Processing main color:', colorValue);
+            console.log('Mapped color value:', colorValue);
 
             // Update the value in the Cotton component
             updateCottonComponent('main_color', colorValue);
@@ -1261,6 +1265,10 @@
               'gold': 'GOLD',
               'light blue': 'SKY_BLUE',
               'light-blue': 'SKY_BLUE',
+              'sky blue': 'SKY_BLUE',
+              'sky-blue': 'SKY_BLUE',
+              'off white': 'OFF_WHITE',
+              'off-white': 'OFF_WHITE',
               'dark blue': 'NAVY',
               'dark-blue': 'NAVY',
               'light grey': 'GRAY',
@@ -1349,9 +1357,10 @@
             const typeValue = kitData.type.name;
             const found = this.setSelectValueByText('id_kit_type', typeValue);
 
-            // For kit types, we don't create new ones since they are predefined values
+            // If kit type not found, create it dynamically
             if (!found) {
-              console.log(`El tipo de kit "${typeValue}" no se encontró en las opciones disponibles. Se usará el valor predeterminado.`);
+              console.log(`El tipo de kit "${typeValue}" no se encontró. Creando opción dinámicamente...`);
+              this.createKitTypeOption(typeValue);
             }
 
             // Mostrar el valor en el campo
@@ -1451,6 +1460,17 @@
           }
         },
 
+        // Helper method to create kit type option dynamically
+        createKitTypeOption(typeValue) {
+          const selectElement = document.getElementById('id_kit_type');
+          if (selectElement) {
+            const option = document.createElement('option');
+            option.value = typeValue;
+            option.textContent = typeValue;
+            selectElement.appendChild(option);
+            console.log(`Kit type option "${typeValue}" created successfully`);
+          }
+        },
 
         // Method to show the value of a field
         displayFieldValue(fieldName, value, isColor = false) {
@@ -1708,11 +1728,11 @@
             imagePreview.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
             imagePreview.innerHTML = `
             <div class="card-header bg-primary text-white">
-              <h5 class="card-title mb-0">Imagen del Kit</h5>
+              <h5 class="card-title mb-0">Kit Image</h5>
             </div>
             <div class="card-body text-center">
-              <img src="${imageUrl}" alt="Imagen del kit" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
-              <p class="text-muted mb-0 small">Esta imagen se descargará automáticamente al crear el jersey</p>
+              <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
+              <p class="text-muted mb-0 small">This image will be automatically downloaded once the jersey is created</p>
             </div>
           `;
 
@@ -1763,11 +1783,11 @@
                 imagePreview.className = 'card mb-3 api-image-preview';
                 imagePreview.innerHTML = `
                 <div class="card-header bg-primary text-white">
-                  <h5 class="card-title mb-0">Imagen del Kit</h5>
+                  <h5 class="card-title mb-0">Kit Image</h5>
                 </div>
                 <div class="card-body text-center">
-                  <img src="${imageUrl}" alt="Imagen del kit" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
-                  <p class="text-muted mb-0 small">Esta imagen se descargará automáticamente al crear el jersey</p>
+                  <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
+                  <p class="text-muted mb-0 small">This image will be automatically downloaded once the jersey is created</p>
                 </div>
               `;
                 form.insertBefore(imagePreview, form.firstChild);

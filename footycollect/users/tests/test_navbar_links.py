@@ -9,17 +9,19 @@ from django.urls import reverse
 User = get_user_model()
 HTTP_OK = 200
 
+# Constants for test values
+TEST_PASSWORD = "testpass123"
+
 
 class NavbarLinksTestCase(TestCase):
     """Test that all navbar links work correctly."""
 
     def setUp(self):
         """Set up test data."""
-        test_password = "testpass123"  # noqa: S105
         self.user = User.objects.create_user(
             username="testuser",
             email="test@example.com",
-            password=test_password,
+            password=TEST_PASSWORD,
         )
 
     def test_home_link(self):
@@ -34,8 +36,7 @@ class NavbarLinksTestCase(TestCase):
 
     def test_authenticated_user_links(self):
         """Test links that are only visible to authenticated users."""
-        test_password = "testpass123"  # noqa: S105
-        self.client.login(username="testuser", password=test_password)
+        self.client.login(username="testuser", password=TEST_PASSWORD)
 
         # Test collection links
         response = self.client.get(reverse("collection:item_create"))
@@ -68,8 +69,7 @@ class NavbarLinksTestCase(TestCase):
     def test_navbar_renders_without_errors(self):
         """Test that navbar template renders without errors."""
         # Test for authenticated user
-        test_password = "testpass123"  # noqa: S105
-        self.client.login(username="testuser", password=test_password)
+        self.client.login(username="testuser", password=TEST_PASSWORD)
         response = self.client.get(reverse("home"))
         assert response.status_code == HTTP_OK
         self.assertContains(response, "FootyCollect")
