@@ -79,5 +79,19 @@ DATABASES = {
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "http://media.testserver"
+
+# Football Kit Archive API Settings for Testing
+# ------------------------------------------------------------------------------
+# Skip FKA API settings in test environment since they're not used in tests
+# and require external API access
+try:
+    FKA_API_IP = env("FKA_API_IP")
+    API_KEY = env("API_KEY")
+except (ValueError, TypeError, AttributeError) as e:
+    # If FKA API settings are not available, skip them for tests
+    import logging
+
+    logging.getLogger(__name__).debug("FKA API settings not available for tests: %s", e)
+
 # Your stuff...
 # ------------------------------------------------------------------------------
