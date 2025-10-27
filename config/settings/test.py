@@ -95,7 +95,3 @@ except (ValueError, TypeError, AttributeError) as e:
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-
-# Disable MFA for testing to avoid fido2 compatibility issues
-# ------------------------------------------------------------------------------
-ACCOUNT_MFA_ENABLED = False

@@ -398,3 +398,6 @@ SPECTACULAR_SETTINGS = {
 # Football Kit Archive API Settings
 FKA_API_IP = env("FKA_API_IP")
 API_KEY = env("API_KEY")
+
+# Testing flag for conditional URL loading
+TESTING = False
