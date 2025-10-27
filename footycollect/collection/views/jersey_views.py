@@ -301,8 +301,8 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         # Ensure form has an instance
         if form.instance is None:
             # Check if form is a ModelForm and has _meta
-            if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):  # noqa: SLF001
-                form.instance = form._meta.model()  # noqa: SLF001
+            if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):
+                form.instance = form._meta.model()
             else:
                 # For non-ModelForm or if _meta is None, create a BaseItem instance
                 from footycollect.collection.models import BaseItem

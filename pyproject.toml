@@ -137,3 +137,17 @@ extend-unsafe-fixes = [
 
 [tool.ruff.lint.isort]
 # force-single-line = true
+
+[tool.ruff.lint.flake8-self]
+# Ignore access to _meta since it's a recognized Django API
+ignore-names = ["_meta"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore SLF001, S105, S106 in all test files
+"**/tests/**/*.py" = ["SLF001", "S105", "S106"]
+"**/test_*.py" = ["SLF001", "S105", "S106"]
+# Ignore F403 and S104 in configuration files
+"config/settings/*.py" = ["F403"]
+"config/settings/local.py" = ["S104"]
+# Ignore PD011 in test_services files
+"**/tests/test_services.py" = ["PD011"]

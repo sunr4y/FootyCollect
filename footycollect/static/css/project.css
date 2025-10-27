@@ -21,6 +21,22 @@
   height: 50px !important;
 }
 
+/* Item card styles */
+.item-logo {
+  height: 30px;
+  width: auto;
+}
+
+.item-crest {
+  height: 30px;
+  width: auto;
+}
+
+.item-flag {
+  height: 20px;
+  width: auto;
+}
+
 .selected-club-logo {
   width: 30px;
   height: 30px;

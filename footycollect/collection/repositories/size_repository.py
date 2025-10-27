@@ -73,7 +73,10 @@ class SizeRepository(BaseRepository):
         Returns:
             Size instance or None if not found
         """
-        return self.get_by_field("name", name) and self.get_by_field("category", category)
+        try:
+            return self.model.objects.get(name=name, category=category)
+        except self.model.DoesNotExist:
+            return None
 
     def get_popular_sizes(self, category: str | None = None, limit: int = 10) -> QuerySet[Size]:
         """

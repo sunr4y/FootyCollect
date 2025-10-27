@@ -113,12 +113,12 @@ class ColorRepository(BaseRepository):
 
         # Get colors used as main colors
         main_colors = self.model.objects.filter(
-            jersey__isnull=False,
+            baseitem__isnull=False,
         ).distinct()
 
         # Get colors used as secondary colors
         secondary_colors = self.model.objects.filter(
-            jersey_secondary__isnull=False,
+            collection_baseitem_secondary__isnull=False,
         ).distinct()
 
         # Combine and return unique colors
@@ -137,11 +137,11 @@ class ColorRepository(BaseRepository):
         # Count main colors usage
         main_color_usage = (
             self.model.objects.filter(
-                jersey__isnull=False,
+                baseitem__isnull=False,
             )
             .values("name", "hex_value")
             .annotate(
-                count=models.Count("jersey"),
+                count=models.Count("baseitem"),
             )
             .order_by("-count")
         )
@@ -149,11 +149,11 @@ class ColorRepository(BaseRepository):
         # Count secondary colors usage
         secondary_color_usage = (
             self.model.objects.filter(
-                jersey_secondary__isnull=False,
+                collection_baseitem_secondary__isnull=False,
             )
             .values("name", "hex_value")
             .annotate(
-                count=models.Count("jersey_secondary"),
+                count=models.Count("collection_baseitem_secondary"),
             )
             .order_by("-count")
         )

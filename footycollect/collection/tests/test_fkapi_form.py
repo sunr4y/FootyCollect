@@ -12,6 +12,9 @@ from footycollect.core.models import Brand, Club, Season
 HTTP_OK = 200
 HTTP_REDIRECT = 302
 
+# Constants for test values
+TEST_PASSWORD = "testpass123"
+
 User = get_user_model()
 fake = Faker()
 
@@ -22,14 +25,12 @@ class FKAPIFormTest(TestCase):
     def setUp(self):
         """Set up test data."""
         self.client = Client()
-        # Use a test password constant to avoid hardcoded password warnings
-        test_password = "testpass123"  # noqa: S105
         self.user = User.objects.create_user(
             username="testuser",
             email="test@example.com",
-            password=test_password,
+            password=TEST_PASSWORD,
         )
-        self.client.login(username="testuser", password=test_password)
+        self.client.login(username="testuser", password=TEST_PASSWORD)
 
         # Create test data
         self.club = Club.objects.create(

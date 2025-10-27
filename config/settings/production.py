@@ -7,7 +7,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
-from .base import *  # noqa: F403
+from .base import *
 from .base import DATABASES, INSTALLED_APPS, SPECTACULAR_SETTINGS, env
 
 # GENERAL

@@ -185,8 +185,9 @@ class UserService:
             items.filter(club__isnull=False).values("club__name").annotate(count=Count("id")).order_by("-count")
         )
 
-        if club_counts:
-            return club_counts.first()["club__name"]
+        first_club = club_counts.first()
+        if first_club:
+            return first_club["club__name"]
         return None
 
     def _get_most_common_competition(self, items: QuerySet) -> str | None:
@@ -208,6 +209,7 @@ class UserService:
             .order_by("-count")
         )
 
-        if competition_counts:
-            return competition_counts.first()["competitions__name"]
+        first_competition = competition_counts.first()
+        if first_competition:
+            return first_competition["competitions__name"]
         return None

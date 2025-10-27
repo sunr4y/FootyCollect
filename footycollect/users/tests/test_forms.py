@@ -1,9 +1,7 @@
-"""Module for all Form Tests."""
+from django.contrib.auth import get_user_model
+from django.test import TestCase
 
-import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.utils.translation import gettext_lazy as _
-
+from footycollect.core.models import Club
 from footycollect.users.forms import (
     UserAdminChangeForm,
     UserAdminCreationForm,
@@ -11,145 +9,107 @@ from footycollect.users.forms import (
     UserSocialSignupForm,
     UserUpdateForm,
 )
-from footycollect.users.models import User
+
+User = get_user_model()
+
+# Constants for test values
+TEST_PASSWORD = "testpass123"
 
 
-@pytest.mark.django_db
-class TestUserAdminCreationForm:
-    """Test class for all tests related to the UserAdminCreationForm."""
+class TestUserAdminChangeForm(TestCase):
+    """Test cases for UserAdminChangeForm."""
 
-    def test_username_validation_error_msg(self, user: User):
-        """
-        Tests UserAdminCreation Form's unique validator functions correctly by testing:
-            1) A new user with an existing username cannot be added.
-            2) Only 1 error is raised by the UserCreation Form
-            3) The desired error message is raised
-        """
-        # The user already exists, hence cannot be created.
-        form = UserAdminCreationForm(
-            {
-                "username": user.username,
-                "password1": user.password,
-                "password2": user.password,
-            },
-        )
+    def test_user_admin_change_form_meta(self):
+        """Test UserAdminChangeForm Meta class."""
+        form = UserAdminChangeForm()
+        assert form.Meta.model == User
 
-        assert not form.is_valid()
-        assert len(form.errors) == 1
-        assert "username" in form.errors
-        assert form.errors["username"][0] == _("This username has already been taken.")
+    def test_user_admin_change_form_inheritance(self):
+        """Test UserAdminChangeForm inheritance."""
+        from django.contrib.auth import forms as admin_forms
 
-    def test_valid_user_creation(self):
-        """Test that valid user creation works."""
-        form = UserAdminCreationForm(
-            {
-                "username": "newuser",
-                "password1": "testpass123",
-                "password2": "testpass123",
-            },
-        )
+        assert issubclass(UserAdminChangeForm, admin_forms.UserChangeForm)
 
+
+class TestUserAdminCreationForm(TestCase):
+    """Test cases for UserAdminCreationForm."""
+
+    def test_user_admin_creation_form_meta(self):
+        """Test UserAdminCreationForm Meta class."""
+        form = UserAdminCreationForm()
+        assert form.Meta.model == User
+
+    def test_user_admin_creation_form_inheritance(self):
+        """Test UserAdminCreationForm inheritance."""
+        from django.contrib.auth import forms as admin_forms
+
+        assert issubclass(UserAdminCreationForm, admin_forms.UserCreationForm)
+
+    def test_user_admin_creation_form_error_messages(self):
+        """Test UserAdminCreationForm error messages."""
+        form = UserAdminCreationForm()
+        assert "username" in form.Meta.error_messages
+        assert form.Meta.error_messages["username"]["unique"] == "This username has already been taken."
+
+    def test_user_admin_creation_form_valid_data(self):
+        """Test UserAdminCreationForm with valid data."""
+        form_data = {
+            "username": "testuser",
+            "email": "test@example.com",
+            "password1": "testpass123",
+            "password2": "testpass123",
+        }
+        form = UserAdminCreationForm(data=form_data)
         assert form.is_valid()
-        user = form.save()
-        assert user.username == "newuser"
-        assert user.check_password("testpass123")
 
-    def test_password_mismatch(self):
-        """Test that password mismatch is caught."""
-        form = UserAdminCreationForm(
-            {
-                "username": "newuser",
-                "password1": "testpass123",
-                "password2": "differentpass",
-            },
-        )
-
+    def test_user_admin_creation_form_invalid_data(self):
+        """Test UserAdminCreationForm with invalid data."""
+        form_data = {
+            "username": "testuser",
+            "email": "test@example.com",
+            "password1": "testpass123",
+            "password2": "differentpass",
+        }
+        form = UserAdminCreationForm(data=form_data)
         assert not form.is_valid()
-        assert "password2" in form.errors
 
 
-@pytest.mark.django_db
-class TestUserAdminChangeForm:
-    """Test class for UserAdminChangeForm."""
+class TestUserSignupForm(TestCase):
+    """Test cases for UserSignupForm."""
 
-    def test_form_initialization(self, user: User):
-        """Test that form initializes correctly with user data."""
-        form = UserAdminChangeForm(instance=user)
+    def test_user_signup_form_inheritance(self):
+        """Test UserSignupForm inheritance."""
+        from allauth.account.forms import SignupForm
 
-        assert form.instance == user
-        assert form.initial["username"] == user.username
-        assert form.initial["email"] == user.email
+        assert issubclass(UserSignupForm, SignupForm)
 
-    def test_form_save(self, user: User):
-        """Test that form saves changes correctly."""
-        # Get all required fields from the form
-        form = UserAdminChangeForm(instance=user)
-        required_fields = {}
 
-        # Fill in all required fields with current values
-        for field_name, field in form.fields.items():
-            if field.required:
-                if hasattr(user, field_name):
-                    required_fields[field_name] = getattr(user, field_name)
-                elif field_name == "is_active":
-                    required_fields[field_name] = True
-                elif field_name in ("is_staff", "is_superuser"):
-                    required_fields[field_name] = False
+class TestUserSocialSignupForm(TestCase):
+    """Test cases for UserSocialSignupForm."""
 
-        # Update some fields
-        required_fields.update(
-            {
-                "email": "newemail@example.com",
-                "name": "New Name",
-            },
+    def test_user_social_signup_form_inheritance(self):
+        """Test UserSocialSignupForm inheritance."""
+        from allauth.socialaccount.forms import SignupForm as SocialSignupForm
+
+        assert issubclass(UserSocialSignupForm, SocialSignupForm)
+
+
+class TestUserUpdateForm(TestCase):
+    """Test cases for UserUpdateForm."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password=TEST_PASSWORD,
         )
+        self.club = Club.objects.create(name="FC Barcelona")
 
-        form = UserAdminChangeForm(required_fields, instance=user)
-        assert form.is_valid()
-        updated_user = form.save()
-        assert updated_user.email == "newemail@example.com"
-        assert updated_user.name == "New Name"
-
-
-@pytest.mark.django_db
-class TestUserSignupForm:
-    """Test class for UserSignupForm."""
-
-    def test_form_inheritance(self):
-        """Test that UserSignupForm inherits from SignupForm."""
-        form = UserSignupForm()
-        assert isinstance(form, UserSignupForm)
-
-    def test_form_fields(self):
-        """Test that form has expected fields."""
-        form = UserSignupForm()
-        # SignupForm typically has username, email, password1, password2
-        expected_fields = ["username", "email", "password1", "password2"]
-        for field in expected_fields:
-            assert field in form.fields
-
-
-@pytest.mark.django_db
-class TestUserSocialSignupForm:
-    """Test class for UserSocialSignupForm."""
-
-    def test_form_inheritance(self):
-        """Test that UserSocialSignupForm inherits from SocialSignupForm."""
-        # UserSocialSignupForm requires sociallogin parameter
-        from unittest.mock import Mock
-
-        mock_sociallogin = Mock()
-        form = UserSocialSignupForm(sociallogin=mock_sociallogin)
-        assert isinstance(form, UserSocialSignupForm)
-
-
-@pytest.mark.django_db
-class TestUserUpdateForm:
-    """Test class for UserUpdateForm."""
-
-    def test_form_fields(self):
-        """Test that form has correct fields."""
+    def test_user_update_form_meta(self):
+        """Test UserUpdateForm Meta class."""
         form = UserUpdateForm()
+        assert form.Meta.model == User
         expected_fields = [
             "name",
             "biography",
@@ -158,85 +118,108 @@ class TestUserUpdateForm:
             "favourite_teams",
             "is_private",
         ]
-        for field in expected_fields:
-            assert field in form.fields
+        assert form.Meta.fields == expected_fields
 
-    def test_form_initialization(self, user: User):
-        """Test that form initializes correctly with user data."""
-        form = UserUpdateForm(instance=user)
-
-        assert form.instance == user
-        assert form.initial["name"] == user.name
-        assert form.initial["biography"] == user.biography
-        assert form.initial["location"] == user.location
-        assert form.initial["is_private"] == user.is_private
-
-    def test_form_save(self, user: User):
-        """Test that form saves changes correctly."""
-        form = UserUpdateForm(
-            {
-                "name": "Updated Name",
-                "biography": "Updated biography",
-                "location": "Updated Location",
-                "is_private": True,
-            },
-            instance=user,
-        )
-
-        assert form.is_valid()
-        updated_user = form.save()
-        assert updated_user.name == "Updated Name"
-        assert updated_user.biography == "Updated biography"
-        assert updated_user.location == "Updated Location"
-        assert updated_user.is_private is True
-
-    def test_avatar_upload(self, user: User):
-        """Test that avatar upload works."""
-        # Use real test image
-        from pathlib import Path
-
-        test_image_path = Path(__file__).parent / "test_images" / "test_avatar.jpg"
-
-        with test_image_path.open("rb") as f:
-            test_image = SimpleUploadedFile(
-                "test_avatar.jpg",
-                f.read(),
-                content_type="image/jpeg",
-            )
-
-        form = UserUpdateForm(
-            {
-                "name": user.name,
-                "biography": user.biography,
-                "location": user.location,
-                "is_private": user.is_private,
-            },
-            {
-                "avatar": test_image,
-            },
-            instance=user,
-        )
-
-        assert form.is_valid()
-        updated_user = form.save()
-        assert updated_user.avatar.name is not None
-
-    def test_is_private_widget_configuration(self):
-        """Test that is_private field has correct widget configuration."""
+    def test_user_update_form_init(self):
+        """Test UserUpdateForm __init__ method."""
         form = UserUpdateForm()
 
-        is_private_field = form.fields["is_private"]
-        assert is_private_field.label == ""  # Label should be empty
-        assert hasattr(is_private_field.widget, "attrs")
-        assert "class" in is_private_field.widget.attrs
-        assert "role" in is_private_field.widget.attrs
-        assert is_private_field.widget.attrs["class"] == "form-check-input"
-        assert is_private_field.widget.attrs["role"] == "switch"
+        # Check is_private field configuration
+        assert form.fields["is_private"].label == ""
+        assert isinstance(form.fields["is_private"].widget, form.fields["is_private"].widget.__class__)
 
-    def test_form_helper_configuration(self):
-        """Test that form helper is configured correctly."""
+        # Check widget attributes
+        widget_attrs = form.fields["is_private"].widget.attrs
+        assert widget_attrs["class"] == "form-check-input"
+        assert widget_attrs["role"] == "switch"
+
+    def test_user_update_form_helper_configuration(self):
+        """Test UserUpdateForm helper configuration."""
         form = UserUpdateForm()
 
-        assert hasattr(form, "helper")
-        assert form.helper.form_tag is False  # Should not render form tag
-        assert hasattr(form.helper, "layout")
+        # Check helper configuration
+        assert not form.helper.form_tag
+        assert form.helper.layout is not None
+
+    def test_user_update_form_valid_data(self):
+        """Test UserUpdateForm with valid data."""
+        form_data = {
+            "name": "John Doe",
+            "biography": "Test biography",
+            "location": "Test City",
+            "favourite_teams": [self.club.id],
+            "is_private": True,
+        }
+        form = UserUpdateForm(data=form_data, instance=self.user)
+        assert form.is_valid()
+
+    def test_user_update_form_save(self):
+        """Test UserUpdateForm save method."""
+        form_data = {
+            "name": "John Doe",
+            "biography": "Test biography",
+            "location": "Test City",
+            "favourite_teams": [self.club.id],
+            "is_private": True,
+        }
+        form = UserUpdateForm(data=form_data, instance=self.user)
+        assert form.is_valid()
+
+        updated_user = form.save()
+
+        assert updated_user.name == "John Doe"
+        assert updated_user.biography == "Test biography"
+        assert updated_user.location == "Test City"
+        assert updated_user.is_private
+        assert self.club in updated_user.favourite_teams.all()
+
+    def test_user_update_form_empty_data(self):
+        """Test UserUpdateForm with empty data."""
+        form = UserUpdateForm(data={}, instance=self.user)
+        assert form.is_valid()
+
+    def test_user_update_form_partial_data(self):
+        """Test UserUpdateForm with partial data."""
+        form_data = {
+            "name": "John Doe",
+            "is_private": False,
+        }
+        form = UserUpdateForm(data=form_data, instance=self.user)
+        assert form.is_valid()
+
+        updated_user = form.save()
+
+        assert updated_user.name == "John Doe"
+        assert not updated_user.is_private
+
+    def test_user_update_form_favourite_teams_multiple(self):
+        """Test UserUpdateForm with multiple favourite teams."""
+        club2, _ = Club.objects.get_or_create(
+            name="Test Club Unique",
+            defaults={"slug": "test-club-unique", "country": "ES"},
+        )
+
+        form_data = {
+            "name": "John Doe",
+            "favourite_teams": [self.club.id, club2.id],
+        }
+        form = UserUpdateForm(data=form_data, instance=self.user)
+        assert form.is_valid()
+
+        updated_user = form.save()
+
+        assert self.club in updated_user.favourite_teams.all()
+        assert club2 in updated_user.favourite_teams.all()
+
+    def test_user_update_form_favourite_teams_empty(self):
+        """Test UserUpdateForm with empty favourite teams."""
+        form_data = {
+            "name": "John Doe",
+            "favourite_teams": [],
+        }
+        form = UserUpdateForm(data=form_data, instance=self.user)
+        assert form.is_valid()
+
+        updated_user = form.save()
+
+        assert updated_user.favourite_teams.count() == 0

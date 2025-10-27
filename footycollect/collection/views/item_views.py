@@ -31,14 +31,14 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-def test_country_view(request):
-    """Test view for country form."""
+def demo_country_view(request):
+    """Demo view for country form."""
     form = TestCountryForm()
     return render(request, "collection/test_country.html", {"form": form})
 
 
-def test_brand_view(request):
-    """Test view for brand form."""
+def demo_brand_view(request):
+    """Demo view for brand form."""
     form = TestBrandForm()
     context = {"form": form}
     return render(request, "collection/test_brand.html", context)
@@ -166,7 +166,7 @@ class ItemListView(BaseItemListView):
                 "base_item__season",
                 "base_item__brand",
             )
-            .prefetch_related("competitions", "photos")
+            .prefetch_related("base_item__competitions", "base_item__photos")
             .order_by("-base_item__created_at")
         )
 

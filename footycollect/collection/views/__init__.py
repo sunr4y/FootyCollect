@@ -16,9 +16,9 @@ from .item_views import (
     JerseySelectView,
     JerseyUpdateView,
     PostCreateView,
+    demo_brand_view,
+    demo_country_view,  # Demo views
     home,
-    test_brand_view,
-    test_country_view,  # Test views
     test_dropzone,
 )
 from .jersey_views import JerseyFKAPICreateView
@@ -49,9 +49,9 @@ __all__ = [
     "file_upload",
     "handle_dropzone_files",
     "PhotoProcessorMixin",
-    # Test views
-    "test_country_view",
-    "test_brand_view",
+    # Demo views
+    "demo_country_view",
+    "demo_brand_view",
     "home",
     "test_dropzone",
 ]

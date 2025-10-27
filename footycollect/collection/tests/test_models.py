@@ -2,6 +2,8 @@
 Tests for collection models.
 """
 
+from unittest.mock import patch
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -266,8 +268,11 @@ class TestSizeModel:
 class TestPhotoModel:
     """Test Photo model."""
 
-    def test_photo_creation(self, user, jersey):
+    @patch("footycollect.collection.models.optimize_image")
+    def test_photo_creation(self, mock_optimize, user, jersey):
         """Test creating a photo."""
+        mock_optimize.return_value = None  # Mock the optimization to return None
+
         from pathlib import Path
 
         from django.core.files.uploadedfile import SimpleUploadedFile
@@ -298,8 +303,10 @@ class TestPhotoModel:
         assert photo.caption == "Test caption"
         assert str(photo) == "Photo 1 of Jersey: Nike FC Barcelona Jersey"
 
-    def test_photo_str_representation(self, user, jersey):
+    @patch("footycollect.collection.models.optimize_image")
+    def test_photo_str_representation(self, mock_optimize, user, jersey):
         """Test photo string representation."""
+        mock_optimize.return_value = None
         from pathlib import Path
 
         from django.core.files.uploadedfile import SimpleUploadedFile
@@ -323,8 +330,10 @@ class TestPhotoModel:
         )
         assert str(photo) == "Photo 2 of Jersey: Nike FC Barcelona Jersey"
 
-    def test_photo_default_order(self, user, jersey):
+    @patch("footycollect.collection.models.optimize_image")
+    def test_photo_default_order(self, mock_optimize, user, jersey):
         """Test photo default order."""
+        mock_optimize.return_value = None
         from pathlib import Path
 
         from django.core.files.uploadedfile import SimpleUploadedFile
@@ -347,8 +356,10 @@ class TestPhotoModel:
         )
         assert photo.order == 0  # Default value
 
-    def test_photo_get_image_url(self, user, jersey):
+    @patch("footycollect.collection.models.optimize_image")
+    def test_photo_get_image_url(self, mock_optimize, user, jersey):
         """Test photo get_image_url method."""
+        mock_optimize.return_value = None
         from pathlib import Path
 
         from django.core.files.uploadedfile import SimpleUploadedFile
@@ -541,7 +552,7 @@ class TestOuterwearModel:
             club,
             season,
             size,
-            condition=9,
+            condition=10,
             type="hoodie",
         )
 
@@ -550,7 +561,7 @@ class TestOuterwearModel:
         assert outerwear.base_item.club == club
         assert outerwear.base_item.season == season
         assert outerwear.size == size
-        assert outerwear.base_item.condition == 9  # noqa: PLR2004
+        assert outerwear.base_item.condition == 10  # noqa: PLR2004
         assert outerwear.type == "hoodie"
         assert str(outerwear) == "Outerwear: Nike FC Barcelona Outerwear"
 
