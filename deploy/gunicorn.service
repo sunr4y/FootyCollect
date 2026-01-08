@@ -1,0 +1,26 @@
+[Unit]
+Description=FootyCollect Gunicorn daemon
+After=network.target postgresql.service redis.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/footycollect
+Environment="PATH=/var/www/footycollect/venv/bin"
+EnvironmentFile=/var/www/footycollect/.env
+ExecStart=/var/www/footycollect/venv/bin/gunicorn \
+    --access-logfile - \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --timeout 120 \
+    --keep-alive 5 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --log-level info \
+    config.wsgi:application
+
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
