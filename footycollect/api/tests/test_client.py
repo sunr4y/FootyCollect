@@ -292,14 +292,14 @@ class TestFKAPIClient:
         assert results is not None
         assert len(results) == 0
 
-    @patch("footycollect.api.client.cache.get")
+    @patch("footycollect.api.client.cache")
     @patch("footycollect.api.client.requests.get")
-    def test_get_club_seasons_api_error(self, mock_get, mock_cache_get):
+    def test_get_club_seasons_api_error(self, mock_get, mock_cache):
         """Test club seasons retrieval with API error."""
         from footycollect.api.client import FKAPIClient
 
-        # Mock cache miss
-        mock_cache_get.return_value = None
+        # Mock cache miss for all keys
+        mock_cache.get.return_value = None
         # Mock API error
         mock_get.side_effect = requests.RequestException("API Error")
 
@@ -308,14 +308,14 @@ class TestFKAPIClient:
         results = client.get_club_seasons(2089)
         assert results == []
 
-    @patch("footycollect.api.client.cache.get")
+    @patch("footycollect.api.client.cache")
     @patch("footycollect.api.client.requests.get")
-    def test_get_club_kits_api_error(self, mock_get, mock_cache_get):
+    def test_get_club_kits_api_error(self, mock_get, mock_cache):
         """Test club kits retrieval with API error."""
         from footycollect.api.client import FKAPIClient
 
-        # Mock cache miss
-        mock_cache_get.return_value = None
+        # Mock cache miss for all keys
+        mock_cache.get.return_value = None
         # Mock API error
         mock_get.side_effect = requests.RequestException("API Error")
 
@@ -324,14 +324,14 @@ class TestFKAPIClient:
         results = client.get_club_kits(CLUB_749_ID, 2025)
         assert results == []
 
-    @patch("footycollect.api.client.cache.get")
+    @patch("footycollect.api.client.cache")
     @patch("footycollect.api.client.requests.get")
-    def test_get_kit_details_api_error(self, mock_get, mock_cache_get):
+    def test_get_kit_details_api_error(self, mock_get, mock_cache):
         """Test kit details retrieval with API error."""
         from footycollect.api.client import FKAPIClient
 
-        # Mock cache miss
-        mock_cache_get.return_value = None
+        # Mock cache miss for all keys
+        mock_cache.get.return_value = None
         # Mock API error
         mock_get.side_effect = requests.RequestException("API Error")
 
@@ -340,14 +340,14 @@ class TestFKAPIClient:
         result = client.get_kit_details(KIT_171008_ID)
         assert result is None
 
-    @patch("footycollect.api.client.cache.get")
+    @patch("footycollect.api.client.cache")
     @patch("footycollect.api.client.requests.get")
-    def test_search_clubs_api_error(self, mock_get, mock_cache_get):
+    def test_search_clubs_api_error(self, mock_get, mock_cache):
         """Test club search with API error."""
         from footycollect.api.client import FKAPIClient
 
-        # Mock cache miss
-        mock_cache_get.return_value = None
+        # Mock cache miss for all keys
+        mock_cache.get.return_value = None
         # Mock API error
         mock_get.side_effect = requests.RequestException("API Error")
 
@@ -356,10 +356,18 @@ class TestFKAPIClient:
         results = client.search_clubs("Hammarby")
         assert results == []
 
+    @patch("footycollect.api.client.cache")
     @patch("footycollect.api.client.requests.get")
-    def test_search_kits_with_empty_query(self, mock_get):
+    def test_search_kits_with_empty_query(self, mock_get, mock_cache):
         """Test kit search with empty query."""
         from footycollect.api.client import FKAPIClient
+
+        # Mock cache miss and empty response
+        mock_cache.get.return_value = None
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = []
+        mock_get.return_value = mock_response
 
         client = FKAPIClient()
         results = client.search_kits("")
@@ -368,10 +376,18 @@ class TestFKAPIClient:
         assert results is not None
         assert len(results) == 0
 
+    @patch("footycollect.api.client.cache")
     @patch("footycollect.api.client.requests.get")
-    def test_search_kits_with_none_query(self, mock_get):
+    def test_search_kits_with_none_query(self, mock_get, mock_cache):
         """Test kit search with None query."""
         from footycollect.api.client import FKAPIClient
+
+        # Mock cache miss and empty response
+        mock_cache.get.return_value = None
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = []
+        mock_get.return_value = mock_response
 
         client = FKAPIClient()
         results = client.search_kits(None)

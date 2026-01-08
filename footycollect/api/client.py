@@ -174,7 +174,7 @@ class FKAPIClient:
     def _check_rate_limit(self) -> bool:
         """Check if request is within rate limit."""
         rate_limit_key = "fkapi_rate_limit"
-        current_count = cache.get(rate_limit_key, 0)
+        current_count = cache.get(rate_limit_key) or 0
 
         if current_count >= self.rate_limit_max:
             logger.warning(
