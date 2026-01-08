@@ -8,7 +8,6 @@ file, including FKAPI integration and detailed jersey processing.
 import json
 import logging
 
-import requests
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -365,20 +364,23 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         """Fetch kit data from FKAPI."""
         client = FKAPIClient()
 
-        try:
-            kit_data = client.get_kit_details(kit_id)
-            logger.info("Processing kit ID: %s", kit_id)
-            logger.info("Kit data from FKAPI: %s", kit_data)
-        except (requests.RequestException, ValueError, json.JSONDecodeError) as fkapi_error:
+        kit_data = client.get_kit_details(kit_id)
+
+        if kit_data is None:
             # FKAPI is not available - log warning and continue without external data
-            logger.warning("FKAPI not available for kit ID %s: %s", kit_id, str(fkapi_error))
+            logger.warning(
+                "FKAPI not available for kit ID %s. Returning None to allow graceful degradation.",
+                kit_id,
+            )
             messages.warning(
                 self.request,
                 _("External kit data temporarily unavailable. Jersey will be created with basic information."),
             )
             return None
-        else:
-            return kit_data
+
+        logger.info("Processing kit ID: %s", kit_id)
+        logger.info("Kit data from FKAPI: %s", kit_data)
+        return kit_data
 
     def _add_kit_id_to_description(self, form, kit_id):
         """Add kit ID to form description."""
