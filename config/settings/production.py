@@ -7,6 +7,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
+# Import production checks to register them
+from config import checks  # noqa: F401
+
 from .base import *
 from .base import DATABASES, INSTALLED_APPS, SPECTACULAR_SETTINGS, env
 
