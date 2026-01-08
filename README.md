@@ -73,7 +73,6 @@ See [Architecture Decision Records](docs/ARCHITECTURE/decisions/) for design rat
 - Python 3.11+
 - PostgreSQL 14+
 - Redis 6+
-- Node.js 18+ (for frontend assets)
 
 ### Installation
 
