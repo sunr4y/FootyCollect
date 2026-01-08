@@ -124,13 +124,14 @@ class TestItemFKAPIService(TestCase):
             mock_get.assert_called_once_with("123")
 
     def test_fetch_kit_data_from_api_error(self):
-        """Test _fetch_kit_data_from_api method with error."""
+        """Test _fetch_kit_data_from_api method with API unavailable."""
         with patch.object(self.service.fkapi_client, "get_kit_details") as mock_get:
-            mock_get.side_effect = Exception("API Error")
+            mock_get.return_value = None
 
             result = self.service._fetch_kit_data_from_api("123")
 
             assert result is None
+            mock_get.assert_called_once_with("123")
 
     def test_add_kit_id_to_description(self):
         """Test _add_kit_id_to_description method."""
