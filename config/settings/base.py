@@ -387,11 +387,47 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # By Default swagger ui is available only to admin user(s). You can change permission classes to change that
 # See more configuration options at https://drf-spectacular.readthedocs.io/en/latest/settings.html#settings
 SPECTACULAR_SETTINGS = {
-    "TITLE": "footycollect API",
-    "DESCRIPTION": "Documentation of API endpoints of footycollect",
+    "TITLE": "FootyCollect API",
+    "DESCRIPTION": """
+    FootyCollect REST API Documentation
+
+    This API provides programmatic access to the FootyCollect platform for managing
+    football memorabilia collections.
+
+    ## Authentication
+
+    Most endpoints require authentication. Use token authentication by including
+    the token in the Authorization header:
+
+    ```
+    Authorization: Token <your-token>
+    ```
+
+    ## Endpoints
+
+    - `/api/` - Internal server APIs (DRF)
+    - `/fkapi/` - External API proxy endpoints
+
+    ## Rate Limiting
+
+    API requests are rate-limited to prevent abuse. Contact support for higher limits.
+
+    ## Support
+
+    For API issues or questions, please open an issue on GitHub.
+    """,
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/",
+    "COMPONENT_SPLIT_REQUEST": True,
+    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
+    "SORT_OPERATIONS": False,
+    "TAGS": [
+        {"name": "items", "description": "Collection item operations"},
+        {"name": "photos", "description": "Photo management"},
+        {"name": "users", "description": "User management"},
+        {"name": "fkapi", "description": "External API proxy endpoints"},
+    ],
 }
 # ------------------------------------------------------------------------------
 
