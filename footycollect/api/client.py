@@ -97,7 +97,7 @@ class FKAPIClient:
         Returns:
             dict: Response data if successful, None if all retries fail
         """
-        ctx = self._create_request_context(endpoint, params, use_cache)
+        ctx = self._create_request_context(endpoint, params, use_cache=use_cache)
 
         # Try cache first
         if cached := self._try_cache(ctx):
