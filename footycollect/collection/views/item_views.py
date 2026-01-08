@@ -18,7 +18,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
-from footycollect.collection.models import Jersey, OtherItem, Outerwear, Pants, Shorts, Tracksuit
+from footycollect.collection.models import Jersey
 from footycollect.collection.services import get_photo_service
 
 from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemDetailView, BaseItemListView, BaseItemUpdateView
@@ -162,11 +162,20 @@ class ItemListView(BaseItemListView):
         return (
             Jersey.objects.filter(base_item__user=self.request.user)
             .select_related(
+                "base_item",
+                "base_item__user",
                 "base_item__club",
                 "base_item__season",
                 "base_item__brand",
+                "base_item__main_color",
+                "size",
+                "kit",
             )
-            .prefetch_related("base_item__competitions", "base_item__photos")
+            .prefetch_related(
+                "base_item__competitions",
+                "base_item__photos",
+                "base_item__secondary_colors",
+            )
             .order_by("-base_item__created_at")
         )
 
@@ -176,43 +185,81 @@ class ItemDetailView(BaseItemDetailView):
 
     template_name = "collection/item_detail.html"
 
+    def get_queryset(self):
+        """Get queryset with optimizations for detail view."""
+        from footycollect.collection.models import Jersey
+
+        return (
+            Jersey.objects.filter(base_item__user=self.request.user)
+            .select_related(
+                "base_item",
+                "base_item__user",
+                "base_item__club",
+                "base_item__season",
+                "base_item__brand",
+                "base_item__main_color",
+                "size",
+                "kit",
+            )
+            .prefetch_related(
+                "base_item__competitions",
+                "base_item__photos",
+                "base_item__secondary_colors",
+            )
+        )
+
     def get_context_data(self, **kwargs):
         """Add additional context data for the item detail."""
-        context = super().get_context_data(**kwargs)
+        from django.views.generic.detail import SingleObjectMixin
+
+        from footycollect.collection.models import BaseItem
+
+        context = super(SingleObjectMixin, self).get_context_data(**kwargs)
+
+        photo_service = get_photo_service()
+
+        if isinstance(self.object, BaseItem):
+            base_item = self.object
+            context["specific_item"] = self.object.get_specific_item()
+        else:
+            base_item = self.object.base_item
+            context["specific_item"] = self.object
+
+        context["photos"] = photo_service.get_item_photos(base_item)
+        context["object"] = base_item
+        context["item"] = base_item
 
         # Get related items from all item types
         related_items = self._get_related_items()
-        context["related_items"] = related_items[:5]
+        context["related_items"] = related_items
         return context
 
     def _get_related_items(self):
-        """Get related items from all item types."""
+        """Get related items from all item types with optimized queries."""
+        from footycollect.collection.models import BaseItem
 
-        # Get all item types
-        item_models = [Jersey, Shorts, Outerwear, Tracksuit, Pants, OtherItem]
+        base_item = self.object if isinstance(self.object, BaseItem) else self.object.base_item
+
+        if not base_item.club:
+            return []
+
+        # Optimized: Query BaseItem directly and get specific items via select_related
+        related_base_items = (
+            BaseItem.objects.filter(club=base_item.club)
+            .exclude(id=base_item.id)
+            .select_related("club", "season", "brand", "user", "main_color")
+            .prefetch_related("competitions", "photos")
+            .order_by("-created_at")[:5]
+        )
+
+        # Get specific item instances efficiently
         related_items = []
+        for related_base_item in related_base_items:
+            specific_item = related_base_item.get_specific_item()
+            if specific_item:
+                related_items.append(specific_item)
 
-        # Get items from each model type
-        for model in item_models:
-            try:
-                if hasattr(model, "base_item"):
-                    # For MTI models, filter through base_item
-                    items = model.objects.filter(
-                        base_item__club=self.object.club,
-                    ).exclude(base_item__id=self.object.id)
-                else:
-                    # For BaseItem itself
-                    items = model.objects.filter(
-                        club=self.object.club,
-                    ).exclude(id=self.object.id)
-                related_items.extend(items)
-            except (AttributeError, ValueError) as e:
-                # Skip if model doesn't have required fields
-                logger.debug("Skipping model %s due to missing fields: %s", model.__name__, e)
-                continue
-
-        # Sort by creation date and return
-        return sorted(related_items, key=lambda x: x.base_item.created_at, reverse=True)
+        return related_items
 
 
 class ItemCreateView(BaseItemCreateView):
