@@ -300,7 +300,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         ):
             mock_client = Mock()
             mock_client_class.return_value = mock_client
-            mock_client.get_kit_details.side_effect = ValueError("API error")
+            mock_client.get_kit_details.return_value = None
 
             view = JerseyFKAPICreateView()
             request = Mock()

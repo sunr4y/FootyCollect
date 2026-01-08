@@ -71,11 +71,11 @@ class TestFKAPIClient:
         results = client.search_clubs("Hammarby")
 
         assert results is not None
-        assert "results" in results
-        assert len(results["results"]) == HAMMARBY_SEARCH_RESULTS_COUNT
-        assert results["results"][0]["id"] == HAMMARBY_CLUB_ID
-        assert results["results"][0]["name"] == "Hammarby"
-        assert "logo" in results["results"][0]
+        assert isinstance(results, list)
+        assert len(results) == HAMMARBY_SEARCH_RESULTS_COUNT
+        assert results[0]["id"] == HAMMARBY_CLUB_ID
+        assert results[0]["name"] == "Hammarby"
+        assert "logo" in results[0]
 
     @patch("footycollect.api.client.requests.get")
     def test_get_club_seasons_success(self, mock_get):
@@ -110,12 +110,12 @@ class TestFKAPIClient:
         results = client.get_club_seasons(2089)
 
         assert results is not None
-        assert "results" in results
-        assert len(results["results"]) == CLUB_2089_SEASONS_COUNT
-        assert results["results"][0]["id"] == SEASON_691_ID
-        assert results["results"][0]["year"] == "2025"
-        assert results["results"][1]["id"] == SEASON_41_ID
-        assert results["results"][1]["year"] == "2024"
+        assert isinstance(results, list)
+        assert len(results) == CLUB_2089_SEASONS_COUNT
+        assert results[0]["id"] == SEASON_691_ID
+        assert results[0]["year"] == "2025"
+        assert results[1]["id"] == SEASON_41_ID
+        assert results[1]["year"] == "2024"
 
     @patch("footycollect.api.client.requests.get")
     def test_get_club_kits_success(self, mock_get):
@@ -133,8 +133,8 @@ class TestFKAPIClient:
         results = client.get_club_kits(CLUB_749_ID, 2025)
 
         assert results is not None
-        assert "results" in results
-        assert len(results["results"]) == 0
+        assert isinstance(results, list)
+        assert len(results) == 0
 
     @patch("footycollect.api.client.requests.get")
     def test_get_kit_details_success(self, mock_get):
@@ -305,8 +305,8 @@ class TestFKAPIClient:
 
         client = FKAPIClient()
 
-        with pytest.raises(Exception, match="API Error"):
-            client.get_club_seasons(2089)
+        results = client.get_club_seasons(2089)
+        assert results == []
 
     @patch("footycollect.api.client.cache.get")
     @patch("footycollect.api.client.requests.get")
@@ -321,8 +321,8 @@ class TestFKAPIClient:
 
         client = FKAPIClient()
 
-        with pytest.raises(Exception, match="API Error"):
-            client.get_club_kits(CLUB_749_ID, 2025)
+        results = client.get_club_kits(CLUB_749_ID, 2025)
+        assert results == []
 
     @patch("footycollect.api.client.cache.get")
     @patch("footycollect.api.client.requests.get")
@@ -337,8 +337,8 @@ class TestFKAPIClient:
 
         client = FKAPIClient()
 
-        with pytest.raises(Exception, match="API Error"):
-            client.get_kit_details(KIT_171008_ID)
+        result = client.get_kit_details(KIT_171008_ID)
+        assert result is None
 
     @patch("footycollect.api.client.cache.get")
     @patch("footycollect.api.client.requests.get")
@@ -353,8 +353,8 @@ class TestFKAPIClient:
 
         client = FKAPIClient()
 
-        with pytest.raises(Exception, match="API Error"):
-            client.search_clubs("Hammarby")
+        results = client.search_clubs("Hammarby")
+        assert results == []
 
     @patch("footycollect.api.client.requests.get")
     def test_search_kits_with_empty_query(self, mock_get):

@@ -110,11 +110,10 @@ class ItemFKAPIService:
 
     def _fetch_kit_data_from_api(self, kit_id: str) -> dict[str, Any] | None:
         """Fetch kit data from FKAPI."""
-        try:
-            return self.fkapi_client.get_kit_details(kit_id)
-        except Exception:
-            logger.exception("Error fetching kit data for kit_id %s", kit_id)
-            return None
+        kit_data = self.fkapi_client.get_kit_details(kit_id)
+        if kit_data is None:
+            logger.warning("FKAPI unavailable for kit_id %s", kit_id)
+        return kit_data
 
     def _add_kit_id_to_description(self, form, kit_id: str) -> None:
         """Add kit ID to description for reference."""
