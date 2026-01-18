@@ -1,6 +1,8 @@
 # ruff: noqa: ERA001, E501
 """Base settings to build other settings files upon."""
 
+import logging
+import sys
 from pathlib import Path
 
 import environ
@@ -263,11 +265,39 @@ MANAGERS = ADMINS
 # Force the `admin` sign in process to go through the `django-allauth` workflow
 DJANGO_ADMIN_FORCE_ALLAUTH = env.bool("DJANGO_ADMIN_FORCE_ALLAUTH", default=False)
 
+
 # LOGGING
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#logging
 # See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
+class UTF8StreamHandler(logging.StreamHandler):
+    """StreamHandler that ensures UTF-8 encoding for Unicode characters."""
+
+    def __init__(self, stream=None):
+        if stream is None:
+            stream = sys.stdout
+        super().__init__(stream)
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            if not isinstance(msg, str):
+                msg = str(msg)
+            stream = self.stream
+            stream.write(msg + self.terminator)
+            self.flush()
+        except UnicodeEncodeError:
+            try:
+                msg = self.format(record)
+                stream.write(msg.encode("utf-8", errors="replace").decode("utf-8", errors="replace") + self.terminator)
+                self.flush()
+            except (UnicodeError, OSError, ValueError):
+                self.handleError(record)
+        except (UnicodeError, OSError, ValueError):
+            self.handleError(record)
+
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -279,7 +309,7 @@ LOGGING = {
     "handlers": {
         "console": {
             "level": "DEBUG",
-            "class": "logging.StreamHandler",
+            "()": UTF8StreamHandler,
             "formatter": "verbose",
         },
     },

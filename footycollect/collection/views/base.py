@@ -110,8 +110,12 @@ class BaseItemUpdateView(
     success_url = reverse_lazy("collection:item_list")
 
     def get_queryset(self):
-        """Get all items."""
-        return BaseItem.objects.all()
+        """Get all items with optimizations."""
+        return (
+            BaseItem.objects.all()
+            .select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("competitions", "photos")
+        )
 
 
 class BaseItemDeleteView(
@@ -126,8 +130,12 @@ class BaseItemDeleteView(
     success_url = reverse_lazy("collection:item_list")
 
     def get_queryset(self):
-        """Get all items."""
-        return BaseItem.objects.all()
+        """Get all items with optimizations."""
+        return (
+            BaseItem.objects.all()
+            .select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("competitions", "photos")
+        )
 
     def delete(self, request, *args, **kwargs):
         """Override delete to add custom success message."""

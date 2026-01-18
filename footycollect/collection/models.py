@@ -208,9 +208,14 @@ class BaseItem(models.Model):
         help_text=_("Name or title of the item"),
     )
 
-    user = models.ForeignKey("users.User", on_delete=models.CASCADE, help_text="User who owns this item")
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    club = models.ForeignKey(Club, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        help_text="User who owns this item",
+        db_index=True,
+    )
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, db_index=True)
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     competitions = models.ManyToManyField(
         Competition,
         blank=True,
@@ -222,6 +227,7 @@ class BaseItem(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
+        db_index=True,
     )
     condition = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)],
@@ -274,6 +280,11 @@ class BaseItem(models.Model):
             models.Index(fields=["club"]),
             models.Index(fields=["brand"]),
             models.Index(fields=["created_at"]),
+            # Composite indexes for common query patterns
+            models.Index(fields=["user", "item_type"], name="baseitem_user_item_type_idx"),
+            models.Index(fields=["user", "is_private", "is_draft"], name="baseitem_user_visibility_idx"),
+            models.Index(fields=["user", "created_at"], name="baseitem_user_created_idx"),
+            models.Index(fields=["club", "season"], name="baseitem_club_season_idx"),
         ]
 
     def __str__(self):
@@ -342,8 +353,8 @@ class Jersey(models.Model):
     )
 
     # Jersey-specific fields
-    kit = models.ForeignKey(Kit, on_delete=models.CASCADE, null=True, blank=True)
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
+    kit = models.ForeignKey(Kit, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
+    size = models.ForeignKey(Size, on_delete=models.CASCADE, db_index=True)
     is_fan_version = models.BooleanField(default=True)
     is_signed = models.BooleanField(default=False)
     has_nameset = models.BooleanField(default=False)
@@ -352,6 +363,12 @@ class Jersey(models.Model):
     is_short_sleeve = models.BooleanField(default=True)
 
     objects = MTIManager()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["size"], name="jersey_size_idx"),
+            models.Index(fields=["kit"], name="jersey_kit_idx"),
+        ]
 
     def __str__(self):
         return f"Jersey: {self.base_item}"
