@@ -94,7 +94,15 @@ class Photo(models.Model):
                 super().save(update_fields=["image_avif"])
 
     def get_image_url(self):
-        return self.image_avif.url if self.image_avif else self.image.url
+        if self.image_avif:
+            # Check if the AVIF file actually exists on disk
+            try:
+                if Path(self.image_avif.path).exists():
+                    return self.image_avif.url
+            except (ValueError, AttributeError):
+                # If path doesn't exist or field is empty, fall back to original
+                pass
+        return self.image.url if self.image else ""
 
     def delete(self, *args, **kwargs):
         """Override delete to remove files from filesystem."""
@@ -480,6 +488,9 @@ class Pants(models.Model):
 
     # Pants-specific fields
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name_plural = "Pants"
 
     def __str__(self):
         return f"Pants: {self.base_item}"

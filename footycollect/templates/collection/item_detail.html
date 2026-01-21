@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load i18n %}
+{% load cache %}
 
 {% block extra_css %}
   <style>
@@ -12,38 +13,77 @@
     #itemPhotos .carousel-inner {
       min-height: 400px;
       position: relative;
-      overflow: visible;
     }
 
     #itemPhotos .carousel-item {
       min-height: 400px;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-
-    #itemPhotos .carousel-item.active {
-      display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-
-    #itemPhotos .carousel-item:not(.active) {
-      display: none !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     #itemPhotos img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      max-height: 600px;
+      object-fit: contain;
+      margin: 0 auto;
+    }
+
+    .carousel-thumbnails {
+      max-width: 100%;
+    }
+
+    .carousel-thumbnail.btn {
+      width: 80px !important;
+      height: 80px !important;
+      min-width: 80px !important;
+      min-height: 80px !important;
+      max-width: 80px !important;
+      max-height: 80px !important;
+      overflow: hidden !important;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0.6;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8f9fa;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .carousel-thumbnail:hover {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+
+    .carousel-thumbnail.active {
+      opacity: 1;
+      border-color: #0d6efd !important;
+      border-width: 2px !important;
+      transform: scale(1.1);
+    }
+
+    .carousel-thumbnail.btn .thumbnail-img,
+    .carousel-thumbnail.btn img {
+      width: 80px !important;
+      height: 80px !important;
+      min-width: 80px !important;
+      min-height: 80px !important;
+      max-width: 80px !important;
+      max-height: 80px !important;
+      object-fit: cover !important;
       display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      height: auto !important;
-      max-height: 600px !important;
-      object-fit: contain !important;
-      margin: 0 auto !important;
+      flex-shrink: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box;
     }
   </style>
 {% endblock extra_css %}
@@ -106,10 +146,52 @@
                   </button>
                 {% endif %}
               </div>
+              {% if photos|length > 1 or object.photos.count > 1 %}
+                <div class="carousel-thumbnails mt-3 d-flex justify-content-center gap-2 flex-wrap">
+                  {% if photos|length > 0 %}
+                    {% for photo in photos %}
+                      <button type="button"
+                              class="carousel-thumbnail btn p-0 border {% if forloop.first %}active{% endif %}"
+                              data-bs-target="#itemPhotos"
+                              data-bs-slide-to="{{ forloop.counter0 }}"
+                              aria-label="Slide {{ forloop.counter }}">
+                        {% if photo.image_avif %}
+                          <img src="{{ photo.image.url }}"
+                               data-avif="{{ photo.image_avif.url }}"
+                               class="thumbnail-img"
+                               alt=""
+                               onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
+                        {% else %}
+                          <img src="{{ photo.image.url }}" class="thumbnail-img" alt="" />
+                        {% endif %}
+                      </button>
+                    {% endfor %}
+                  {% else %}
+                    {% for photo in object.photos.all %}
+                      <button type="button"
+                              class="carousel-thumbnail btn p-0 border {% if forloop.first %}active{% endif %}"
+                              data-bs-target="#itemPhotos"
+                              data-bs-slide-to="{{ forloop.counter0 }}"
+                              aria-label="Slide {{ forloop.counter }}">
+                        {% if photo.image_avif %}
+                          <img src="{{ photo.image.url }}"
+                               data-avif="{{ photo.image_avif.url }}"
+                               class="thumbnail-img"
+                               alt=""
+                               onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
+                        {% else %}
+                          <img src="{{ photo.image.url }}" class="thumbnail-img" alt="" />
+                        {% endif %}
+                      </button>
+                    {% endfor %}
+                  {% endif %}
+                </div>
+              {% endif %}
             {% endif %}
           </div>
           <div class="col-md-6">
             <!-- Item information -->
+            {% cache 600 item_detail_sidebar object.id %}
             <dl class="row">
               <!-- Base Item fields -->
               <dt class="col-sm-4">{% trans "Name" %}</dt>
@@ -182,7 +264,16 @@
               {% if object.main_color %}
                 <dt class="col-sm-4">{% trans "Main Color" %}</dt>
                 <dd class="col-sm-8">
-                  {{ object.get_main_color_display }}
+                  {{ object.main_color.name }}
+                </dd>
+              {% endif %}
+              {% if object.secondary_colors.exists %}
+                <dt class="col-sm-4">{% trans "Secondary Colors" %}</dt>
+                <dd class="col-sm-8">
+                  {% for color in object.secondary_colors.all %}
+                    {{ color.name }}
+                    {% if not forloop.last %},{% endif %}
+                  {% endfor %}
                 </dd>
               {% endif %}
               {% if object.design %}
@@ -244,9 +335,55 @@
               <h5>{% trans "Description" %}</h5>
               <p>{{ object.description }}</p>
             {% endif %}
-          </div>
+          {% endcache %}
         </div>
       </div>
     </div>
   </div>
+</div>
 {% endblock content %}
+{% block inline_javascript %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const carousel = document.getElementById('itemPhotos');
+      if (carousel) {
+        const thumbnails = document.querySelectorAll('.carousel-thumbnail');
+        const thumbnailImgs = document.querySelectorAll('.carousel-thumbnail img');
+
+        thumbnails.forEach(function(thumb) {
+          thumb.style.width = '80px';
+          thumb.style.height = '80px';
+          thumb.style.minWidth = '80px';
+          thumb.style.minHeight = '80px';
+          thumb.style.maxWidth = '80px';
+          thumb.style.maxHeight = '80px';
+          thumb.style.overflow = 'hidden';
+          thumb.style.display = 'inline-flex';
+          thumb.style.alignItems = 'center';
+          thumb.style.justifyContent = 'center';
+        });
+
+        thumbnailImgs.forEach(function(img) {
+          img.style.width = '80px';
+          img.style.height = '80px';
+          img.style.minWidth = '80px';
+          img.style.minHeight = '80px';
+          img.style.maxWidth = '80px';
+          img.style.maxHeight = '80px';
+          img.style.objectFit = 'cover';
+          img.style.display = 'block';
+        });
+
+        carousel.addEventListener('slid.bs.carousel', function(event) {
+          thumbnails.forEach(function(thumb, index) {
+            if (index === event.to) {
+              thumb.classList.add('active');
+            } else {
+              thumb.classList.remove('active');
+            }
+          });
+        });
+      }
+    });
+  </script>
+{% endblock inline_javascript %}

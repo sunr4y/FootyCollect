@@ -564,40 +564,40 @@
   <script src="{% static 'js/spark-md5.min.js' %}"></script>
   <script>
     $(document).ready(function() {
-      // Inicialización de Select2 para país
+      // Initialize Select2 for country
       $('#id_country_code').select2({
         theme: 'bootstrap-5',
         placeholder: "{% trans 'Select a country...' %}",
         allowClear: true,
-        // templateSelection y templateResult para asegurar renderizado HTML con bandera
+        // templateSelection and templateResult ensure HTML rendering with flag
         templateSelection: formatCountrySelection,
         templateResult: formatCountryResult,
         escapeMarkup: function(markup) {
           return markup;
-        } // Permitir HTML
+        } // Allow HTML
       });
 
       function formatCountrySelection(country) {
-        console.log("Formatting selection:", country); // Log para depuración
+        console.log("Formatting selection:", country); // Log for debugging
         if (!country.id) {
           console.log("Selection is placeholder or empty");
           return country.text;
         }
 
         var selectionHtml;
-        // Comprobar si el texto ya contiene el HTML de la bandera
+        // Check if text already contains flag HTML
         if (typeof country.text === 'string' && country.text.includes('<i class="fi')) {
           console.log("Selection text already contains HTML flag");
           selectionHtml = country.text;
         } else {
           console.log("Selection text needs flag HTML. ID:", country.id, "Text:", country.text);
-          // Si no tiene HTML (probablemente la selección inicial), construirlo
+          // If it does not have HTML (likely initial selection), build it
           var countryCode = country.id.toLowerCase();
-          // Usamos country.text si está disponible, si no, podríamos necesitar buscar el nombre
-          var countryName = country.text || country.id; // Fallback al ID si el texto no está
+          // Use country.text if available, otherwise fallback to ID
+          var countryName = country.text || country.id;
           selectionHtml = '<span><i class="fi fi-' + countryCode + '"></i> ' + countryName + '</span>';
         }
-        // Devolver la cadena HTML directamente
+        // Return HTML string directly
         return selectionHtml;
       }
 
@@ -605,7 +605,7 @@
         if (country.loading) {
           return country.text;
         }
-        // country.text ya tiene el formato HTML desde la vista
+        // country.text is already formatted with HTML from the view
         return $(country.text);
       }
 

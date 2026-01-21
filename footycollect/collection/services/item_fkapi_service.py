@@ -19,6 +19,7 @@ from footycollect.collection.models import (
 )
 from footycollect.collection.services.item_service import ItemService
 from footycollect.collection.services.photo_service import PhotoService
+from footycollect.core.models import TypeK
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -98,6 +99,11 @@ class ItemFKAPIService:
             if not kit_data:
                 return
 
+            # Store kit_data on form for later use in Kit creation
+            if not hasattr(form, "fkapi_data"):
+                form.fkapi_data = {}
+            form.fkapi_data.update(kit_data)
+
             # Add kit ID to description for reference
             self._add_kit_id_to_description(form, kit_id)
 
@@ -137,25 +143,76 @@ class ItemFKAPIService:
             if api_description and api_description not in current_description:
                 form.cleaned_data["description"] = f"{current_description}\n\n{api_description}"
 
+        # Process kit type
+        type_obj = kit_data.get("type")
+        if type_obj:
+            type_name = type_obj.get("name") if isinstance(type_obj, dict) else type_obj
+            if type_name:
+                logger.info("Processing kit type: %s", type_name)
+                try:
+                    type_k = TypeK.objects.filter(name=type_name).first()
+                    if not type_k:
+                        type_k = TypeK.objects.filter(name__iexact=type_name).first()
+                    if not type_k:
+                        type_k = TypeK.objects.create(name=type_name)
+                        logger.info("Created new kit type: %s (ID: %s)", type_name, type_k.id)
+                    else:
+                        logger.info("Found existing kit type: %s (ID: %s)", type_k.name, type_k.id)
+                except Exception:
+                    logger.exception("Error creating kit type %s", type_name)
+
         # Process kit colors
         if "colors" in kit_data:
             self._process_kit_colors(form, kit_data["colors"])
 
     def _process_kit_colors(self, form, colors: list[dict[str, Any]]) -> None:
-        """Process kit colors from API data."""
+        """
+        Process kit colors and set them in form.data (not cleaned_data).
+
+        CRITICAL: Must set in form.data so clean methods can access via self.data
+        Only set if not already present in POST data (POST data takes precedence)
+        """
         if not colors:
             return
 
-        # Set main color from first color
-        main_color = colors[0].get("name", "")
-        if main_color:
-            form.cleaned_data["main_color"] = main_color
+        # Make form.data mutable
+        if hasattr(form.data, "_mutable"):
+            form.data._mutable = True  # noqa: SLF001
+        else:
+            form.data = form.data.copy()
 
-        # Set secondary colors from remaining colors
-        if len(colors) > 1:
-            secondary_colors = [color.get("name", "") for color in colors[1:] if color.get("name")]
-            if secondary_colors:
-                form.cleaned_data["secondary_colors"] = secondary_colors
+        # Only set main_color if not already in POST data
+        # POST data from JavaScript takes precedence over API data
+        if not form.data.get("main_color"):
+            main_color = colors[0].get("name", "")
+            if main_color:
+                form.data["main_color"] = main_color
+                logger.info("Set main_color in form.data from API: %s", main_color)
+        else:
+            logger.info("main_color already in form.data: %s (keeping POST value)", form.data.get("main_color"))
+
+        # Only set secondary_colors if not already in POST data
+        # POST data from JavaScript takes precedence over API data
+        has_secondary_colors = form.data.get("secondary_colors") or (
+            hasattr(form.data, "getlist") and form.data.getlist("secondary_colors")
+        )
+        if not has_secondary_colors:
+            if len(colors) > 1:
+                secondary_colors = [color.get("name", "") for color in colors[1:] if color.get("name")]
+                if secondary_colors:
+                    if hasattr(form.data, "setlist"):
+                        form.data.setlist("secondary_colors", secondary_colors)
+                    else:
+                        # Fallback for non-QueryDict
+                        form.data["secondary_colors"] = secondary_colors
+                    logger.info("Set secondary_colors in form.data from API: %s", secondary_colors)
+        else:
+            existing = (
+                form.data.getlist("secondary_colors")
+                if hasattr(form.data, "getlist")
+                else form.data.get("secondary_colors")
+            )
+            logger.info("secondary_colors already in form.data: %s (keeping POST value)", existing)
 
     def _process_new_entities(self, form) -> None:
         """Process new entities from the API."""

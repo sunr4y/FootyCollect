@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Too Many Requests
+{% endblock title %}
+{% block content %}
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm border-warning">
+        <div class="card-header bg-warning text-dark">
+          <h1 class="h4 mb-0">You're moving a bit too fast</h1>
+        </div>
+        <div class="card-body">
+          <p class="mb-3">For security and performance reasons, we had to slow things down for a moment.</p>
+          <p class="mb-3">Please wait a few seconds before continuing to browse FootyCollect.</p>
+          <p class="text-muted small mb-4">
+            If you continue to see this page, try refreshing after a short pause or closing extra tabs hitting FootyCollect.
+          </p>
+          <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

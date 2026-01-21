@@ -248,6 +248,11 @@ CSRF_COOKIE_HTTPONLY = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#x-frame-options
 X_FRAME_OPTIONS = "DENY"
 
+# Additional security headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
+
 # EMAIL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
@@ -318,7 +323,7 @@ LOGGING = {
             "formatter": "verbose",
         },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {"level": "DEBUG", "handlers": ["console"]},
     "loggers": {
         "django.db.backends": {
             "level": "ERROR",
@@ -329,6 +334,31 @@ LOGGING = {
         "sentry_sdk": {"level": "ERROR", "handlers": ["console"], "propagate": False},
         "django.security.DisallowedHost": {
             "level": "ERROR",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "django.request": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection.views": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection.forms": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection.services": {
+            "level": "DEBUG",
             "handlers": ["console"],
             "propagate": False,
         },

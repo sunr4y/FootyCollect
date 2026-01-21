@@ -3,23 +3,41 @@
 import logging
 
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.http import require_GET
+from django_ratelimit.decorators import ratelimit
 
 from .client import FKAPIClient
 
 logger = logging.getLogger(__name__)
 
+HTTP_TOO_MANY_REQUESTS = 429
 
+
+def _rate_limited_response(request):
+    """Return a user-friendly response when the rate limit is exceeded."""
+    accept = request.headers.get("Accept", "")
+    if "application/json" in accept:
+        return JsonResponse({"error": "Rate limit exceeded"}, status=HTTP_TOO_MANY_REQUESTS)
+    return render(request, "429.html", status=HTTP_TOO_MANY_REQUESTS)
+
+
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def search_clubs(request):
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     query = request.GET.get("keyword", "")
     client = FKAPIClient()
     results = client.search_clubs(query)
     return JsonResponse({"results": results})
 
 
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def get_kit_details(request, kit_id):
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     client = FKAPIClient()
     kit_data = client.get_kit_details(kit_id)
     if kit_data is None:
@@ -30,11 +48,14 @@ def get_kit_details(request, kit_id):
     return JsonResponse(kit_data)
 
 
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def search_kits(request):
     """
     Endpoint to search for kits as the user types.
     """
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     query = request.GET.get("keyword", "")
     min_query_length = 3
     if len(query) < min_query_length:
@@ -45,29 +66,38 @@ def search_kits(request):
     return JsonResponse({"results": results})
 
 
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def get_club_seasons(request, club_id):
     """
     Endpoint to retrieve seasons for a given club.
     """
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     client = FKAPIClient()
     results = client.get_club_seasons(club_id)
     return JsonResponse({"results": results})
 
 
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def get_club_kits(request, club_id, season_id):
     """
     Endpoint to retrieve kits for a given club in a specific season.
     """
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     client = FKAPIClient()
     results = client.get_club_kits(club_id, season_id)
     return JsonResponse({"results": results})
 
 
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def search_brands(request):
     """Search brands from external FKAPI database."""
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     query = request.GET.get("keyword", "")
     min_query_length = 2
     if len(query) < min_query_length:
@@ -78,9 +108,12 @@ def search_brands(request):
     return JsonResponse({"results": results})
 
 
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def search_competitions(request):
     """Search competitions from external FKAPI database."""
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     query = request.GET.get("keyword", "")
     min_query_length = 2
     if len(query) < min_query_length:
@@ -91,9 +124,12 @@ def search_competitions(request):
     return JsonResponse({"results": results})
 
 
+@ratelimit(key="ip", rate="100/h", method="GET")
 @require_GET
 def search_seasons(request):
     """Search seasons from external FKAPI database by searching kits."""
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
     query = request.GET.get("keyword", "")
     min_query_length = 2
     if len(query) < min_query_length:

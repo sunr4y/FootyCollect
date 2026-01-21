@@ -17,6 +17,12 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import TemplateView
 
+from footycollect.collection.cache_utils import (
+    ITEM_LIST_CACHE_TIMEOUT,
+    get_item_list_cache_key,
+    increment_item_list_cache_metric,
+    track_item_list_cache_key,
+)
 from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
 from footycollect.collection.models import Jersey
 from footycollect.collection.services import get_photo_service
@@ -160,6 +166,30 @@ class ItemListView(BaseItemListView):
     """List view for all items in the user's collection."""
 
     template_name = "collection/item_list.html"
+
+    def get(self, request, *args, **kwargs):
+        from django.core.cache import cache
+
+        if not request.user.is_authenticated:
+            return super().get(request, *args, **kwargs)
+
+        page = request.GET.get("page", "1")
+        cache_key = get_item_list_cache_key(request.user.pk, page)
+
+        cached_response = cache.get(cache_key)
+        if cached_response is not None:
+            logger.info("ItemListView cache hit for user %s page %s", request.user.pk, page)
+            track_item_list_cache_key(request.user.pk, cache_key)
+            increment_item_list_cache_metric(is_hit=True)
+            return cached_response
+
+        response = super().get(request, *args, **kwargs)
+        response.render()
+        cache.set(cache_key, response, ITEM_LIST_CACHE_TIMEOUT)
+        track_item_list_cache_key(request.user.pk, cache_key)
+        increment_item_list_cache_metric(is_hit=False)
+        logger.info("ItemListView cache miss; cached response for user %s page %s", request.user.pk, page)
+        return response
 
     def get_queryset(self):
         """Get all items for the current user with optimizations."""

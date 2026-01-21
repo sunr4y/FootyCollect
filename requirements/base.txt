@@ -33,6 +33,10 @@ django-cotton==0.9.35 # https://github.com/wrabit/django-cotton
 # Admin
 django-unfold==0.37.0  # https://github.com/unfoldadmin/django-unfold
 
+# Security
+django-ratelimit==4.1.0  # https://github.com/jsocol/django-ratelimit
+django-csp==4.0  # https://github.com/mozilla/django-csp
+
 # Imagen processing
 Pillow==10.4.0  # https://github.com/python-pillow/Pillow
 django-imagekit==5.0.0  # https://github.com/matthewwithanm/django-imagekit
