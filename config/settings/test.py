@@ -80,17 +80,6 @@ DATABASES = {
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "http://media.testserver/"
 
-# CACHE
-# ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#caches
-# Disable caching during tests to ensure deterministic test results
-# and prevent cache state from affecting test outcomes
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-    },
-}
-
 # Football Kit Archive API Settings for Testing
 # ------------------------------------------------------------------------------
 # Skip FKA API settings in test environment since they're not used in tests
