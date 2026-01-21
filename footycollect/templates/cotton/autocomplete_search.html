@@ -1,0 +1,264 @@
+<c-vars name label required="false" api_endpoint help_text multiple="false" />
+<div class="mb-3">
+  <label for="id_{{ name }}" class="form-label">
+    {{ label }}
+    {% if required == "true" or required == True %}*{% endif %}
+  </label>
+  <div class="position-relative"
+       x-data="autocompleteSearch('{{ name }}', '{{ api_endpoint }}', {{ multiple|yesno:'true,false' }})">
+    <!-- Selected items display (multiple) -->
+    <template x-if="isMultiple && selectedItems.length > 0">
+      <div class="mb-2">
+        <template x-for="item in selectedItems" :key="item.id">
+          {# djlint:off H021 #}
+          <div class="d-flex align-items-center border rounded p-2 mb-1"
+               style="background-color: #f8f9fa">
+            <img x-show="item.logo"
+                 :src="item.logo"
+                 :alt="item.name"
+                 class="me-2"
+                 style="width: 20px;
+                        height: 20px;
+                        object-fit: contain" />
+            {# djlint:on #}
+            <span x-text="item.name" class="flex-grow-1"></span>
+            <button type="button"
+                    @click="removeItem(item.id)"
+                    class="btn btn-sm btn-outline-danger ms-2"
+                    title="Remove">
+              <i class="bi bi-x-lg"></i> Remove
+            </button>
+          </div>
+        </template>
+      </div>
+    </template>
+    <!-- Selected item display (single) -->
+    <div x-show="!isMultiple && selectedItem" x-cloak>
+      {# djlint:off H021 #}
+      <div class="d-flex align-items-center border rounded p-2 mb-2"
+           style="min-height: 38px;
+                  background-color: #f8f9fa">
+        <img x-show="selectedItem && selectedItem.logo"
+             :src="selectedItem.logo"
+             :alt="selectedItem.name"
+             class="me-2"
+             style="width: 20px;
+                    height: 20px;
+                    object-fit: contain" />
+        {# djlint:on #}
+        <span x-text="selectedItem ? selectedItem.name : ''" class="flex-grow-1"></span>
+        <button type="button"
+                @click="clearSelection()"
+                class="btn btn-sm btn-outline-danger ms-2"
+                title="Remove selection">
+          <i class="bi bi-x-lg"></i> Remove
+        </button>
+      </div>
+    </div>
+    <!-- Search input - HIDDEN when item selected in single mode -->
+    <template x-if="isMultiple || selectedItem === null || selectedItem === undefined">
+      <input type="text"
+             class="form-control"
+             placeholder="Search..."
+             x-model="searchQuery"
+             @input.debounce.300ms="search()"
+             @focus="showDropdown = true"
+             @blur="setTimeout(() => showDropdown = false, 200)" />
+    </template>
+    <!-- Hidden input for form submission -->
+    <input type="hidden"
+           name="{{ name }}"
+           id="id_{{ name }}"
+           :value="getHiddenValue()" />
+    {% if name == "brand" %}
+      <input type="hidden"
+             name="brand_name"
+             id="id_brand_name"
+             :value="selectedItem ? selectedItem.name : ''" />
+    {% elif name == "club" %}
+      <input type="hidden"
+             name="club_name"
+             id="id_club_name"
+             :value="selectedItem ? selectedItem.name : ''" />
+    {% elif name == "season" %}
+      <input type="hidden"
+             name="season_name"
+             id="id_season_name"
+             :value="selectedItem ? selectedItem.name : ''" />
+    {% elif name == "competitions" %}
+      <input type="hidden"
+             name="competition_name"
+             id="id_competition_name"
+             :value="selectedItems.map(i => i.name).join(',')" />
+    {% endif %}
+    <!-- Dropdown results -->
+    {# djlint:off H021 #}
+    <div x-show="showDropdown && (results.length > 0 || (searchQuery.length >= 2 && !isSearching && results.length === 0))"
+         class="position-absolute w-100 border rounded bg-white shadow-lg"
+         style="z-index: 1000;
+                max-height: 300px;
+                overflow-y: auto;
+                top: 100%;
+                margin-top: 2px"
+         x-cloak>
+      {# djlint:on #}
+      <!-- Loading state -->
+      <div x-show="isSearching" class="p-3 text-center text-muted">
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Searching...
+      </div>
+      <!-- Results -->
+      <template x-if="!isSearching && results.length > 0">
+        <div>
+          <template x-for="item in results" :key="item.id">
+            {# djlint:off H021 #}
+            <div @mousedown.prevent="selectItem(item)"
+                 class="p-2 border-bottom"
+                 style="cursor: pointer"
+                 @mouseenter="$el.style.backgroundColor = '#f8f9fa'"
+                 @mouseleave="$el.style.backgroundColor = 'white'">
+              <div class="d-flex align-items-center">
+                <img x-show="item.logo"
+                     :src="item.logo"
+                     :alt="item.name"
+                     class="me-2"
+                     style="width: 20px;
+                            height: 20px;
+                            object-fit: contain" />
+                {# djlint:on #}
+                <span x-text="item.name"></span>
+                <template x-if="!isMultiple && selectedItem && selectedItem.id === item.id">
+                  <i class="bi bi-check-circle-fill text-success ms-2"></i>
+                </template>
+                <template x-if="isMultiple && selectedItems.find(i => i.id === item.id)">
+                  <i class="bi bi-check-circle-fill text-success ms-2"></i>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+      <!-- No results -->
+      <div x-show="!isSearching && searchQuery.length >= 2 && results.length === 0"
+           class="p-3 text-center text-muted">
+        <p class="mb-2">No results found</p>
+        <button type="button" @click="createCustom()" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-circle"></i> Create Custom
+        </button>
+      </div>
+    </div>
+    {% if help_text %}<small class="form-text text-muted">{{ help_text }}</small>{% endif %}
+  </div>
+</div>
+<script>
+  document.addEventListener('alpine:init', () => {
+    if (!Alpine.data('autocompleteSearch')) {
+      Alpine.data('autocompleteSearch', (name, apiEndpoint, multiple = false) => ({
+        searchQuery: '',
+        results: [],
+        selectedItem: null,
+        selectedItems: [],
+        selectedId: null,
+        isSearching: false,
+        showDropdown: false,
+        isMultiple: multiple === true || multiple === 'true',
+        fieldName: name,
+        apiEndpoint: apiEndpoint,
+
+        search() {
+          if (this.searchQuery.length < 2) {
+            this.results = [];
+            return;
+          }
+
+          this.isSearching = true;
+          this.showDropdown = true;
+
+          const url = `/fkapi/${this.apiEndpoint}/search/?keyword=${encodeURIComponent(this.searchQuery)}`;
+
+          fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              this.results = data.results || [];
+              this.isSearching = false;
+            })
+            .catch(error => {
+              console.error('Error searching:', error);
+              this.results = [];
+              this.isSearching = false;
+            });
+        },
+
+        selectItem(item) {
+          if (this.isMultiple) {
+            if (!this.selectedItems.find(i => i.id === item.id)) {
+              this.selectedItems.push(item);
+              this.searchQuery = '';
+              this.results = [];
+              this.showDropdown = false;
+            }
+          } else {
+            this.selectedItem = Object.assign({}, item);
+            this.selectedId = item.id;
+            this.selectedItems = [];
+            this.searchQuery = '';
+            this.results = [];
+            this.showDropdown = false;
+          }
+        },
+
+        clearSelection() {
+          this.selectedItem = null;
+          this.selectedId = null;
+          this.selectedItems = [];
+          this.searchQuery = '';
+          this.results = [];
+        },
+
+        removeItem(itemId) {
+          this.selectedItems = this.selectedItems.filter(item => item.id !== itemId);
+        },
+
+        getHiddenValue() {
+          if (this.isMultiple) {
+            return this.selectedItems.map(item => item.id).join(',');
+          }
+          return this.selectedId || '';
+        },
+
+        createCustom() {
+          if (!this.searchQuery || this.searchQuery.trim().length === 0) {
+            alert('Please enter a name');
+            return;
+          }
+
+          const customName = this.searchQuery.trim();
+          const nameField = document.getElementById(`id_${this.fieldName}_name`);
+          if (nameField) {
+            nameField.value = customName;
+          }
+
+          if (this.isMultiple) {
+            this.selectedItems.push({
+              id: null,
+              name: customName,
+              logo: null
+            });
+          } else {
+            this.selectedItem = {
+              id: null,
+              name: customName,
+              logo: null
+            };
+          }
+
+          this.searchQuery = '';
+          this.results = [];
+          this.showDropdown = false;
+
+          alert(`Custom item "${customName}" will be created when you submit the form`);
+        }
+      }));
+    }
+  });
+</script>

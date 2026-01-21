@@ -1,103 +1,110 @@
 {% load i18n %}
 {% load static %}
+{% load list_filters %}
 
 <!-- Cotton design selector component -->
 <div class="mb-3">
   <label for="id_{{ name }}" class="form-label">{{ label }}</label>
   <select id="id_{{ name }}" name="{{ name }}" class="form-control d-none">
     <option value="">Select design</option>
-    {% for design in design_choices %}
-      <option value="{{ design.value }}"
-              {% if design.value == data_selected %}selected{% endif %}>{{ design.label }}</option>
-    {% endfor %}
-  </select>
-  <!-- SVG definitions for jersey shape mask -->
-  <svg width="0" height="0" class="position-absolute">
-    <defs>
-    <clipPath id="jersey-shape">
-    <!-- Simple t-shirt/jersey silhouette -->
-    <path d="M25,0 H75 C80,0 82,5 85,15 L95,40 C95,45 95,50 90,50 L85,50 L85,100 H15 L15,50 L10,50 C5,50 5,45 5,40 L15,15 C18,5 20,0 25,0 Z" />
-    </clipPath>
-    </defs>
-  </svg>
-  <div class="design-selector-container">
-    {% for design in design_choices %}
-      <div class="design-option {% if design.value == data_selected %}selected{% endif %}"
-           data-value="{{ design.value }}"
-           title="{{ design.label }}"
-           onclick="selectDesign('{{ name }}', '{{ design.value }}')">
-        <div class="jersey-container">
-          <div class="design-icon">
-            {% if design.value == "PLAIN" %}
-              <img src="{% static 'images/design_type/plain.svg' %}"
-                   alt="Plain"
-                   class="design-image" />
-            {% elif design.value == "STRIPES" %}
-              <img src="{% static 'images/design_type/stripes.svg' %}"
-                   alt="Stripes"
-                   class="design-image" />
-            {% elif design.value == "GRAPHIC" %}
-              <img src="{% static 'images/design_type/graphic.svg' %}"
-                   alt="Graphic"
-                   class="design-image" />
-            {% elif design.value == "CHEST_BAND" %}
-              <img src="{% static 'images/design_type/chest-band.svg' %}"
-                   alt="Chest Band"
-                   class="design-image" />
-            {% elif design.value == "CONTRASTING_SLEEVES" %}
-              <img src="{% static 'images/design_type/contrasting-sleeves.svg' %}"
-                   alt="Contrasting Sleeves"
-                   class="design-image" />
-            {% elif design.value == "PINSTRIPES" %}
-              <img src="{% static 'images/design_type/pinstripes.svg' %}"
-                   alt="Pinstripes"
-                   class="design-image" />
-            {% elif design.value == "HOOPS" %}
-              <img src="{% static 'images/design_type/hoops.svg' %}"
-                   alt="Hoops"
-                   class="design-image" />
-            {% elif design.value == "SINGLE_STRIPE" %}
-              <img src="{% static 'images/design_type/single-stripe.svg' %}"
-                   alt="Single Stripe"
-                   class="design-image" />
-            {% elif design.value == "HALF_AND_HALF" %}
-              <img src="{% static 'images/design_type/half-and-half.svg' %}"
-                   alt="Half and Half"
-                   class="design-image" />
-            {% elif design.value == "SASH" %}
-              <img src="{% static 'images/design_type/sash.svg' %}"
-                   alt="Sash"
-                   class="design-image" />
-            {% elif design.value == "CHEVRON" %}
-              <img src="{% static 'images/design_type/chevron.svg' %}"
-                   alt="Chevron"
-                   class="design-image" />
-            {% elif design.value == "CHECKERS" %}
-              <img src="{% static 'images/design_type/checkers.svg' %}"
-                   alt="Checkers"
-                   class="design-image" />
-            {% elif design.value == "GRADIENT" %}
-              <img src="{% static 'images/design_type/gradient.svg' %}"
-                   alt="Gradient"
-                   class="design-image" />
-            {% elif design.value == "DIAGONAL" %}
-              <img src="{% static 'images/design_type/diagonal.svg' %}"
-                   alt="Diagonal"
-                   class="design-image" />
-            {% elif design.value == "CROSS" %}
-              <img src="{% static 'images/design_type/cross.svg' %}"
-                   alt="Cross"
-                   class="design-image" />
-            {% elif design.value == "QUARTERS" %}
-              <img src="{% static 'images/design_type/quarters.svg' %}"
-                   alt="Quarters"
-                   class="design-image" />
-            {% endif %}
+    {% with design_choices_parsed=design_choices|parse_json %}
+      {% if design_choices_parsed %}
+        {% for design in design_choices_parsed %}
+          <option value="{{ design.value }}"
+                  {% if design.value == data_selected %}selected{% endif %}>{{ design.label }}</option>
+        {% endfor %}
+      {% endif %}
+    </select>
+    <!-- SVG definitions for jersey shape mask -->
+    <svg width="0" height="0" class="position-absolute">
+      <defs>
+      <clipPath id="jersey-shape">
+      <!-- Simple t-shirt/jersey silhouette -->
+      <path d="M25,0 H75 C80,0 82,5 85,15 L95,40 C95,45 95,50 90,50 L85,50 L85,100 H15 L15,50 L10,50 C5,50 5,45 5,40 L15,15 C18,5 20,0 25,0 Z" />
+      </clipPath>
+      </defs>
+    </svg>
+    <div class="design-selector-container">
+      {% if design_choices_parsed %}
+        {% for design in design_choices_parsed %}
+          <div class="design-option {% if design.value == data_selected %}selected{% endif %}"
+               data-value="{{ design.value }}"
+               title="{{ design.label }}"
+               onclick="selectDesign('{{ name }}', '{{ design.value }}')">
+            <div class="jersey-container">
+              <div class="design-icon">
+                {% if design.value == "PLAIN" %}
+                  <img src="{% static 'images/design_type/plain.svg' %}"
+                       alt="Plain"
+                       class="design-image" />
+                {% elif design.value == "STRIPES" %}
+                  <img src="{% static 'images/design_type/stripes.svg' %}"
+                       alt="Stripes"
+                       class="design-image" />
+                {% elif design.value == "GRAPHIC" %}
+                  <img src="{% static 'images/design_type/graphic.svg' %}"
+                       alt="Graphic"
+                       class="design-image" />
+                {% elif design.value == "CHEST_BAND" %}
+                  <img src="{% static 'images/design_type/chest-band.svg' %}"
+                       alt="Chest Band"
+                       class="design-image" />
+                {% elif design.value == "CONTRASTING_SLEEVES" %}
+                  <img src="{% static 'images/design_type/contrasting-sleeves.svg' %}"
+                       alt="Contrasting Sleeves"
+                       class="design-image" />
+                {% elif design.value == "PINSTRIPES" %}
+                  <img src="{% static 'images/design_type/pinstripes.svg' %}"
+                       alt="Pinstripes"
+                       class="design-image" />
+                {% elif design.value == "HOOPS" %}
+                  <img src="{% static 'images/design_type/hoops.svg' %}"
+                       alt="Hoops"
+                       class="design-image" />
+                {% elif design.value == "SINGLE_STRIPE" %}
+                  <img src="{% static 'images/design_type/single-stripe.svg' %}"
+                       alt="Single Stripe"
+                       class="design-image" />
+                {% elif design.value == "HALF_AND_HALF" %}
+                  <img src="{% static 'images/design_type/half-and-half.svg' %}"
+                       alt="Half and Half"
+                       class="design-image" />
+                {% elif design.value == "SASH" %}
+                  <img src="{% static 'images/design_type/sash.svg' %}"
+                       alt="Sash"
+                       class="design-image" />
+                {% elif design.value == "CHEVRON" %}
+                  <img src="{% static 'images/design_type/chevron.svg' %}"
+                       alt="Chevron"
+                       class="design-image" />
+                {% elif design.value == "CHECKERS" %}
+                  <img src="{% static 'images/design_type/checkers.svg' %}"
+                       alt="Checkers"
+                       class="design-image" />
+                {% elif design.value == "GRADIENT" %}
+                  <img src="{% static 'images/design_type/gradient.svg' %}"
+                       alt="Gradient"
+                       class="design-image" />
+                {% elif design.value == "DIAGONAL" %}
+                  <img src="{% static 'images/design_type/diagonal.svg' %}"
+                       alt="Diagonal"
+                       class="design-image" />
+                {% elif design.value == "CROSS" %}
+                  <img src="{% static 'images/design_type/cross.svg' %}"
+                       alt="Cross"
+                       class="design-image" />
+                {% elif design.value == "QUARTERS" %}
+                  <img src="{% static 'images/design_type/quarters.svg' %}"
+                       alt="Quarters"
+                       class="design-image" />
+                {% endif %}
+              </div>
+            </div>
+            <span class="design-label">{{ design.label }}</span>
           </div>
-        </div>
-        <span class="design-label">{{ design.label }}</span>
-      </div>
-    {% endfor %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
   </div>
 </div>
 <script>

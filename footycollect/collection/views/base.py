@@ -47,7 +47,15 @@ class BaseItemListView(CollectionLoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         """Add additional context data."""
         context = super().get_context_data(**kwargs)
-        context["total_items"] = self.get_queryset().count()
+        # Optimized: Use object_list.count() instead of calling get_queryset() again
+        # This avoids executing the queryset twice
+        if hasattr(self, "object_list"):
+            if hasattr(self.object_list, "count"):
+                context["total_items"] = self.object_list.count()
+            else:
+                context["total_items"] = len(self.object_list)
+        else:
+            context["total_items"] = 0
         return context
 
 
@@ -110,9 +118,9 @@ class BaseItemUpdateView(
     success_url = reverse_lazy("collection:item_list")
 
     def get_queryset(self):
-        """Get all items with optimizations."""
+        """Get user's items with optimizations."""
         return (
-            BaseItem.objects.all()
+            BaseItem.objects.filter(user=self.request.user)
             .select_related("user", "club", "season", "brand", "main_color")
             .prefetch_related("competitions", "photos")
         )
@@ -130,9 +138,9 @@ class BaseItemDeleteView(
     success_url = reverse_lazy("collection:item_list")
 
     def get_queryset(self):
-        """Get all items with optimizations."""
+        """Get user's items with optimizations."""
         return (
-            BaseItem.objects.all()
+            BaseItem.objects.filter(user=self.request.user)
             .select_related("user", "club", "season", "brand", "main_color")
             .prefetch_related("competitions", "photos")
         )

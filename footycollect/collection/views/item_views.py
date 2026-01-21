@@ -131,7 +131,7 @@ class DropzoneTestView(TemplateView):
 
 
 class JerseySelectView(LoginRequiredMixin, TemplateView):
-    """View for selecting a jersey from the database (first step)."""
+    """View for browsing and selecting kit templates from the database."""
 
     template_name = "collection/jersey_select.html"
 
@@ -140,9 +140,15 @@ class JerseySelectView(LoginRequiredMixin, TemplateView):
     prefetch_related_fields = []
 
     def get_context_data(self, **kwargs):
-        # No need to add additional context for the grid layout
-        # The grid is populated dynamically via JavaScript/Alpine.js
-        return super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
+        context["help_text"] = _(
+            "Browse available kit templates in our database. "
+            "A 'kit' is the design/template (e.g., 'FC Barcelona 2020-21 Home Kit'). "
+            "After selecting a kit, you'll add details about your specific physical item "
+            "(size, condition, player name, photos, etc.). Multiple users can own the same kit "
+            "but with different customizations!",
+        )
+        return context
 
 
 # =============================================================================
@@ -225,9 +231,27 @@ class ItemDetailView(BaseItemDetailView):
             base_item = self.object.base_item
             context["specific_item"] = self.object
 
-        context["photos"] = photo_service.get_item_photos(base_item)
+        # Get photos using the service (which uses the correct ContentType)
+        photos = photo_service.get_item_photos(base_item)
+
+        # Force evaluation of the queryset to ensure it's cached and available
+        photos_list = list(photos)
+        context["photos"] = photos_list
+
+        # Ensure object is base_item so GenericRelation works in template
         context["object"] = base_item
         context["item"] = base_item
+
+        # Log for debugging
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            "ItemDetailView: base_item ID=%s, photos count=%d, photos_list=%s",
+            base_item.id,
+            len(photos_list),
+            [p.id for p in photos_list],
+        )
 
         # Get related items from all item types
         related_items = self._get_related_items()
@@ -236,7 +260,7 @@ class ItemDetailView(BaseItemDetailView):
 
     def _get_related_items(self):
         """Get related items from all item types with optimized queries."""
-        from footycollect.collection.models import BaseItem
+        from footycollect.collection.models import BaseItem, Jersey
 
         base_item = self.object if isinstance(self.object, BaseItem) else self.object.base_item
 
@@ -244,6 +268,8 @@ class ItemDetailView(BaseItemDetailView):
             return []
 
         # Optimized: Query BaseItem directly and get specific items via select_related
+        # Since most items are jerseys, we'll optimize for that case
+        # For other item types, we'll use a more generic approach
         related_base_items = (
             BaseItem.objects.filter(club=base_item.club)
             .exclude(id=base_item.id)
@@ -252,12 +278,29 @@ class ItemDetailView(BaseItemDetailView):
             .order_by("-created_at")[:5]
         )
 
+        # Optimize: Prefetch Jersey objects for jersey items to avoid N+1
+        jersey_ids = [item.id for item in related_base_items if item.item_type == "jersey"]
+        jerseys = {}
+        if jersey_ids:
+            jerseys = {
+                jersey.base_item_id: jersey
+                for jersey in Jersey.objects.filter(base_item_id__in=jersey_ids).select_related(
+                    "base_item",
+                    "size",
+                    "kit",
+                )
+            }
+
         # Get specific item instances efficiently
         related_items = []
         for related_base_item in related_base_items:
-            specific_item = related_base_item.get_specific_item()
-            if specific_item:
-                related_items.append(specific_item)
+            if related_base_item.item_type == "jersey" and related_base_item.id in jerseys:
+                related_items.append(jerseys[related_base_item.id])
+            else:
+                # For non-jersey items, use get_specific_item (will do one query per item)
+                specific_item = related_base_item.get_specific_item()
+                if specific_item:
+                    related_items.append(specific_item)
 
         return related_items
 
@@ -276,6 +319,30 @@ class ItemCreateView(BaseItemCreateView):
         # Add other form types as needed
         return JerseyForm
 
+    def get_context_data(self, **kwargs):
+        """Add context data for item creation."""
+        context = super().get_context_data(**kwargs)
+
+        # Add options for Cotton components using services
+        try:
+            import json
+
+            from footycollect.collection.models import BaseItem
+            from footycollect.collection.services import get_collection_service
+
+            collection_service = get_collection_service()
+            form_data = collection_service.get_form_data()
+            context["color_choices"] = json.dumps(form_data["colors"]["main_colors"])
+            context["design_choices"] = json.dumps(
+                [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
+            )
+        except (KeyError, AttributeError, ImportError) as e:
+            logger.warning("Error getting form data: %s", str(e))
+            context["color_choices"] = "[]"
+            context["design_choices"] = "[]"
+
+        return context
+
 
 class ItemUpdateView(BaseItemUpdateView):
     """Update view for editing existing items in the collection."""
@@ -289,6 +356,30 @@ class ItemUpdateView(BaseItemUpdateView):
             return JerseyForm
         # Add other form types as needed
         return JerseyForm
+
+    def get_context_data(self, **kwargs):
+        """Add context data for item update."""
+        context = super().get_context_data(**kwargs)
+
+        # Add options for Cotton components using services
+        try:
+            import json
+
+            from footycollect.collection.models import BaseItem
+            from footycollect.collection.services import get_collection_service
+
+            collection_service = get_collection_service()
+            form_data = collection_service.get_form_data()
+            context["color_choices"] = json.dumps(form_data["colors"]["main_colors"])
+            context["design_choices"] = json.dumps(
+                [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
+            )
+        except (KeyError, AttributeError, ImportError) as e:
+            logger.warning("Error getting form data: %s", str(e))
+            context["color_choices"] = "[]"
+            context["design_choices"] = "[]"
+
+        return context
 
 
 class ItemDeleteView(BaseItemDeleteView):
@@ -322,32 +413,124 @@ class JerseyCreateView(BaseItemCreateView):
         """Add context data for jersey creation."""
         context = super().get_context_data(**kwargs)
         context["item_type"] = "jersey"
+        context["is_manual_mode"] = True
+        context["help_text"] = _(
+            "Use this form to add a jersey that is not in our kit database. "
+            "Search for clubs, seasons, and competitions. If they don't exist, you can create them. "
+            "This is perfect for fantasy clubs, custom jerseys, or rare items not in the database.",
+        )
+
+        # Add translated labels for autocomplete components
+        context["label_brand"] = _("Brand")
+        context["label_club"] = _("Club")
+        context["label_season"] = _("Season")
+        context["label_competitions"] = _("Competitions")
+        context["help_brand"] = _(
+            "Search for a brand from the external database. If not found, you can create it manually.",
+        )
+        context["help_club"] = _("Search for a club. If not found, you can create it manually.")
+        context["help_season"] = _("Search for a season (e.g., 2020-21). If not found, you can create it manually.")
+        context["help_competitions"] = _(
+            "Search for competitions from the external database. If not found, you can create them manually.",
+        )
+
+        # Add options for Cotton components using services
+        try:
+            import json
+
+            from footycollect.collection.models import BaseItem
+            from footycollect.collection.services import get_collection_service
+
+            collection_service = get_collection_service()
+            form_data = collection_service.get_form_data()
+            context["color_choices"] = json.dumps(form_data["colors"]["main_colors"])
+            context["design_choices"] = json.dumps(
+                [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
+            )
+        except (KeyError, AttributeError, ImportError) as e:
+            logger.warning("Error getting form data: %s", str(e))
+            context["color_choices"] = "[]"
+            context["design_choices"] = "[]"
+
         return context
 
     def form_valid(self, form):
         """Handle form validation for jersey creation."""
         try:
             with transaction.atomic():
-                # Set the user
-                form.instance.user = self.request.user
+                # JerseyForm.save() creates both BaseItem and Jersey objects
+                # It needs the user in the form's user attribute
+                form.user = self.request.user
 
-                # Save the jersey
-                response = super().form_valid(form)
+                # Save the jersey (this creates BaseItem and Jersey)
+                base_item = form.save()
+
+                # Set self.object for CreateView's redirect
+                self.object = base_item
 
                 # Process any additional data
                 self._process_post_creation(form)
 
                 messages.success(self.request, _("Jersey created successfully!"))
-                return response
+
+                # Redirect to success URL
+                from django.http import HttpResponseRedirect
+
+                return HttpResponseRedirect(self.get_success_url())
 
         except Exception:
             logger.exception("Error creating jersey")
-            messages.error(self.request, _("Error creating jersey. Please try again."))
+            messages.error(
+                self.request,
+                _("Error creating jersey."),
+            )
             return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        """Handle form validation errors."""
+        logger.warning("Form validation failed. Errors: %s", form.errors)
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, f"{field}: {error}")
+        return super().form_invalid(form)
 
     def _process_post_creation(self, form):
         """Process any additional data after jersey creation."""
-        # This method can be extended to handle additional processing
+        from django.utils.text import slugify
+
+        from footycollect.core.models import Brand, Competition
+
+        brand_name = self.request.POST.get("brand_name")
+        if brand_name and not self.object.brand:
+            try:
+                brand, created = Brand.objects.get_or_create(
+                    name=brand_name,
+                    defaults={"slug": slugify(brand_name)},
+                )
+                self.object.brand = brand
+                self.object.save()
+                if created:
+                    logger.info("Created new brand %s for jersey", brand.name)
+                else:
+                    logger.info("Found existing brand %s for jersey", brand.name)
+            except Exception:
+                logger.exception("Error creating brand %s", brand_name)
+
+        competition_name = self.request.POST.get("competition_name")
+        if competition_name:
+            try:
+                competition, created = Competition.objects.get_or_create(
+                    name=competition_name,
+                    defaults={"slug": slugify(competition_name)},
+                )
+                if competition not in self.object.competitions.all():
+                    self.object.competitions.add(competition)
+                    if created:
+                        logger.info("Created and added new competition %s to jersey", competition.name)
+                    else:
+                        logger.info("Added existing competition %s to jersey", competition.name)
+            except Exception:
+                logger.exception("Error adding competition %s", competition_name)
 
 
 class JerseyUpdateView(BaseItemUpdateView):

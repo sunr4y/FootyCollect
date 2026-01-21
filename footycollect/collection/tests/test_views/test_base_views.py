@@ -147,11 +147,13 @@ class TestBaseItemListView(TestCase):
 
         with patch("footycollect.collection.views.base.get_item_service") as mock_service:
             mock_item_service = Mock()
-            mock_item_service.get_user_items.return_value = BaseItem.objects.filter(user=self.user)
+            queryset = BaseItem.objects.filter(user=self.user)
+            mock_item_service.get_user_items.return_value = queryset
             mock_service.return_value = mock_item_service
 
             with patch("footycollect.collection.views.base.ListView.get_context_data") as mock_super:
                 mock_super.return_value = {"items": []}
+                view.object_list = queryset
 
                 context = view.get_context_data()
 
@@ -197,7 +199,8 @@ class TestBaseItemListView(TestCase):
         view = BaseItemListView()
         view.request = Mock()
         view.request.user = self.user
-        view.object_list = []  # Set object_list to avoid AttributeError
+        queryset = BaseItem.objects.filter(user=self.user)
+        view.object_list = queryset  # Set object_list to queryset
         view.kwargs = {}  # Set kwargs to avoid AttributeError
         view.request.GET = {}  # Set GET to avoid AttributeError
 
@@ -407,6 +410,8 @@ class TestBaseItemUpdateView(TestCase):
     def test_update_view_get_queryset_integration(self):
         """Test update view get_queryset integration with real data."""
         view = BaseItemUpdateView()
+        view.request = Mock()
+        view.request.user = self.user
 
         # Test with real queryset (no mocking)
         queryset = view.get_queryset()
@@ -460,6 +465,8 @@ class TestBaseItemDeleteView(TestCase):
     def test_delete_view_get_queryset_integration(self):
         """Test delete view get_queryset integration with real data."""
         view = BaseItemDeleteView()
+        view.request = Mock()
+        view.request.user = self.user
 
         # Test with real queryset (no mocking)
         queryset = view.get_queryset()

@@ -1,0 +1,7 @@
+# Git configuration for FootyCollect project
+# Add this to your global .gitconfig or use: git config --local --file .gitconfig.local
+
+[core]
+    autocrlf = false
+    eol = lf
+    safecrlf = false

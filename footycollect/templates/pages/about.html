@@ -1,1 +1,110 @@
 {% extends "base.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  {% translate "About FootyCollect" %}
+{% endblock title %}
+{% block content %}
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <h1 class="display-4 mb-4">{% translate "About FootyCollect" %}</h1>
+        <div class="card mb-4">
+          <div class="card-body">
+            <h2 class="card-title h4">{% translate "What is FootyCollect?" %}</h2>
+            <p class="card-text">
+              {% translate "FootyCollect is a comprehensive platform for managing and showcasing your football memorabilia collection. Whether you collect jerseys, shorts, or other football-related items, FootyCollect helps you organize, track, and share your collection with ease." %}
+            </p>
+          </div>
+        </div>
+        <div class="card mb-4">
+          <div class="card-body">
+            <h2 class="card-title h4">{% translate "Key Features" %}</h2>
+            <ul class="list-unstyled">
+              <li class="mb-2">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong>{% translate "Organize Your Collection" %}</strong>
+                <p class="text-muted small mb-0">
+                  {% translate "Track jerseys, shorts, and other items by club, season, competition, and more." %}
+                </p>
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong>{% translate "Automatic Kit Detection" %}</strong>
+                <p class="text-muted small mb-0">
+                  {% translate "Use our automatic mode to quickly add items from our extensive kit database, or manually add items not found in the database." %}
+                </p>
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong>{% translate "Photo Management" %}</strong>
+                <p class="text-muted small mb-0">
+                  {% translate "Upload multiple photos of each item to showcase your collection." %}
+                </p>
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong>{% translate "Detailed Information" %}</strong>
+                <p class="text-muted small mb-0">
+                  {% translate "Record condition, size, player names, numbers, and other customizations for each item." %}
+                </p>
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong>{% translate "Search & Filter" %}</strong>
+                <p class="text-muted small mb-0">
+                  {% translate "Find items in your collection or discover what others have collected by searching kits, clubs, seasons, and competitions." %}
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="card mb-4">
+          <div class="card-body">
+            <h2 class="card-title h4">{% translate "How It Works" %}</h2>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <h5 class="h6">{% translate "Adding Items - Automatic Mode" %}</h5>
+                <p class="small text-muted">
+                  {% translate "When you own a jersey from a kit in our database, use automatic mode. Select the kit template (e.g., 'FC Barcelona 2020-21 Home Kit'), then add details about your specific item like size, condition, player name, and photos." %}
+                </p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <h5 class="h6">{% translate "Adding Items - Manual Mode" %}</h5>
+                <p class="small text-muted">
+                  {% translate "For items not in our database (fantasy clubs, custom jerseys, or rare items), use manual mode. Search for or create the club, select season and competition, then add all the details about your item." %}
+                </p>
+              </div>
+            </div>
+            <div class="alert alert-info mt-3">
+              <strong>{% translate "Understanding Kits vs Items" %}</strong>
+              <p class="mb-0 small">
+                {% translate "A 'Kit' is the template/design (e.g., 'FC Barcelona 2020-21 Home Kit'). An 'Item' is your physical jersey with specific details (e.g., 'My FC Barcelona 2020-21 Home Jersey, Size M, with Messi #10 nameset'). Multiple users can own the same kit but with different customizations!" as kits_vs_items_text %}
+                {{ kits_vs_items_text }}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title h4">{% translate "Get Started" %}</h2>
+            <p>
+              {% translate "Ready to start managing your collection?" %}
+              {% if not user.is_authenticated %}
+                <a href="{% url 'account_signup' %}" class="btn btn-primary">{% translate "Sign Up" %}</a>
+                {% translate "or" %}
+                <a href="{% url 'account_login' %}" class="btn btn-outline-primary">{% translate "Sign In" %}</a>
+              {% else %}
+                <a href="{% url 'collection:item_list' %}" class="btn btn-primary">{% translate "View My Collection" %}</a>
+                {% translate "or" %}
+                <a href="{% url 'collection:jersey_add_automatic' %}"
+                   class="btn btn-outline-primary">{% translate "Add Your First Item" %}</a>
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

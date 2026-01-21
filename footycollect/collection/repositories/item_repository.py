@@ -42,7 +42,11 @@ class ItemRepository(BaseRepository):
         if item_type:
             queryset = queryset.filter(item_type=item_type)
 
-        return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
+        return (
+            queryset.select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("photos", "competitions", "secondary_colors")
+            .order_by("-created_at")
+        )
 
     def get_public_items(self, item_type: str | None = None) -> QuerySet[BaseItem]:
         """
@@ -60,7 +64,11 @@ class ItemRepository(BaseRepository):
             # For now, only support jerseys in this repository
             return self.model.objects.none()
 
-        return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
+        return (
+            queryset.select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("photos", "competitions", "secondary_colors")
+            .order_by("-created_at")
+        )
 
     def search_items(self, query: str, user: User | None = None) -> QuerySet[BaseItem]:
         """
@@ -81,7 +89,10 @@ class ItemRepository(BaseRepository):
             queryset = self.model.objects.filter(is_draft=False, is_private=False)
 
         return (
-            queryset.filter(search_filter).select_related("user", "club", "season", "brand").prefetch_related("photos")
+            queryset.filter(search_filter)
+            .select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("photos", "competitions", "secondary_colors")
+            .order_by("-created_at")
         )
 
     def get_items_by_club(self, club_id: int, user: User | None = None) -> QuerySet[BaseItem]:
@@ -98,7 +109,11 @@ class ItemRepository(BaseRepository):
         queryset = self.model.objects.filter(club_id=club_id)
         queryset = queryset.filter(user=user) if user else queryset.filter(is_draft=False, is_private=False)
 
-        return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
+        return (
+            queryset.select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("photos", "competitions", "secondary_colors")
+            .order_by("-created_at")
+        )
 
     def get_items_by_season(self, season_id: int, user: User | None = None) -> QuerySet[BaseItem]:
         """
@@ -114,7 +129,11 @@ class ItemRepository(BaseRepository):
         queryset = self.model.objects.filter(season_id=season_id)
         queryset = queryset.filter(user=user) if user else queryset.filter(is_draft=False, is_private=False)
 
-        return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
+        return (
+            queryset.select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("photos", "competitions", "secondary_colors")
+            .order_by("-created_at")
+        )
 
     def get_items_by_brand(self, brand_id: int, user: User | None = None) -> QuerySet[BaseItem]:
         """
@@ -130,7 +149,11 @@ class ItemRepository(BaseRepository):
         queryset = self.model.objects.filter(brand_id=brand_id)
         queryset = queryset.filter(user=user) if user else queryset.filter(is_draft=False, is_private=False)
 
-        return queryset.select_related("user", "club", "season", "brand").prefetch_related("photos")
+        return (
+            queryset.select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("photos", "competitions", "secondary_colors")
+            .order_by("-created_at")
+        )
 
     def get_recent_items(self, limit: int = 10, user: User | None = None) -> QuerySet[BaseItem]:
         """
@@ -147,8 +170,8 @@ class ItemRepository(BaseRepository):
         queryset = queryset.filter(user=user) if user else queryset.filter(is_draft=False, is_private=False)
 
         return (
-            queryset.select_related("user", "club", "season", "brand")
-            .prefetch_related("photos")
+            queryset.select_related("user", "club", "season", "brand", "main_color")
+            .prefetch_related("photos", "competitions", "secondary_colors")
             .order_by("-created_at")[:limit]
         )
 
@@ -174,14 +197,24 @@ class ItemRepository(BaseRepository):
         Returns:
             Dictionary with item type counts
         """
-        counts = {}
+        from django.db.models import Count
 
-        # Count each item type using STI structure (all items in BaseItem table)
-        counts["jersey"] = BaseItem.objects.filter(user=user, item_type="jersey").count()
-        counts["shorts"] = BaseItem.objects.filter(user=user, item_type="shorts").count()
-        counts["outerwear"] = BaseItem.objects.filter(user=user, item_type="outerwear").count()
-        counts["tracksuit"] = BaseItem.objects.filter(user=user, item_type="tracksuit").count()
-        counts["pants"] = BaseItem.objects.filter(user=user, item_type="pants").count()
-        counts["other"] = BaseItem.objects.filter(user=user, item_type="other").count()
+        # Optimized: Single query with aggregation instead of 6 separate queries
+        counts_query = self.model.objects.filter(user=user).values("item_type").annotate(count=Count("item_type"))
+
+        # Convert to dictionary with default 0 for missing types
+        counts = {
+            "jersey": 0,
+            "shorts": 0,
+            "outerwear": 0,
+            "tracksuit": 0,
+            "pants": 0,
+            "other": 0,
+        }
+
+        for item in counts_query:
+            item_type = item["item_type"]
+            if item_type in counts:
+                counts[item_type] = item["count"]
 
         return counts

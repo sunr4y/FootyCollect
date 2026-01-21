@@ -14,4 +14,7 @@ urlpatterns = [
         views.get_club_kits,
         name="club_season_kits",
     ),
+    path("brands/search/", views.search_brands, name="search_brands"),
+    path("competitions/search/", views.search_competitions, name="search_competitions"),
+    path("seasons/search/", views.search_seasons, name="search_seasons"),
 ]

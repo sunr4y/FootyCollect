@@ -171,12 +171,15 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             view.object = Mock()
             view.object.is_draft = True
             view.object.save = Mock()
+            view.object.refresh_from_db = Mock()
+            view.object.base_item = Mock()
+            view.object.base_item.id = 1
 
             result = view.form_valid(mock_form)
 
             mock_process_entities.assert_called_once_with(mock_form)
             mock_save.assert_called_once_with(mock_form)
-            mock_process_images.assert_called_once_with(mock_form)
+            mock_process_images.assert_called_once_with(mock_form, view.object.base_item)
             mock_messages.success.assert_called_once()
             assert result == mock_response
 
@@ -453,13 +456,16 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         ):
             mock_save.return_value = Mock()
             view.object = mock_jersey
+            view.object.refresh_from_db = Mock()
+            view.object.base_item = Mock()
+            view.object.base_item.id = 1
 
             result = view.form_valid(mock_form)
 
             # Verify the complete flow was executed
             mock_process_entities.assert_called_once_with(mock_form)
             mock_save.assert_called_once_with(mock_form)
-            mock_process_images.assert_called_once_with(mock_form)
+            mock_process_images.assert_called_once_with(mock_form, view.object.base_item)
             mock_messages.success.assert_called_once()
             assert result == mock_save.return_value
 
@@ -685,6 +691,8 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view = JerseyFKAPICreateView()
         view.object = Mock()
         view.object.id = 1
+        view.object.base_item = Mock()
+        view.object.base_item.id = 1
         view.request = Mock()
         view.request.user = self.user
 
@@ -701,8 +709,8 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             view._process_photo_ids(photo_ids)
 
             mock_parse.assert_called_once_with(photo_ids)
-            mock_external.assert_called_once_with([])
-            mock_associate.assert_called_once_with(["1", "2", "3"], {})
+            mock_external.assert_called_once_with([], view.object.base_item)
+            mock_associate.assert_called_once_with(["1", "2", "3"], {}, view.object.base_item)
 
     def test_entity_creation_integration(self):
         """Test entity creation integration with real data."""

@@ -146,7 +146,7 @@ class JerseyViewsAdditionalTest(TestCase):
         """Test JerseyFKAPICreateView GET method context."""
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
 
-        response = self.client.get(reverse("collection:jersey_fkapi_create"))
+        response = self.client.get(reverse("collection:jersey_create_automatic"))
         assert response.status_code == HTTP_OK
         assert "form" in response.context
 
@@ -169,7 +169,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "competitions": [self.competition.id],
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_kit_id(self):
@@ -190,7 +190,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "kit_id": "12345",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_api_data(self):
@@ -214,7 +214,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "is_short_sleeve": True,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_external_images(self):
@@ -236,7 +236,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "external_image_urls": "https://example.com/image1.jpg,https://example.com/image2.jpg",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_photo_ids(self):
@@ -257,7 +257,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "photo_ids": "1,2,3",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_country_code(self):
@@ -278,7 +278,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "country_code": "ES",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_name_generation(self):
@@ -299,7 +299,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "name": "Generated Jersey Name",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_json_photo_ids(self):
@@ -320,7 +320,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "photo_ids": '[{"id": "1", "order": 0}, {"url": "https://example.com/image.jpg", "order": 1}]',
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_empty_photo_ids(self):
@@ -341,7 +341,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "photo_ids": "",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_invalid_photo_ids(self):
@@ -362,7 +362,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "photo_ids": "invalid_json",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_brand_name_only(self):
@@ -374,7 +374,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": 8,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_club_name_only(self):
@@ -386,7 +386,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": 8,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_season_name_only(self):
@@ -398,7 +398,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": 8,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_competition_name_only(self):
@@ -410,7 +410,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": 8,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_name_field(self):
@@ -422,7 +422,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": 8,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_empty_name(self):
@@ -434,7 +434,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": 8,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_BAD_REQUEST]
 
     def test_jersey_fkapi_create_view_post_with_no_name_data(self):
@@ -445,7 +445,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": 8,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_BAD_REQUEST]
 
     def test_jersey_fkapi_create_view_post_with_form_errors(self):
@@ -457,7 +457,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "condition": "invalid",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_BAD_REQUEST]
 
     def test_jersey_fkapi_create_view_post_with_exception_handling(self):
@@ -475,14 +475,14 @@ class JerseyViewsAdditionalTest(TestCase):
             "id_fka": "invalid_kit_id",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR]
 
     def test_jersey_fkapi_create_view_post_with_context_data(self):
         """Test JerseyFKAPICreateView POST with context data."""
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
 
-        response = self.client.get(reverse("collection:jersey_fkapi_create"))
+        response = self.client.get(reverse("collection:jersey_create_automatic"))
         assert response.status_code == HTTP_OK
         assert "form" in response.context
 
@@ -501,7 +501,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "id_fka": 999999,  # Non-existent kit ID
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR]
 
     def test_jersey_fkapi_create_view_post_with_kit_processing(self):
@@ -522,7 +522,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "kit_id": 123,
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_entity_processing(self):
@@ -544,7 +544,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "club_name": "New Club",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_image_processing(self):
@@ -565,7 +565,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "external_images": '["https://example.com/image1.jpg"]',
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_photo_processing(self):
@@ -586,7 +586,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "photo_ids": "1,2,3",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_post_with_competition_processing(self):
@@ -608,5 +608,5 @@ class JerseyViewsAdditionalTest(TestCase):
             "all_competitions": "Champions League, La Liga, Copa del Rey",
         }
 
-        response = self.client.post(reverse("collection:jersey_fkapi_create"), form_data)
+        response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]

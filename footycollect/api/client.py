@@ -311,15 +311,16 @@ class FKAPIClient:
 
     def get_club_kits(self, club_id: int, season_id: int) -> list[dict]:
         """Get kits for a club for a specific season."""
-        result = self._get(
-            "/kits",
-            params={"club": club_id, "season": season_id},
-        )
+        # Use nested club kits endpoint from FKAPI
+        endpoint = f"/clubs/{club_id}/kits"
+        params = {"season": season_id}
+        result = self._get(endpoint, params=params)
         return self._extract_list_from_result(result)
 
     def get_kit_details(self, kit_id: int) -> dict | None:
         """Get complete details of a kit."""
-        return self._get(f"/kit-json/{kit_id}")
+        # Use primary kit details endpoint (legacy /kit-json/{id} is still available but deprecated)
+        return self._get(f"/kits/{kit_id}")
 
     def search_kits(self, query: str) -> list[dict]:
         """Search kits by name."""
@@ -332,6 +333,56 @@ class FKAPIClient:
 
         results = self._extract_list_from_result(result)
         logger.info("Search returned %s results", len(results))
+        return results
+
+    def search_brands(self, query: str) -> list[dict]:
+        """Search brands by name from external database."""
+        logger.info("Searching brands with query: '%s'", query)
+        result = self._get("/brands/search", params={"keyword": query})
+
+        if result is None:
+            logger.warning("FKAPI unavailable, trying alternative method for brand search")
+            kits = self.search_kits(query)
+            brands = {}
+            for kit in kits:
+                brand = kit.get("brand") or kit.get("team", {}).get("brand")
+                if brand:
+                    brand_name = brand.get("name") if isinstance(brand, dict) else brand
+                    if brand_name and brand_name not in brands:
+                        brands[brand_name] = {
+                            "id": brand.get("id") if isinstance(brand, dict) else None,
+                            "name": brand_name,
+                        }
+            return list(brands.values())
+
+        results = self._extract_list_from_result(result)
+        logger.info("Brand search returned %s results", len(results))
+        return results
+
+    def search_competitions(self, query: str) -> list[dict]:
+        """Search competitions by name from external database."""
+        logger.info("Searching competitions with query: '%s'", query)
+        result = self._get("/competitions/search", params={"keyword": query})
+
+        if result is None:
+            logger.warning("FKAPI unavailable, trying alternative method for competition search")
+            kits = self.search_kits(query)
+            competitions = {}
+            for kit in kits:
+                comps = kit.get("competition") or kit.get("competitions", [])
+                if not isinstance(comps, list):
+                    comps = [comps] if comps else []
+                for comp in comps:
+                    comp_name = comp.get("name") if isinstance(comp, dict) else comp
+                    if comp_name and comp_name not in competitions:
+                        competitions[comp_name] = {
+                            "id": comp.get("id") if isinstance(comp, dict) else None,
+                            "name": comp_name,
+                        }
+            return list(competitions.values())
+
+        results = self._extract_list_from_result(result)
+        logger.info("Competition search returned %s results", len(results))
         return results
 
     def _extract_list_from_result(self, result: dict | list | None) -> list[dict]:

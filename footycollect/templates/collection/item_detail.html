@@ -2,6 +2,51 @@
 
 {% load i18n %}
 
+{% block extra_css %}
+  <style>
+    #itemPhotos {
+      min-height: 400px;
+      position: relative;
+    }
+
+    #itemPhotos .carousel-inner {
+      min-height: 400px;
+      position: relative;
+      overflow: visible;
+    }
+
+    #itemPhotos .carousel-item {
+      min-height: 400px;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    #itemPhotos .carousel-item.active {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    #itemPhotos .carousel-item:not(.active) {
+      display: none !important;
+    }
+
+    #itemPhotos img {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      max-height: 600px !important;
+      object-fit: contain !important;
+      margin: 0 auto !important;
+    }
+  </style>
+{% endblock extra_css %}
 {% block content %}
   <div class="container py-4">
     <div class="card">
@@ -11,16 +56,40 @@
         <div class="row mt-4">
           <div class="col-md-6">
             <!-- Photos -->
-            {% if object.photos.exists %}
+            {% if photos|length > 0 or object.photos.exists %}
               <div id="itemPhotos" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
-                  {% for photo in object.photos.all %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                      <img src="{{ photo.get_image_url }}" class="d-block w-100" alt="" />
-                    </div>
-                  {% endfor %}
+                  {% if photos|length > 0 %}
+                    {% for photo in photos %}
+                      <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        {% if photo.image_avif %}
+                          <img src="{{ photo.image.url }}"
+                               data-avif="{{ photo.image_avif.url }}"
+                               class="d-block w-100"
+                               alt=""
+                               onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
+                        {% else %}
+                          <img src="{{ photo.image.url }}" class="d-block w-100" alt="" />
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  {% else %}
+                    {% for photo in object.photos.all %}
+                      <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        {% if photo.image_avif %}
+                          <img src="{{ photo.image.url }}"
+                               data-avif="{{ photo.image_avif.url }}"
+                               class="d-block w-100"
+                               alt=""
+                               onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
+                        {% else %}
+                          <img src="{{ photo.image.url }}" class="d-block w-100" alt="" />
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  {% endif %}
                 </div>
-                {% if object.photos.count > 1 %}
+                {% if photos|length > 1 or object.photos.count > 1 %}
                   <button class="carousel-control-prev"
                           type="button"
                           data-bs-target="#itemPhotos"

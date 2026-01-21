@@ -787,33 +787,51 @@ class TestPhotoRepository(TestCase):
 
     def test_photo_repository_integration_with_real_photos(self):
         """Test photo repository integration with real photo data."""
+        from io import BytesIO
+        from unittest.mock import patch
+
         from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
 
         from footycollect.collection.models import Photo
 
-        # Create test photos
+        # Create a valid test image
+        img = Image.new("RGB", (100, 100), color="red")
+        img_io = BytesIO()
+        img.save(img_io, format="JPEG")
+        img_io.seek(0)
+
         test_image1 = SimpleUploadedFile(
             "test1.jpg",
-            b"fake content",
+            img_io.read(),
             content_type="image/jpeg",
         )
+        img_io.seek(0)
         test_image2 = SimpleUploadedFile(
             "test2.jpg",
-            b"fake content",
+            img_io.read(),
             content_type="image/jpeg",
         )
 
-        # Create photos for the jersey
-        photo1 = Photo.objects.create(
-            content_object=self.jersey,
-            image=test_image1,
-            order=1,
-        )
-        photo2 = Photo.objects.create(
-            content_object=self.jersey,
-            image=test_image2,
-            order=2,
-        )
+        # Mock optimize_image to avoid actual optimization during tests
+        with patch("footycollect.core.utils.images.optimize_image") as mock_optimize:
+            # Return None to skip AVIF optimization
+            mock_optimize.return_value = None
+            # Create photos for the base_item (GenericRelation is on BaseItem)
+            photo1 = Photo.objects.create(
+                content_object=self.base_item,
+                image=test_image1,
+                order=1,
+            )
+            photo2 = Photo.objects.create(
+                content_object=self.base_item,
+                image=test_image2,
+                order=2,
+            )
+
+        # Refresh from database to ensure they're saved
+        photo1.refresh_from_db()
+        photo2.refresh_from_db()
 
         # Test get_photos_by_item with real data
         photos = self.repository.get_photos_by_item(self.jersey)

@@ -1,11 +1,12 @@
 from dal import autocomplete
 from dal_select2 import widgets as select2_widgets
 from django import forms
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django_countries import countries
 
 from footycollect.collection.services import FormService
-from footycollect.core.models import Brand, Club, Season
+from footycollect.core.models import Brand
 
 from .models import BaseItem, Color, Jersey, Size
 
@@ -87,7 +88,16 @@ class BaseItemForm(forms.ModelForm):
             "brand": BrandWidget(),
             "club": forms.Select(),
             "season": forms.Select(),
-            "competitions": forms.SelectMultiple(),
+            "competitions": autocomplete.ModelSelect2Multiple(
+                url="core:competition-autocomplete",
+                attrs={
+                    "data-placeholder": _("Search for competitions..."),
+                    "class": "form-control select2",
+                    "data-theme": "bootstrap-5",
+                    "data-allow-clear": "true",
+                    "data-minimum-input-length": 2,
+                },
+            ),
             "main_color": forms.Select(
                 attrs={
                     "class": "form-select",
@@ -181,12 +191,8 @@ class JerseyForm(forms.ModelForm):
         model = BaseItem
         fields = [
             "name",
-            "club",
-            "season",
-            "brand",
             "condition",
             "description",
-            "competitions",
             "main_color",
             "secondary_colors",
         ]
@@ -207,23 +213,33 @@ class JerseyForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "form-select"}),
     )
 
-    brand = forms.ModelChoiceField(
-        queryset=Brand.objects.all(),
-        required=True,
-        widget=BrandWidget(),
+    brand = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput(),
     )
 
-    club = forms.ModelChoiceField(
-        queryset=Club.objects.all(),
+    brand_name = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    competitions = forms.CharField(
         required=False,
-        widget=forms.Select(attrs={"class": "form-select"}),
+        widget=forms.HiddenInput(),
     )
 
-    season = forms.ModelChoiceField(
-        queryset=Season.objects.all(),
+    competition_name = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    club = forms.IntegerField(
         required=False,
-        widget=forms.Select(attrs={"class": "form-select"}),
+        widget=forms.HiddenInput(),
     )
+
+    club_name = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    season = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    season_name = forms.CharField(required=False, widget=forms.HiddenInput())
 
     condition = forms.IntegerField(
         min_value=1,
@@ -322,13 +338,212 @@ class JerseyForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
 
+    def clean_main_color(self):
+        """Normalize main color from string name to Color object."""
+        main_color_name = self.data.get("main_color")
+        if not main_color_name:
+            return self.cleaned_data.get("main_color")
+
+        # If it's already a Color object, return it
+        if isinstance(main_color_name, Color):
+            return main_color_name
+
+        # If it's an ID, try to get the Color object
+        try:
+            color_id = int(main_color_name)
+            return Color.objects.get(id=color_id)
+        except (ValueError, TypeError, Color.DoesNotExist):
+            pass
+
+        # Otherwise, treat it as a color name and get_or_create
+        color_obj, _ = Color.objects.get_or_create(
+            name__iexact=main_color_name.strip(),
+            defaults={"name": main_color_name.strip().upper()},
+        )
+        return color_obj
+
+    def clean_secondary_colors(self):
+        """Normalize secondary colors from string names to Color objects."""
+        # Handle both QueryDict and regular dict
+        if hasattr(self.data, "getlist"):
+            secondary_colors_names = self.data.getlist("secondary_colors")
+        else:
+            secondary_colors = self.data.get("secondary_colors")
+            if secondary_colors:
+                secondary_colors_names = [secondary_colors] if isinstance(secondary_colors, str) else secondary_colors
+            else:
+                secondary_colors_names = []
+
+        if not secondary_colors_names:
+            return self.cleaned_data.get("secondary_colors", [])
+
+        color_objects = []
+        for color_name in secondary_colors_names:
+            if not color_name:
+                continue
+
+            # If it's already a Color object, add it
+            if isinstance(color_name, Color):
+                color_objects.append(color_name)
+                continue
+
+            # If it's an ID, try to get the Color object
+            try:
+                color_id = int(color_name)
+                color_obj = Color.objects.get(id=color_id)
+                color_objects.append(color_obj)
+                continue
+            except (ValueError, TypeError, Color.DoesNotExist):
+                pass
+
+            # Otherwise, treat it as a color name and get_or_create
+            color_obj, _ = Color.objects.get_or_create(
+                name__iexact=color_name.strip(),
+                defaults={"name": color_name.strip().upper()},
+            )
+            color_objects.append(color_obj)
+
+        return color_objects
+
+    def clean(self):
+        """Custom validation for the form."""
+        cleaned_data = super().clean()
+
+        # If brand is not provided but brand_name is, that's OK
+        # The brand will be created in _extract_base_item_data
+        brand_id = cleaned_data.get("brand")
+        brand_name = self.data.get("brand_name")
+
+        if not brand_id and not brand_name:
+            raise forms.ValidationError({"brand": _("Please select a brand or provide a brand name.")})
+
+        return cleaned_data
+
+    def _resolve_brand(self):
+        """Resolve or create brand from cleaned_data and request data."""
+        import contextlib
+        import logging
+
+        from django.utils.text import slugify
+
+        from footycollect.core.models import Brand
+
+        logger = logging.getLogger(__name__)
+
+        brand = None
+        brand_id = self.cleaned_data.get("brand")
+        if brand_id:
+            with contextlib.suppress(Brand.DoesNotExist):
+                brand = Brand.objects.get(id=brand_id)
+                logger.info("Found brand by ID: %s", brand_id)
+
+        if not brand and self.data.get("brand_name"):
+            brand_name = self.data.get("brand_name")
+            logger.info("Creating brand from name: %s", brand_name)
+            try:
+                brand, created = Brand.objects.get_or_create(
+                    name=brand_name,
+                    defaults={"slug": slugify(brand_name)},
+                )
+                if created:
+                    logger.info("Created new brand: %s", brand_name)
+                else:
+                    logger.info("Found existing brand: %s", brand_name)
+            except (ValueError, TypeError):
+                logger.exception("Error creating brand %s", brand_name)
+                brand = None
+
+        if not brand:
+            raise ValidationError(_("Brand could not be resolved. Please try again."))
+        return brand
+
+    def _resolve_club(self):
+        """Resolve or create club from cleaned_data and request data."""
+        import contextlib
+        import logging
+
+        from django.utils.text import slugify
+
+        from footycollect.core.models import Club
+
+        logger = logging.getLogger(__name__)
+
+        club = None
+        club_id = self.cleaned_data.get("club")
+        if club_id:
+            with contextlib.suppress(Club.DoesNotExist):
+                club = Club.objects.get(id=club_id)
+                logger.info("Found club by ID: %s", club_id)
+
+        if not club and self.data.get("club_name"):
+            club_name = self.data.get("club_name")
+            logger.info("Creating club from name: %s", club_name)
+            try:
+                club, created = Club.objects.get_or_create(
+                    name=club_name,
+                    defaults={"slug": slugify(club_name)},
+                )
+                if created:
+                    logger.info("Created new club: %s", club_name)
+                else:
+                    logger.info("Found existing club: %s", club_name)
+            except (ValueError, TypeError):
+                logger.exception("Error creating club %s", club_name)
+                club = None
+
+        if not club:
+            raise ValidationError(_("Club could not be resolved. Please try again."))
+        return club
+
+    def _resolve_season(self):
+        """Resolve or create season from cleaned_data and request data."""
+        import contextlib
+        import logging
+
+        from django.utils.text import slugify
+
+        from footycollect.core.models import Season
+
+        logger = logging.getLogger(__name__)
+
+        season = None
+        season_id = self.cleaned_data.get("season")
+        if season_id:
+            with contextlib.suppress(Season.DoesNotExist):
+                season = Season.objects.get(id=season_id)
+                logger.info("Found season by ID: %s", season_id)
+
+        if not season and self.data.get("season_name"):
+            season_name = self.data.get("season_name")
+            logger.info("Creating season from name: %s", season_name)
+            try:
+                season, created = Season.objects.get_or_create(
+                    name=season_name,
+                    defaults={"slug": slugify(season_name)},
+                )
+                if created:
+                    logger.info("Created new season: %s", season_name)
+                else:
+                    logger.info("Found existing season: %s", season_name)
+            except (ValueError, TypeError):
+                logger.exception("Error creating season %s", season_name)
+                season = None
+
+        if not season:
+            raise ValidationError(_("Season could not be resolved. Please try again."))
+        return season
+
     def _extract_base_item_data(self):
         """Extract data for BaseItem creation."""
+        brand = self._resolve_brand()
+        club = self._resolve_club()
+        season = self._resolve_season()
+
         return {
             "name": self.cleaned_data.get("name", ""),
-            "club": self.cleaned_data.get("club"),
-            "season": self.cleaned_data.get("season"),
-            "brand": self.cleaned_data.get("brand"),
+            "club": club,
+            "season": season,
+            "brand": brand,
             "condition": self.cleaned_data.get("condition"),
             "detailed_condition": self.cleaned_data.get("detailed_condition"),
             "is_replica": self.cleaned_data.get("is_replica", False),
@@ -353,8 +568,25 @@ class JerseyForm(forms.ModelForm):
 
     def _extract_many_to_many_data(self):
         """Extract ManyToMany field data."""
+        from footycollect.core.models import Competition
+
+        competitions = []
+        competitions_data = self.cleaned_data.get("competitions", "")
+        if competitions_data:
+            if isinstance(competitions_data, str):
+                competition_ids = [
+                    int(comp_id.strip()) for comp_id in competitions_data.split(",") if comp_id.strip().isdigit()
+                ]
+            elif isinstance(competitions_data, list):
+                competition_ids = [int(comp_id) for comp_id in competitions_data if comp_id]
+            else:
+                competition_ids = [competitions_data] if competitions_data else []
+
+            if competition_ids:
+                competitions = Competition.objects.filter(id__in=competition_ids)
+
         return {
-            "competitions": self.cleaned_data.get("competitions", ""),
+            "competitions": competitions,
         }
 
     def save(self, *, commit=True):
@@ -393,7 +625,7 @@ class JerseyFKAPIForm(JerseyForm):
     class Meta(JerseyForm.Meta):
         """Meta class for JerseyFKAPIForm - inherits from JerseyForm.Meta"""
 
-    # Campos adicionales para búsqueda (no se guardan en el modelo)
+    # Additional fields for search (not saved to the model)
     kit_search = forms.CharField(
         required=False,
         label=_("Search Kit"),
@@ -435,7 +667,7 @@ class JerseyFKAPIForm(JerseyForm):
     # Hidden field for the main image URL
     main_img_url = forms.URLField(required=False, widget=forms.HiddenInput())
 
-    # Campo para almacenar URLs de imágenes externas
+    # Field to store external image URLs
     external_image_urls = forms.CharField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
@@ -628,7 +860,7 @@ class ItemPhotosForm(forms.Form):
 
     def clean_photos(self):
         photos = self.cleaned_data.get("photos", [])
-        # Convertir a lista si es un solo archivo
+        # Convert to list if it's a single file
         if not isinstance(photos, list):
             photos = [photos] if photos else []
 
@@ -640,7 +872,7 @@ class ItemPhotosForm(forms.Form):
 
 
 class TestCountryForm(forms.Form):
-    """Form simple para probar la integración de Select2 con Countries"""
+    """Simple form to test Select2 integration with Countries"""
 
     country = forms.ChoiceField(
         choices=countries,
