@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load i18n %}
+{% load cache %}
 
 {% block extra_css %}
   <style>
@@ -190,6 +191,7 @@
           </div>
           <div class="col-md-6">
             <!-- Item information -->
+            {% cache 600 item_detail_sidebar object.id %}
             <dl class="row">
               <!-- Base Item fields -->
               <dt class="col-sm-4">{% trans "Name" %}</dt>
@@ -324,11 +326,12 @@
               <h5>{% trans "Description" %}</h5>
               <p>{{ object.description }}</p>
             {% endif %}
-          </div>
+          {% endcache %}
         </div>
       </div>
     </div>
   </div>
+</div>
 {% endblock content %}
 {% block inline_javascript %}
   <script>
