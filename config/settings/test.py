@@ -78,7 +78,7 @@ DATABASES = {
 # MEDIA
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
-MEDIA_URL = "http://media.testserver"
+MEDIA_URL = "http://media.testserver/"
 
 # Football Kit Archive API Settings for Testing
 # ------------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load i18n %}
+{% load cache %}
 
 {% block css %}
   {{ block.super }}
@@ -23,6 +24,7 @@
           </a>
         </div>
         <!-- Collection Stats -->
+        {% cache 600 collection_stats request.user.pk %}
         <div class="row mb-4">
           <div class="col-md-3">
             <div class="card text-center">
@@ -41,125 +43,128 @@
             </div>
           </div>
         </div>
-        <!-- Items Grid - Updated -->
-        {% if items %}
-          <div class="row">
-            {% for item in items %}
-              <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 item-card">
-                  <!-- Logo row above photo -->
-                  <div class="item-logos-above-photo bg-light border-bottom">
-                    <div class="d-flex align-items-center w-100 position-relative">
-                      <div class="d-flex align-items-center justify-content-center brand-logo-container">
-                        {% if item.base_item.brand and item.base_item.brand.logo %}
-                          <img src="{{ item.base_item.brand.logo }}"
-                               alt="{{ item.base_item.brand.name }}"
-                               class="item-logo-small"
-                               onerror="this.style.display='none'" />
-                        {% endif %}
-                      </div>
-                      <div>
-                        {% if item.base_item.club and item.base_item.club.logo %}
-                          <img src="{{ item.base_item.club.logo }}"
-                               alt="{{ item.base_item.club.name }}"
-                               class="item-club-shield"
-                               onerror="this.style.display='none'" />
-                        {% endif %}
-                      </div>
-                      <div class="d-flex align-items-center justify-content-center flag-logo-container">
-                        {% if item.base_item.club and item.base_item.club.country %}
-                          <span class="fi fi-{{ item.base_item.club.country|lower }}"
-                                title="{{ item.base_item.club.country }}"></span>
-                        {% endif %}
-                      </div>
+      {% endcache %}
+      <!-- Items Grid - Updated -->
+      {% if items %}
+        {% cache 300 collection_items_grid request.user.pk page_obj.number %}
+        <div class="row">
+          {% for item in items %}
+            <div class="col-md-6 col-lg-4 mb-4">
+              <div class="card h-100 item-card">
+                <!-- Logo row above photo -->
+                <div class="item-logos-above-photo bg-light border-bottom">
+                  <div class="d-flex align-items-center w-100 position-relative">
+                    <div class="d-flex align-items-center justify-content-center brand-logo-container">
+                      {% if item.base_item.brand and item.base_item.brand.logo %}
+                        <img src="{{ item.base_item.brand.logo }}"
+                             alt="{{ item.base_item.brand.name }}"
+                             class="item-logo-small"
+                             onerror="this.style.display='none'" />
+                      {% endif %}
+                    </div>
+                    <div>
+                      {% if item.base_item.club and item.base_item.club.logo %}
+                        <img src="{{ item.base_item.club.logo }}"
+                             alt="{{ item.base_item.club.name }}"
+                             class="item-club-shield"
+                             onerror="this.style.display='none'" />
+                      {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center flag-logo-container">
+                      {% if item.base_item.club and item.base_item.club.country %}
+                        <span class="fi fi-{{ item.base_item.club.country|lower }}"
+                              title="{{ item.base_item.club.country }}"></span>
+                      {% endif %}
                     </div>
                   </div>
-                  {% if item.base_item.photos.exists %}
-                    <img src="{{ item.base_item.photos.first.get_image_url }}"
-                         class="card-img-top item-photo"
-                         alt="{{ item.base_item.name }}" />
-                  {% else %}
-                    <div class="card-img-top item-photo d-flex align-items-center justify-content-center bg-light">
-                      <i class="bi bi-image text-muted item-placeholder-icon"></i>
-                    </div>
-                  {% endif %}
-                  <div class="card-body d-flex flex-column">
-                    <h6 class="card-title item-title">{{ item.base_item.name }}</h6>
-                    <div class="item-meta">
-                      {% if item.base_item.club %}
-                        <div class="d-flex align-items-center">
-                          <span class="item-details">{{ item.base_item.club.name }}</span>
-                        </div>
-                      {% endif %}
-                      {% if item.base_item.brand %}
-                        <div class="d-flex align-items-center">
-                          <span class="item-details">{{ item.base_item.brand.name }}</span>
-                        </div>
-                      {% endif %}
-                    </div>
-                    {% if item.base_item.season %}
-                      <p class="card-text item-details mb-2">
-                        <i class="bi bi-calendar"></i> {{ item.base_item.season.year }}
-                      </p>
-                    {% endif %}
-                    <div class="mt-auto">
-                      <div class="btn-group w-100" role="group">
-                        <a href="{% url 'collection:item_detail' item.pk %}"
-                           class="btn btn-primary btn-sm">
-                          <i class="bi bi-eye"></i> {% trans "View Details" %}
-                        </a>
-                        <a href="{% url 'collection:item_update' item.pk %}"
-                           class="btn btn-outline-secondary btn-sm">
-                          <i class="bi bi-pencil"></i> {% trans "Edit" %}
-                        </a>
+                </div>
+                {% if item.base_item.photos.exists %}
+                  <img src="{{ item.base_item.photos.first.get_image_url }}"
+                       class="card-img-top item-photo"
+                       alt="{{ item.base_item.name }}" />
+                {% else %}
+                  <div class="card-img-top item-photo d-flex align-items-center justify-content-center bg-light">
+                    <i class="bi bi-image text-muted item-placeholder-icon"></i>
+                  </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                  <h6 class="card-title item-title">{{ item.base_item.name }}</h6>
+                  <div class="item-meta">
+                    {% if item.base_item.club %}
+                      <div class="d-flex align-items-center">
+                        <span class="item-details">{{ item.base_item.club.name }}</span>
                       </div>
+                    {% endif %}
+                    {% if item.base_item.brand %}
+                      <div class="d-flex align-items-center">
+                        <span class="item-details">{{ item.base_item.brand.name }}</span>
+                      </div>
+                    {% endif %}
+                  </div>
+                  {% if item.base_item.season %}
+                    <p class="card-text item-details mb-2">
+                      <i class="bi bi-calendar"></i> {{ item.base_item.season.year }}
+                    </p>
+                  {% endif %}
+                  <div class="mt-auto">
+                    <div class="btn-group w-100" role="group">
+                      <a href="{% url 'collection:item_detail' item.pk %}"
+                         class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye"></i> {% trans "View Details" %}
+                      </a>
+                      <a href="{% url 'collection:item_update' item.pk %}"
+                         class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-pencil"></i> {% trans "Edit" %}
+                      </a>
                     </div>
                   </div>
                 </div>
               </div>
-            {% endfor %}
-          </div>
-          <!-- Pagination -->
-          {% if is_paginated %}
-            <nav aria-label="{% trans 'Collection pagination' %}">
-              <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page=1">{% trans "First" %}</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
-                  </li>
-                {% endif %}
-                <li class="page-item active">
-                  <span class="page-link">
-                    {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
-                  </span>
-                </li>
-                {% if page_obj.has_next %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% trans "Next" %}</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">{% trans "Last" %}</a>
-                  </li>
-                {% endif %}
-              </ul>
-            </nav>
-          {% endif %}
-        {% else %}
-          <!-- Empty State -->
-          <div class="text-center py-5">
-            <i class="bi bi-collection text-muted empty-state-icon"></i>
-            <h3 class="mt-3 text-muted">{% trans "No items in your collection yet" %}</h3>
-            <p class="text-muted mb-4">{% trans "Start building your collection by adding your first item!" %}</p>
-            <a href="{% url 'collection:item_create' %}"
-               class="btn btn-primary btn-lg">
-              <i class="bi bi-plus-circle"></i> {% trans "Add Your First Item" %}
-            </a>
-          </div>
-        {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endcache %}
+      <!-- Pagination -->
+      {% if is_paginated %}
+        <nav aria-label="{% trans 'Collection pagination' %}">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1">{% trans "First" %}</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
+              </li>
+            {% endif %}
+            <li class="page-item active">
+              <span class="page-link">
+                {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
+              </span>
+            </li>
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% trans "Next" %}</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">{% trans "Last" %}</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <!-- Empty State -->
+      <div class="text-center py-5">
+        <i class="bi bi-collection text-muted empty-state-icon"></i>
+        <h3 class="mt-3 text-muted">{% trans "No items in your collection yet" %}</h3>
+        <p class="text-muted mb-4">{% trans "Start building your collection by adding your first item!" %}</p>
+        <a href="{% url 'collection:item_create' %}"
+           class="btn btn-primary btn-lg">
+          <i class="bi bi-plus-circle"></i> {% trans "Add Your First Item" %}
+        </a>
       </div>
-    </div>
+    {% endif %}
   </div>
+</div>
+</div>
 {% endblock content %}
