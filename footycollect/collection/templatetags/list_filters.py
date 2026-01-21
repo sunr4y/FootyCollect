@@ -7,10 +7,15 @@ register = template.Library()
 
 @register.filter
 def contains(value, arg):
-    """Check if value is in arg (list/iterable)."""
+    """Check if value is in arg (list/iterable or comma-separated string)."""
     if not value or not arg:
         return False
     try:
+        # If arg is a string, treat it as comma-separated values
+        if isinstance(arg, str):
+            arg_list = [item.strip() for item in arg.split(",") if item.strip()]
+            return str(value) in arg_list
+        # If arg is iterable (list, tuple, etc.), convert to list of strings
         return str(value) in [str(item) for item in arg]
     except (TypeError, ValueError):
         return False

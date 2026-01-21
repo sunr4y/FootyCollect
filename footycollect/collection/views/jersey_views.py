@@ -551,10 +551,30 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
     def _update_club_country(self, club):
         """Update club country from API data if different."""
-        if not (hasattr(self, "kit") and self.kit and "team" in self.kit):
+        # Check if we have API data (dict) or use fkapi_data
+        kit_data = None
+        if hasattr(self, "fkapi_data") and self.fkapi_data and isinstance(self.fkapi_data, dict):
+            # Try to get team data from fkapi_data
+            if "team" in self.fkapi_data:
+                kit_data = {"team": self.fkapi_data["team"]}
+            elif "team_country" in self.fkapi_data:
+                # If we only have team_country, use it directly
+                api_country = self.fkapi_data["team_country"]
+                if club.country != api_country:
+                    old_country = club.country
+                    club.country = api_country
+                    club.save()
+                    logger.info("Updated club %s country from %s to %s", club.name, old_country, api_country)
+                return
+        elif hasattr(self, "kit") and self.kit:
+            # Check if self.kit is a dict (API data) or a Kit model instance
+            if isinstance(self.kit, dict) and "team" in self.kit:
+                kit_data = self.kit
+
+        if not kit_data:
             return
 
-        api_country = self.kit["team"].get("country", "ES")
+        api_country = kit_data["team"].get("country", "ES")
         if club.country != api_country:
             old_country = club.country
             club.country = api_country
@@ -855,15 +875,21 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
     def _assign_kit_entities(self, form, kit):
         """Assign related entities from kit to form instance."""
-        if not form.instance.brand and kit.brand:
+        # Check if form.instance has brand attribute (it might not exist yet)
+        has_brand = hasattr(form.instance, "brand") and form.instance.brand_id is not None
+        if not has_brand and kit.brand:
             form.instance.brand = kit.brand
             logger.info("Assigned brand from kit: %s", kit.brand.name)
 
-        if not form.instance.club and kit.team:
+        # Check if form.instance has club attribute (it might not exist yet)
+        has_club = hasattr(form.instance, "club") and form.instance.club_id is not None
+        if not has_club and kit.team:
             form.instance.club = kit.team
             logger.info("Assigned club from kit: %s", kit.team.name)
 
-        if not form.instance.season and kit.season:
+        # Check if form.instance has season attribute (it might not exist yet)
+        has_season = hasattr(form.instance, "season") and form.instance.season_id is not None
+        if not has_season and kit.season:
             form.instance.season = kit.season
             logger.info("Assigned season from kit: %s", kit.season.year)
 
