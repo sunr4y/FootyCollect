@@ -57,7 +57,17 @@ class BaseItemAdmin(ModelAdmin):
 
 @admin.register(Jersey)
 class JerseyAdmin(ModelAdmin):
-    list_display = ["base_item", "size", "kit", "is_fan_version", "is_signed", "player_name", "number"]
+    list_display = [
+        "base_item",
+        "base_user",
+        "base_name",
+        "size",
+        "kit",
+        "is_fan_version",
+        "is_signed",
+        "player_name",
+        "number",
+    ]
     list_filter = ["is_fan_version", "is_signed", "has_nameset", "is_short_sleeve", "size", "kit"]
     search_fields = ["base_item__name", "player_name", "base_item__user__username"]
     fieldsets = (
@@ -68,12 +78,86 @@ class JerseyAdmin(ModelAdmin):
             },
         ),
         (
+            "Base item information",
+            {
+                "fields": (
+                    "base_user",
+                    "base_name",
+                    "base_brand",
+                    "base_club",
+                    "base_season",
+                    "base_condition",
+                    "base_is_draft",
+                    "base_created_at",
+                ),
+            },
+        ),
+        (
             "Player Information",
             {
                 "fields": ("is_signed", "has_nameset", "player_name", "number"),
             },
         ),
     )
+
+    readonly_fields = (
+        "base_user",
+        "base_name",
+        "base_brand",
+        "base_club",
+        "base_season",
+        "base_condition",
+        "base_is_draft",
+        "base_created_at",
+    )
+
+    @admin.display(
+        description="User",
+    )
+    def base_user(self, obj):
+        return obj.base_item.user
+
+    @admin.display(
+        description="Name",
+    )
+    def base_name(self, obj):
+        return obj.base_item.name
+
+    @admin.display(
+        description="Brand",
+    )
+    def base_brand(self, obj):
+        return obj.base_item.brand
+
+    @admin.display(
+        description="Club",
+    )
+    def base_club(self, obj):
+        return obj.base_item.club
+
+    @admin.display(
+        description="Season",
+    )
+    def base_season(self, obj):
+        return obj.base_item.season
+
+    @admin.display(
+        description="Condition",
+    )
+    def base_condition(self, obj):
+        return obj.base_item.condition
+
+    @admin.display(
+        description="Is draft",
+    )
+    def base_is_draft(self, obj):
+        return obj.base_item.is_draft
+
+    @admin.display(
+        description="Created at",
+    )
+    def base_created_at(self, obj):
+        return obj.base_item.created_at
 
 
 @admin.register(Shorts)

@@ -481,6 +481,9 @@ class Pants(models.Model):
     # Pants-specific fields
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name_plural = "Pants"
+
     def __str__(self):
         return f"Pants: {self.base_item}"
 
