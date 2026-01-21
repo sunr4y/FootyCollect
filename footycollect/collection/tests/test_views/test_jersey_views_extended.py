@@ -692,7 +692,10 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view.request.POST = {"all_competitions": "La Liga, Champions League"}
 
         mock_form = Mock()
-        mock_form.cleaned_data = {"name": "Test Jersey"}
+        mock_form.cleaned_data = {"name": "Test Jersey", "main_color": None, "secondary_colors": []}
+        mock_form.data = Mock()
+        mock_form.data.get = Mock(return_value=None)
+        mock_form.data.getlist = Mock(return_value=[])
 
         # Mock the jersey object
         mock_jersey = Mock()
@@ -705,12 +708,14 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             patch(
                 "footycollect.collection.views.jersey_views.Competition.objects.get_or_create",
             ) as mock_get_or_create,
+            patch("footycollect.collection.models.Color.objects.get_or_create") as mock_color_get_or_create,
         ):
             mock_super.return_value = Mock()
             mock_get_or_create.side_effect = [
                 (Mock(name="La Liga"), True),
                 (Mock(name="Champions League"), True),
             ]
+            mock_color_get_or_create.return_value = (Mock(name="WHITE"), False)
 
             view.object = mock_jersey
             result = view._save_and_finalize(mock_form)

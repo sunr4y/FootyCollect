@@ -906,25 +906,6 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                 cleaned_data["country_code"] = self.fkapi_data["team_country"]
                 logger.info("Set country_code in cleaned_data from fkapi_data: %s", self.fkapi_data["team_country"])
 
-    def _ensure_main_color_in_cleaned_data(self, cleaned_data, main_color_post, form):
-        """Ensure main_color is a Color object in cleaned_data."""
-        from footycollect.collection.models import Color
-
-        main_color_val = cleaned_data.get("main_color")
-        if not main_color_val or isinstance(main_color_val, str):
-            if main_color_post:
-                main_color_val = main_color_post
-            elif form.data.get("main_color"):
-                main_color_val = form.data.get("main_color")
-
-            if main_color_val and isinstance(main_color_val, str):
-                color_obj, _created = Color.objects.get_or_create(
-                    name__iexact=main_color_val.strip(),
-                    defaults={"name": main_color_val.strip().upper()},
-                )
-                cleaned_data["main_color"] = color_obj
-                logger.info("Set main_color in cleaned_data from POST: %s -> %s", main_color_val, color_obj.name)
-
     def _is_string_list(self, value):
         """Check if value is a list of strings."""
         if not value:
@@ -962,19 +943,6 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             elif isinstance(color, Color):
                 color_objects.append(color)
         return color_objects
-
-    def _ensure_secondary_colors_in_cleaned_data(self, cleaned_data, secondary_colors_post, form):
-        """Ensure secondary_colors are Color objects in cleaned_data."""
-        secondary_colors_val = cleaned_data.get("secondary_colors", [])
-        is_string_list = self._is_string_list(secondary_colors_val)
-
-        if not secondary_colors_val or is_string_list:
-            secondary_colors_val = self._get_secondary_colors_from_sources(secondary_colors_post, form)
-
-            if secondary_colors_val:
-                color_objects = self._convert_secondary_colors_to_objects(secondary_colors_val)
-                cleaned_data["secondary_colors"] = color_objects
-                logger.info("Set secondary_colors in cleaned_data from POST: %s", [c.name for c in color_objects])
 
     def _update_base_item_country(self, base_item, country_code_post, form):
         """Update BaseItem country if missing."""
@@ -1150,11 +1118,10 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         logger.info("secondary_colors_post: %s (type: %s)", secondary_colors_post, type(secondary_colors_post))
 
         # Before saving, ensure country_code and colors are in cleaned_data
-        cleaned_data = form._cleaned_data if hasattr(form, "_cleaned_data") else form.cleaned_data  # noqa: SLF001
-
-        self._ensure_country_in_cleaned_data(cleaned_data, country_code_post, form)
-        self._ensure_main_color_in_cleaned_data(cleaned_data, main_color_post, form)
-        self._ensure_secondary_colors_in_cleaned_data(cleaned_data, secondary_colors_post, form)
+        # Use form.cleaned_data directly - the ensure methods will handle it
+        self._ensure_country_code_in_cleaned_data(form)
+        self._ensure_main_color_in_cleaned_data(form)
+        self._ensure_secondary_colors_in_cleaned_data(form)
 
         # Save the jersey (this will create/get Kit via JerseyForm.save())
         response = super().form_valid(form)
