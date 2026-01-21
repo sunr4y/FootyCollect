@@ -21,6 +21,7 @@ from footycollect.api.views import (
 HTTP_OK = 200
 HTTP_INTERNAL_SERVER_ERROR = 500
 HTTP_SERVICE_UNAVAILABLE = 503
+HTTP_TOO_MANY_REQUESTS = 429
 
 # Test data constants
 EXPECTED_RESULTS_COUNT = 2
@@ -100,6 +101,20 @@ class TestAPIViews:
             data = json.loads(response.content)
             assert "results" in data
             assert data["results"] == []
+
+    def test_search_clubs_rate_limited_returns_429(self):
+        """Test that rate-limited search_clubs returns 429."""
+        request = self.factory.get(
+            "/api/clubs/search/?keyword=hammarby",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = search_clubs(request)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
 
     def test_get_kit_details_success(self):
         """Test successful kit details retrieval."""
