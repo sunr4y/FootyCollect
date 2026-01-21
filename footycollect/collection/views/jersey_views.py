@@ -7,6 +7,7 @@ file, including FKAPI integration and detailed jersey processing.
 
 import json
 import logging
+from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -48,29 +49,232 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         # For GET requests, we don't need photo processing
         return super().get(request, *args, **kwargs)
 
+    def _make_post_mutable(self, request):
+        """Make request.POST mutable for modification."""
+        if hasattr(request.POST, "_mutable"):
+            if not request.POST._mutable:  # noqa: SLF001
+                request.POST = request.POST.copy()
+                request.POST._mutable = True  # noqa: SLF001
+        elif hasattr(request.POST, "copy"):
+            request.POST = request.POST.copy()
+            if hasattr(request.POST, "_mutable"):
+                request.POST._mutable = True  # noqa: SLF001
+
+    def _process_competitions_from_api(self, competitions, request):
+        """Process and add competitions from API data to request.POST."""
+        if not competitions:
+            return
+
+        competition_ids = []
+        for comp in competitions:
+            if not isinstance(comp, dict):
+                continue
+
+            comp_id_fka = comp.get("id")
+            comp_name = comp.get("name")
+            if not comp_name:
+                continue
+
+            competition = None
+            if comp_id_fka:
+                competition = Competition.objects.filter(id_fka=comp_id_fka).first()
+            if not competition:
+                competition = Competition.objects.filter(name=comp_name).first()
+            if not competition:
+                from django.utils.text import slugify
+
+                competition, _created = Competition.objects.get_or_create(
+                    name=comp_name,
+                    defaults={
+                        "id_fka": comp_id_fka,
+                        "slug": slugify(comp_name),
+                    },
+                )
+                logger.debug(
+                    "Created/found competition: %s (ID: %s, id_fka: %s)",
+                    competition.name,
+                    competition.id,
+                    competition.id_fka,
+                )
+            elif comp_id_fka and not competition.id_fka:
+                competition.id_fka = comp_id_fka
+                competition.save(update_fields=["id_fka"])
+
+            competition_ids.append(str(competition.id))
+            logger.debug(
+                "Added competition to list: %s (ID: %s, id_fka: %s)",
+                competition.name,
+                competition.id,
+                comp_id_fka,
+            )
+
+        if competition_ids:
+            request.POST["competitions"] = ",".join(competition_ids)
+            logger.info(
+                "Set competitions from API: %s (count: %s)",
+                request.POST["competitions"],
+                len(competition_ids),
+            )
+        else:
+            logger.warning("No competition IDs collected from API data: %s", competitions)
+
+    def _merge_fkapi_data_to_post(self, kit_data, request):
+        """Merge FKAPI data into request.POST."""
+        # Set colors from API if not already in POST
+        colors = kit_data.get("colors", [])
+        if colors:
+            if not request.POST.get("main_color"):
+                main_color = colors[0].get("name", "")
+                if main_color:
+                    request.POST["main_color"] = main_color
+                    logger.debug("Set main_color from API: %s", main_color)
+
+            has_secondary = (
+                request.POST.getlist("secondary_colors")
+                if hasattr(request.POST, "getlist")
+                else request.POST.get("secondary_colors")
+            )
+            if not has_secondary:
+                secondary_colors = [c.get("name", "") for c in colors[1:] if c.get("name")]
+                if secondary_colors:
+                    request.POST.setlist("secondary_colors", secondary_colors)
+                    logger.debug("Set secondary_colors from API: %s", secondary_colors)
+
+        # Set country from API if not already in POST
+        if not request.POST.get("country_code"):
+            team = kit_data.get("team", {})
+            country = team.get("country", "")
+            if country:
+                request.POST["country_code"] = country
+                logger.debug("Set country_code from API: %s", country)
+
+        # Set competitions from API if not already in POST
+        if not request.POST.get("competitions"):
+            competitions = kit_data.get("competition", [])
+            self._process_competitions_from_api(competitions, request)
+
+        # Store kit_data on request for later use
+        request._fkapi_kit_data = kit_data  # noqa: SLF001
+
+    def _fetch_and_merge_fkapi_data(self, request):
+        """Fetch FKAPI data and merge it into request.POST."""
+        kit_id = request.POST.get("kit_id")
+        if not kit_id:
+            return
+
+        try:
+            from footycollect.api.client import FKAPIClient
+
+            client = FKAPIClient()
+            try:
+                kit_id_int = int(kit_id)
+            except (ValueError, TypeError):
+                logger.warning("Invalid kit_id: %s, skipping FKAPI fetch", kit_id)
+                return
+
+            kit_data = client.get_kit_details(kit_id_int) if kit_id_int else None
+
+            if kit_data:
+                logger.debug("Fetched kit data for kit_id %s", kit_id)
+                self._merge_fkapi_data_to_post(kit_data, request)
+
+        except Exception:
+            logger.exception("Error fetching kit data")
+
     def post(self, request, *args, **kwargs):
-        """Override post to log POST requests and pre-process form data."""
-        logger.info("=== POST METHOD CALLED ===")
-        logger.info("POST data keys: %s", list(request.POST.keys()))
-        logger.info("FILES data keys: %s", list(request.FILES.keys()))
-        logger.info("CSRF token in POST: %s", "csrfmiddlewaretoken" in request.POST)
-        logger.info("Content type: %s", request.content_type)
-        logger.info("Request META keys: %s", list(request.META.keys()))
+        """
+        Handle POST request for automatic jersey creation.
 
-        # Log some POST data (be careful with sensitive data)
-        for key, value in request.POST.items():
-            if key != "csrfmiddlewaretoken":
-                logger.info("POST %s: %s", key, value)
+        CRITICAL: Modify request.POST BEFORE creating the form.
+        Django forms copy POST data at creation time, so modifications
+        after get_form() won't affect the form.
+        """
+        logger.info("=" * 60)
+        logger.info("JerseyFKAPICreateView.post() START")
+        logger.info("=" * 60)
 
-        # Get the form and pre-process it before validation
+        # Log what we received
+        logger.debug("POST keys: %s", list(request.POST.keys()))
+        logger.debug("POST main_color: %s", request.POST.get("main_color"))
+        secondary_colors = (
+            request.POST.getlist("secondary_colors")
+            if hasattr(request.POST, "getlist")
+            else request.POST.get("secondary_colors")
+        )
+        logger.debug("POST secondary_colors: %s", secondary_colors)
+        logger.debug("POST country_code: %s", request.POST.get("country_code"))
+        logger.debug("POST kit_id: %s", request.POST.get("kit_id"))
+
+        # STEP 1: Make request.POST mutable BEFORE creating form
+        self._make_post_mutable(request)
+
+        # STEP 2: If we have a kit_id, fetch FKAPI data and merge it
+        self._fetch_and_merge_fkapi_data(request)
+
+        # Log final POST data
+        logger.debug("Final POST main_color: %s", request.POST.get("main_color"))
+        final_secondary = (
+            request.POST.getlist("secondary_colors")
+            if hasattr(request.POST, "getlist")
+            else request.POST.get("secondary_colors")
+        )
+        logger.debug("Final POST secondary_colors: %s", final_secondary)
+        logger.debug("Final POST country_code: %s", request.POST.get("country_code"))
+        logger.debug("Final POST competitions: %s", request.POST.get("competitions"))
+
+        # ============================================================
+        # STEP 3: NOW create the form (it will use modified POST)
+        # ============================================================
+        self.object = None
         form = self.get_form()
 
-        # Pre-process form data from API
-        self._preprocess_form_data(form)
+        # Store kit_data on form for save() method
+        if hasattr(request, "_fkapi_kit_data"):
+            form.fkapi_data = request._fkapi_kit_data  # noqa: SLF001
 
-        # Check if form is valid after preprocessing
+        # ============================================================
+        # STEP 4: Validate and process
+        # ============================================================
+        logger.debug("Form data main_color: %s", form.data.get("main_color"))
+        form_secondary = (
+            form.data.getlist("secondary_colors")
+            if hasattr(form.data, "getlist")
+            else form.data.get("secondary_colors")
+        )
+        logger.debug("Form data secondary_colors: %s", form_secondary)
+        logger.debug("Form data country_code: %s", form.data.get("country_code"))
+
         if form.is_valid():
+            logger.info("Form is VALID")
+            cleaned_keys = (
+                list(form.cleaned_data.keys())
+                if hasattr(form, "cleaned_data") and isinstance(form.cleaned_data, dict)
+                else "N/A"
+            )
+            logger.debug("cleaned_data keys: %s", cleaned_keys)
+            cleaned_main_color = (
+                form.cleaned_data.get("main_color")
+                if hasattr(form, "cleaned_data") and isinstance(form.cleaned_data, dict)
+                else "N/A"
+            )
+            logger.debug("cleaned_data main_color: %s", cleaned_main_color)
+            cleaned_secondary = (
+                form.cleaned_data.get("secondary_colors")
+                if hasattr(form, "cleaned_data") and isinstance(form.cleaned_data, dict)
+                else "N/A"
+            )
+            logger.debug("cleaned_data secondary_colors: %s", cleaned_secondary)
+            cleaned_country = (
+                form.cleaned_data.get("country_code")
+                if hasattr(form, "cleaned_data") and isinstance(form.cleaned_data, dict)
+                else "N/A"
+            )
+            logger.debug("cleaned_data country_code: %s", cleaned_country)
+            self._preprocess_form_data(form)
             return self.form_valid(form)
+        logger.error("Form is INVALID")
+        logger.error("Form errors: %s", form.errors)
+        logger.error("Form non_field_errors: %s", form.non_field_errors())
         return self.form_invalid(form)
 
     def get_success_url(self):
@@ -96,9 +300,21 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         return form
 
     def get_form_kwargs(self):
-        """Add user to form kwargs."""
+        """Add user to form kwargs and ensure we use the modified POST."""
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
+        # Ensure form uses the modified request.POST (not a copy)
+        # The super() method already sets data=request.POST, but we want to be explicit
+        if "data" in kwargs:
+            # Ensure the data is the mutable version we modified
+            kwargs["data"] = self.request.POST
+        data = kwargs.get("data", {})
+        if isinstance(data, dict):
+            logger.debug("get_form_kwargs - data keys: %s", list(data.keys()))
+            logger.debug("get_form_kwargs - data main_color: %s", data.get("main_color"))
+            logger.debug("get_form_kwargs - data country_code: %s", data.get("country_code"))
+        else:
+            logger.debug("get_form_kwargs - data type: %s", type(data))
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -127,17 +343,129 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             context["design_choices"] = "[]"
         return context
 
+    def _ensure_country_code_in_cleaned_data(self, form):
+        """Ensure country_code is in cleaned_data."""
+        country_code = form.cleaned_data.get("country_code")
+        if not country_code:
+            if form.data.get("country_code"):
+                country_code = form.data.get("country_code")
+                form.cleaned_data["country_code"] = country_code
+                logger.info("Set country_code in cleaned_data from form.data: %s", country_code)
+            elif hasattr(self, "fkapi_data") and "team_country" in self.fkapi_data:
+                country_code = self.fkapi_data["team_country"]
+                form.cleaned_data["country_code"] = country_code
+                logger.info("Set country_code in cleaned_data from fkapi_data: %s", country_code)
+
+    def _ensure_main_color_in_cleaned_data(self, form):
+        """Ensure main_color is in cleaned_data."""
+        from footycollect.collection.models import Color
+
+        main_color = form.cleaned_data.get("main_color")
+        if not main_color and form.data.get("main_color"):
+            main_color_str = form.data.get("main_color")
+            if main_color_str:
+                color_obj, _created = Color.objects.get_or_create(
+                    name__iexact=main_color_str.strip(),
+                    defaults={"name": main_color_str.strip().upper()},
+                )
+                form.cleaned_data["main_color"] = color_obj
+                logger.info(
+                    "Set main_color in cleaned_data from form.data: %s -> %s",
+                    main_color_str,
+                    color_obj.name,
+                )
+
+    def _ensure_secondary_colors_in_cleaned_data(self, form):
+        """Ensure secondary_colors are in cleaned_data."""
+        from footycollect.collection.models import Color
+
+        secondary_colors = form.cleaned_data.get("secondary_colors", [])
+        if not secondary_colors:
+            if hasattr(form.data, "getlist"):
+                secondary_colors_raw = form.data.getlist("secondary_colors")
+            else:
+                secondary_colors_raw = form.data.get("secondary_colors", [])
+                if isinstance(secondary_colors_raw, str):
+                    secondary_colors_raw = [c.strip() for c in secondary_colors_raw.split(",") if c.strip()]
+                elif not isinstance(secondary_colors_raw, list):
+                    secondary_colors_raw = []
+
+            if secondary_colors_raw:
+                color_objects = []
+                for color_str in secondary_colors_raw:
+                    if isinstance(color_str, str) and color_str.strip():
+                        color_obj, _created = Color.objects.get_or_create(
+                            name__iexact=color_str.strip(),
+                            defaults={"name": color_str.strip().upper()},
+                        )
+                        color_objects.append(color_obj)
+                if color_objects:
+                    form.cleaned_data["secondary_colors"] = color_objects
+                    logger.info(
+                        "Set secondary_colors in cleaned_data from form.data: %s",
+                        [c.name for c in color_objects],
+                    )
+
+    def _ensure_form_cleaned_data(self, form):
+        """Ensure country_code and colors are in cleaned_data before processing."""
+        self._ensure_country_code_in_cleaned_data(form)
+        self._ensure_main_color_in_cleaned_data(form)
+        self._ensure_secondary_colors_in_cleaned_data(form)
+
+    def _get_base_item_for_photos(self):
+        """Get base_item for photo associations."""
+        from footycollect.collection.models import BaseItem
+
+        if isinstance(self.object, BaseItem):
+            base_item = self.object
+        else:
+            base_item = getattr(self.object, "base_item", None)
+            if base_item is None:
+                base_item = BaseItem.objects.get(pk=self.object.pk)
+
+        logger.info(
+            "Using base_item ID: %s (type: %s) for photo associations. Jersey ID: %s, Jersey type: %s",
+            base_item.id if base_item else None,
+            type(base_item).__name__ if base_item else None,
+            self.object.id,
+            type(self.object).__name__,
+        )
+        return base_item
+
     def form_valid(self, form):
         """
         Processes the form when it is valid.
         Creates the necessary entities from the API data
         and handles external images.
         """
+
+        from django.conf import settings
+
+        debug_log_path = Path(settings.BASE_DIR) / "debug_post.log"
+
+        debug_msg = f"\n{'='*50}\n=== FORM_VALID CALLED (Timestamp: {__import__('datetime').datetime.now()}) ===\n"
+        debug_msg += f"Form is_valid: {form.is_valid()}\n"
+        debug_msg += f"Form errors: {form.errors}\n"
+        debug_msg += f"{'='*50}\n"
+
+        logger.debug(debug_msg)
+
+        # Also write to file
+        try:
+            debug_path = Path(debug_log_path)
+            with debug_path.open("a", encoding="utf-8") as f:
+                f.write(debug_msg)
+        except Exception:
+            logger.exception("ERROR writing debug log in form_valid")
+
         logger.info("=== FORM_VALID CALLED ===")
         logger.info("Form is_valid: %s", form.is_valid())
         logger.info("Form errors: %s", form.errors)
 
         try:
+            # Ensure country_code, colors are in cleaned_data BEFORE processing entities
+            self._ensure_form_cleaned_data(form)
+
             # Process related entities from the API
             self._process_new_entities(form)
 
@@ -147,26 +475,8 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             # Refresh object from database to ensure base_item is available
             self.object.refresh_from_db()
 
-            # Get base_item for photo associations (GenericRelation is on BaseItem)
-            # Jersey uses MTI, so base_item is the BaseItem instance
-            from footycollect.collection.models import BaseItem
-
-            if isinstance(self.object, BaseItem):
-                base_item = self.object
-            else:
-                # For Jersey, access through base_item attribute
-                base_item = getattr(self.object, "base_item", None)
-                if base_item is None:
-                    # Fallback: try to get BaseItem directly
-                    base_item = BaseItem.objects.get(pk=self.object.pk)
-
-            logger.info(
-                "Using base_item ID: %s (type: %s) for photo associations. Jersey ID: %s, Jersey type: %s",
-                base_item.id if base_item else None,
-                type(base_item).__name__ if base_item else None,
-                self.object.id,
-                type(self.object).__name__,
-            )
+            # Get base_item for photo associations
+            base_item = self._get_base_item_for_photos()
 
             # Process external images
             self._process_external_images(form, base_item)
@@ -189,22 +499,21 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         except Exception as e:
             logger.exception("Error in form_valid")
             logger.exception("Full traceback:")
-            messages.error(self.request, _("Error creating jersey: {}").format(str(e)))
+            error_msg = _("Error creating jersey: %s") % str(e)
+            messages.error(self.request, error_msg)
             return self.form_invalid(form)
 
         return response
 
     def _preprocess_form_data(self, form):
-        """Pre-process form data from API before validation."""
-        # Setup form instance
+        """
+        Preprocess form data before validation.
+        Sets up form instance and processes kit data if available.
+        """
         self._setup_form_instance(form)
-
-        # Process kit data if available
         kit_id = form.data.get("kit_id")
         if kit_id:
             self._process_kit_data(form, kit_id)
-
-        # Fill form fields with API data
         self._fill_form_with_api_data(form)
 
     def _fill_form_with_api_data(self, form):
@@ -356,7 +665,8 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             form.data["name"] = form.instance.name
 
         # Set user
-        form.instance.user = self.request.user
+        if hasattr(self, "request") and self.request and hasattr(self.request, "user"):
+            form.instance.user = self.request.user
 
         # Assign country if selected
         if form.data.get("country_code"):
@@ -370,6 +680,11 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             kit_data = self._fetch_kit_data_from_api(kit_id)
             if not kit_data:
                 return
+
+            # Store kit_data on form for Kit service to use
+            if not hasattr(form, "fkapi_data"):
+                form.fkapi_data = {}
+            form.fkapi_data.update(kit_data)
 
             # Add kit ID to description for reference
             self._add_kit_id_to_description(form, kit_id)
@@ -462,6 +777,13 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                         self.fkapi_data = {}
                     self.fkapi_data["team_country"] = team_country
                     logger.info("Stored team_country in fkapi_data: %s", self.fkapi_data)
+                    # Also set country_code in form data if not already set
+                    if hasattr(self, "form") and self.form:
+                        if not self.form.data.get("country_code"):
+                            form_data = self.form.data.copy()
+                            form_data["country_code"] = team_country
+                            self.form.data = form_data
+                            logger.info("Set country_code in form.data to: %s", team_country)
         else:
             logger.warning("No team data found in kit_data")
 
@@ -559,15 +881,358 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         else:
             logger.warning("No competitions found in kit")
 
+    def _get_post_color_values(self):
+        """Extract color values from POST data."""
+        main_color_post = self.request.POST.get("main_color")
+        secondary_colors_post = (
+            self.request.POST.getlist("secondary_colors") if hasattr(self.request.POST, "getlist") else []
+        )
+        if not secondary_colors_post:
+            secondary_colors_post = self.request.POST.get("secondary_colors")
+            if secondary_colors_post and isinstance(secondary_colors_post, str):
+                secondary_colors_post = [c.strip() for c in secondary_colors_post.split(",") if c.strip()]
+        return main_color_post, secondary_colors_post
+
+    def _ensure_country_in_cleaned_data(self, cleaned_data, country_code_post, form):
+        """Ensure country_code is in cleaned_data."""
+        if not cleaned_data.get("country_code"):
+            if country_code_post:
+                cleaned_data["country_code"] = country_code_post
+                logger.info("Set country_code in cleaned_data from POST: %s", country_code_post)
+            elif form.data.get("country_code"):
+                cleaned_data["country_code"] = form.data.get("country_code")
+                logger.info("Set country_code in cleaned_data from form.data: %s", form.data.get("country_code"))
+            elif hasattr(self, "fkapi_data") and "team_country" in self.fkapi_data:
+                cleaned_data["country_code"] = self.fkapi_data["team_country"]
+                logger.info("Set country_code in cleaned_data from fkapi_data: %s", self.fkapi_data["team_country"])
+
+    def _ensure_main_color_in_cleaned_data(self, cleaned_data, main_color_post, form):
+        """Ensure main_color is a Color object in cleaned_data."""
+        from footycollect.collection.models import Color
+
+        main_color_val = cleaned_data.get("main_color")
+        if not main_color_val or isinstance(main_color_val, str):
+            if main_color_post:
+                main_color_val = main_color_post
+            elif form.data.get("main_color"):
+                main_color_val = form.data.get("main_color")
+
+            if main_color_val and isinstance(main_color_val, str):
+                color_obj, _created = Color.objects.get_or_create(
+                    name__iexact=main_color_val.strip(),
+                    defaults={"name": main_color_val.strip().upper()},
+                )
+                cleaned_data["main_color"] = color_obj
+                logger.info("Set main_color in cleaned_data from POST: %s -> %s", main_color_val, color_obj.name)
+
+    def _is_string_list(self, value):
+        """Check if value is a list of strings."""
+        if not value:
+            return False
+        try:
+            if hasattr(value, "__getitem__") and len(value) > 0:
+                return isinstance(value[0], str)
+        except (TypeError, IndexError, AttributeError):
+            pass
+        return False
+
+    def _get_secondary_colors_from_sources(self, secondary_colors_post, form):
+        """Get secondary colors from POST or form data."""
+        if secondary_colors_post:
+            return secondary_colors_post
+        if hasattr(form.data, "getlist"):
+            return form.data.getlist("secondary_colors")
+        return form.data.get("secondary_colors", [])
+
+    def _convert_secondary_colors_to_objects(self, secondary_colors_val):
+        """Convert secondary colors list to Color objects."""
+        from footycollect.collection.models import Color
+
+        if isinstance(secondary_colors_val, str):
+            secondary_colors_val = [c.strip() for c in secondary_colors_val.split(",") if c.strip()]
+
+        color_objects = []
+        for color in secondary_colors_val:
+            if isinstance(color, str):
+                color_obj, _created = Color.objects.get_or_create(
+                    name__iexact=color.strip(),
+                    defaults={"name": color.strip().upper()},
+                )
+                color_objects.append(color_obj)
+            elif isinstance(color, Color):
+                color_objects.append(color)
+        return color_objects
+
+    def _ensure_secondary_colors_in_cleaned_data(self, cleaned_data, secondary_colors_post, form):
+        """Ensure secondary_colors are Color objects in cleaned_data."""
+        secondary_colors_val = cleaned_data.get("secondary_colors", [])
+        is_string_list = self._is_string_list(secondary_colors_val)
+
+        if not secondary_colors_val or is_string_list:
+            secondary_colors_val = self._get_secondary_colors_from_sources(secondary_colors_post, form)
+
+            if secondary_colors_val:
+                color_objects = self._convert_secondary_colors_to_objects(secondary_colors_val)
+                cleaned_data["secondary_colors"] = color_objects
+                logger.info("Set secondary_colors in cleaned_data from POST: %s", [c.name for c in color_objects])
+
+    def _update_base_item_country(self, base_item, country_code_post, form):
+        """Update BaseItem country if missing."""
+        if base_item.country:
+            return False
+
+        logger.info("BaseItem has no country, trying to set it...")
+        country_code = country_code_post
+        logger.info("country_code from stored POST: %s", country_code)
+        if not country_code:
+            country_code = form.cleaned_data.get("country_code")
+            logger.info("country_code from cleaned_data: %s", country_code)
+        has_fkapi_data = hasattr(self, "fkapi_data") and self.fkapi_data and "team_country" in self.fkapi_data
+        if not country_code and has_fkapi_data:
+            country_code = self.fkapi_data["team_country"]
+            logger.info("country_code from fkapi_data: %s", country_code)
+
+        if not country_code:
+            logger.warning("No country_code found in any source")
+            return False
+
+        from footycollect.core.models import Country
+
+        try:
+            country = Country.objects.get(code=country_code)
+            base_item.country = country
+            logger.info("Set country on BaseItem: %s (ID: %s)", country_code, country.id)
+        except Country.DoesNotExist:
+            logger.warning("Country not found: %s", country_code)
+            return False
+        except Exception:
+            logger.exception("Error setting country")
+            return False
+        else:
+            return True
+
+    def _update_base_item_main_color(self, base_item, main_color_post, form):
+        """Update BaseItem main_color if missing."""
+        from footycollect.collection.models import Color
+
+        if base_item.main_color:
+            return False
+
+        logger.info("BaseItem has no main_color, trying to set it...")
+        main_color = form.cleaned_data.get("main_color")
+        logger.info("main_color from cleaned_data: %s", main_color)
+        if not main_color and main_color_post:
+            main_color_str = main_color_post
+            logger.info("main_color_str from stored POST: %s", main_color_str)
+            if main_color_str:
+                try:
+                    color_obj, _created = Color.objects.get_or_create(
+                        name__iexact=main_color_str.strip(),
+                        defaults={"name": main_color_str.strip().upper()},
+                    )
+                    main_color = color_obj
+                    logger.info("Created/found Color object: %s (ID: %s)", color_obj.name, color_obj.id)
+                except Exception:
+                    logger.exception("Error creating/finding Color")
+
+        if not main_color:
+            logger.warning("No main_color found in any source")
+            return False
+
+        base_item.main_color = main_color
+        logger.info("Set main_color on BaseItem: %s", main_color.name)
+        return True
+
+    def _process_secondary_colors_from_post(self, secondary_colors_post):
+        """Process secondary colors from POST data into Color objects."""
+        from footycollect.collection.models import Color
+
+        if not secondary_colors_post:
+            return []
+
+        secondary_colors_raw = secondary_colors_post
+        logger.info(
+            "secondary_colors_raw from stored POST: %s (type: %s)",
+            secondary_colors_raw,
+            type(secondary_colors_raw),
+        )
+
+        if isinstance(secondary_colors_raw, str):
+            secondary_colors_raw = [c.strip() for c in secondary_colors_raw.split(",") if c.strip()]
+        elif not isinstance(secondary_colors_raw, list):
+            secondary_colors_raw = []
+
+        logger.info("Processed secondary_colors_raw: %s", secondary_colors_raw)
+        if not secondary_colors_raw:
+            return []
+
+        color_objects = []
+        for color_str in secondary_colors_raw:
+            if isinstance(color_str, str) and color_str.strip():
+                try:
+                    color_obj, _created = Color.objects.get_or_create(
+                        name__iexact=color_str.strip(),
+                        defaults={"name": color_str.strip().upper()},
+                    )
+                    color_objects.append(color_obj)
+                    logger.info("Created/found Color object: %s (ID: %s)", color_obj.name, color_obj.id)
+                except Exception:
+                    logger.exception("Error creating/finding Color")
+        return color_objects
+
+    def _update_base_item_secondary_colors(self, base_item, secondary_colors_post, form):
+        """Update BaseItem secondary_colors if missing."""
+        if base_item.secondary_colors.exists():
+            return False
+
+        logger.info("BaseItem has no secondary_colors, trying to set them...")
+        secondary_colors = form.cleaned_data.get("secondary_colors", [])
+        logger.info("secondary_colors from cleaned_data: %s", secondary_colors)
+
+        if not secondary_colors and secondary_colors_post:
+            secondary_colors = self._process_secondary_colors_from_post(secondary_colors_post)
+
+        if not secondary_colors:
+            logger.warning("No secondary_colors found in any source")
+            return False
+
+        base_item.secondary_colors.set(secondary_colors)
+        logger.info("Set secondary_colors on BaseItem: %s", [c.name for c in secondary_colors])
+        return True
+
+    def _write_debug_log(self, form, method_name):
+        """Write debug log for form processing."""
+
+        from django.conf import settings
+
+        datetime_now = __import__("datetime").datetime.now()
+        debug_msg = f"\n{'='*50}\n=== {method_name} CALLED (Timestamp: {datetime_now}) ===\n"
+        debug_msg += f"POST keys: {list(self.request.POST.keys())}\n"
+        debug_msg += f"country_code: {self.request.POST.get('country_code')}\n"
+        debug_msg += f"main_color: {self.request.POST.get('main_color')}\n"
+        debug_msg += f"secondary_colors (get): {self.request.POST.get('secondary_colors')}\n"
+        secondary_colors_getlist = (
+            self.request.POST.getlist("secondary_colors") if hasattr(self.request.POST, "getlist") else "N/A"
+        )
+        debug_msg += f"secondary_colors (getlist): {secondary_colors_getlist}\n"
+        debug_msg += f"kit_id: {self.request.POST.get('kit_id')}\n"
+        cleaned_data_keys = list(form.cleaned_data.keys()) if hasattr(form, "cleaned_data") else "N/A"
+        debug_msg += f"form.cleaned_data keys: {cleaned_data_keys}\n"
+        cleaned_data_country = form.cleaned_data.get("country_code") if hasattr(form, "cleaned_data") else "N/A"
+        debug_msg += f"form.cleaned_data country_code: {cleaned_data_country}\n"
+        cleaned_data_main_color = form.cleaned_data.get("main_color") if hasattr(form, "cleaned_data") else "N/A"
+        debug_msg += f"form.cleaned_data main_color: {cleaned_data_main_color}\n"
+        cleaned_data_secondary = form.cleaned_data.get("secondary_colors") if hasattr(form, "cleaned_data") else "N/A"
+        debug_msg += f"form.cleaned_data secondary_colors: {cleaned_data_secondary}\n"
+        debug_msg += f"{'='*50}\n"
+
+        logger.debug(debug_msg)
+
+        debug_log_path = Path(settings.BASE_DIR) / "debug_post.log"
+        try:
+            with debug_log_path.open("a", encoding="utf-8") as f:
+                f.write(debug_msg)
+        except Exception:
+            logger.exception("ERROR writing debug log")
+
     def _save_and_finalize(self, form):
         """Save the jersey and finalize related assignments."""
-        # Save the jersey
+        self._write_debug_log(form, "_save_and_finalize")
+
+        logger.info("=== _save_and_finalize CALLED ===")
+
+        country_code_post = self.request.POST.get("country_code")
+        main_color_post, secondary_colors_post = self._get_post_color_values()
+
+        logger.info("=== DEBUG: Stored POST values BEFORE form.save() ===")
+        logger.info("country_code_post: %s (type: %s)", country_code_post, type(country_code_post))
+        logger.info("main_color_post: %s (type: %s)", main_color_post, type(main_color_post))
+        logger.info("secondary_colors_post: %s (type: %s)", secondary_colors_post, type(secondary_colors_post))
+
+        # Before saving, ensure country_code and colors are in cleaned_data
+        cleaned_data = form._cleaned_data if hasattr(form, "_cleaned_data") else form.cleaned_data  # noqa: SLF001
+
+        self._ensure_country_in_cleaned_data(cleaned_data, country_code_post, form)
+        self._ensure_main_color_in_cleaned_data(cleaned_data, main_color_post, form)
+        self._ensure_secondary_colors_in_cleaned_data(cleaned_data, secondary_colors_post, form)
+
+        # Save the jersey (this will create/get Kit via JerseyForm.save())
         response = super().form_valid(form)
         logger.info("Jersey saved with ID: %s", self.object.pk)
 
+        # Get the created BaseItem and Jersey
+        from footycollect.collection.models import Jersey
+
+        base_item = self.object
+        try:
+            if hasattr(base_item, "base_item"):
+                jersey = base_item
+                base_item = base_item.base_item
+            else:
+                jersey = Jersey.objects.get(base_item=base_item)
+        except (Jersey.DoesNotExist, AttributeError, TypeError):
+            if hasattr(self.object, "base_item"):
+                jersey = self.object
+                base_item = self.object.base_item
+            else:
+                jersey = self.object
+                base_item = getattr(self.object, "base_item", self.object)
+
+        logger.info("base_item.country: %s", base_item.country)
+        logger.info("base_item.main_color: %s", base_item.main_color)
+        logger.info("base_item.secondary_colors.count(): %s", base_item.secondary_colors.count())
+
+        # Update BaseItem with country and colors if they weren't saved
+        updated = False
+        updated |= self._update_base_item_country(base_item, country_code_post, form)
+        updated |= self._update_base_item_main_color(base_item, main_color_post, form)
+        updated |= self._update_base_item_secondary_colors(base_item, secondary_colors_post, form)
+
+        # Save BaseItem if updated
+        if updated:
+            base_item.save()
+            logger.info("Updated BaseItem with country/colors")
+
+        self._create_kit_if_needed(jersey, form)
+
+        # Process additional competitions if they exist
+        self._process_additional_competitions(form)
+
+        return response
+
+    def _create_kit_if_needed(self, jersey, form):
+        """Create Kit if jersey doesn't have one."""
+        if jersey.kit:
+            return
+
+        try:
+            from footycollect.collection.services.kit_service import KitService
+
+            kit_service = KitService()
+            kit_id = form.cleaned_data.get("kit_id")
+            fkapi_data = getattr(form, "fkapi_data", {})
+            fkapi_keys = list(fkapi_data.keys()) if fkapi_data else []
+            logger.info(
+                "Creating Kit in _save_and_finalize - kit_id: %s, fkapi_data keys: %s",
+                kit_id,
+                fkapi_keys,
+            )
+            kit = kit_service.get_or_create_kit_for_jersey(
+                base_item=self.object,
+                jersey=jersey,
+                fkapi_data=fkapi_data,
+                kit_id=kit_id,
+            )
+            jersey.kit = kit
+            jersey.save(update_fields=["kit"])
+            logger.info("Created/linked Kit %s to Jersey %s", kit.id, jersey.id)
+        except Exception:
+            logger.exception("Error creating Kit in _save_and_finalize")
+            # Don't raise - allow jersey creation to continue without kit
+
         # If we have a kit with competitions, assign them to the jersey
-        if hasattr(self, "kit") and self.kit and self.kit.competition.exists():
-            competitions = self.kit.competition.all()
+        if jersey.kit and jersey.kit.competition.exists():
+            competitions = jersey.kit.competition.all()
             self.object.competitions.add(*competitions)
             logger.info(
                 "Added %s competitions from kit to jersey",
@@ -593,8 +1258,6 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                     logger.info("Added additional competition %s to jersey", comp.name)
                 except Exception:
                     logger.exception("Error adding competition %s", comp_name)
-
-        return response
 
     def _process_new_entities(self, form):
         """
@@ -833,11 +1496,19 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
     def _process_additional_competitions(self, form):
         """Process additional competitions from form data."""
+        from footycollect.core.models import Competition
+
         all_competitions = self.request.POST.get("all_competitions", "")
         if all_competitions and "," in all_competitions:
-            # Save all competitions in description field
-            form.instance.description = form.instance.description or ""
-            form.instance.description += f"\nAdditional competitions: {all_competitions}"
+            competition_names = [name.strip() for name in all_competitions.split(",") if name.strip()]
+            for comp_name in competition_names:
+                comp, _created = Competition.objects.get_or_create(
+                    name=comp_name,
+                    defaults={"slug": slugify(comp_name)},
+                )
+                if hasattr(self.object, "competitions"):
+                    self.object.competitions.add(comp)
+                    logger.info("Added competition %s to jersey", comp.name)
 
     def _process_external_images(self, form, base_item=None):
         """

@@ -264,7 +264,16 @@
               {% if object.main_color %}
                 <dt class="col-sm-4">{% trans "Main Color" %}</dt>
                 <dd class="col-sm-8">
-                  {{ object.get_main_color_display }}
+                  {{ object.main_color.name }}
+                </dd>
+              {% endif %}
+              {% if object.secondary_colors.exists %}
+                <dt class="col-sm-4">{% trans "Secondary Colors" %}</dt>
+                <dd class="col-sm-8">
+                  {% for color in object.secondary_colors.all %}
+                    {{ color.name }}
+                    {% if not forloop.last %},{% endif %}
+                  {% endfor %}
                 </dd>
               {% endif %}
               {% if object.design %}

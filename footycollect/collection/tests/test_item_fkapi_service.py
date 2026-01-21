@@ -244,36 +244,36 @@ class TestItemFKAPIService(TestCase):
     def test_process_kit_colors(self):
         """Test _process_kit_colors method."""
         mock_form = Mock()
-        mock_form.cleaned_data = {}
+        mock_form.data = {}
 
         colors = [{"name": "Red"}, {"name": "Blue"}, {"name": "Green"}]
 
         self.service._process_kit_colors(mock_form, colors)
 
-        assert mock_form.cleaned_data["main_color"] == "Red"
-        assert mock_form.cleaned_data["secondary_colors"] == ["Blue", "Green"]
+        assert mock_form.data["main_color"] == "Red"
+        assert mock_form.data["secondary_colors"] == ["Blue", "Green"]
 
     def test_process_kit_colors_empty(self):
         """Test _process_kit_colors with empty colors."""
         mock_form = Mock()
-        mock_form.cleaned_data = {}
+        mock_form.data = {}
 
         self.service._process_kit_colors(mock_form, [])
 
         # Should not set any colors
-        assert "main_color" not in mock_form.cleaned_data
+        assert "main_color" not in mock_form.data
 
     def test_process_kit_colors_single_color(self):
         """Test _process_kit_colors with single color."""
         mock_form = Mock()
-        mock_form.cleaned_data = {}
+        mock_form.data = {}
 
         colors = [{"name": "Red"}]
 
         self.service._process_kit_colors(mock_form, colors)
 
-        assert mock_form.cleaned_data["main_color"] == "Red"
-        assert "secondary_colors" not in mock_form.cleaned_data
+        assert mock_form.data["main_color"] == "Red"
+        assert "secondary_colors" not in mock_form.data
 
     def test_process_photo_ids_success(self):
         """Test _process_photo_ids with valid photo IDs."""

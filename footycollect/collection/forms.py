@@ -11,6 +11,60 @@ from footycollect.core.models import Brand
 from .models import BaseItem, Color, Jersey, Size
 
 MAX_PHOTOS = 10
+YEAR_LENGTH = 4
+
+
+class ColorModelChoiceField(forms.ModelChoiceField):
+    """ModelChoiceField that accepts color names as strings."""
+
+    def to_python(self, value):
+        """Override to handle color names in addition to IDs."""
+        if value in self.empty_values:
+            return None
+        # Try normal ModelChoiceField behavior first (ID lookup)
+        try:
+            return super().to_python(value)
+        except ValidationError:
+            # If that fails, try as color name
+            # Color is already imported at module level
+            try:
+                return Color.objects.get(name__iexact=str(value).strip())
+            except Color.DoesNotExist:
+                # Return the string - clean method will create it
+                return str(value).strip()
+
+
+class ColorModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    """ModelMultipleChoiceField that accepts color names as strings."""
+
+    def to_python(self, value):
+        """Override to handle color names in addition to IDs."""
+        if value in self.empty_values:
+            return []
+        if isinstance(value, (list, tuple)):
+            result = []
+            for v in value:
+                # Try normal lookup first
+                try:
+                    result.append(super().to_python(v))
+                except ValidationError:
+                    # Try as color name
+                    # Color is already imported at module level
+                    try:
+                        result.append(Color.objects.get(name__iexact=str(v).strip()))
+                    except Color.DoesNotExist:
+                        # Keep as string - clean method will create it
+                        result.append(str(v).strip())
+            return result
+        # Single value
+        try:
+            return [super().to_python(value)]
+        except ValidationError:
+            # Color is already imported at module level
+            try:
+                return [Color.objects.get(name__iexact=str(value).strip())]
+            except Color.DoesNotExist:
+                return [str(value).strip()]
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -264,13 +318,13 @@ class JerseyForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
     )
 
-    main_color = forms.ModelChoiceField(
+    main_color = ColorModelChoiceField(
         queryset=Color.objects.all(),
         required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
     )
 
-    secondary_colors = forms.ModelMultipleChoiceField(
+    secondary_colors = ColorModelMultipleChoiceField(
         queryset=Color.objects.all(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "form-select"}),
@@ -500,8 +554,6 @@ class JerseyForm(forms.ModelForm):
         import contextlib
         import logging
 
-        from django.utils.text import slugify
-
         from footycollect.core.models import Season
 
         logger = logging.getLogger(__name__)
@@ -515,16 +567,36 @@ class JerseyForm(forms.ModelForm):
 
         if not season and self.data.get("season_name"):
             season_name = self.data.get("season_name")
-            logger.info("Creating season from name: %s", season_name)
+            logger.info("Creating season from year: %s", season_name)
             try:
+                # Season model uses 'year' field, not 'name'
+                # Parse year string (e.g., "2022-23") into first_year and second_year
+                if "-" in season_name:
+                    parts = season_name.split("-")
+                    first_year = parts[0]
+                    second_year = parts[1] if len(parts) > 1 else ""
+                else:
+                    # Single year (e.g., "2022")
+                    first_year = season_name[:YEAR_LENGTH] if len(season_name) >= YEAR_LENGTH else season_name
+                    second_year = ""
+
                 season, created = Season.objects.get_or_create(
-                    name=season_name,
-                    defaults={"slug": slugify(season_name)},
+                    year=season_name,  # Use 'year' field, not 'name'
+                    defaults={
+                        "first_year": first_year,
+                        "second_year": second_year,
+                    },
                 )
                 if created:
-                    logger.info("Created new season: %s", season_name)
+                    logger.info(
+                        "Created new season: %s (year=%s, first=%s, second=%s)",
+                        season_name,
+                        season.year,
+                        season.first_year,
+                        season.second_year,
+                    )
                 else:
-                    logger.info("Found existing season: %s", season_name)
+                    logger.info("Found existing season: %s (year=%s)", season_name, season.year)
             except (ValueError, TypeError):
                 logger.exception("Error creating season %s", season_name)
                 season = None
@@ -539,7 +611,7 @@ class JerseyForm(forms.ModelForm):
         club = self._resolve_club()
         season = self._resolve_season()
 
-        return {
+        base_data = {
             "name": self.cleaned_data.get("name", ""),
             "club": club,
             "season": season,
@@ -553,6 +625,39 @@ class JerseyForm(forms.ModelForm):
             "user": self.user,
             "item_type": "jersey",
         }
+
+        # FIX: Convert country_code string to Country object
+        country_code = self.cleaned_data.get("country_code")
+
+        if country_code:
+            try:
+                # Convert to Country object (CountryField expects this)
+                from django_countries import countries
+
+                # CountryField accepts country code strings directly, but let's ensure it's valid
+                if isinstance(country_code, str):
+                    # Validate the country code exists
+                    if country_code.upper() in countries:
+                        base_data["country"] = country_code.upper()
+                    elif club and club.country:
+                        base_data["country"] = club.country
+                else:
+                    # Already a Country object or None
+                    base_data["country"] = country_code
+            except (ValueError, AttributeError, KeyError, TypeError) as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.warning("Error converting country_code %s: %s", country_code, str(e))
+                # Fallback to club's country if conversion fails
+                if club and club.country:
+                    base_data["country"] = club.country
+        elif hasattr(self.instance, "country") and self.instance.country:
+            base_data["country"] = self.instance.country
+        elif club and club.country:
+            base_data["country"] = club.country
+
+        return base_data
 
     def _extract_jersey_data(self):
         """Extract data for Jersey creation."""
@@ -568,22 +673,44 @@ class JerseyForm(forms.ModelForm):
 
     def _extract_many_to_many_data(self):
         """Extract ManyToMany field data."""
+        import logging
+
         from footycollect.core.models import Competition
 
+        logger = logging.getLogger(__name__)
         competitions = []
         competitions_data = self.cleaned_data.get("competitions", "")
+        logger.debug(
+            "_extract_many_to_many_data - competitions_data: %s (type: %s)",
+            competitions_data,
+            type(competitions_data),
+        )
+
         if competitions_data:
             if isinstance(competitions_data, str):
                 competition_ids = [
                     int(comp_id.strip()) for comp_id in competitions_data.split(",") if comp_id.strip().isdigit()
                 ]
+                logger.debug("_extract_many_to_many_data - parsed competition_ids from string: %s", competition_ids)
             elif isinstance(competitions_data, list):
                 competition_ids = [int(comp_id) for comp_id in competitions_data if comp_id]
+                logger.debug("_extract_many_to_many_data - parsed competition_ids from list: %s", competition_ids)
             else:
                 competition_ids = [competitions_data] if competitions_data else []
+                logger.debug("_extract_many_to_many_data - parsed competition_ids from other: %s", competition_ids)
 
             if competition_ids:
                 competitions = Competition.objects.filter(id__in=competition_ids)
+                logger.info(
+                    "_extract_many_to_many_data - found competitions: %s (count: %s)",
+                    [c.name for c in competitions],
+                    competitions.count(),
+                )
+            else:
+                logger.warning(
+                    "_extract_many_to_many_data - no valid competition_ids extracted from: %s",
+                    competitions_data,
+                )
 
         return {
             "competitions": competitions,
@@ -591,26 +718,72 @@ class JerseyForm(forms.ModelForm):
 
     def save(self, *, commit=True):
         """Save the form data using MTI structure."""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
         base_item_data = self._extract_base_item_data()
         jersey_data = self._extract_jersey_data()
         many_to_many_data = self._extract_many_to_many_data()
 
         if commit:
-            # Create BaseItem first
+            # Create BaseItem with ALL fields
+            logger.debug("Creating BaseItem with data: %s", base_item_data)
             base_item = BaseItem.objects.create(**base_item_data)
+            logger.debug("Created BaseItem %s", base_item.id)
 
-            # Create Jersey linked to BaseItem
-            jersey_data["base_item"] = base_item
-            Jersey.objects.create(**jersey_data)
+            # Remove any 'id' from jersey_data
+            jersey_data.pop("id", None)
 
-            # Handle ManyToMany fields
+            # CRITICAL: Link Jersey to BaseItem via parent_link
+            logger.debug("Creating Jersey with base_item=%s", base_item.id)
+            jersey = Jersey.objects.create(
+                base_item=base_item,  # Link to the BaseItem we just created
+                **jersey_data,
+            )
+            logger.debug("Created Jersey %s", jersey.pk)
+
+            # Verify they're linked
+            if jersey.base_item.id != base_item.id:
+                logger.error("ERROR: Jersey %s not linked to BaseItem %s", jersey.pk, base_item.id)
+
+            # Now set ManyToMany on the properly-linked BaseItem
             if many_to_many_data.get("competitions"):
-                base_item.competitions.set(many_to_many_data["competitions"])
+                competitions_list = many_to_many_data["competitions"]
+                base_item.competitions.set(competitions_list)
+                logger.info(
+                    "Set competitions on BaseItem %s: %s (count: %s)",
+                    base_item.id,
+                    [c.name for c in competitions_list],
+                    len(competitions_list),
+                )
 
             # Handle secondary_colors from cleaned_data
             secondary_colors = self.cleaned_data.get("secondary_colors", [])
             if secondary_colors:
                 base_item.secondary_colors.set(secondary_colors)
+                logger.debug("Set secondary_colors: %s", [c.name for c in secondary_colors])
+
+            # Create or get Kit for this jersey
+            try:
+                from footycollect.collection.services.kit_service import KitService
+
+                kit_service = KitService()
+                kit_id = self.cleaned_data.get("kit_id")
+                fkapi_data = getattr(self, "fkapi_data", {})
+
+                kit = kit_service.get_or_create_kit_for_jersey(
+                    base_item=base_item,
+                    jersey=jersey,
+                    fkapi_data=fkapi_data,
+                    kit_id=kit_id,
+                )
+
+                jersey.kit = kit
+                jersey.save(update_fields=["kit"])
+                logger.info("Successfully created/linked Kit %s to Jersey %s", kit.id, jersey.pk)
+            except Exception:
+                logger.exception("Error creating Kit")
 
             return base_item
         # For non-commit case, create instances but don't save
@@ -620,7 +793,7 @@ class JerseyForm(forms.ModelForm):
 
 
 class JerseyFKAPIForm(JerseyForm):
-    """Formulario mejorado para crear jerseys con integración de FKAPI"""
+    """Enhanced form for creating jerseys with FKAPI integration."""
 
     class Meta(JerseyForm.Meta):
         """Meta class for JerseyFKAPIForm - inherits from JerseyForm.Meta"""
@@ -637,6 +810,11 @@ class JerseyFKAPIForm(JerseyForm):
                 "x-on:input.debounce.500ms": "searchKits()",
             },
         ),
+    )
+    name = forms.CharField(
+        max_length=255,
+        required=False,  # Make optional for FKAPI flow
+        help_text="Auto-generated from kit if not provided",
     )
 
     kit_id = forms.IntegerField(
@@ -704,45 +882,180 @@ class JerseyFKAPIForm(JerseyForm):
             self.fields["main_color"].required = False
             self.fields["secondary_colors"].required = False
 
-    def clean_main_color(self):
+    def _get_main_color_name(self, value):
+        """Extract main color name from form data."""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
         main_color_name = self.data.get("main_color")
+        logger.debug("clean_main_color - from self.data: %s", main_color_name)
+
+        if not main_color_name and hasattr(self.data, "getlist"):
+            color_list = self.data.getlist("main_color")
+            if color_list:
+                main_color_name = color_list[0]
+                logger.debug("clean_main_color - from getlist: %s", main_color_name)
+
         if not main_color_name:
-            return self.cleaned_data.get("main_color")
+            main_color_name = self.initial.get("main_color")
+            logger.debug("clean_main_color - from initial: %s", main_color_name)
 
-        color_obj, _ = Color.objects.get_or_create(
-            name__iexact=main_color_name.strip(),
-            defaults={"name": main_color_name.strip().upper()},
-        )
-        return color_obj
-
-    def clean_secondary_colors(self):
-        # Handle both QueryDict and regular dict
-        if hasattr(self.data, "getlist"):
-            secondary_colors_names = self.data.getlist("secondary_colors")
-        else:
-            secondary_colors = self.data.get("secondary_colors")
-            if secondary_colors:
-                secondary_colors_names = [secondary_colors] if isinstance(secondary_colors, str) else secondary_colors
+        if not main_color_name and value:
+            try:
+                color_obj = Color.objects.get(pk=value)
+                logger.debug("clean_main_color - found Color by ID: %s", color_obj)
+            except (Color.DoesNotExist, ValueError, TypeError):
+                pass
             else:
-                secondary_colors_names = []
+                return color_obj, None
 
-        if not secondary_colors_names:
-            return self.cleaned_data.get("secondary_colors", [])
+        return None, main_color_name
+
+    def clean_main_color(self):
+        """Convert main_color string to Color object."""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        value = self.cleaned_data.get("main_color")
+
+        if value and hasattr(value, "name"):
+            logger.debug("clean_main_color - already Color object: %s", value)
+            return value
+
+        color_obj, main_color_name = self._get_main_color_name(value)
+        if color_obj:
+            return color_obj
+
+        if not main_color_name:
+            logger.debug("clean_main_color - no value found, returning None")
+            return None
+
+        try:
+            color_obj, created = Color.objects.get_or_create(
+                name__iexact=main_color_name.strip(),
+                defaults={"name": main_color_name.strip().upper()},
+            )
+            logger.info("clean_main_color - returning Color: %s (created=%s)", color_obj, created)
+        except Exception:
+            logger.exception("clean_main_color - error")
+            return None
+        else:
+            return color_obj
+
+    def _get_secondary_colors_names(self):
+        """Extract secondary color names from form data."""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        # Method 1: getlist for multiple values
+        if hasattr(self.data, "getlist"):
+            names = self.data.getlist("secondary_colors")
+            if names:
+                logger.debug("clean_secondary_colors - from getlist: %s", names)
+                return names
+
+        # Method 2: Direct get (might be single value or list)
+        colors = self.data.get("secondary_colors")
+        if colors:
+            names = colors if isinstance(colors, list) else [colors]
+            logger.debug("clean_secondary_colors - from get: %s", names)
+            return names
+
+        # Method 3: From initial data
+        colors = self.initial.get("secondary_colors")
+        if colors:
+            names = colors if isinstance(colors, list) else [colors]
+            logger.debug("clean_secondary_colors - from initial: %s", names)
+            return names
+
+        return []
+
+    def _convert_color_names_to_objects(self, color_names):
+        """Convert color name strings to Color objects."""
+        import logging
+
+        logger = logging.getLogger(__name__)
 
         color_objects = []
-        for color_name in secondary_colors_names:
+        for color_name in color_names:
             if not color_name:
                 continue
-            color_obj, _ = Color.objects.get_or_create(
-                name__iexact=color_name.strip(),
-                defaults={"name": color_name.strip().upper()},
-            )
-            color_objects.append(color_obj)
+            try:
+                color_obj, created = Color.objects.get_or_create(
+                    name__iexact=color_name.strip(),
+                    defaults={"name": color_name.strip().upper()},
+                )
+                color_objects.append(color_obj)
+                logger.debug("clean_secondary_colors - added Color: %s (created=%s)", color_obj, created)
+            except Exception:
+                logger.exception("clean_secondary_colors - error for %s", color_name)
+
         return color_objects
 
+    def clean_secondary_colors(self):
+        """Convert secondary_colors strings to Color objects."""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        secondary_colors_names = self._get_secondary_colors_names()
+
+        if not secondary_colors_names:
+            logger.debug("clean_secondary_colors - no values found, returning []")
+            return []
+
+        color_objects = self._convert_color_names_to_objects(secondary_colors_names)
+        logger.debug("clean_secondary_colors - returning %s colors", len(color_objects))
+        return color_objects
+
+    def clean_country_code(self):
+        """Validate and return country code."""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        country_code = self.data.get("country_code")
+        logger.debug("clean_country_code - from self.data: %s", country_code)
+
+        if not country_code:
+            country_code = self.initial.get("country_code")
+            logger.debug("clean_country_code - from initial: %s", country_code)
+
+        if country_code:
+            # Validate it's a valid country code
+            try:
+                from django_countries import countries
+
+                if country_code.upper() in dict(countries):
+                    logger.debug("clean_country_code - valid: %s", country_code.upper())
+                    return country_code.upper()
+                logger.warning("clean_country_code - invalid code: %s", country_code)
+            except Exception:
+                logger.exception("clean_country_code - error")
+
+        return country_code
+
     def clean(self):
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.debug("=== JerseyFKAPIForm.clean() CALLED ===")
+        data_keys = list(self.data.keys()) if hasattr(self.data, "keys") else "N/A"
+        logger.debug("self.data keys: %s", data_keys)
+        logger.debug("country_code in data: %s", self.data.get("country_code"))
         cleaned_data = super().clean()
         using_api = bool(self.data.get("brand_name"))
+        logger.debug("using_api: %s", using_api)
+        logger.debug("cleaned_data keys: %s", list(cleaned_data.keys()))
+        logger.debug("country_code in cleaned_data: %s", cleaned_data.get("country_code"))
+        logger.debug("main_color in cleaned_data: %s", cleaned_data.get("main_color"))
+        logger.debug(
+            "secondary_colors in cleaned_data: %s",
+            cleaned_data.get("secondary_colors"),
+        )
         # When using the API, ignore validation errors for these fields since
         # they will be handled in the view. Remove any such errors if present.
         if using_api:
