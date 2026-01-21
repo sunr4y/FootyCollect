@@ -144,13 +144,37 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             # Save and finalize
             response = self._save_and_finalize(form)
 
+            # Refresh object from database to ensure base_item is available
+            self.object.refresh_from_db()
+
+            # Get base_item for photo associations (GenericRelation is on BaseItem)
+            # Jersey uses MTI, so base_item is the BaseItem instance
+            from footycollect.collection.models import BaseItem
+
+            if isinstance(self.object, BaseItem):
+                base_item = self.object
+            else:
+                # For Jersey, access through base_item attribute
+                base_item = getattr(self.object, "base_item", None)
+                if base_item is None:
+                    # Fallback: try to get BaseItem directly
+                    base_item = BaseItem.objects.get(pk=self.object.pk)
+
+            logger.info(
+                "Using base_item ID: %s (type: %s) for photo associations. Jersey ID: %s, Jersey type: %s",
+                base_item.id if base_item else None,
+                type(base_item).__name__ if base_item else None,
+                self.object.id,
+                type(self.object).__name__,
+            )
+
             # Process external images
-            self._process_external_images(form)
+            self._process_external_images(form, base_item)
 
             # Process uploaded photos through the dropzone
             photo_ids = self.request.POST.get("photo_ids", "")
             if photo_ids:
-                self._process_photo_ids(photo_ids)
+                self._process_photo_ids(photo_ids, base_item)
 
             # Mark as not draft
             self.object.is_draft = False
@@ -473,7 +497,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             kit.name,
             kit.id,
         )
-        # Asignar el kit directamente
+        # Assign the kit directly
         form.instance.kit = kit
         self.kit = kit
         logger.info(
@@ -485,10 +509,10 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         # DEBUG: Logging competition data
         self._log_kit_debug_info(form, kit)
 
-        # Asignar otras entidades relacionadas
+        # Assign other related entities
         self._assign_kit_entities(form, kit)
 
-        # Asignar competiciones del kit
+        # Assign kit competitions
         self._assign_kit_competitions(form, kit)
 
     def _log_kit_debug_info(self, form, kit):
@@ -541,7 +565,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         response = super().form_valid(form)
         logger.info("Jersey saved with ID: %s", self.object.pk)
 
-        # Si tenemos un kit con competiciones, asignarlas al jersey
+        # If we have a kit with competitions, assign them to the jersey
         if hasattr(self, "kit") and self.kit and self.kit.competition.exists():
             competitions = self.kit.competition.all()
             self.object.competitions.add(*competitions)
@@ -815,16 +839,23 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             form.instance.description = form.instance.description or ""
             form.instance.description += f"\nAdditional competitions: {all_competitions}"
 
-    def _process_external_images(self, form):
+    def _process_external_images(self, form, base_item=None):
         """
         Process external images provided by the API.
         Download images and associate them with the jersey.
+
+        Args:
+            form: The form instance
+            base_item: The BaseItem instance to associate photos with (defaults to self.object.base_item)
         """
+        if base_item is None:
+            base_item = self.object.base_item if hasattr(self.object, "base_item") else self.object
+
         # Process main image if it exists
         main_img_url = form.cleaned_data.get("main_img_url")
         if main_img_url:
             try:
-                photo = self._download_and_attach_image(self.object, main_img_url)
+                photo = self._download_and_attach_image(base_item, main_img_url)
                 if photo:
                     # Set as main image
                     photo.order = 0
@@ -850,7 +881,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                 clean_url = url.strip()
                 if clean_url and clean_url != main_img_url:  # Avoid duplicates with main image
                     try:
-                        photo = self._download_and_attach_image(self.object, clean_url)
+                        photo = self._download_and_attach_image(base_item, clean_url)
                         if photo:
                             # Set order to maintain image order
                             photo.order = i
@@ -862,13 +893,18 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                             _("Error downloading image"),
                         )
 
-    def _process_photo_ids(self, photo_ids):
+    def _process_photo_ids(self, photo_ids, base_item=None):
         """
         Process photo IDs uploaded through the dropzone.
         Associate existing photos with the jersey.
 
-        photo_ids: String with JSON of photos or IDs separated by commas
+        Args:
+            photo_ids: String with JSON of photos or IDs separated by commas
+            base_item: The BaseItem instance to associate photos with (defaults to self.object.base_item)
         """
+        if base_item is None:
+            base_item = self.object.base_item if hasattr(self.object, "base_item") else self.object
+
         try:
             # Parse photo IDs and external images
             photo_id_list, external_images, order_map = self._parse_photo_ids(photo_ids)
@@ -876,10 +912,10 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                 return
 
             # Process external images first
-            self._process_external_images_from_photo_ids(external_images)
+            self._process_external_images_from_photo_ids(external_images, base_item)
 
             # Process existing photos
-            self._associate_existing_photos(photo_id_list, order_map)
+            self._associate_existing_photos(photo_id_list, order_map, base_item)
 
         except Exception:
             logger.exception("Error processing photo IDs")
@@ -926,15 +962,23 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
         return photo_id_list, external_images, order_map
 
-    def _process_external_images_from_photo_ids(self, external_images):
-        """Process external images from photo IDs data."""
+    def _process_external_images_from_photo_ids(self, external_images, base_item=None):
+        """Process external images from photo IDs data.
+
+        Args:
+            external_images: List of external image data dictionaries
+            base_item: The BaseItem instance to associate photos with (defaults to self.object.base_item)
+        """
+        if base_item is None:
+            base_item = self.object.base_item if hasattr(self.object, "base_item") else self.object
+
         if not external_images:
             return
 
         logger.info("Processing external images: %s", external_images)
         for img_data in external_images:
             try:
-                photo = self._download_and_attach_image(self.object, img_data["url"])
+                photo = self._download_and_attach_image(base_item, img_data["url"])
                 if photo:
                     photo.order = img_data.get("order", 0)
                     photo.save()
@@ -947,32 +991,79 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                 logger.exception("Error downloading external image %s", img_data["url"])
                 messages.error(self.request, _("Error downloading image"))
 
-    def _associate_existing_photos(self, photo_id_list, order_map):
-        """Associate existing photos with the jersey and set their order."""
+    def _associate_existing_photos(self, photo_id_list, order_map, base_item=None):
+        """Associate existing photos with the jersey and set their order.
+
+        Args:
+            photo_id_list: List of photo IDs to associate
+            order_map: Dictionary mapping photo IDs to their order
+            base_item: The BaseItem instance to associate photos with (defaults to self.object.base_item)
+        """
+        if base_item is None:
+            base_item = self.object.base_item if hasattr(self.object, "base_item") else self.object
+
         if not photo_id_list:
             return
 
-        logger.info("Processing photos with IDs: %s", photo_id_list)
-        photos = Photo.objects.filter(id__in=photo_id_list, user=self.request.user)
+        logger.info("Attempting to associate existing photos, IDs: %s", photo_id_list)
+
+        # Ensure photo IDs are integers and unique
+        try:
+            photo_ids_int = list({int(pid) for pid in photo_id_list if str(pid).isdigit()})
+        except Exception:
+            logger.exception("Failed to parse photo IDs as integers (input was: %s)", photo_id_list)
+            return
+
+        if not photo_ids_int:
+            logger.warning("No valid photo IDs found to associate.")
+            return
+
+        # Query for photos belonging to the current user
+        photos = Photo.objects.filter(id__in=photo_ids_int, user=self.request.user)
+
+        # Log how many photos were found
+        logger.info("Found %d photos matching IDs %s for user %s", len(photos), photo_ids_int, self.request.user)
+
+        if not photos.exists():
+            logger.warning("No photos found with IDs %s for user %s", photo_ids_int, self.request.user)
+            # Try without user filter to see if photos exist
+            all_photos = Photo.objects.filter(id__in=photo_ids_int)
+            logger.info("Total photos with these IDs (any user): %d", all_photos.count())
+            return
+
+        # Get ContentType for BaseItem model (not the instance)
+        from footycollect.collection.models import BaseItem
+
+        content_type = ContentType.objects.get_for_model(BaseItem)
 
         for photo in photos:
-            # Associate the photo with the jersey
-            photo.content_type = ContentType.objects.get_for_model(self.object)
-            photo.object_id = self.object.id
+            # Associate the photo with the base_item (GenericRelation is on BaseItem, not Jersey)
+            photo.content_type = content_type
+            photo.object_id = base_item.id
 
             # Set the order
-            if str(photo.id) in order_map:
-                photo.order = order_map[str(photo.id)]
+            photo.order = order_map.get(str(photo.id), photo.order or 0)
 
             photo.save()
             logger.info(
-                "Associated photo %s with jersey %s, order: %s",
+                "Associated photo %s with base_item %s (jersey %s), order: %s, content_type: %s",
                 photo.id,
+                base_item.id,
                 self.object.id,
                 photo.order,
+                content_type,
             )
 
-        logger.info("Processed %s photos for jersey %s", len(photos), self.object.id)
+            # Verify the association was saved correctly
+            photo.refresh_from_db()
+            logger.info(
+                "Photo %s after save - content_type_id: %s, object_id: %s",
+                photo.id,
+                photo.content_type_id,
+                photo.object_id,
+            )
+
+        logger.info("Processed %s photos for jersey %s (base_item %s)", len(photos), self.object.id, base_item.id)
 
     def form_invalid(self, form):
         """Handle invalid form submission."""

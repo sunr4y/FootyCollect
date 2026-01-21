@@ -249,8 +249,8 @@ class TestPhotoViews(TestCase):
             headers={"x-requested-with": "XMLHttpRequest"},
         )
 
-        # Check response - returns 200 with empty string
-        assert response.status_code == HTTP_OK
+        # Check response - returns 400 when no file provided
+        assert response.status_code == HTTP_BAD_REQUEST
 
     def test_handle_dropzone_files_success_returns_metadata(self):
         """Test successful dropzone file handling returns correct metadata."""

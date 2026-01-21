@@ -45,7 +45,7 @@ class NavbarLinksTestCase(TestCase):
         response = self.client.get(reverse("collection:item_list"))
         assert response.status_code == HTTP_OK
 
-        response = self.client.get(reverse("collection:jersey_fkapi_create"))
+        response = self.client.get(reverse("collection:jersey_create_automatic"))
         assert response.status_code == HTTP_OK
 
         # Test user profile link

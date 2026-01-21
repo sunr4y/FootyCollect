@@ -24,9 +24,9 @@
               <div class="col-md-6 mb-3">
                 <div class="card h-100">
                   <div class="card-body">
-                    <h5 class="card-title">{% trans "Add Jersey with FKAPI" %}</h5>
-                    <p class="card-text">{% trans "Search and add jerseys using the Football Kit Archive API." %}</p>
-                    <a href="{% url 'collection:jersey_fkapi_create' %}"
+                    <h5 class="card-title">{% trans "Add Jersey from Database" %}</h5>
+                    <p class="card-text">{% trans "Search and add jerseys from our extensive kit database." %}</p>
+                    <a href="{% url 'collection:jersey_add_automatic' %}"
                        class="btn btn-success">{% trans "Add Jersey" %}</a>
                   </div>
                 </div>
@@ -55,7 +55,7 @@
             <ul>
               <li>{% trans "Track jerseys, balls, boots, and more" %}</li>
               <li>{% trans "Upload photos of your items" %}</li>
-              <li>{% trans "Search the Football Kit Archive" %}</li>
+              <li>{% trans "Search our kit database" %}</li>
               <li>{% trans "Organize by teams, competitions, and seasons" %}</li>
             </ul>
           </div>

@@ -139,7 +139,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 8,
+        },
+    },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -373,6 +378,13 @@ ACCOUNT_AUTHENTICATION_METHOD = "username"
 ACCOUNT_EMAIL_REQUIRED = True
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+# Account lockout after failed login attempts
+# New format: ACCOUNT_RATE_LIMITS replaces deprecated ACCOUNT_LOGIN_ATTEMPTS_LIMIT/TIMEOUT
+# Format: "attempts/period" where period can be 's' (seconds), 'm' (minutes), 'h' (hours)
+# 5 attempts per 5 minutes (300 seconds)
+ACCOUNT_RATE_LIMITS = {
+    "login_failed": "5/5m",
+}
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_ADAPTER = "footycollect.users.adapters.CustomAccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html
@@ -409,6 +421,14 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "100/hour",
+        "anon": "20/hour",
+    },
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup

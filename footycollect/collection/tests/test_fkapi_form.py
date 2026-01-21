@@ -134,7 +134,7 @@ class FKAPIFormTest(TestCase):
         mock_get_kit.return_value = self._mock_fkapi_kit_response(3)  # Third result
 
         # Step 1: Get the form page
-        response = self.client.get(reverse("collection:jersey_fkapi_create"))
+        response = self.client.get(reverse("collection:jersey_add_automatic"))
         assert response.status_code == HTTP_OK
 
         # Step 2: Search for kits (simulate AJAX call)
@@ -180,7 +180,7 @@ class FKAPIFormTest(TestCase):
 
         # Step 5: Submit the form
         response = self.client.post(
-            reverse("collection:jersey_fkapi_create"),
+            reverse("collection:jersey_add_automatic"),
             data=form_data,
             follow=True,
         )
@@ -226,7 +226,7 @@ class FKAPIFormTest(TestCase):
         }
 
         response = self.client.post(
-            reverse("collection:jersey_fkapi_create"),
+            reverse("collection:jersey_add_automatic"),
             data=form_data,
             follow=True,
         )
@@ -251,7 +251,7 @@ class FKAPIFormTest(TestCase):
         }
 
         response = self.client.post(
-            reverse("collection:jersey_fkapi_create"),
+            reverse("collection:jersey_create_automatic"),
             data=form_data,
         )
 

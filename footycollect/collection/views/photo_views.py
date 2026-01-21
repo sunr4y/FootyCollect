@@ -23,7 +23,6 @@ from django.db.models import Max
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
 from footycollect.collection.models import Photo
@@ -32,14 +31,15 @@ from footycollect.collection.services import get_photo_service
 logger = logging.getLogger(__name__)
 
 
+@login_required
 @require_POST
 def reorder_photos(request, item_id):
     """Handle photo reordering via AJAX."""
     try:
         from footycollect.collection.models import Jersey
 
-        # Get the item
-        item = Jersey.objects.get(pk=item_id)
+        # Get the item and verify ownership
+        item = Jersey.objects.get(pk=item_id, base_item__user=request.user)
 
         photo_service = get_photo_service()
         new_order = request.POST.getlist("order[]")
@@ -89,14 +89,15 @@ def upload_photo(request):
         return JsonResponse({"error": _("System error")}, status=500)
 
 
-@csrf_exempt
+@login_required
+@require_POST
 def file_upload(request):
     """Handle file upload for testing purposes."""
-    if request.method == "POST":
-        my_file = request.FILES.get("file")
-        Photo.objects.create(image=my_file)
-        return HttpResponse("")
-    return JsonResponse({"post": "false"})
+    my_file = request.FILES.get("file")
+    if not my_file:
+        return JsonResponse({"error": _("No file provided")}, status=400)
+    Photo.objects.create(image=my_file, user=request.user)
+    return HttpResponse("")
 
 
 @require_http_methods(["POST", "DELETE"])

@@ -45,10 +45,13 @@ urlpatterns = [
     path("items/<int:pk>/update/", ItemUpdateView.as_view(), name="item_update"),
     path("items/<int:pk>/delete/", ItemDeleteView.as_view(), name="item_delete"),
     # Jersey-specific views
-    path("jersey/create/", JerseyCreateView.as_view(), name="jersey_create"),
+    path("jersey/create/manual/", JerseyCreateView.as_view(), name="jersey_create_manual"),
+    path("jersey/create/automatic/", JerseyFKAPICreateView.as_view(), name="jersey_create_automatic"),
     path("jersey/<int:pk>/update/", JerseyUpdateView.as_view(), name="jersey_update"),
     path("jersey/select/", JerseySelectView.as_view(), name="jersey_select"),
-    path("jersey/fkapi/create/", JerseyFKAPICreateView.as_view(), name="jersey_fkapi_create"),
+    # Legacy URLs for backwards compatibility
+    path("jersey/create/", JerseyCreateView.as_view(), name="jersey_create"),
+    path("jersey/add/", JerseyFKAPICreateView.as_view(), name="jersey_add_automatic"),
     # Photo operations
     path("items/<int:item_id>/reorder-photos/", reorder_photos, name="reorder_photos"),
     path("upload/", file_upload, name="file_upload"),

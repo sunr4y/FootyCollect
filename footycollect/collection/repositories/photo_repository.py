@@ -31,17 +31,31 @@ class PhotoRepository(BaseRepository):
         Get all photos for a specific item.
 
         Args:
-            item: Item instance (Jersey, Shorts, etc.)
+            item: Item instance (Jersey, Shorts, BaseItem, etc.)
 
         Returns:
             QuerySet of photos for the item
         """
         from django.contrib.contenttypes.models import ContentType
 
-        content_type = ContentType.objects.get_for_model(item)
+        # For MTI models like Jersey, we need to get the BaseItem
+        # because GenericRelation is on BaseItem, not on Jersey
+        from footycollect.collection.models import BaseItem
+
+        # If item is a Jersey (or other MTI model), get its base_item
+        if hasattr(item, "base_item"):
+            base_item = item.base_item
+        elif isinstance(item, BaseItem):
+            base_item = item
+        else:
+            # Fallback: assume it's already a BaseItem or try to get it
+            base_item = item
+
+        # Get ContentType for BaseItem model class (not instance)
+        content_type = ContentType.objects.get_for_model(BaseItem)
         return self.model.objects.filter(
             content_type=content_type,
-            object_id=item.pk,
+            object_id=base_item.pk,
         ).order_by("order")
 
     def get_main_photo(self, item) -> Photo | None:
@@ -69,13 +83,27 @@ class PhotoRepository(BaseRepository):
         """
         from django.contrib.contenttypes.models import ContentType
 
-        content_type = ContentType.objects.get_for_model(item)
+        # For MTI models like Jersey, we need to get the BaseItem
+        # because GenericRelation is on BaseItem, not on Jersey
+        from footycollect.collection.models import BaseItem
+
+        # If item is a Jersey (or other MTI model), get its base_item
+        if hasattr(item, "base_item"):
+            base_item = item.base_item
+        elif isinstance(item, BaseItem):
+            base_item = item
+        else:
+            # Fallback: assume it's already a BaseItem or try to get it
+            base_item = item
+
+        # Get ContentType for BaseItem model class (not instance)
+        content_type = ContentType.objects.get_for_model(BaseItem)
         try:
             for photo_id, new_order in photo_orders:
                 photo = self.model.objects.get(
                     id=photo_id,
                     content_type=content_type,
-                    object_id=item.pk,
+                    object_id=base_item.pk,
                 )
                 photo.order = new_order
                 photo.save(update_fields=["order"])

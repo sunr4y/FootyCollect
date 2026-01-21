@@ -687,8 +687,10 @@
             this.debouncedSearchClubs();
           });
 
-          // Load all countries by default
-          this.loadAllCountries();
+          // Load all countries by default - wait for DOM and Select2 to be ready
+          setTimeout(() => {
+            this.loadAllCountries();
+          }, 100);
         },
 
         // Mutually exclusive version toggle handlers
@@ -783,12 +785,12 @@
                   allowClear: true,
                   templateResult: function(country) {
                     if (!country.id) return country.text;
-                    // Return the HTML as a jQuery object
+                    // Return the HTML as a jQuery object - country.text already contains HTML with flag
                     return $('<span>' + country.text + '</span>');
                   },
                   templateSelection: function(country) {
                     if (!country.id) return country.text;
-                    // Return the HTML as a jQuery object
+                    // Return the HTML as a jQuery object - country.text already contains HTML with flag
                     return $('<span>' + country.text + '</span>');
                   },
                   escapeMarkup: function(markup) {
@@ -805,6 +807,11 @@
               .catch(error => {
                 console.error('Error loading countries:', error);
               });
+          } else {
+            // If select2 hasn't initialized yet, wait a bit and try again
+            setTimeout(() => {
+              this.loadAllCountries();
+            }, 500);
           }
         },
 
@@ -2062,7 +2069,7 @@
 {% endblock inline_javascript %}
 {% block content %}
   <div class="container py-4" x-data="jerseyForm" x-init="init()">
-    <h1>{% trans "Add New Jersey with FKAPI" %}</h1>
+    <h1>{% trans "Add Jersey from Database" %}</h1>
     {% if messages %}
       <div class="messages">
         {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
@@ -2208,7 +2215,7 @@
             <span class="spinner-border spinner-border-sm"
                   role="status"
                   aria-hidden="true"></span>
-            {% trans "Loading data from API..." %}
+            {% trans "Loading kit information..." %}
           </div>
         </div>
         <div class="card-body">

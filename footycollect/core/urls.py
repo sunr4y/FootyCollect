@@ -25,6 +25,16 @@ urlpatterns = [
         autocomplete.ClubAutocomplete.as_view(),
         name="club-autocomplete",
     ),
+    path(
+        "season-autocomplete/",
+        autocomplete.SeasonAutocomplete.as_view(),
+        name="season-autocomplete",
+    ),
+    path(
+        "competition-autocomplete/",
+        autocomplete.CompetitionAutocomplete.as_view(),
+        name="competition-autocomplete",
+    ),
 ]
 
 logger.info("URLs registered: %s", [url.pattern for url in urlpatterns])

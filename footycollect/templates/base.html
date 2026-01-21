@@ -84,40 +84,50 @@
                   <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle"
                        href="#"
-                       id="jerseyDropdown"
-                       role="button"
-                       data-bs-toggle="dropdown"
-                       aria-expanded="false">{% translate "Jerseys" %}</a>
-                    <ul class="dropdown-menu" aria-labelledby="jerseyDropdown">
-                      <li>
-                        <a class="dropdown-item"
-                           href="{% url 'collection:jersey_fkapi_create' %}">{% translate "Add Jersey (FKAPI)" %}</a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="{% url 'collection:jersey_select' %}">{% translate "Select Jersey" %}</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle"
-                       href="#"
                        id="itemsDropdown"
                        role="button"
                        data-bs-toggle="dropdown"
                        aria-expanded="false">{% translate "Collection" %}</a>
                     <ul class="dropdown-menu" aria-labelledby="itemsDropdown">
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:item_create' %}">{% translate "Add New Item" %}</a>
+                        <h6 class="dropdown-header">{% translate "Add Items" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:item_list' %}">{% translate "View All Items" %}</a>
+                        <a class="dropdown-item"
+                           href="{% url 'collection:jersey_create_automatic' %}">
+                          <i class="bi bi-magic me-2"></i>{% translate "Add Jersey (Automatic)" %}
+                          <small class="text-muted d-block ms-4">{% translate "From kit database" %}</small>
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item"
+                           href="{% url 'collection:jersey_create_manual' %}">
+                          <i class="bi bi-pencil me-2"></i>{% translate "Add Jersey (Manual)" %}
+                          <small class="text-muted d-block ms-4">{% translate "Not in database" %}</small>
+                        </a>
+                      </li>
+                      <li>
+                        <span class="dropdown-item-text text-muted">
+                          <i class="bi bi-plus-circle me-2"></i>{% translate "Add Other Item" %}
+                          <small class="d-block ms-4 text-muted">{% translate "Coming Soon" %}</small>
+                        </span>
                       </li>
                       <li>
                         <hr class="dropdown-divider" />
                       </li>
                       <li>
-                        <a class="dropdown-item"
-                           href="{% url 'collection:jersey_fkapi_create' %}">{% translate "Add Jersey with FKAPI" %}</a>
+                        <h6 class="dropdown-header">{% translate "Browse" %}</h6>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{% url 'collection:item_list' %}">
+                          <i class="bi bi-grid me-2"></i>{% translate "View My Collection" %}
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{% url 'collection:jersey_select' %}">
+                          <i class="bi bi-search me-2"></i>{% translate "Browse Kit Database" %}
+                          <small class="text-muted d-block ms-4">{% translate "Search available kits" %}</small>
+                        </a>
                       </li>
                     </ul>
                   </li>

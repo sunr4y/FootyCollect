@@ -99,13 +99,13 @@ class JerseyViewsTest(TestCase):
 
     def test_jersey_fkapi_create_view_requires_login(self):
         """Test Jersey FKAPI create view requires login."""
-        response = self.client.get(reverse("collection:jersey_fkapi_create"))
+        response = self.client.get(reverse("collection:jersey_create_automatic"))
         assert response.status_code == HTTP_FOUND  # Redirect to login
 
     def test_jersey_fkapi_create_view_authenticated(self):
         """Test Jersey FKAPI create view for authenticated user."""
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
-        response = self.client.get(reverse("collection:jersey_fkapi_create"))
+        response = self.client.get(reverse("collection:jersey_create_automatic"))
         assert response.status_code == HTTP_OK
         self.assertContains(response, "Search for a Kit")
 

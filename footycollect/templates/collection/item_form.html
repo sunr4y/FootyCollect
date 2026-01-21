@@ -1,96 +1,267 @@
 {% extends "base.html" %}
 
 {% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-  <!-- Test fuera del container -->
-  {% comment %}Debug: Cotton test 1{% endcomment %}
-  <c-test></c-test>
-  <div class="container">
-    <!-- Test dentro del container -->
-    {% comment %}Debug: Cotton test 2{% endcomment %}
-    <c-test></c-test>
-    <form method="post" enctype="multipart/form-data" class="card">
-      {% csrf_token %}
-      <!-- Test dentro del form -->
-      {% comment %}Debug: Cotton test 3{% endcomment %}
-      <c-test></c-test>
-      {{ wizard.management_form }}
-      <div class="card-body">
-        {% if wizard.form.forms %}
-          {{ wizard.form.management_form }}
-          {% for form in wizard.form.forms %}{{ form }}{% endfor %}
-        {% else %}
-          <h3 class="card-title">Item Details</h3>
-          <!-- Test component -->
-          <c-test></c-test>
-          <!-- Debug visual -->
-          <p>Debug: Antes del componente Cotton</p>
-          <c-country-select name="details-country" data-url="{% url 'core:country-autocomplete' %}" data-selected="{{ wizard.form.country_code.value|default:'' }}"></c-country-select>
-          <p>Debug: Después del componente Cotton</p>
-          <!-- Campo hidden original -->
-          <input type="hidden"
-                 name="details-country_code"
-                 id="id_details-country_code"
-                 value="{{ wizard.form.country_code.value|default:'' }}" />
-          <c-country-select url="{% url 'core:country-autocomplete' %}" data-selected="{{ wizard.form.country_code.value|default:'' }}"></c-country-select>
-          <c-color-selector name="details-main_color" label="Main Color" data-selected="{{ wizard.form.main_color.value|default:'' }}" :color_choices="color_choices">
-          </c-color-selector>
-          <c-color-selector name="details-secondary_colors" label="Secondary Colors"  data-multiple="true" data-selected="{{ wizard.form.secondary_colors.value|default:'' }}" :color_choices="color_choices">
-          </c-color-selector>
-          <!-- Componente Cotton para el diseño -->
-          <c-design-selector name="details-design" label="Design Pattern" data-selected="{{ wizard.form.design.value|default:'' }}" :design_choices="design_choices">
-          </c-design-selector>
-          {{ wizard.form.as_p }}
-        {% endif %}
+  {{ form.media }}
+  <div class="container py-4">
+    <h1>{% trans "Add Jersey (Manual)" %}</h1>
+    {% if help_text %}
+      <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle me-2"></i>{{ help_text }}
       </div>
-      <div class="card-footer d-flex justify-content-between">
-        {% if wizard.steps.prev %}
-          <button name="wizard_goto_step"
-                  type="submit"
-                  value="{{ wizard.steps.prev }}"
-                  class="btn btn-secondary">Previous</button>
-        {% endif %}
-        <button type="submit" class="btn btn-primary">
-          {% if wizard.steps.next %}
-            Next
-          {% else %}
-            Submit
-          {% endif %}
-        </button>
+    {% endif %}
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" id="jersey-form">
+      {% csrf_token %}
+      <!-- Basic Information -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Basic Information" %}</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">{{ form.name|as_crispy_field }}</div>
+            <div class="col-md-6 mb-3">{{ form.size|as_crispy_field }}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <c-autocomplete-search name="brand" label="{{ label_brand }}" required="true" api_endpoint="brands" help_text="{{ help_brand }}">
+              </c-autocomplete-search>
+              {{ form.brand }}
+              {{ form.brand_name }}
+            </div>
+            <div class="col-md-4 mb-3">
+              <c-autocomplete-search name="club" label="{{ label_club }}" required="false" api_endpoint="clubs" help_text="{{ help_club }}">
+              </c-autocomplete-search>
+              {{ form.club }}
+            </div>
+            <div class="col-md-4 mb-3">
+              <c-autocomplete-search name="season" label="{{ label_season }}" required="false" api_endpoint="seasons" help_text="{{ help_season }}">
+              </c-autocomplete-search>
+              {{ form.season }}
+              {{ form.season_name }}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <c-autocomplete-search name="competitions" label="{{ label_competitions }}" required="false" multiple="true" api_endpoint="competitions" help_text="{{ help_competitions }}">
+              </c-autocomplete-search>
+              {{ form.competitions }}
+              {{ form.competition_name }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Appearance -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Appearance" %}</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-6" id="div_id_main_color">
+              <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+              </c-color-selector>
+            </div>
+            <div class="col-md-6" id="div_id_secondary_colors">
+              <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" data-multiple="true" data-selected="{{ form.secondary_colors.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+              </c-color-selector>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6" id="div_id_design">
+              <c-design-selector name="design" label="{% trans 'Design Pattern' %}" data-selected="{{ form.design.value|default:'' }}" :design_choices="{{ design_choices|safe }}">
+              </c-design-selector>
+            </div>
+            <div class="col-md-6 mb-3">{{ form.country_code|as_crispy_field }}</div>
+          </div>
+        </div>
+      </div>
+      <!-- Condition & Details -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Condition & Details" %}</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 mb-3">{{ form.condition|as_crispy_field }}</div>
+            <div class="col-md-3 mb-3">{{ form.detailed_condition|as_crispy_field }}</div>
+            <div class="col-md-3 mb-3">{{ form.is_replica|as_crispy_field }}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-12 mb-3">{{ form.description|as_crispy_field }}</div>
+          </div>
+        </div>
+      </div>
+      <!-- Jersey-Specific Details -->
+      <div class="card mb-4" x-data="jerseyFormManual">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Jersey-Specific Details" %}</h5>
+        </div>
+        <div class="card-body">
+          <!-- Version Toggle: Fan vs Player (mutually exclusive) -->
+          <div class="row mb-3 mt-2">
+            <div class="col-md-6">
+              <div class="fw-semibold mb-1">{% trans "Jersey Version" %}</div>
+              <div class="btn-group w-100" role="group" aria-label="Version toggle">
+                <button type="button"
+                        class="btn"
+                        :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setVersion('fan')">{% trans "Fan Version" %}</button>
+                <button type="button"
+                        class="btn"
+                        :class="!isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setVersion('player')">{% trans "Player Version" %}</button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="fw-semibold mb-1">{% trans "Sleeve Type" %}</div>
+              <div class="btn-group w-100" role="group" aria-label="Sleeve toggle">
+                <button type="button"
+                        class="btn"
+                        :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setSleeve('short')">{% trans "Short Sleeve" %}</button>
+                <button type="button"
+                        class="btn"
+                        :class="!isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setSleeve('long')">{% trans "Long Sleeve" %}</button>
+              </div>
+            </div>
+          </div>
+          <!-- Binary options row (clear alignment) -->
+          <div class="row mb-3 mt-3">
+            <div class="col-md-6">
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="id_is_signed"
+                       name="is_signed"
+                       {% if form.is_signed.value %}checked{% endif %} />
+                <label class="form-check-label" for="id_is_signed">{% trans "Include Player Signature" %}</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="id_has_nameset"
+                       name="has_nameset"
+                       x-model="hasNameset"
+                       {% if form.has_nameset.value %}checked{% endif %} />
+                <label class="form-check-label" for="id_has_nameset">{% trans "Has nameset" %}</label>
+              </div>
+            </div>
+          </div>
+          <!-- Nameset fields: hidden by default, toggled via checkbox -->
+          <div class="row" x-show="hasNameset" x-cloak>
+            <div class="col-md-6 mb-3">{{ form.player_name|as_crispy_field }}</div>
+            <div class="col-md-6 mb-3">{{ form.number|as_crispy_field }}</div>
+          </div>
+          <!-- Hidden fields for form submission -->
+          <div class="d-none">
+            {{ form.is_fan_version }}
+            {{ form.is_short_sleeve }}
+            {{ form.is_signed }}
+          </div>
+        </div>
+      </div>
+      <!-- Photo Manager -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{% trans "Photos" %}</h5>
+        </div>
+        <div class="card-body">
+          <c-collection.photo_manager></c-collection.photo_manager>
+        </div>
+      </div>
+      <!-- Submit Button -->
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{% url 'collection:item_list' %}"
+           class="btn btn-secondary me-md-2">{% trans "Cancel" %}</a>
+        <button type="submit" class="btn btn-primary">{% trans "Add Jersey" %}</button>
       </div>
     </form>
   </div>
-  <!-- Test usando componente dinámico -->
-  {% comment %}Debug: Cotton test dinámico{% endcomment %}
-  <c-component is="test"></c-component>
 {% endblock content %}
 {% block js %}
   {{ block.super }}
-  <!-- Asegurarnos que jQuery y Select2 están cargados -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-        rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
-        rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
-        rel="stylesheet" />
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-    // Script para cargar colores desde FKAPI
-    document.addEventListener('DOMContentLoaded', function() {
-      const colorSelectors = document.querySelectorAll('[data-fkapi="true"]');
-      if (colorSelectors.length > 0) {
-        fetch('/api/colors/')
-          .then(response => response.json())
-          .then(data => {
-            colorSelectors.forEach(selector => {
-              // Actualizar opciones con datos de la API
-              // Implementación depende de la estructura de datos de FKAPI
-            });
-          })
-          .catch(error => console.error('Error loading colors from FKAPI:', error));
-      }
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('jerseyFormManual', () => ({
+        isFanVersion: true,
+        isShortSleeve: true,
+        hasNameset: false,
+
+        init() {
+          // Initialize version toggle (default to Fan Version)
+          const fanInput = document.getElementById('id_is_fan_version');
+          if (fanInput) {
+            this.isFanVersion = fanInput.checked;
+          } else {
+            this.isFanVersion = true;
+            if (fanInput) {
+              fanInput.checked = true;
+            }
+          }
+
+          // Initialize sleeve toggle (default to Short Sleeve)
+          const shortSleeveInput = document.getElementById('id_is_short_sleeve');
+          if (shortSleeveInput) {
+            this.isShortSleeve = shortSleeveInput.checked;
+          } else {
+            this.isShortSleeve = true;
+            if (shortSleeveInput) {
+              shortSleeveInput.checked = true;
+            }
+          }
+
+          // Initialize nameset checkbox
+          const hasNamesetInput = document.getElementById('id_has_nameset');
+          if (hasNamesetInput) {
+            this.hasNameset = hasNamesetInput.checked;
+          }
+        },
+
+        // Mutually exclusive version toggle handlers
+        setVersion(version) {
+          const fanInput = document.getElementById('id_is_fan_version');
+          if (!fanInput) return;
+          if (version === 'fan') {
+            this.isFanVersion = true;
+            fanInput.checked = true;
+          } else {
+            this.isFanVersion = false;
+            fanInput.checked = false;
+          }
+          // Trigger change in case any listener depends on it
+          fanInput.dispatchEvent(new Event('change', {
+            bubbles: true
+          }));
+        },
+
+        // Sleeve toggle maps to is_short_sleeve boolean
+        setSleeve(type) {
+          const input = document.getElementById('id_is_short_sleeve');
+          if (!input) return;
+          if (type === 'short') {
+            this.isShortSleeve = true;
+            input.checked = true;
+          } else {
+            this.isShortSleeve = false;
+            input.checked = false;
+          }
+          input.dispatchEvent(new Event('change', {
+            bubbles: true
+          }));
+        }
+      }));
     });
   </script>
 {% endblock js %}

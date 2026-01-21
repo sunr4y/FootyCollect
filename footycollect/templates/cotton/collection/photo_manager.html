@@ -2,6 +2,7 @@
 
 <div class="photo-manager"
      x-data="photoManager({{ initial_photos|default:'[]'|safe }})"
+     x-init="console.log('Photo manager initialized', photos.length)"
      @dragover.prevent="isDragging = true"
      @dragleave.prevent="isDragging = false"
      @drop.prevent="handleDrop($event)"
@@ -56,6 +57,8 @@
   </template>
 </div>
 <script>
+  // Make photoManager available globally for Alpine.js
+  // Register it both as window property and Alpine data function
   function photoManager(initialPhotos = []) {
     return {
       photos: initialPhotos,
@@ -69,6 +72,32 @@
           message,
           type
         });
+      },
+
+      getCsrfToken() {
+        // Try multiple ways to get CSRF token
+        // Method 1: From form input
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+          return csrfInput.value;
+        }
+
+        // Method 2: From cookie
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'csrftoken') {
+            return value;
+          }
+        }
+
+        // Method 3: From meta tag (if present)
+        const metaTag = document.querySelector('meta[name=csrf-token]');
+        if (metaTag) {
+          return metaTag.getAttribute('content');
+        }
+
+        return null;
       },
 
       async uploadPhoto(file, order) {
@@ -89,12 +118,19 @@
         formData.append('order', order);
 
         try {
+          // Get CSRF token safely
+          const csrfToken = this.getCsrfToken();
+          if (!csrfToken) {
+            throw new Error('CSRF token not found. Please refresh the page.');
+          }
+
           const response = await fetch('{% url "collection:upload_photo" %}', {
             method: 'POST',
             body: formData,
             headers: {
-              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
+              'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin'
           });
 
           if (!response.ok) throw new Error('Upload failed');
@@ -221,6 +257,21 @@
       }
     };
   }
+
+  // Make it available globally - Alpine.js will look for it in window scope
+  window.photoManager = photoManager;
+
+  // Also register with Alpine if it's available (for x-data="photoManager")
+  if (typeof Alpine !== 'undefined') {
+    Alpine.data('photoManager', photoManager);
+  }
+
+  // Wait for Alpine to be ready if it's not yet loaded
+  document.addEventListener('alpine:init', () => {
+    if (typeof Alpine !== 'undefined') {
+      Alpine.data('photoManager', photoManager);
+    }
+  });
 
   // Handle global notifications
   document.addEventListener('alpine:init', () => {
