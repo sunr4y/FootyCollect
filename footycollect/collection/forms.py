@@ -429,7 +429,10 @@ class JerseyForm(forms.ModelForm):
                 secondary_colors_names = []
 
         if not secondary_colors_names:
-            return self.cleaned_data.get("secondary_colors", [])
+            # If no secondary colors provided, return empty list
+            # Don't use cleaned_data here as it might contain values from to_python
+            # that shouldn't be there
+            return []
 
         color_objects = []
         for color_name in secondary_colors_names:

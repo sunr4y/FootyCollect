@@ -1251,7 +1251,8 @@
           const secondaryColors = kitData.secondary_color || kitData.secondary_colors;
           console.log('Debugging secondary colors:', secondaryColors);
 
-          if (secondaryColors) {
+          // Only process if secondaryColors exists and is not an empty array
+          if (secondaryColors && !(Array.isArray(secondaryColors) && secondaryColors.length === 0)) {
             let selectedColors = [];
 
             // Map API color names to our color values (UPPERCASE)
@@ -1291,13 +1292,13 @@
                 colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
                 selectedColors.push(colorValue);
               });
-            } else if (typeof secondaryColors === 'object' && secondaryColors !== null) {
-              // It's an object with a single color
+            } else if (typeof secondaryColors === 'object' && secondaryColors !== null && !Array.isArray(secondaryColors)) {
+              // It's an object with a single color (but not an array)
               let colorValue = secondaryColors.name || secondaryColors.toString();
               // Normalize the color value
               colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
               selectedColors.push(colorValue);
-            } else if (typeof secondaryColors === 'string') {
+            } else if (typeof secondaryColors === 'string' && secondaryColors.trim() !== '') {
               // It's a string
               let colorValue = secondaryColors;
               // Normalize the color value
@@ -1309,6 +1310,10 @@
             if (selectedColors.length > 0) {
               updateCottonComponent('secondary_colors', selectedColors);
             }
+          } else if (Array.isArray(secondaryColors) && secondaryColors.length === 0) {
+            // Explicitly handle empty array - clear secondary colors
+            console.log('Secondary colors is empty array, clearing selection');
+            updateCottonComponent('secondary_colors', []);
           }
 
           // Design
