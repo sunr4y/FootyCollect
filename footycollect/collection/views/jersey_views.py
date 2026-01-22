@@ -1199,29 +1199,33 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             return
 
         try:
-            from footycollect.collection.services.kit_service import KitService
-
-            kit_service = KitService()
-            kit_id = form.cleaned_data.get("kit_id")
-            fkapi_data = getattr(form, "fkapi_data", {})
-            fkapi_keys = list(fkapi_data.keys()) if fkapi_data else []
-            logger.info(
-                "Creating Kit in _save_and_finalize - kit_id: %s, fkapi_data keys: %s",
-                kit_id,
-                fkapi_keys,
-            )
-            kit = kit_service.get_or_create_kit_for_jersey(
-                base_item=self.object,
-                jersey=jersey,
-                fkapi_data=fkapi_data,
-                kit_id=kit_id,
-            )
-            jersey.kit = kit
-            jersey.save(update_fields=["kit"])
-            logger.info("Created/linked Kit %s to Jersey %s", kit.id, jersey.id)
+            self._create_and_link_kit(jersey, form)
         except Exception:
             logger.exception("Error creating Kit in _save_and_finalize")
             # Don't raise - allow jersey creation to continue without kit
+
+    def _create_and_link_kit(self, jersey, form):
+        """Create and link Kit to jersey."""
+        from footycollect.collection.services.kit_service import KitService
+
+        kit_service = KitService()
+        kit_id = form.cleaned_data.get("kit_id")
+        fkapi_data = getattr(form, "fkapi_data", {})
+        fkapi_keys = list(fkapi_data.keys()) if fkapi_data else []
+        logger.info(
+            "Creating Kit in _save_and_finalize - kit_id: %s, fkapi_data keys: %s",
+            kit_id,
+            fkapi_keys,
+        )
+        kit = kit_service.get_or_create_kit_for_jersey(
+            base_item=self.object,
+            jersey=jersey,
+            fkapi_data=fkapi_data,
+            kit_id=kit_id,
+        )
+        jersey.kit = kit
+        jersey.save(update_fields=["kit"])
+        logger.info("Created/linked Kit %s to Jersey %s", kit.id, jersey.id)
 
         # If we have a kit with competitions, assign them to the jersey
         if jersey.kit and jersey.kit.competition.exists():

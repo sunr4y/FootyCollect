@@ -244,6 +244,28 @@ class ItemDetailView(BaseItemDetailView):
             )
         )
 
+    def get_object(self, queryset=None):
+        """Override to handle BaseItem pk lookup in Jersey queryset."""
+        from django.http import Http404
+        from django.utils.translation import gettext as _
+
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        if pk is not None:
+            queryset = queryset.filter(base_item__pk=pk)
+
+        try:
+            obj = queryset.get()
+        except queryset.model.DoesNotExist:
+            verbose_name = queryset.model._meta.verbose_name
+            raise Http404(
+                _("No %(verbose_name)s found matching the query") % {"verbose_name": verbose_name},
+            ) from None
+
+        return obj
+
     def get_context_data(self, **kwargs):
         """Add additional context data for the item detail."""
         from django.views.generic.detail import SingleObjectMixin
