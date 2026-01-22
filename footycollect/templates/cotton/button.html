@@ -1,21 +1,15 @@
 <c-vars variant="default" size="default" as_link href />
-
 {% if as_link %}
-<a href="{{ href|default:'#' }}" class="fc-button fc-button-{{ variant }} fc-button-{{ size }} {% if disabled %}fc-button-disabled{% endif %}" {{ attrs }}>
-  {% if icon %}
-    <i class="{{ icon }} me-2"></i>
-  {% endif %}
-  {{ slot }}
-</a>
+  <a href="{{ href|default:'#' }}" class="fc-button fc-button-{{ variant }} fc-button-{{ size }} {% if disabled %}fc-button-disabled{% endif %}" {{ attrs }}>
+    {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}
+    {{ slot }}
+  </a>
 {% else %}
-<button type="{{ type|default:'button' }}" class="fc-button fc-button-{{ variant }} fc-button-{{ size }} {% if disabled %}fc-button-disabled{% endif %}" {% if disabled %}disabled{% endif %} {{ attrs }}>
-  {% if icon %}
-    <i class="{{ icon }} me-2"></i>
-  {% endif %}
-  {{ slot }}
-</button>
+  <button type="{{ type|default:'button' }}" class="fc-button fc-button-{{ variant }} fc-button-{{ size }} {% if disabled %}fc-button-disabled{% endif %}" {% if disabled %}disabled{% endif %} {{ attrs }}>
+    {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}
+    {{ slot }}
+  </button>
 {% endif %}
-
 <style>
   .fc-button {
     display: inline-flex;
@@ -32,111 +26,111 @@
     outline: none;
     text-decoration: none;
   }
-  
+
   .fc-button:focus-visible {
     outline: 2px solid var(--fc-ring);
     outline-offset: 2px;
   }
-  
+
   .fc-button-disabled,
   .fc-button:disabled {
     pointer-events: none;
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   .fc-button-default {
     background-color: var(--fc-primary);
     color: var(--fc-primary-foreground);
   }
-  
+
   .fc-button-default:hover:not(:disabled):not(.fc-button-disabled) {
     background-color: hsl(180, 85%, 35%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px hsla(180, 85%, 40%, 0.3);
   }
-  
+
   a.fc-button-default:hover {
     background-color: hsl(180, 85%, 35%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px hsla(180, 85%, 40%, 0.3);
   }
-  
+
   .fc-button-destructive {
     background-color: var(--fc-destructive);
     color: var(--fc-destructive-foreground);
   }
-  
+
   .fc-button-destructive:hover:not(:disabled) {
     background-color: hsl(0, 84%, 55%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px hsla(0, 84%, 60%, 0.3);
   }
-  
+
   .fc-button-outline {
     border: 1px solid var(--fc-border);
     background-color: transparent;
     color: var(--fc-foreground);
   }
-  
+
   .fc-button-outline:hover:not(:disabled) {
     background-color: var(--fc-secondary);
     color: var(--fc-secondary-foreground);
   }
-  
+
   .fc-button-secondary {
     background-color: var(--fc-secondary);
     color: var(--fc-secondary-foreground);
   }
-  
+
   .fc-button-secondary:hover:not(:disabled) {
     background-color: hsl(220, 15%, 20%);
   }
-  
+
   .fc-button-ghost {
     background-color: transparent;
     color: var(--fc-foreground);
   }
-  
+
   .fc-button-ghost:hover:not(:disabled):not(.fc-button-disabled) {
     background-color: var(--fc-secondary);
     color: var(--fc-secondary-foreground);
   }
-  
+
   a.fc-button-ghost:hover {
     background-color: var(--fc-secondary);
     color: var(--fc-secondary-foreground);
   }
-  
+
   .fc-button-link {
     background-color: transparent;
     color: var(--fc-primary);
     text-decoration: underline;
     text-underline-offset: 4px;
   }
-  
+
   .fc-button-link:hover:not(:disabled) {
     color: hsl(180, 85%, 35%);
   }
-  
+
   .fc-button-sm {
     height: 2.25rem;
     padding: 0.375rem 0.75rem;
     font-size: 0.8125rem;
   }
-  
+
   .fc-button-default-size {
     height: 2.5rem;
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
   }
-  
+
   .fc-button-lg {
     height: 2.75rem;
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
   }
-  
+
   .fc-button-icon {
     height: 2.5rem;
     width: 2.5rem;

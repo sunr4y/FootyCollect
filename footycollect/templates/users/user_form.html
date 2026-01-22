@@ -15,13 +15,13 @@
       width: 50px;
       height: 26px;
     }
-    
+
     .toggle-switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
-    
+
     .toggle-slider {
       position: absolute;
       cursor: pointer;
@@ -34,7 +34,7 @@
       transition: 0.3s;
       border-radius: 26px;
     }
-    
+
     .toggle-slider:before {
       position: absolute;
       content: "";
@@ -46,29 +46,33 @@
       transition: 0.3s;
       border-radius: 50%;
     }
-    
-    .toggle-switch input:checked + .toggle-slider {
+
+    .toggle-switch input:checked+.toggle-slider {
       background-color: hsla(180, 85%, 40%, 1);
       border-color: hsla(180, 85%, 40%, 1);
     }
-    
-    .toggle-switch input:checked + .toggle-slider:before {
+
+    .toggle-switch input:checked+.toggle-slider:before {
       transform: translateX(24px);
       background-color: white;
     }
-    
-    .toggle-switch input:focus + .toggle-slider {
+
+    .toggle-switch input:focus+.toggle-slider {
       box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.25);
     }
 
     /* Form inputs dark theme */
-    .form-control, .form-select, textarea.form-control {
+    .form-control,
+    .form-select,
+    textarea.form-control {
       background-color: var(--fc-secondary) !important;
       border: 1px solid var(--fc-border) !important;
       color: var(--fc-foreground) !important;
     }
-    
-    .form-control:focus, .form-select:focus, textarea.form-control:focus {
+
+    .form-control:focus,
+    .form-select:focus,
+    textarea.form-control:focus {
       background-color: var(--fc-secondary) !important;
       border-color: hsla(180, 85%, 40%, 1) !important;
       color: var(--fc-foreground) !important;
@@ -83,7 +87,8 @@
     }
 
     /* Help text styling */
-    .form-text, small.text-muted {
+    .form-text,
+    small.text-muted {
       color: var(--fc-muted-foreground) !important;
       font-size: 0.8125rem;
     }
@@ -130,7 +135,8 @@
           {% csrf_token %}
           {% crispy form %}
           <div class="d-flex justify-content-end gap-2 fc-form-actions">
-            <a href="{% url 'users:detail' username=user.username %}" class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
+            <a href="{% url 'users:detail' username=user.username %}"
+               class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
             <button type="submit" class="btn fc-btn-primary">{% trans "Update Profile" %}</button>
           </div>
         </form>

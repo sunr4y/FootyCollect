@@ -86,7 +86,6 @@
       <!-- Select2 Bootstrap 5 Theme  -->
       <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
             rel="stylesheet" />
-     
       <!-- This file stores project-specific CSS-->
       {% compress css %}
         <link href="{% static 'css/project.css' %}" rel="stylesheet" />
@@ -114,119 +113,109 @@
       {% endcompress %}
     {% endblock javascript %}
   </head>
-  <body class="fc-body {% block bodyclass %}{% endblock bodyclass %}" style="background-color: var(--fc-background); color: var(--fc-foreground);">
+  <body class="fc-body fc-body-base {% block bodyclass %}{% endblock bodyclass %}">
     {% block body %}
-      <header class="fc-header" style="border-bottom: 1px solid var(--fc-border); background-color: var(--fc-card); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000;">
-        <nav class="navbar navbar-expand-md" style="background-color: transparent;">
+      <header class="fc-header fc-header-base">
+        <nav class="navbar navbar-expand-md fc-navbar-base">
           <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'home' %}" style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.5rem; color: var(--fc-foreground); text-decoration: none;">
-              <span style="background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Footy</span>Collect
+            <a class="navbar-brand fc-navbar-brand" href="{% url 'home' %}">
+              <span class="fc-navbar-brand-gradient">Footy</span>Collect
             </a>
-            <button class="navbar-toggler"
+            <button class="navbar-toggler fc-navbar-toggler-base"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#navbarSupportedContent"
                     aria-controls="navbarSupportedContent"
                     aria-expanded="false"
-                    aria-label="Toggle navigation"
-                    style="border: 1px solid var(--fc-border); color: var(--fc-foreground);">
+                    aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
               <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'home' %}" style="color: var(--fc-foreground); transition: color 0.2s ease;">
-                    {% translate "Home" %}
-                  </a>
+                  <a class="nav-link fc-nav-link-base" href="{% url 'home' %}">{% translate "Home" %}</a>
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle"
+                    <a class="nav-link dropdown-toggle fc-nav-link-base"
                        href="#"
                        id="itemsDropdown"
                        role="button"
                        data-bs-toggle="dropdown"
-                       aria-expanded="false"
-                       style="color: var(--fc-foreground); transition: color 0.2s ease;">
-                      {% translate "Collection" %}
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="itemsDropdown" style="background-color: var(--fc-card); border: 1px solid var(--fc-border);">
+                       aria-expanded="false">{% translate "Collection" %}</a>
+                    <ul class="dropdown-menu fc-dropdown-menu-base"
+                        aria-labelledby="itemsDropdown">
                       <li>
-                        <h6 class="dropdown-header" style="color: var(--fc-muted-foreground);">{% translate "Add Items" %}</h6>
+                        <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Add Items" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item"
-                           href="{% url 'collection:jersey_create_automatic' %}"
-                           style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
+                        <a class="dropdown-item fc-dropdown-item-base"
+                           href="{% url 'collection:jersey_create_automatic' %}">
                           <i class="bi bi-magic me-2"></i>{% translate "Add Jersey (Automatic)" %}
-                          <small class="d-block ms-4" style="color: var(--fc-muted-foreground);">{% translate "From kit database" %}</small>
+                          <small class="d-block ms-4 fc-dropdown-item-small">{% translate "From kit database" %}</small>
                         </a>
                       </li>
                       <li>
-                        <a class="dropdown-item"
-                           href="{% url 'collection:jersey_create_manual' %}"
-                           style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
+                        <a class="dropdown-item fc-dropdown-item-base"
+                           href="{% url 'collection:jersey_create_manual' %}">
                           <i class="bi bi-pencil me-2"></i>{% translate "Add Jersey (Manual)" %}
-                          <small class="d-block ms-4" style="color: var(--fc-muted-foreground);">{% translate "Not in database" %}</small>
+                          <small class="d-block ms-4 fc-dropdown-item-small">{% translate "Not in database" %}</small>
                         </a>
                       </li>
                       <li>
-                        <span class="dropdown-item-text" style="color: var(--fc-muted-foreground);">
+                        <span class="dropdown-item-text fc-dropdown-item-text-base">
                           <i class="bi bi-plus-circle me-2"></i>{% translate "Add Other Item" %}
                           <small class="d-block ms-4">{% translate "Coming Soon" %}</small>
                         </span>
                       </li>
                       <li>
-                        <hr class="dropdown-divider" style="border-color: var(--fc-border);" />
+                        <hr class="dropdown-divider fc-dropdown-divider-base" />
                       </li>
                       <li>
-                        <h6 class="dropdown-header" style="color: var(--fc-muted-foreground);">{% translate "Browse" %}</h6>
+                        <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Browse" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:item_list' %}" style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
+                        <a class="dropdown-item fc-dropdown-item-base"
+                           href="{% url 'collection:item_list' %}">
                           <i class="bi bi-grid me-2"></i>{% translate "View My Collection" %}
                         </a>
                       </li>
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:jersey_select' %}" style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
+                        <a class="dropdown-item fc-dropdown-item-base"
+                           href="{% url 'collection:jersey_select' %}">
                           <i class="bi bi-search me-2"></i>{% translate "Browse Kit Database" %}
-                          <small class="d-block ms-4" style="color: var(--fc-muted-foreground);">{% translate "Search available kits" %}</small>
+                          <small class="d-block ms-4 fc-dropdown-item-small">{% translate "Search available kits" %}</small>
                         </a>
                       </li>
                     </ul>
                   </li>
                 {% endif %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'about' %}" style="color: var(--fc-foreground); transition: color 0.2s ease;">
-                    {% translate "About" %}
-                  </a>
+                  <a class="nav-link fc-nav-link-base" href="{% url 'about' %}">{% translate "About" %}</a>
                 </li>
               </ul>
-                  <ul class="navbar-nav ms-auto d-flex align-items-center">
-                    {% if request.user.is_authenticated %}
-                      <li class="nav-item">
-                        <a class="nav-link"
-                           href="{% url 'users:detail' request.user.username %}"
-                           style="color: var(--fc-foreground); transition: color 0.2s ease;">
-                          {% translate "My Profile" %}
-                        </a>
-                      </li>
-                      <li class="nav-item">
-                        <c-button variant="ghost" size="sm" as_link href="{% url 'account_logout' %}" style="display: inline-flex; align-items: center;">
-                          {% translate "Sign Out" %}
-                        </c-button>
-                      </li>
+              <ul class="navbar-nav ms-auto d-flex align-items-center">
+                {% if request.user.is_authenticated %}
+                  <li class="nav-item">
+                    <a class="nav-link fc-nav-link-base"
+                       href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
+                  </li>
+                  <li class="nav-item">
+                    <c-button variant="ghost" size="sm" as_link href="{% url 'account_logout' %}" class="fc-button-inline-flex">
+                    {% translate "Sign Out" %}
+                    </c-button>
+                  </li>
                 {% else %}
                   {% if ACCOUNT_ALLOW_REGISTRATION %}
                     <li class="nav-item">
-                      <c-button variant="ghost" size="sm" as_link href="{% url 'account_signup' %}" style="margin-right: 0.5rem;">
-                        {% translate "Sign Up" %}
+                      <c-button variant="ghost" size="sm" as_link href="{% url 'account_signup' %}" class="fc-button-margin-right">
+                      {% translate "Sign Up" %}
                       </c-button>
                     </li>
                   {% endif %}
                   <li class="nav-item">
                     <c-button variant="default" size="sm" as_link href="{% url 'account_login' %}">
-                      {% translate "Sign In" %}
+                    {% translate "Sign In" %}
                     </c-button>
                   </li>
                 {% endif %}
@@ -241,23 +230,23 @@
             {% for message in messages %}
               {% if message.tags == 'error' or message.tags == 'danger' %}
                 <c-alert variant="destructive" title="{% translate 'Error' %}" dismissible>
-                  {{ message }}
+                {{ message }}
                 </c-alert>
               {% elif message.tags == 'warning' %}
                 <c-alert variant="warning" title="{% translate 'Warning' %}" dismissible>
-                  {{ message }}
+                {{ message }}
                 </c-alert>
               {% elif message.tags == 'success' %}
                 <c-alert variant="success" title="{% translate 'Success' %}" dismissible>
-                  {{ message }}
+                {{ message }}
                 </c-alert>
               {% elif message.tags == 'info' %}
                 <c-alert variant="info" title="{% translate 'Info' %}" dismissible>
-                  {{ message }}
+                {{ message }}
                 </c-alert>
               {% else %}
                 <c-alert variant="default" dismissible>
-                  {{ message }}
+                {{ message }}
                 </c-alert>
               {% endif %}
             {% endfor %}
@@ -306,13 +295,13 @@
               integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
               crossorigin="anonymous"></script>
       <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-      <!-- Dropzone CSS y JS oficiales -->
+      <!-- Dropzone CSS and JS official -->
       <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
             rel="stylesheet" />
       <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"
               defer></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
-        {% endblock js %}
-      </body>
-    </html>
+    {% endblock js %}
+  </body>
+</html>

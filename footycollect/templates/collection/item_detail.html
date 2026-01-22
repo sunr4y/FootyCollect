@@ -5,7 +5,6 @@
 {% block css %}
   {{ block.super }}
   <style>
-
     .fc-jersey-detail {
       max-width: 1400px;
       margin: 0 auto;
@@ -430,10 +429,13 @@
     }
 
     @keyframes signedGlow {
-      0%, 100% {
+
+      0%,
+      100% {
         box-shadow: 0 0 30px -5px hsla(180, 85%, 40%, 0.5), inset 0 0 20px -10px hsla(180, 85%, 40%, 0.3);
         border-color: hsla(180, 85%, 40%, 0.6);
       }
+
       50% {
         box-shadow: 0 0 50px -5px hsla(180, 85%, 40%, 0.8), inset 0 0 30px -10px hsla(180, 85%, 40%, 0.5);
         border-color: hsla(180, 85%, 40%, 0.9);
@@ -441,10 +443,13 @@
     }
 
     @keyframes signedBreathe {
-      0%, 100% {
+
+      0%,
+      100% {
         transform: scale(1);
         opacity: 1;
       }
+
       50% {
         transform: scale(1.1);
         opacity: 0.9;
@@ -742,7 +747,6 @@
     }
   </style>
 {% endblock css %}
-
 {% block content %}
   <div class="fc-jersey-detail">
     <div class="fc-breadcrumb fc-mb-2">
@@ -758,7 +762,6 @@
         <span class="fc-text-foreground">{{ object.season }}</span>
       {% endif %}
     </div>
-
     <div class="fc-main-grid" data-responsive-grid>
       <div class="fc-flex-col fc-gap-3">
         {% if photos|length > 0 or object.photos.exists %}
@@ -779,7 +782,6 @@
                 <div class="fc-main-image-overlay"></div>
               </div>
             {% endwith %}
-            
             {% if photos|length > 1 %}
               <div class="fc-thumbnails-container">
                 {% for photo in photos %}
@@ -819,7 +821,6 @@
                 <div class="fc-main-image-overlay"></div>
               </div>
             {% endwith %}
-            
             {% if object.photos.count > 1 %}
               <div class="fc-thumbnails-container">
                 {% for photo in object.photos.all %}
@@ -845,39 +846,29 @@
           {% endif %}
         {% endif %}
       </div>
-
       <div class="fc-flex-col fc-gap-4">
         <div class="fc-flex-col fc-gap-3">
           <div class="fc-flex-center fc-gap-2 fc-flex-wrap">
             {% if object.get_condition_display %}
               <c-badge variant="outline" class="fc-badge-condition">{{ object.get_condition_display }}</c-badge>
             {% endif %}
-            {% if object.main_color %}
-              <c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>
-            {% endif %}
+            {% if object.main_color %}<c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>{% endif %}
           </div>
-          
           <h1 class="fc-title">
             {% if object.club %}
               {{ object.club.name }}
             {% else %}
               {{ object.name }}
             {% endif %}
-            {% if object.season %}
-              <span class="fc-title-gradient">{{ object.season }}</span>
-            {% endif %}
+            {% if object.season %}<span class="fc-title-gradient">{{ object.season }}</span>{% endif %}
           </h1>
-          
           {% if object.user %}
             <div class="fc-flex-center fc-gap-1 fc-text-sm fc-text-muted">
               <i class="bi bi-person-circle fc-icon-sm"></i>
-              <a href="{% url 'users:detail' object.user.username %}" class="fc-link">
-                {{ object.user.username }}
-              </a>
+              <a href="{% url 'users:detail' object.user.username %}" class="fc-link">{{ object.user.username }}</a>
             </div>
           {% endif %}
         </div>
-
         {% if object.club or object.brand %}
           <div class="fc-club-brand-grid">
             {% if object.club %}
@@ -886,8 +877,8 @@
                   <img src="{{ object.club.logo }}"
                        alt="{{ object.club.name }}"
                        class="fc-club-logo"
-                       onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                  <i class="bi bi-shield-fill fc-club-logo-fallback" style="display: none;"></i>
+                       onerror="this.classList.add('fc-d-none'); this.nextElementSibling.classList.add('fc-d-flex');" />
+                  <i class="bi bi-shield-fill fc-club-logo-fallback fc-d-none"></i>
                 {% else %}
                   <i class="bi bi-shield-fill fc-club-logo-fallback"></i>
                 {% endif %}
@@ -902,7 +893,6 @@
                 </div>
               </div>
             {% endif %}
-            
             {% if object.brand %}
               <div class="fc-detail-card">
                 <div class="fc-detail-label">
@@ -911,9 +901,14 @@
                 </div>
                 <div class="fc-flex-center fc-gap-2">
                   {% if object.brand.logo_dark and object.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ object.brand.logo_dark }}" alt="{{ object.brand.name }}" class="fc-brand-logo" onerror="this.onerror=null; this.src='{{ object.brand.logo|default:'' }}';" />
+                    <img src="{{ object.brand.logo_dark }}"
+                         alt="{{ object.brand.name }}"
+                         class="fc-brand-logo"
+                         onerror="this.onerror=null; this.src='{{ object.brand.logo|default:'' }}';" />
                   {% elif object.brand.logo and object.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ object.brand.logo }}" alt="{{ object.brand.name }}" class="fc-brand-logo" />
+                    <img src="{{ object.brand.logo }}"
+                         alt="{{ object.brand.name }}"
+                         class="fc-brand-logo" />
                   {% endif %}
                   <p class="fc-detail-value">{{ object.brand.name }}</p>
                 </div>
@@ -921,9 +916,7 @@
             {% endif %}
           </div>
         {% endif %}
-
         <div class="fc-separator"></div>
-
         <div class="fc-details-grid">
           {% if object.get_condition_display %}
             <div class="fc-detail-card">
@@ -934,7 +927,6 @@
               <p class="fc-detail-value">{{ object.get_condition_display }}</p>
             </div>
           {% endif %}
-
           {% if object.jersey.size %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -944,7 +936,6 @@
               <p class="fc-detail-value">{{ object.jersey.size.name }}</p>
             </div>
           {% endif %}
-
           {% if object.season %}
             <div class="fc-detail-card fc-season-card">
               <div class="fc-detail-label">
@@ -954,7 +945,6 @@
               <p class="fc-detail-value fc-season-value">{{ object.season }}</p>
             </div>
           {% endif %}
-
           {% if object.jersey.player_name %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -964,7 +954,6 @@
               <p class="fc-detail-value">{{ object.jersey.player_name }}</p>
             </div>
           {% endif %}
-
           {% if object.jersey.number %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -974,7 +963,6 @@
               <p class="fc-detail-value">{{ object.jersey.number }}</p>
             </div>
           {% endif %}
-
           {% if object.design %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -984,7 +972,6 @@
               <p class="fc-detail-value">{{ object.get_design_display }}</p>
             </div>
           {% endif %}
-
           {% if object.competitions.exists %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -994,14 +981,16 @@
               <p class="fc-detail-value">
                 {% for competition in object.competitions.all %}
                   {% if competition.logo and competition.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ competition.logo }}" alt="{{ competition.name }}" class="fc-competition-logo" />
+                    <img src="{{ competition.logo }}"
+                         alt="{{ competition.name }}"
+                         class="fc-competition-logo" />
                   {% endif %}
-                  {{ competition.name }}{% if not forloop.last %}, {% endif %}
+                  {{ competition.name }}
+                  {% if not forloop.last %},{% endif %}
                 {% endfor %}
               </p>
             </div>
           {% endif %}
-
           {% if object.jersey and object.jersey.is_short_sleeve is not None %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -1017,7 +1006,6 @@
               </p>
             </div>
           {% endif %}
-
           {% if object.main_color %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -1027,7 +1015,6 @@
               <p class="fc-detail-value">{{ object.main_color.name }}</p>
             </div>
           {% endif %}
-
           {% if object.secondary_colors.exists %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -1036,12 +1023,12 @@
               </div>
               <p class="fc-detail-value">
                 {% for color in object.secondary_colors.all %}
-                  {{ color.name }}{% if not forloop.last %}, {% endif %}
+                  {{ color.name }}
+                  {% if not forloop.last %},{% endif %}
                 {% endfor %}
               </p>
             </div>
           {% endif %}
-
           {% if object.country %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
@@ -1054,7 +1041,6 @@
               </p>
             </div>
           {% endif %}
-
           {% if object.jersey.is_signed %}
             <div class="fc-signed-card">
               <div class="fc-flex-center fc-gap-1">
@@ -1063,20 +1049,23 @@
               </div>
             </div>
           {% endif %}
-
           {% if object.match_worn %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">
                 <i class="bi bi-star fc-icon-sm"></i>
                 <span class="fc-uppercase">{% trans "Match Worn" %}</span>
               </div>
-              <p class="fc-detail-value">{% if object.match_worn %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</p>
+              <p class="fc-detail-value">
+                {% if object.match_worn %}
+                  {% trans "Yes" %}
+                {% else %}
+                  {% trans "No" %}
+                {% endif %}
+              </p>
             </div>
           {% endif %}
         </div>
-
         <div class="fc-separator"></div>
-
         <div class="fc-metadata">
           <div class="fc-metadata-item">
             <i class="bi bi-clock fc-icon-xs"></i>
@@ -1089,7 +1078,6 @@
             <span class="fc-text-foreground fc-font-semibold">{{ object.updated_at|date:"d M Y" }}</span>
           </div>
         </div>
-
         {% if object.description %}
           <div class="fc-description-card">
             <p class="fc-description-text">
@@ -1100,12 +1088,11 @@
       </div>
     </div>
   </div>
-
   <script>
     function changeImage(imageUrl, avifUrl, thumbnail) {
       const mainImage = document.getElementById('mainImageSrc');
       if (!mainImage || !imageUrl) return;
-      
+
       if (avifUrl && avifUrl.trim() !== '') {
         mainImage.src = imageUrl;
         mainImage.setAttribute('data-avif', avifUrl);
@@ -1115,17 +1102,17 @@
           mainImage.removeAttribute('data-avif');
         }
       }
-      
+
       mainImage.style.transition = 'opacity 0.2s ease';
       mainImage.style.opacity = '0.7';
       setTimeout(() => {
         mainImage.style.opacity = '1';
       }, 100);
-      
+
       document.querySelectorAll('.fc-thumbnail').forEach(thumb => {
         thumb.classList.remove('active');
       });
-      
+
       if (thumbnail) {
         thumbnail.classList.add('active');
       }

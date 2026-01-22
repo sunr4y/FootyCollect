@@ -1,5 +1,4 @@
 <c-vars rows="4" />
-
 <div class="fc-textarea-group">
   {% if label %}
     <label for="{{ id }}" class="fc-textarea-group__label">
@@ -7,34 +6,15 @@
       {% if required %}<span class="fc-textarea-group__required">*</span>{% endif %}
     </label>
   {% endif %}
-  
-  <textarea 
-    class="fc-textarea {% if errors %}fc-textarea--error{% endif %}" 
-    id="{{ id }}"
-    name="{{ name }}"
-    rows="{{ rows }}"
-    placeholder="{{ placeholder|default:'' }}"
-    {% if required %}required{% endif %}
-    {% if disabled %}disabled{% endif %}
-    {{ attrs }}
-  >{{ value|default:'' }}</textarea>
-  
-  {% if help_text %}
-    <div class="fc-textarea-group__help">{{ help_text }}</div>
-  {% endif %}
-  
-  {% if errors %}
-    <div class="fc-textarea-group__error">
-      {{ errors }}
-    </div>
-  {% endif %}
+  <textarea class="fc-textarea {% if errors %}fc-textarea--error{% endif %}" id="{{ id }}" name="{{ name }}" rows="{{ rows }}" placeholder="{{ placeholder|default:'' }}" {% if required %}required{% endif %} {% if disabled %}disabled{% endif %} {{ attrs }}>{{ value|default:'' }}</textarea>
+  {% if help_text %}<div class="fc-textarea-group__help">{{ help_text }}</div>{% endif %}
+  {% if errors %}<div class="fc-textarea-group__error">{{ errors }}</div>{% endif %}
 </div>
-
 <style>
   .fc-textarea-group {
     margin-bottom: 1rem;
   }
-  
+
   .fc-textarea-group__label {
     display: block;
     font-weight: 500;
@@ -42,12 +22,12 @@
     color: var(--fc-foreground);
     font-size: 0.875rem;
   }
-  
+
   .fc-textarea-group__required {
     color: var(--fc-destructive);
     margin-left: 0.25rem;
   }
-  
+
   .fc-textarea {
     width: 100%;
     min-height: 2.5rem;
@@ -63,35 +43,35 @@
     outline: none;
     resize: vertical;
   }
-  
+
   .fc-textarea::placeholder {
     color: var(--fc-muted-foreground);
   }
-  
+
   .fc-textarea:focus {
     border-color: var(--fc-ring);
     box-shadow: 0 0 0 2px hsla(180, 85%, 40%, 0.2);
   }
-  
+
   .fc-textarea:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   .fc-textarea--error {
     border-color: var(--fc-destructive);
   }
-  
+
   .fc-textarea--error:focus {
     box-shadow: 0 0 0 2px hsla(0, 84%, 60%, 0.2);
   }
-  
+
   .fc-textarea-group__help {
     margin-top: 0.25rem;
     font-size: 0.75rem;
     color: var(--fc-muted-foreground);
   }
-  
+
   .fc-textarea-group__error {
     margin-top: 0.25rem;
     font-size: 0.75rem;

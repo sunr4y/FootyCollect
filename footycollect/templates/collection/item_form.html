@@ -17,13 +17,13 @@
       width: 50px;
       height: 26px;
     }
-    
+
     .toggle-switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
-    
+
     .toggle-slider {
       position: absolute;
       cursor: pointer;
@@ -36,7 +36,7 @@
       transition: 0.3s;
       border-radius: 26px;
     }
-    
+
     .toggle-slider:before {
       position: absolute;
       content: "";
@@ -48,18 +48,18 @@
       transition: 0.3s;
       border-radius: 50%;
     }
-    
-    .toggle-switch input:checked + .toggle-slider {
+
+    .toggle-switch input:checked+.toggle-slider {
       background-color: hsla(180, 85%, 40%, 1);
       border-color: hsla(180, 85%, 40%, 1);
     }
-    
-    .toggle-switch input:checked + .toggle-slider:before {
+
+    .toggle-switch input:checked+.toggle-slider:before {
       transform: translateX(24px);
       background-color: white;
     }
-    
-    .toggle-switch input:focus + .toggle-slider {
+
+    .toggle-switch input:focus+.toggle-slider {
       box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.25);
     }
 
@@ -68,17 +68,17 @@
       background-color: hsla(180, 85%, 40%, 1) !important;
       border-color: hsla(180, 85%, 40%, 1) !important;
     }
-    
+
     .btn-primary:hover {
       background-color: hsla(180, 85%, 35%, 1) !important;
       border-color: hsla(180, 85%, 35%, 1) !important;
     }
-    
+
     .btn-outline-primary {
       border-color: hsla(180, 85%, 40%, 1) !important;
       color: hsla(180, 85%, 40%, 1) !important;
     }
-    
+
     .btn-outline-primary:hover {
       background-color: hsla(180, 85%, 40%, 0.1) !important;
       border-color: hsla(180, 85%, 40%, 1) !important;
@@ -86,26 +86,27 @@
     }
 
     /* Form inputs dark theme */
-    .form-control, .form-select {
+    .form-control,
+    .form-select {
       background-color: var(--fc-secondary) !important;
       border: 1px solid var(--fc-border) !important;
       color: var(--fc-foreground) !important;
     }
-    
-    .form-control:focus, .form-select:focus {
+
+    .form-control:focus,
+    .form-select:focus {
       background-color: var(--fc-secondary) !important;
       border-color: hsla(180, 85%, 40%, 1) !important;
       color: var(--fc-foreground) !important;
       box-shadow: 0 0 0 0.2rem hsla(180, 85%, 40%, 0.25) !important;
     }
-    
+
     .form-label {
       color: var(--fc-muted-foreground) !important;
       font-size: 0.875rem !important;
     }
   </style>
 {% endblock css %}
-
 {% block content %}
   {{ form.media }}
   <div class="fc-container-centered">
@@ -162,11 +163,11 @@
         </div>
       </div>
       <!-- Appearance -->
-      <div class="card mb-4" style="border: 1px solid var(--fc-border); background-color: var(--fc-card); border-radius: 0.5rem;">
-        <div class="card-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--fc-border);">
-          <h5 class="card-title mb-0" style="font-size: 1.125rem; font-weight: 600; color: var(--fc-foreground);">{% trans "Appearance" %}</h5>
+      <div class="fc-card mb-4">
+        <div class="fc-card-header">
+          <h5 class="card-title mb-0 fc-title-small">{% trans "Appearance" %}</h5>
         </div>
-        <div class="card-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="fc-card-body-flex">
           <div class="row mb-3">
             <div class="col-md-6" id="div_id_main_color">
               <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
@@ -189,11 +190,11 @@
         </div>
       </div>
       <!-- Condition & Details -->
-      <div class="card mb-4" style="border: 1px solid var(--fc-border); background-color: var(--fc-card); border-radius: 0.5rem;">
-        <div class="card-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--fc-border);">
-          <h5 class="card-title mb-0" style="font-size: 1.125rem; font-weight: 600; color: var(--fc-foreground);">{% trans "Condition & Details" %}</h5>
+      <div class="fc-card mb-4">
+        <div class="fc-card-header">
+          <h5 class="card-title mb-0 fc-title-small">{% trans "Condition & Details" %}</h5>
         </div>
-        <div class="card-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="fc-card-body-flex">
           <div class="row">
             <div class="col-md-6 mb-3">{{ form.condition|as_crispy_field }}</div>
             <div class="col-md-6 mb-3">{{ form.detailed_condition|as_crispy_field }}</div>
@@ -204,16 +205,18 @@
         </div>
       </div>
       <!-- Jersey-Specific Details -->
-      <div class="card mb-4" x-data="jerseyFormManual" style="border: 1px solid var(--fc-border); background-color: var(--fc-card); border-radius: 0.5rem;">
-        <div class="card-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--fc-border);">
-          <h5 class="card-title mb-0" style="font-size: 1.125rem; font-weight: 600; color: var(--fc-foreground);">{% trans "Jersey-Specific Details" %}</h5>
+      <div class="fc-card mb-4" x-data="jerseyFormManual">
+        <div class="fc-card-header">
+          <h5 class="card-title mb-0 fc-title-small">{% trans "Jersey-Specific Details" %}</h5>
         </div>
-        <div class="card-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="fc-card-body-flex">
           <!-- Version Toggle: Fan vs Player (mutually exclusive) -->
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Jersey Version" %}</label>
-              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Version toggle">
+              <div class="btn-group w-100 fc-btn-group"
+                   role="group"
+                   aria-label="Version toggle">
                 <button type="button"
                         class="btn fc-btn-group-item"
                         :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
@@ -226,7 +229,9 @@
             </div>
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Sleeve Type" %}</label>
-              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Sleeve toggle">
+              <div class="btn-group w-100 fc-btn-group"
+                   role="group"
+                   aria-label="Sleeve toggle">
                 <button type="button"
                         class="btn fc-btn-group-item"
                         :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
@@ -290,22 +295,24 @@
         </div>
       </div>
       <!-- Photo Manager -->
-      <div class="card mb-4" style="border: 1px solid var(--fc-border); background-color: var(--fc-card); border-radius: 0.5rem;">
-        <div class="card-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--fc-border);">
-          <h5 class="card-title mb-0" style="font-size: 1.125rem; font-weight: 600; color: var(--fc-foreground);">{% trans "Photos" %}</h5>
+      <div class="fc-card mb-4">
+        <div class="fc-card-header">
+          <h5 class="card-title mb-0 fc-title-small">{% trans "Photos" %}</h5>
         </div>
-        <div class="card-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+        <div class="fc-card-body-flex-small-gap">
           <c-collection.photo_manager></c-collection.photo_manager>
         </div>
       </div>
       <!-- Submit Button -->
       <div class="d-flex justify-content-end gap-3 mt-4">
-        <a href="{% url 'collection:item_list' %}" class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
-        <button type="submit" 
-                id="submit-jersey-btn"
-                class="btn fc-btn-primary">
+        <a href="{% url 'collection:item_list' %}"
+           class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
+        <button type="submit" id="submit-jersey-btn" class="btn fc-btn-primary">
           <span id="submit-text">{% trans "Add Jersey" %}</span>
-          <span id="submit-spinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
+          <span id="submit-spinner"
+                class="spinner-border spinner-border-sm ms-2 fc-d-none"
+                role="status"
+                aria-hidden="true"></span>
         </button>
       </div>
     </form>
@@ -324,12 +331,11 @@
 
       if (form && submitBtn) {
         form.addEventListener('submit', function(e) {
-          // Show spinner and disable button
-          submitSpinner.style.display = 'inline-block';
+          submitSpinner.classList.remove('fc-d-none');
+          submitSpinner.classList.add('fc-d-inline-block');
           submitText.textContent = creatingText;
           submitBtn.disabled = true;
-          submitBtn.style.opacity = '0.7';
-          submitBtn.style.cursor = 'not-allowed';
+          submitBtn.classList.add('fc-btn-disabled');
         });
       }
     });

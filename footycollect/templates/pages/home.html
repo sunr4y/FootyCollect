@@ -110,7 +110,7 @@
       flex-shrink: 1 !important;
     }
 
-    .home-card-item .card-body > div {
+    .home-card-item .card-body>div {
       margin-bottom: 0 !important;
     }
 
@@ -235,6 +235,7 @@
       0% {
         transform: translateY(0);
       }
+
       100% {
         transform: translateY(-33.333%);
       }
@@ -244,6 +245,7 @@
       0% {
         transform: translateY(-33.333%);
       }
+
       100% {
         transform: translateY(0);
       }
@@ -380,7 +382,6 @@
     }
   </style>
 {% endblock css %}
-
 {% block content %}
   <div class="home-hero">
     <!-- Center content - Load first for faster rendering -->
@@ -392,19 +393,19 @@
         Collection
       </h1>
       <p class="home-description">
-        Catalog, organize, and showcase your prized football jerseys. 
+        Catalog, organize, and showcase your prized football jerseys.
         From vintage classics to modern masterpieces.
       </p>
       <div class="home-buttons">
         {% if request.user.is_authenticated %}
           <a href="{% url 'collection:item_list' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
-          <a href="{% url 'collection:item_list' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
+          <a href="{% url 'collection:item_list' %}"
+             class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
         {% else %}
           <a href="{% url 'account_signup' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
           <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
         {% endif %}
       </div>
-      
       <!-- Stats -->
       <div class="home-stats">
         <div class="home-stat-item">
@@ -423,12 +424,12 @@
         </div>
       </div>
     </div>
-
     <!-- Animated background cards -->
     <div class="home-background-cards">
       {% if columns_items %}
         {% for column_items in columns_items %}
-          <div class="home-card-column {% if forloop.counter|divisibleby:2 %}reverse{% endif %}" data-column="{{ forloop.counter0 }}">
+          <div class="home-card-column {% if forloop.counter|divisibleby:2 %}reverse{% endif %}"
+               data-column="{{ forloop.counter0 }}">
             {% for item in column_items %}
               <div class="home-card-item card item-card">
                 <!-- Logo row above photo -->

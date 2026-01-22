@@ -15,9 +15,9 @@
            accept="image/jpeg,image/png,image/webp,image/gif"
            class="file-input" />
     <div class="upload-message">
-      <i class="bi bi-cloud-upload fs-1" style="color: var(--fc-primary);"></i>
-      <p style="color: var(--fc-foreground);">{% trans "Drag files here or click to select" %}</p>
-      <small style="color: var(--fc-muted-foreground);">{% trans "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF" %}</small>
+      <i class="bi bi-cloud-upload fs-1 fc-upload-icon"></i>
+      <p class="fc-upload-text">{% trans "Drag files here or click to select" %}</p>
+      <small class="fc-upload-hint">{% trans "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF" %}</small>
     </div>
   </div>
   <!-- Photo Grid -->
@@ -423,5 +423,17 @@
   .progress {
     height: 0.5rem;
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  .fc-upload-icon {
+    color: var(--fc-primary);
+  }
+
+  .fc-upload-text {
+    color: var(--fc-foreground);
+  }
+
+  .fc-upload-hint {
+    color: var(--fc-muted-foreground);
   }
 </style>

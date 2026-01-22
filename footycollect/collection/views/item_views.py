@@ -101,6 +101,7 @@ def home(request):
 
         if items and len(items) > 0:
             import random
+
             # Shuffle items to ensure randomness
             shuffled_items = items.copy()
             random.shuffle(shuffled_items)

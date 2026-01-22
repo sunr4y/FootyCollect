@@ -17,11 +17,14 @@
         <form method="post" action="{% url 'account_logout' %}">
           {% csrf_token %}
           {% if redirect_field_value %}
-            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            <input type="hidden"
+                   name="{{ redirect_field_name }}"
+                   value="{{ redirect_field_value }}" />
           {% endif %}
           <div class="d-grid gap-2">
             <button type="submit" class="btn fc-btn-primary">{% trans "Sign Out" %}</button>
-            <a href="{% url 'home' %}" class="btn fc-btn-outline-secondary text-center text-decoration-none">{% trans "Cancel" %}</a>
+            <a href="{% url 'home' %}"
+               class="btn fc-btn-outline-secondary text-center text-decoration-none">{% trans "Cancel" %}</a>
           </div>
         </form>
       </div>

@@ -151,7 +151,8 @@
       color: var(--fc-primary-foreground);
     }
 
-    h1, h3 {
+    h1,
+    h3 {
       color: var(--fc-foreground);
     }
 
@@ -170,7 +171,8 @@
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h1 class="h3 mb-0">{% trans "My Collection" %}</h1>
-          <a href="{% url 'collection:item_create' %}" class="btn btn-primary fc-font-space-grotesk">
+          <a href="{% url 'collection:item_create' %}"
+             class="btn btn-primary fc-font-space-grotesk">
             <i class="bi bi-plus-circle"></i> {% trans "Add New Item" %}
           </a>
         </div>

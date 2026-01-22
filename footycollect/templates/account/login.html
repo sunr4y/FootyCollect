@@ -29,26 +29,19 @@
           {% csrf_token %}
           <div class="mb-4">
             <label for="{{ form.login.id_for_label }}" class="fc-label">{% trans "Username or Email" %}</label>
-            <div class="fc-input-wrapper">
-              {{ form.login }}
-            </div>
-            {% if form.login.errors %}
-              <div class="fc-error-text mt-2">{{ form.login.errors }}</div>
-            {% endif %}
+            <div class="fc-input-wrapper">{{ form.login }}</div>
+            {% if form.login.errors %}<div class="fc-error-text mt-2">{{ form.login.errors }}</div>{% endif %}
           </div>
           <div class="mb-4">
             <label for="{{ form.password.id_for_label }}" class="fc-label">{% trans "Password" %}</label>
-            <div class="fc-input-wrapper">
-              {{ form.password }}
-            </div>
-            {% if form.password.errors %}
-              <div class="fc-error-text mt-2">{{ form.password.errors }}</div>
-            {% endif %}
+            <div class="fc-input-wrapper">{{ form.password }}</div>
+            {% if form.password.errors %}<div class="fc-error-text mt-2">{{ form.password.errors }}</div>{% endif %}
           </div>
           {% if form.remember %}
             <div class="mb-4 form-check">
               {{ form.remember }}
-              <label class="form-check-label fc-checkbox-label" for="{{ form.remember.id_for_label }}">{% trans "Remember me" %}</label>
+              <label class="form-check-label fc-checkbox-label"
+                     for="{{ form.remember.id_for_label }}">{% trans "Remember me" %}</label>
             </div>
           {% endif %}
           <div class="d-grid mb-4">
@@ -63,7 +56,8 @@
         </div>
         <!-- Social Login Options -->
         <div class="text-center mb-4">
-          <a href="{% url 'google_login' %}" class="btn fc-btn-outline-primary d-inline-flex align-items-center justify-content-center gap-2">
+          <a href="{% url 'google_login' %}"
+             class="btn fc-btn-outline-primary d-inline-flex align-items-center justify-content-center gap-2">
             <i class="fab fa-google"></i>
             <span>{% trans "Continue with Google" %}</span>
           </a>
@@ -71,11 +65,13 @@
         <!-- Additional Links -->
         <div class="text-center fc-section-divider">
           <div class="mb-2">
-            <a href="{% url 'account_reset_password' %}" class="fc-link-primary text-decoration-none">{% trans "Forgot password?" %}</a>
+            <a href="{% url 'account_reset_password' %}"
+               class="fc-link-primary text-decoration-none">{% trans "Forgot password?" %}</a>
           </div>
           <div>
             <span class="fc-text-small">{% trans "Don't have an account?" %}</span>
-            <a href="{% url 'account_signup' %}" class="fc-link-primary text-decoration-none ms-1 fw-500">{% trans "Sign up" %}</a>
+            <a href="{% url 'account_signup' %}"
+               class="fc-link-primary text-decoration-none ms-1 fw-500">{% trans "Sign up" %}</a>
           </div>
         </div>
       </div>
