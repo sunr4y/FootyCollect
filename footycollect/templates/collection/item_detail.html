@@ -862,6 +862,9 @@
             {% endif %}
             {% if object.season %}<span class="fc-title-gradient">{{ object.season }}</span>{% endif %}
           </h1>
+          {% if object.club and object.name != object.club.name %}
+            <p class="fc-text-muted fc-text-lg">{{ object.name }}</p>
+          {% endif %}
           {% if object.user %}
             <div class="fc-flex-center fc-gap-1 fc-text-sm fc-text-muted">
               <i class="bi bi-person-circle fc-icon-sm"></i>
