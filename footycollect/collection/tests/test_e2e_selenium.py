@@ -18,6 +18,7 @@ otherwise they fall back to local Chrome/Firefox driver for local development.
 
 import logging
 import os
+import socket
 from pathlib import Path
 from unittest.mock import patch
 
@@ -61,6 +62,11 @@ class TestE2ESeleniumTests(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         """Set up Selenium WebDriver."""
+
+        if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
+            cls.host = socket.gethostbyname(socket.gethostname())
+        else:
+            cls.host = "localhost"
         super().setUpClass()
         if SELENIUM_AVAILABLE:
             chrome_options = ChromeOptions()
