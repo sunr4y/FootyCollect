@@ -297,22 +297,26 @@ class TestE2EItemCreationTests(TestCase):
         }
 
         url = reverse("collection:jersey_create_automatic")
-        response = self.client.post(url, form_data)
+        response = self.client.post(url, form_data, follow=True)
 
-        self.assertEqual(response.status_code, HTTP_FOUND)
+        self.assertEqual(response.status_code, 200)
         item = BaseItem.objects.latest("id")
-        detail_url = reverse("collection:item_detail", kwargs={"pk": item.pk})
-        detail_response = self.client.get(detail_url)
 
-        self.assertEqual(detail_response.status_code, 200)
-        self.assertIn("item", detail_response.context)
-        self.assertEqual(detail_response.context["item"], item)
-        content = detail_response.content.decode()
+        self.assertIn("item", response.context)
+        self.assertEqual(response.context["item"], item)
+        content = response.content.decode()
         content_lower = content.lower()
         self.assertNotIn("traceback", content_lower)
         self.assertNotIn("django exception", content_lower)
         self.assertNotIn("server error", content_lower)
         self.assertNotIn("internal server error", content_lower)
+
+        if item.name not in content:
+            self.fail(
+                f"Item name '{item.name}' not found in page content. "
+                f"Item ID: {item.pk}. "
+                f"Content preview: {content[:500]}",
+            )
         self.assertIn(item.name, content)
 
     def test_create_item_with_photos(self):
