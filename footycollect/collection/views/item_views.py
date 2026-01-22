@@ -52,9 +52,10 @@ def demo_brand_view(request):
 
 def home(request):
     """Home view with animated jersey cards in background."""
-    from footycollect.collection.models import Jersey
     from pathlib import Path
-    
+
+    from footycollect.collection.models import Jersey
+
     # Get most recent items from all users for the background animation
     # Only include items that have physical photos on disk
     try:
@@ -75,9 +76,9 @@ def home(request):
             )
             .filter(base_item__photos__isnull=False)
             .distinct()
-            .order_by("-base_item__created_at")[:500]  # Get most recent items
+            .order_by("-base_item__created_at")[:500],  # Get most recent items
         )
-        
+
         # Filter to only include items with physical photos on disk
         jerseys_with_photos = []
         for jersey in all_jerseys:
@@ -90,42 +91,42 @@ def home(request):
                             break
                     except (ValueError, AttributeError):
                         continue
-        
+
         items = jerseys_with_photos
-        
+
         # Distribute items across columns (40 columns)
         # Each column gets unique items starting at different positions
         num_columns = 40
         columns_items = []
-        
+
         if items and len(items) > 0:
             import random
             # Shuffle items to ensure randomness
             shuffled_items = items.copy()
             random.shuffle(shuffled_items)
-            
+
             for i in range(num_columns):
                 column_items = []
                 # Each column starts at a different offset to ensure uniqueness
                 # Use a larger step to ensure columns are more different
                 start_index = (i * max(1, len(shuffled_items) // num_columns)) % len(shuffled_items)
-                
+
                 # Create a unique sequence for this column by cycling through items
                 # Use enough items to fill the column
                 items_per_cycle = max(len(shuffled_items), 20)  # At least 20 items per cycle
                 for j in range(items_per_cycle):
                     item_index = (start_index + j) % len(shuffled_items)
                     column_items.append(shuffled_items[item_index])
-                
+
                 # Duplicate the sequence 3 times for seamless infinite scroll
                 column_items = column_items * 3
                 columns_items.append(column_items)
         else:
             columns_items = [[] for _ in range(num_columns)]
-    except (OSError, ValueError, AttributeError, TypeError, IndexError) as e:
-        logger.exception("Error in home view: %s", e)
+    except (OSError, ValueError, AttributeError, TypeError, IndexError):
+        logger.exception("Error in home view")
         columns_items = [[] for _ in range(40)]
-    
+
     context = {
         "columns_items": columns_items,
     }
