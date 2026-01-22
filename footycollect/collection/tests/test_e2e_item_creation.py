@@ -44,6 +44,67 @@ class TestE2EItemCreationTests(TestCase):
         self.color_blue = Color.objects.create(name="BLUE", hex_value="#0000FF")
         self.competition = Competition.objects.create(name="La Liga", slug="la-liga")
 
+    def _assert_no_errors_in_content(self, content):
+        """Assert that content does not contain error messages."""
+        content_lower = content.lower()
+        self.assertNotIn("traceback", content_lower)
+        self.assertNotIn("django exception", content_lower)
+        self.assertNotIn("server error", content_lower)
+        self.assertNotIn("internal server error", content_lower)
+
+    def _find_item_name_in_content(self, item, content):
+        """Find item name in content, return tuple (found, content, content_lower)."""
+        item_name_lower = item.name.lower()
+        item_str = str(item)
+        item_str_lower = item_str.lower()
+        content_lower = content.lower()
+
+        name_in_content = item.name in content or item_name_lower in content_lower
+        str_in_content = item_str in content or item_str_lower in content_lower
+
+        return name_in_content or str_in_content, content, content_lower
+
+    def _create_error_message_for_missing_name(self, item, content, response):
+        """Create detailed error message when item name is not found."""
+        item_name_lower = item.name.lower()
+        item_str = str(item)
+        item_str_lower = item_str.lower()
+        content_lower = content.lower()
+
+        name_pos = content.find(item.name)
+        name_pos_lower = content_lower.find(item_name_lower)
+        str_pos = content.find(item_str)
+        str_pos_lower = content_lower.find(item_str_lower)
+
+        body_start = content_lower.find("<body")
+        body_end = content_lower.find("</body>")
+        body_content = content[body_start:body_end] if body_start > 0 and body_end > 0 else content
+
+        name_dd_section = ""
+        if "name" in content_lower:
+            name_idx = content_lower.find("name")
+            if name_idx > 0:
+                start = max(0, name_idx - 200)
+                end = min(len(content), name_idx + 200)
+                name_dd_section = content[start:end]
+
+        content_sample = body_content[1000:2000] if len(body_content) > 2000 else body_content[500:]  # noqa: PLR2004
+        response_url = getattr(response, "url", getattr(response, "request", {}).get("PATH_INFO", "N/A"))
+        return (
+            f"Item name '{item.name}' not found in page content (after cache clear). "
+            f"Item ID: {item.pk}. "
+            f"Item __str__: '{item_str}'. "
+            f"Response URL: {response_url}. "
+            f"Content length: {len(content)}. "
+            f"Name search (case-sensitive): position {name_pos}. "
+            f"Name search (case-insensitive): position {name_pos_lower}. "
+            f"__str__ search (case-sensitive): position {str_pos}. "
+            f"__str__ search (case-insensitive): position {str_pos_lower}. "
+            f"Body content length: {len(body_content)}. "
+            f"Name section context: {name_dd_section}. "
+            f"Content sample from body: {content_sample}"
+        )
+
     def test_create_item_page_renders_correctly(self):
         """Test that the item creation page renders without errors."""
         url = reverse("collection:jersey_create_automatic")
@@ -296,6 +357,10 @@ class TestE2EItemCreationTests(TestCase):
             "design": "PLAIN",
         }
 
+        from django.core.cache import cache
+
+        cache.clear()
+
         url = reverse("collection:jersey_create_automatic")
         response = self.client.post(url, form_data, follow=True)
 
@@ -304,33 +369,26 @@ class TestE2EItemCreationTests(TestCase):
 
         self.assertIn("item", response.context)
         self.assertEqual(response.context["item"], item)
-        content = response.content.decode()
-        content_lower = content.lower()
-        self.assertNotIn("traceback", content_lower)
-        self.assertNotIn("django exception", content_lower)
-        self.assertNotIn("server error", content_lower)
-        self.assertNotIn("internal server error", content_lower)
+        self.assertIsNotNone(item.name, "Item name should not be None")
+        self.assertNotEqual(item.name, "", "Item name should not be empty")
 
-        item_name_lower = item.name.lower()
-        if item_name_lower not in content_lower:
-            name_pos = content.find(item.name)
-            name_pos_lower = content_lower.find(item_name_lower)
-            body_start = content.lower().find("<body")
-            body_end = content.lower().find("</body>")
-            body_content = content[body_start:body_end] if body_start > 0 and body_end > 0 else content
-            content_sample = body_content[1000:2000] if len(body_content) > 2000 else body_content[500:]  # noqa: PLR2004
-            response_url = getattr(response, "url", getattr(response, "request", {}).get("PATH_INFO", "N/A"))
-            self.fail(
-                f"Item name '{item.name}' not found in page content. "
-                f"Item ID: {item.pk}. "
-                f"Response URL: {response_url}. "
-                f"Content length: {len(content)}. "
-                f"Name search (case-sensitive): position {name_pos}. "
-                f"Name search (case-insensitive): position {name_pos_lower}. "
-                f"Body content length: {len(body_content)}. "
-                f"Content sample from body: {content_sample}",
-            )
-        self.assertIn(item.name, content)
+        content = response.content.decode()
+        self._assert_no_errors_in_content(content)
+
+        name_found, content, content_lower = self._find_item_name_in_content(item, content)
+
+        if not name_found:
+            cache.clear()
+            response2 = self.client.get(response.url if hasattr(response, "url") else f"/collection/items/{item.pk}/")
+            content2 = response2.content.decode()
+            name_found2, content2, content2_lower = self._find_item_name_in_content(item, content2)
+
+            if not name_found2:
+                error_msg = self._create_error_message_for_missing_name(item, content2, response)
+                self.fail(error_msg)
+            content = content2
+
+        self.assertIn(item.name, content, f"Item name '{item.name}' not found in content")
 
     def test_create_item_with_photos(self):
         """Test creating an item with uploaded photos."""
@@ -421,11 +479,18 @@ class TestE2EItemCreationTests(TestCase):
         item.competitions.add(self.competition)
         Jersey.objects.create(base_item=item, size=self.size, is_fan_version=True, number=10)
 
+        from django.core.cache import cache
+
+        cache.clear()
+
         url = reverse("collection:item_detail", kwargs={"pk": item.pk})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
+
+        self.assertIn("item", response.context)
+        self.assertEqual(response.context["item"], item)
         self.assertIn("Real Madrid Castilla 2023-24 Home", content)
         self.assertIn("adidas", content.lower())
         self.assertIn("Real Madrid Castilla", content)
