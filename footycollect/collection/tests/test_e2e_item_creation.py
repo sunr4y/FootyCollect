@@ -311,15 +311,24 @@ class TestE2EItemCreationTests(TestCase):
         self.assertNotIn("server error", content_lower)
         self.assertNotIn("internal server error", content_lower)
 
-        if item.name not in content:
-            content_sample = content[1000:2000] if len(content) > 2000 else content[500:]  # noqa: PLR2004
+        item_name_lower = item.name.lower()
+        if item_name_lower not in content_lower:
+            name_pos = content.find(item.name)
+            name_pos_lower = content_lower.find(item_name_lower)
+            body_start = content.lower().find("<body")
+            body_end = content.lower().find("</body>")
+            body_content = content[body_start:body_end] if body_start > 0 and body_end > 0 else content
+            content_sample = body_content[1000:2000] if len(body_content) > 2000 else body_content[500:]  # noqa: PLR2004
             response_url = getattr(response, "url", getattr(response, "request", {}).get("PATH_INFO", "N/A"))
             self.fail(
                 f"Item name '{item.name}' not found in page content. "
                 f"Item ID: {item.pk}. "
                 f"Response URL: {response_url}. "
                 f"Content length: {len(content)}. "
-                f"Content sample: {content_sample}",
+                f"Name search (case-sensitive): position {name_pos}. "
+                f"Name search (case-insensitive): position {name_pos_lower}. "
+                f"Body content length: {len(body_content)}. "
+                f"Content sample from body: {content_sample}",
             )
         self.assertIn(item.name, content)
 

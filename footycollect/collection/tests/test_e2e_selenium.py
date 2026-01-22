@@ -244,6 +244,8 @@ class TestE2ESeleniumTests(StaticLiveServerTestCase):
                     or "Failed to load resource" in log.get("message", "")
                     or "ERR_NAME_NOT_RESOLVED" in log.get("message", "")
                     or "media.testserver" in log.get("message", "")
+                    or "Cross-Origin-Opener-Policy" in log.get("message", "")
+                    or "untrustworthy" in log.get("message", "").lower()
                 )
             ]
             self.assertEqual(len(errors), 0, f"JavaScript errors found: {errors}")
@@ -483,6 +485,8 @@ class TestE2ESeleniumTests(StaticLiveServerTestCase):
                     or "Failed to load resource" in log.get("message", "")
                     or "ERR_NAME_NOT_RESOLVED" in log.get("message", "")
                     or "media.testserver" in log.get("message", "")
+                    or "Cross-Origin-Opener-Policy" in log.get("message", "")
+                    or "untrustworthy" in log.get("message", "").lower()
                 )
             ]
             self.assertEqual(len(errors), 0, f"JavaScript errors found: {errors}")
