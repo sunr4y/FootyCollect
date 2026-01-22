@@ -1,87 +1,151 @@
 {% extends "base.html" %}
 
 {% load static %}
+{% load i18n %}
 
 {% block title %}
-  Login - FootyCollect
+  {% trans "Sign In" %} - FootyCollect
 {% endblock title %}
 {% block extra_head %}
   <!-- Google One Tap Sign-In -->
   <script src="//accounts.google.com/gsi/client" async></script>
 {% endblock extra_head %}
 {% block content %}
-  <div class="container mt-5">
-    <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="text-center">Sign In to FootyCollect</h3>
+  <div class="fc-container-auth">
+    <div class="fc-card">
+      <div class="fc-card-header">
+        <h2 class="text-center mb-0 fc-title-medium">{% trans "Sign In" %}</h2>
+        <p class="text-center mt-2 mb-0 fc-subtitle">{% trans "Welcome back to FootyCollect" %}</p>
+      </div>
+      <div class="fc-card-body">
+        <!-- Google One Tap Sign-In -->
+        <!-- djlint:off H037 -->
+        <div id="g_id_onload"
+             data-client_id="760797752753-f6gbapdqtfucb4u1s4ifq2heamdaflug.apps.googleusercontent.com"
+             data-login_uri="{% url 'google_login_by_token' %}"></div>
+        <!-- djlint:on -->
+        <!-- Traditional Login Form -->
+        <form method="post" class="mb-4">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label for="{{ form.login.id_for_label }}" class="fc-label">{% trans "Username or Email" %}</label>
+            <div class="fc-input-wrapper">
+              {{ form.login }}
+            </div>
+            {% if form.login.errors %}
+              <div class="fc-error-text mt-2">{{ form.login.errors }}</div>
+            {% endif %}
           </div>
-          <div class="card-body">
-            <!-- Google One Tap Sign-In -->
-            <!-- djlint:off H037 -->
-            <div id="g_id_onload"
-                 data-client_id="760797752753-f6gbapdqtfucb4u1s4ifq2heamdaflug.apps.googleusercontent.com"
-                 data-login_uri="{% url 'google_login_by_token' %}"></div>
-            <!-- djlint:on -->
-            <!-- Traditional Login Form -->
-            <form method="post" class="mb-4">
-              {% csrf_token %}
-              <div class="mb-3">
-                <label for="{{ form.login.id_for_label }}" class="form-label">Username or Email</label>
-                {{ form.login }}
-                {% if form.login.errors %}<div class="text-danger">{{ form.login.errors }}</div>{% endif %}
-              </div>
-              <div class="mb-3">
-                <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
-                {{ form.password }}
-                {% if form.password.errors %}<div class="text-danger">{{ form.password.errors }}</div>{% endif %}
-              </div>
-              {% if form.remember %}
-                <div class="mb-3 form-check">
-                  {{ form.remember }}
-                  <label class="form-check-label" for="{{ form.remember.id_for_label }}">Remember me</label>
-                </div>
-              {% endif %}
-              <div class="d-grid">
-                <button type="submit" class="btn btn-primary">Sign In</button>
-              </div>
-            </form>
-            <!-- Social Login Options -->
-            <div class="text-center">
-              <p class="text-muted">Or sign in with:</p>
-              <a href="{% url 'google_login' %}" class="btn btn-outline-danger">
-                <i class="fab fa-google"></i> Google
-              </a>
+          <div class="mb-4">
+            <label for="{{ form.password.id_for_label }}" class="fc-label">{% trans "Password" %}</label>
+            <div class="fc-input-wrapper">
+              {{ form.password }}
             </div>
-            <!-- Additional Links -->
-            <div class="text-center mt-3">
-              <a href="{% url 'account_reset_password' %}"
-                 class="text-decoration-none">Forgot password?</a>
-              <span class="mx-2">|</span>
-              <a href="{% url 'account_signup' %}" class="text-decoration-none">Create account</a>
+            {% if form.password.errors %}
+              <div class="fc-error-text mt-2">{{ form.password.errors }}</div>
+            {% endif %}
+          </div>
+          {% if form.remember %}
+            <div class="mb-4 form-check">
+              {{ form.remember }}
+              <label class="form-check-label fc-checkbox-label" for="{{ form.remember.id_for_label }}">{% trans "Remember me" %}</label>
             </div>
+          {% endif %}
+          <div class="d-grid mb-4">
+            <button type="submit" class="btn fc-btn-primary">{% trans "Sign In" %}</button>
+          </div>
+        </form>
+        <!-- Divider -->
+        <div class="d-flex align-items-center mb-4">
+          <div class="fc-divider"></div>
+          <span class="mx-3 fc-divider-text">{% trans "or" %}</span>
+          <div class="fc-divider"></div>
+        </div>
+        <!-- Social Login Options -->
+        <div class="text-center mb-4">
+          <a href="{% url 'google_login' %}" class="btn fc-btn-outline-primary d-inline-flex align-items-center justify-content-center gap-2">
+            <i class="fab fa-google"></i>
+            <span>{% trans "Continue with Google" %}</span>
+          </a>
+        </div>
+        <!-- Additional Links -->
+        <div class="text-center fc-section-divider">
+          <div class="mb-2">
+            <a href="{% url 'account_reset_password' %}" class="fc-link-primary text-decoration-none">{% trans "Forgot password?" %}</a>
+          </div>
+          <div>
+            <span class="fc-text-small">{% trans "Don't have an account?" %}</span>
+            <a href="{% url 'account_signup' %}" class="fc-link-primary text-decoration-none ms-1 fw-500">{% trans "Sign up" %}</a>
           </div>
         </div>
       </div>
     </div>
   </div>
   <style>
+    /* Form controls dark theme - Apply to all inputs in the form */
+    .fc-card-body .form-control,
+    .fc-card-body input[type="text"],
+    .fc-card-body input[type="email"],
+    .fc-card-body input[type="password"] {
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+      color: var(--fc-foreground) !important;
+      padding: 0.75rem 1rem !important;
+      border-radius: 0.5rem !important;
+      font-size: 0.875rem !important;
+      transition: all 0.2s ease !important;
+      width: 100% !important;
+      display: block !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
+      line-height: 1.5 !important;
+    }
+
+    .fc-card-body .form-control::placeholder,
+    .fc-card-body input[type="text"]::placeholder,
+    .fc-card-body input[type="email"]::placeholder,
+    .fc-card-body input[type="password"]::placeholder {
+      color: var(--fc-muted-foreground) !important;
+      opacity: 0.7 !important;
+    }
+
+    .fc-card-body .form-control:focus,
+    .fc-card-body input[type="text"]:focus,
+    .fc-card-body input[type="email"]:focus,
+    .fc-card-body input[type="password"]:focus {
+      background-color: var(--fc-secondary) !important;
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      color: var(--fc-foreground) !important;
+      box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.15) !important;
+      outline: none !important;
+    }
+
+    .fc-card-body .form-control:hover,
+    .fc-card-body input[type="text"]:hover,
+    .fc-card-body input[type="email"]:hover,
+    .fc-card-body input[type="password"]:hover {
+      border-color: hsla(180, 85%, 40%, 0.5) !important;
+    }
+
+    /* Checkbox styling */
+    .fc-card-body .form-check-input {
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+    }
+
+    .fc-card-body .form-check-input:checked {
+      background-color: hsla(180, 85%, 40%, 1) !important;
+      border-color: hsla(180, 85%, 40%, 1) !important;
+    }
+
+    .fc-card-body .form-check-input:focus {
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      box-shadow: 0 0 0 0.2rem hsla(180, 85%, 40%, 0.25) !important;
+    }
+
     /* Google One Tap styling */
     #g_id_onload {
       margin-bottom: 1rem;
-    }
-
-    /* Social login button styling */
-    .btn-outline-danger {
-      border-color: #db4437;
-      color: #db4437;
-    }
-
-    .btn-outline-danger:hover {
-      background-color: #db4437;
-      border-color: #db4437;
-      color: white;
     }
   </style>
 {% endblock content %}

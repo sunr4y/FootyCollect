@@ -1,66 +1,537 @@
 {% extends "base.html" %}
 
-{% load i18n %}
+{% load i18n static %}
+
+{% block css %}
+  {{ block.super }}
+  <style>
+    .card {
+      border-radius: 1rem;
+      border: 1px solid var(--fc-border);
+      background: var(--fc-card);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      border-color: hsla(180, 85%, 40%, 0.5);
+      box-shadow: 0 4px 20px -10px hsla(180, 85%, 40%, 0.3);
+    }
+
+    .item-card {
+      border-radius: 1rem;
+      overflow: visible;
+    }
+
+    .item-logos-above-photo {
+      background-color: var(--fc-card) !important;
+      border-bottom: 1px solid var(--fc-border) !important;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      overflow: visible;
+      position: relative;
+      z-index: 1;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 0.5rem;
+    }
+
+    .item-logo-small {
+      width: 48px;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    }
+
+    .item-logo-small.has-logo-dark {
+      filter: none;
+    }
+
+    .item-club-shield {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      position: relative;
+      z-index: 10;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+    }
+
+    .brand-logo-container,
+    .flag-logo-container {
+      flex: 1;
+    }
+
+    .fi {
+      font-size: 24px;
+      line-height: 1;
+      border-radius: 2px;
+    }
+
+    .item-photo {
+      position: relative;
+    }
+
+    .item-photo::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 1;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+    }
+
+    .card-img-top {
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+    }
+
+    .card-body {
+      border-bottom-left-radius: 1rem;
+      border-bottom-right-radius: 1rem;
+    }
+
+    .home-card-item .card-body {
+      padding: 0.5rem !important;
+      min-height: auto !important;
+      height: auto !important;
+      flex: 0 0 auto !important;
+    }
+
+    .home-card-item .card-body.d-flex.flex-column {
+      display: flex !important;
+      flex-direction: column !important;
+      flex-shrink: 1 !important;
+    }
+
+    .home-card-item .card-body > div {
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .item-title {
+      margin-bottom: 0.25rem !important;
+      font-size: 0.875rem;
+      line-height: 1.2;
+    }
+
+    .home-card-item .item-meta {
+      gap: 0.125rem;
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .item-meta .d-flex {
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .item-details {
+      font-size: 0.75rem;
+      line-height: 1.2;
+      margin-bottom: 0;
+    }
+
+    .home-card-item .text-end.ms-3 {
+      margin-left: 0.5rem !important;
+    }
+
+    .home-card-item .text-end .item-details {
+      margin-bottom: 0.125rem !important;
+    }
+
+    .home-card-item .text-end small {
+      font-size: 0.7rem;
+      line-height: 1.2;
+    }
+
+    .home-card-item .card-body .d-flex.justify-content-between {
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .mb-1 {
+      margin-bottom: 0.125rem !important;
+    }
+
+    .card {
+      overflow: visible;
+    }
+
+    .card-title {
+      color: var(--fc-foreground);
+    }
+
+    .card-text {
+      color: var(--fc-muted-foreground);
+    }
+
+    .item-title {
+      color: var(--fc-foreground);
+    }
+
+    .item-details {
+      color: var(--fc-muted-foreground);
+      font-size: 0.875rem;
+    }
+
+    .home-hero {
+      position: relative;
+      min-height: calc(100vh - 63px);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 1.5rem;
+      width: 100vw;
+      max-width: 100vw !important;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      left: 0;
+      right: 0;
+      box-sizing: border-box;
+    }
+
+    .container .home-hero {
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      padding-left: calc(50vw - 50%);
+      padding-right: calc(50vw - 50%);
+    }
+
+    .home-background-cards {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      gap: 1rem;
+      padding: 2rem;
+      opacity: 0.3;
+      pointer-events: none;
+      max-width: 100% !important;
+    }
+
+    .home-card-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-width: 200px;
+    }
+
+    .home-card-column.reverse {
+      animation: scrollDown 30s linear infinite;
+    }
+
+    .home-card-column:not(.reverse) {
+      animation: scrollUp 30s linear infinite;
+    }
+
+    @keyframes scrollUp {
+      0% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(-33.333%);
+      }
+    }
+
+    @keyframes scrollDown {
+      0% {
+        transform: translateY(-33.333%);
+      }
+      100% {
+        transform: translateY(0);
+      }
+    }
+
+    .home-content {
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
+    .home-card-item {
+      flex-shrink: 0;
+      height: auto !important;
+      max-height: none !important;
+    }
+
+    .home-card-item.h-100 {
+      height: auto !important;
+    }
+
+    .home-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .home-subtitle {
+      color: hsla(180, 85%, 40%, 1);
+      font-weight: 500;
+      margin-bottom: 1rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .home-title {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--fc-foreground);
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .home-title-gradient {
+      display: block;
+      background: linear-gradient(135deg, hsla(180, 85%, 40%, 1), hsla(180, 85%, 50%, 1));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+    }
+
+    .home-description {
+      font-size: 1.125rem;
+      color: var(--fc-muted-foreground);
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .home-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (min-width: 640px) {
+      .home-buttons {
+        flex-direction: row;
+      }
+    }
+
+    .home-stats {
+      margin-top: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      text-align: center;
+    }
+
+    .home-stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .home-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--fc-foreground);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .home-stat-value.gradient {
+      background: linear-gradient(135deg, hsla(180, 85%, 40%, 1), hsla(180, 85%, 50%, 1));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+    }
+
+    .home-stat-label {
+      font-size: 0.875rem;
+      color: var(--fc-muted-foreground);
+      margin-top: 0.25rem;
+    }
+
+    .home-stat-divider {
+      width: 1px;
+      height: 2.5rem;
+      background-color: var(--fc-border);
+      opacity: 0.5;
+    }
+
+    @media (min-width: 768px) {
+      .home-title {
+        font-size: 4rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .home-title {
+        font-size: 4.5rem;
+      }
+    }
+  </style>
+{% endblock css %}
 
 {% block content %}
-  <div class="container py-5">
-    <div class="row">
-      <div class="col-md-8">
-        <h1>{% trans "Welcome to FootyCollect" %}</h1>
-        <p class="lead">{% trans "Manage your football memorabilia collection with ease." %}</p>
+  <div class="home-hero">
+    <!-- Center content - Load first for faster rendering -->
+    <div class="home-content">
+      <p class="home-subtitle">The Ultimate Jersey Collection</p>
+      <h1 class="home-title">
+        Your Football
+        <span class="home-title-gradient">Memorabilia</span>
+        Collection
+      </h1>
+      <p class="home-description">
+        Catalog, organize, and showcase your prized football jerseys. 
+        From vintage classics to modern masterpieces.
+      </p>
+      <div class="home-buttons">
         {% if request.user.is_authenticated %}
-          <div class="mt-4">
-            <h2>{% trans "Quick Actions" %}</h2>
-            <div class="row mt-3">
-              <div class="col-md-6 mb-3">
-                <div class="card h-100">
-                  <div class="card-body">
-                    <h5 class="card-title">{% trans "Add New Item" %}</h5>
-                    <p class="card-text">{% trans "Add a new item to your collection." %}</p>
-                    <a href="{% url 'collection:item_create' %}" class="btn btn-primary">{% trans "Add Item" %}</a>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <div class="card h-100">
-                  <div class="card-body">
-                    <h5 class="card-title">{% trans "Add Jersey from Database" %}</h5>
-                    <p class="card-text">{% trans "Search and add jerseys from our extensive kit database." %}</p>
-                    <a href="{% url 'collection:jersey_add_automatic' %}"
-                       class="btn btn-success">{% trans "Add Jersey" %}</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <a href="{% url 'collection:item_list' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
+          <a href="{% url 'collection:item_list' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
         {% else %}
-          <div class="mt-4">
-            <p>{% trans "Please sign in to manage your collection." %}</p>
-            <a href="{% url 'account_login' %}" class="btn btn-primary">{% trans "Sign In" %}</a>
-            {% if ACCOUNT_ALLOW_REGISTRATION %}
-              <a href="{% url 'account_signup' %}"
-                 class="btn btn-outline-primary ms-2">{% trans "Sign Up" %}</a>
-            {% endif %}
-          </div>
+          <a href="{% url 'account_signup' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
+          <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
         {% endif %}
       </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title mb-0">{% trans "About FootyCollect" %}</h5>
-          </div>
-          <div class="card-body">
-            <p>{% trans "FootyCollect helps you organize and showcase your football memorabilia collection." %}</p>
-            <p>{% trans "Features include:" %}</p>
-            <ul>
-              <li>{% trans "Track jerseys, balls, boots, and more" %}</li>
-              <li>{% trans "Upload photos of your items" %}</li>
-              <li>{% trans "Search our kit database" %}</li>
-              <li>{% trans "Organize by teams, competitions, and seasons" %}</li>
-            </ul>
-          </div>
+      
+      <!-- Stats -->
+      <div class="home-stats">
+        <div class="home-stat-item">
+          <p class="home-stat-value gradient">10K+</p>
+          <p class="home-stat-label">{% trans "Jerseys" %}</p>
+        </div>
+        <div class="home-stat-divider"></div>
+        <div class="home-stat-item">
+          <p class="home-stat-value">500+</p>
+          <p class="home-stat-label">{% trans "Collectors" %}</p>
+        </div>
+        <div class="home-stat-divider"></div>
+        <div class="home-stat-item">
+          <p class="home-stat-value">50+</p>
+          <p class="home-stat-label">{% trans "Countries" %}</p>
         </div>
       </div>
+    </div>
+
+    <!-- Animated background cards -->
+    <div class="home-background-cards">
+      {% if columns_items %}
+        {% for column_items in columns_items %}
+          <div class="home-card-column {% if forloop.counter|divisibleby:2 %}reverse{% endif %}" data-column="{{ forloop.counter0 }}">
+            {% for item in column_items %}
+              <div class="home-card-item card item-card">
+                <!-- Logo row above photo -->
+                <div class="item-logos-above-photo">
+                  <div class="d-flex align-items-center w-100 position-relative">
+                    <div class="d-flex align-items-center justify-content-center brand-logo-container">
+                      {% if item.base_item.brand %}
+                        {% if item.base_item.brand.logo_dark and item.base_item.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                          <img src="{{ item.base_item.brand.logo_dark }}"
+                               alt="{{ item.base_item.brand.name }}"
+                               class="item-logo-small has-logo-dark"
+                               onerror="this.onerror=null; this.src='{{ item.base_item.brand.logo|default:'' }}'; this.classList.remove('has-logo-dark');" />
+                        {% elif item.base_item.brand.logo and item.base_item.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                          <img src="{{ item.base_item.brand.logo }}"
+                               alt="{{ item.base_item.brand.name }}"
+                               class="item-logo-small"
+                               onerror="this.style.display='none'" />
+                        {% endif %}
+                      {% endif %}
+                    </div>
+                    <div>
+                      {% if item.base_item.club and item.base_item.club.logo %}
+                        <img src="{{ item.base_item.club.logo }}"
+                             alt="{{ item.base_item.club.name }}"
+                             class="item-club-shield"
+                             onerror="this.style.display='none'" />
+                      {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center flag-logo-container">
+                      {% if item.base_item.club and item.base_item.club.country %}
+                        <span class="fi fi-{{ item.base_item.club.country|lower }}"
+                              title="{{ item.base_item.club.country }}"></span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% if item.base_item.photos.exists %}
+                  <img src="{{ item.base_item.photos.first.get_image_url }}"
+                       class="card-img-top item-photo"
+                       alt="{{ item.base_item.name }}" />
+                {% else %}
+                  <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
+                    <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
+                  </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+                      <div class="item-meta">
+                        {% if item.base_item.club %}
+                          <div class="d-flex align-items-center">
+                            <span class="item-details">{{ item.base_item.club.name }}</span>
+                          </div>
+                        {% endif %}
+                        {% if item.base_item.brand %}
+                          <div class="d-flex align-items-center">
+                            <span class="item-details">{{ item.base_item.brand.name }}</span>
+                          </div>
+                        {% endif %}
+                        {% if item.base_item.season %}
+                          <div class="d-flex align-items-center">
+                            <i class="bi bi-calendar me-1"></i>
+                            <span class="item-details">{{ item.base_item.season.year }}</span>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="text-end ms-3">
+                      {% if item.jersey.size %}
+                        <div class="item-details mb-1">
+                          <small>{{ item.jersey.size.name }}</small>
+                        </div>
+                      {% endif %}
+                      {% if item.jersey.player_name %}
+                        <div class="item-details mb-1">
+                          <small>{{ item.jersey.player_name }}</small>
+                        </div>
+                      {% endif %}
+                      {% if item.jersey.number %}
+                        <div class="item-details mb-1">
+                          <small>#{{ item.jersey.number }}</small>
+                        </div>
+                      {% endif %}
+                      {% if item.jersey.is_short_sleeve is not None %}
+                        <div class="item-details">
+                          <small>
+                            {% if item.jersey.is_short_sleeve %}
+                              {% trans "Short Sleeve" %}
+                            {% else %}
+                              {% trans "Long Sleeve" %}
+                            {% endif %}
+                          </small>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      {% endif %}
     </div>
   </div>
 {% endblock content %}

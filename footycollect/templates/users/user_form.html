@@ -2,33 +2,162 @@
 
 {% load static %}
 {% load crispy_forms_tags %}
+{% load i18n %}
 
 {% block css %}
   {{ block.super }}
-  <link href="{% static 'css/users.css' %}" rel="stylesheet" />
+  {{ form.media.css }}
+  <style>
+    /* Toggle Switch Styles */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--fc-secondary);
+      border: 1px solid var(--fc-border);
+      transition: 0.3s;
+      border-radius: 26px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--fc-foreground);
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: hsla(180, 85%, 40%, 1);
+      border-color: hsla(180, 85%, 40%, 1);
+    }
+    
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+      background-color: white;
+    }
+    
+    .toggle-switch input:focus + .toggle-slider {
+      box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.25);
+    }
+
+    /* Form inputs dark theme */
+    .form-control, .form-select, textarea.form-control {
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+      color: var(--fc-foreground) !important;
+    }
+    
+    .form-control:focus, .form-select:focus, textarea.form-control:focus {
+      background-color: var(--fc-secondary) !important;
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      color: var(--fc-foreground) !important;
+      box-shadow: 0 0 0 0.2rem hsla(180, 85%, 40%, 0.25) !important;
+    }
+
+    .form-label {
+      color: var(--fc-muted-foreground) !important;
+      font-size: 0.875rem !important;
+      font-weight: 500 !important;
+      margin-bottom: 0.5rem !important;
+    }
+
+    /* Help text styling */
+    .form-text, small.text-muted {
+      color: var(--fc-muted-foreground) !important;
+      font-size: 0.8125rem;
+    }
+
+    /* File input styling */
+    input[type="file"] {
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+      color: var(--fc-foreground) !important;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+    }
+
+    input[type="file"]:focus {
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      box-shadow: 0 0 0 0.2rem hsla(180, 85%, 40%, 0.25) !important;
+      outline: none;
+    }
+  </style>
 {% endblock css %}
 {% block title %}
-  {{ user.username }}
+  {% trans "Edit Profile" %} - {{ user.username }}
 {% endblock title %}
 {% block content %}
-  <h1>{{ user.username }}</h1>
-  {% if user.avatar %}
-    <div class="mb-3">
-      <img src="{{ user.get_avatar_url }}"
-           alt="{{ user.username }}'s avatar"
-           class="rounded-circle avatar-preview" />
-    </div>
-  {% endif %}
-  <form class="form-horizontal"
-        method="post"
-        action="{% url 'users:update' %}"
-        enctype="multipart/form-data">
-    {% csrf_token %}
-    {% crispy form %}
-    <div class="control-group">
-      <div class="controls">
-        <button type="submit" class="btn btn-primary">Update</button>
+  <div class="fc-container-centered">
+    <div class="fc-card mb-4">
+      <div class="fc-card-header-small">
+        <h2 class="mb-0 fc-title-medium">{% trans "Edit Profile" %}</h2>
+        <p class="mt-2 mb-0 fc-subtitle">{% trans "Update your profile information" %}</p>
+      </div>
+      <div class="fc-card-body-small">
+        {% if user.avatar %}
+          <div class="fc-avatar-preview-container">
+            <img src="{{ user.get_avatar_url }}"
+                 alt="{{ user.username }}'s avatar"
+                 class="rounded-circle fc-avatar-preview" />
+            <p class="mt-2 mb-0 fc-text-small">{% trans "Current avatar" %}</p>
+          </div>
+        {% endif %}
+        <form class="form-horizontal"
+              method="post"
+              action="{% url 'users:update' %}"
+              enctype="multipart/form-data">
+          {% csrf_token %}
+          {% crispy form %}
+          <div class="d-flex justify-content-end gap-2 fc-form-actions">
+            <a href="{% url 'users:detail' username=user.username %}" class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
+            <button type="submit" class="btn fc-btn-primary">{% trans "Update Profile" %}</button>
+          </div>
+        </form>
       </div>
     </div>
-  </form>
+  </div>
+  {{ form.media.js }}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const isPrivateCheckbox = document.getElementById('id_is_private');
+      if (isPrivateCheckbox && !isPrivateCheckbox.closest('.toggle-switch')) {
+        const wrapper = isPrivateCheckbox.closest('.form-check');
+        if (wrapper) {
+          const label = wrapper.querySelector('label');
+          if (label) {
+            wrapper.innerHTML = `
+              <div class="toggle-switch">
+                <input type="checkbox" name="is_private" id="id_is_private" ${isPrivateCheckbox.checked ? 'checked' : ''}>
+                <span class="toggle-slider"></span>
+              </div>
+              <label class="form-check-label ms-3 fc-checkbox-label" for="id_is_private" style="cursor: pointer;">
+                ${label.textContent.trim()}
+              </label>
+            `;
+          }
+        }
+      }
+    });
+  </script>
 {% endblock content %}

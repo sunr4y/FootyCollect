@@ -1,0 +1,144 @@
+<c-vars type="text" />
+
+<div class="fc-input-group">
+  {% if label %}
+    <label for="{{ id }}" class="fc-input-group__label">
+      {{ label }}
+      {% if required %}<span class="fc-input-group__required">*</span>{% endif %}
+    </label>
+  {% endif %}
+  
+  <div class="fc-input-group__wrapper">
+    {% if leading_icon %}
+      <span class="fc-input-group__icon fc-input-group__icon--leading">
+        {{ leading_icon }}
+      </span>
+    {% endif %}
+    
+    <input 
+      type="{{ type }}" 
+      class="fc-input {% if errors %}fc-input--error{% endif %}" 
+      id="{{ id }}"
+      name="{{ name }}"
+      value="{{ value|default:'' }}"
+      placeholder="{{ placeholder|default:'' }}"
+      {% if required %}required{% endif %}
+      {% if disabled %}disabled{% endif %}
+      {{ attrs }}
+    />
+    
+    {% if trailing_icon %}
+      <span class="fc-input-group__icon fc-input-group__icon--trailing">
+        {{ trailing_icon }}
+      </span>
+    {% endif %}
+  </div>
+  
+  {% if help_text %}
+    <div class="fc-input-group__help">{{ help_text }}</div>
+  {% endif %}
+  
+  {% if errors %}
+    <div class="fc-input-group__error">
+      {{ errors }}
+    </div>
+  {% endif %}
+</div>
+
+<style>
+  .fc-input-group {
+    margin-bottom: 1rem;
+  }
+  
+  .fc-input-group__label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--fc-foreground);
+    font-size: 0.875rem;
+  }
+  
+  .fc-input-group__required {
+    color: var(--fc-destructive);
+    margin-left: 0.25rem;
+  }
+  
+  .fc-input-group__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .fc-input {
+    width: 100%;
+    height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--fc-background);
+    border: 1px solid var(--fc-input);
+    border-radius: calc(var(--fc-radius) - 2px);
+    color: var(--fc-foreground);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  
+  .fc-input::placeholder {
+    color: var(--fc-muted-foreground);
+  }
+  
+  .fc-input:focus {
+    border-color: var(--fc-ring);
+    box-shadow: 0 0 0 2px hsla(180, 85%, 40%, 0.2);
+  }
+  
+  .fc-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .fc-input--error {
+    border-color: var(--fc-destructive);
+  }
+  
+  .fc-input--error:focus {
+    box-shadow: 0 0 0 2px hsla(0, 84%, 60%, 0.2);
+  }
+  
+  .fc-input-group__icon {
+    position: absolute;
+    z-index: 10;
+    color: var(--fc-muted-foreground);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .fc-input-group__icon--leading {
+    left: 0.75rem;
+  }
+  
+  .fc-input-group__icon--trailing {
+    right: 0.75rem;
+  }
+  
+  .fc-input-group__wrapper:has(.fc-input-group__icon--leading) .fc-input {
+    padding-left: 2.5rem;
+  }
+  
+  .fc-input-group__wrapper:has(.fc-input-group__icon--trailing) .fc-input {
+    padding-right: 2.5rem;
+  }
+  
+  .fc-input-group__help {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--fc-muted-foreground);
+  }
+  
+  .fc-input-group__error {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--fc-destructive);
+  }
+</style>

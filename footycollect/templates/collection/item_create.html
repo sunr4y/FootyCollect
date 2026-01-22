@@ -3,7 +3,8 @@
 {% load i18n static %}
 {% load crispy_forms_tags %}
 
-{% block extra_css %}
+{% block css %}
+  {{ block.super }}
   {{ form.media.css }}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
@@ -32,7 +33,7 @@
       vertical-align: -0.1em;
     }
 
-    /* Estilos para los selectores de color */
+    /* Styles for color selectors */
     .color-swatch {
       display: inline-block;
       width: 20px;
@@ -43,7 +44,7 @@
       vertical-align: middle;
     }
 
-    /* Estilos para el selector de diseño */
+    /* Styles for design selector */
     .design-option {
       display: flex;
       align-items: center;
@@ -56,7 +57,7 @@
       margin-right: 10px;
     }
   </style>
-{% endblock extra_css %}
+{% endblock css %}
 {% block content %}
   {{ form.media }}
   <div class="container py-4">
@@ -71,7 +72,7 @@
       <!-- Item Details -->
       <div class="card mb-4">
         <div class="card-body">
-          <!-- Componentes Cotton para colores y diseño -->
+          <!-- Cotton components for colors and design -->
           <div class="row mb-3">
             <div class="col-md-6">
               <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="color_choices">
@@ -110,7 +111,7 @@
   {{ form.media.js }}
   <script>
     $(document).ready(function() {
-      // Inicialización de Select2 para país
+      // Initialization of Select2 for country
       $('#id_country_code').select2({
         ajax: {
           url: "{% url 'core:country-autocomplete' %}",
@@ -118,15 +119,15 @@
         }
       });
 
-      // Inicialización para selectores de color con datos de FKAPI
+      // Initialization for color selectors with FKAPI data
       $('[data-colors][data-fkapi]').each(function() {
         const $select = $(this);
         $.ajax({
           url: '/api/colors/',
           dataType: 'json',
           success: function(data) {
-            // Poblar el selector con datos de la API
-            // La implementación depende de la estructura de datos de FKAPI
+            // Populate the selector with data from the API
+            // The implementation depends on the structure of the FKAPI data
             $select.select2({
               templateResult: formatColorOption,
               templateSelection: formatColorSelection,
@@ -136,13 +137,13 @@
         });
       });
 
-      // Función para formatear opciones de color
+      // Function to format color options
       function formatColorOption(color) {
         if (!color.id) return color.text;
         return $(`<span><span class="color-swatch" style="background-color: ${color.code};"></span> ${color.text}</span>`);
       }
 
-      // Función para formatear selección de color
+      // Function to format color selection
       function formatColorSelection(color) {
         if (!color.id) return color.text;
         return $(`<span><span class="color-swatch" style="background-color: ${color.code};"></span> ${color.text}</span>`);

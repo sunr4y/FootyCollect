@@ -2,7 +2,8 @@
 
 {% load i18n static %}
 
-{% block extra_css %}
+{% block css %}
+  {{ block.super }}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <style>
@@ -249,7 +250,7 @@
       color: #6c757d;
     }
   </style>
-{% endblock extra_css %}
+{% endblock css %}
 {% block inline_javascript %}
   <script>
     // Función de debounce para retrasar las búsquedas

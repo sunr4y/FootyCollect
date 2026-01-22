@@ -4,6 +4,7 @@
     {{ label }}
     {% if required == "true" or required == True %}*{% endif %}
   </label>
+  {% if help_text %}<small class="form-text text-muted mb-2 d-block" style="color: var(--fc-muted-foreground);">{{ help_text }}</small>{% endif %}
   <div class="position-relative"
        x-data="autocompleteSearch('{{ name }}', '{{ api_endpoint }}', {{ multiple|yesno:'true,false' }})">
     <!-- Selected items display (multiple) -->
@@ -12,20 +13,23 @@
         <template x-for="item in selectedItems" :key="item.id">
           {# djlint:off H021 #}
           <div class="d-flex align-items-center border rounded p-2 mb-1"
-               style="background-color: #f8f9fa">
-            <img x-show="item.logo"
-                 :src="item.logo"
+               style="background-color: var(--fc-secondary, #1a1f2b);
+                      border-color: var(--fc-border, #242c36) !important;
+                      color: var(--fc-foreground, #f0f0e8);">
+            <img x-show="item.logo_dark || item.logo"
+                 :src="item.logo_dark || item.logo"
                  :alt="item.name"
                  class="me-2"
                  style="width: 20px;
                         height: 20px;
                         object-fit: contain" />
             {# djlint:on #}
-            <span x-text="item.name" class="flex-grow-1"></span>
+            <span x-text="item.name" class="flex-grow-1" style="color: var(--fc-foreground, #f0f0e8);"></span>
             <button type="button"
                     @click="removeItem(item.id)"
                     class="btn btn-sm btn-outline-danger ms-2"
-                    title="Remove">
+                    title="Remove"
+                    style="border-color: var(--fc-border, #242c36); color: var(--fc-foreground, #f0f0e8);">
               <i class="bi bi-x-lg"></i> Remove
             </button>
           </div>
@@ -37,20 +41,23 @@
       {# djlint:off H021 #}
       <div class="d-flex align-items-center border rounded p-2 mb-2"
            style="min-height: 38px;
-                  background-color: #f8f9fa">
-        <img x-show="selectedItem && selectedItem.logo"
-             :src="selectedItem.logo"
-             :alt="selectedItem.name"
+                  background-color: var(--fc-secondary, #1a1f2b);
+                  border-color: var(--fc-border, #242c36) !important;
+                  color: var(--fc-foreground, #f0f0e8);">
+        <img x-show="selectedItem && (selectedItem.logo_dark || selectedItem.logo)"
+             :src="selectedItem ? (selectedItem.logo_dark || selectedItem.logo) : ''"
+             :alt="selectedItem ? selectedItem.name : ''"
              class="me-2"
              style="width: 20px;
                     height: 20px;
                     object-fit: contain" />
         {# djlint:on #}
-        <span x-text="selectedItem ? selectedItem.name : ''" class="flex-grow-1"></span>
+        <span x-text="selectedItem ? selectedItem.name : ''" class="flex-grow-1" style="color: var(--fc-foreground, #f0f0e8);"></span>
         <button type="button"
                 @click="clearSelection()"
                 class="btn btn-sm btn-outline-danger ms-2"
-                title="Remove selection">
+                title="Remove selection"
+                style="border-color: var(--fc-border, #242c36); color: var(--fc-foreground, #f0f0e8);">
           <i class="bi bi-x-lg"></i> Remove
         </button>
       </div>
@@ -63,8 +70,74 @@
              x-model="searchQuery"
              @input.debounce.300ms="search()"
              @focus="showDropdown = true"
-             @blur="setTimeout(() => showDropdown = false, 200)" />
+             @blur="setTimeout(() => showDropdown = false, 200)"
+             style="background-color: var(--fc-secondary) !important;
+                    border: 1px solid var(--fc-border) !important;
+                    color: var(--fc-foreground) !important;" />
     </template>
+    <!-- Dropdown results - positioned right after input -->
+    {# djlint:off H021 #}
+    <div x-show="showDropdown && (results.length > 0 || (searchQuery.length >= 2 && !isSearching && results.length === 0))"
+         class="position-absolute w-100 border rounded shadow-lg"
+         style="z-index: 1000;
+                max-height: 300px;
+                overflow-y: auto;
+                top: 100%;
+                margin-top: 2px;
+                background-color: var(--fc-card, #141820) !important;
+                border-color: var(--fc-border, #242c36) !important;
+                border-radius: 0.5rem;
+                color: var(--fc-foreground, #f0f0e8) !important;"
+         x-cloak>
+      {# djlint:on #}
+      <!-- Loading state -->
+      <div x-show="isSearching" class="p-3 text-center" style="color: var(--fc-muted-foreground, #8b92a0);">
+        <span class="spinner-border spinner-border-sm me-2" role="status" style="border-color: hsla(180, 85%, 40%, 0.3); border-right-color: hsla(180, 85%, 40%, 1);"></span>
+        Searching...
+      </div>
+      <!-- Results -->
+      <template x-if="!isSearching && results.length > 0">
+        <div>
+          <template x-for="item in results" :key="item.id">
+            {# djlint:off H021 #}
+            <div @mousedown.prevent="selectItem(item)"
+                 class="p-2 border-bottom"
+                 style="cursor: pointer;
+                        border-color: var(--fc-border, #242c36) !important;
+                        color: var(--fc-foreground, #f0f0e8) !important;"
+                 @mouseenter="$el.style.backgroundColor = 'var(--fc-secondary, #1a1f2b)'"
+                 @mouseleave="$el.style.backgroundColor = 'var(--fc-card, #141820)'">
+              <div class="d-flex align-items-center">
+                <img x-show="item.logo_dark || item.logo"
+                     :src="item.logo_dark || item.logo"
+                     :alt="item.name"
+                     class="me-2"
+                     style="width: 20px;
+                            height: 20px;
+                            object-fit: contain" />
+                {# djlint:on #}
+                <span x-text="item.name" style="color: var(--fc-foreground, #f0f0e8);"></span>
+                <template x-if="!isMultiple && selectedItem && selectedItem.id === item.id">
+                  <i class="bi bi-check-circle-fill ms-2" style="color: hsla(180, 85%, 40%, 1);"></i>
+                </template>
+                <template x-if="isMultiple && selectedItems.find(i => i.id === item.id)">
+                  <i class="bi bi-check-circle-fill ms-2" style="color: hsla(180, 85%, 40%, 1);"></i>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+      <!-- No results -->
+      <div x-show="!isSearching && searchQuery.length >= 2 && results.length === 0"
+           class="p-3 text-center"
+           style="color: var(--fc-muted-foreground, #8b92a0);">
+        <p class="mb-2">No results found</p>
+        <button type="button" @click="createCustom()" class="btn btn-sm btn-primary" style="background-color: hsla(180, 85%, 40%, 1); border-color: hsla(180, 85%, 40%, 1);">
+          <i class="bi bi-plus-circle"></i> Create Custom
+        </button>
+      </div>
+    </div>
     <!-- Hidden input for form submission -->
     <input type="hidden"
            name="{{ name }}"
@@ -91,63 +164,6 @@
              id="id_competition_name"
              :value="selectedItems.map(i => i.name).join(',')" />
     {% endif %}
-    <!-- Dropdown results -->
-    {# djlint:off H021 #}
-    <div x-show="showDropdown && (results.length > 0 || (searchQuery.length >= 2 && !isSearching && results.length === 0))"
-         class="position-absolute w-100 border rounded bg-white shadow-lg"
-         style="z-index: 1000;
-                max-height: 300px;
-                overflow-y: auto;
-                top: 100%;
-                margin-top: 2px"
-         x-cloak>
-      {# djlint:on #}
-      <!-- Loading state -->
-      <div x-show="isSearching" class="p-3 text-center text-muted">
-        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-        Searching...
-      </div>
-      <!-- Results -->
-      <template x-if="!isSearching && results.length > 0">
-        <div>
-          <template x-for="item in results" :key="item.id">
-            {# djlint:off H021 #}
-            <div @mousedown.prevent="selectItem(item)"
-                 class="p-2 border-bottom"
-                 style="cursor: pointer"
-                 @mouseenter="$el.style.backgroundColor = '#f8f9fa'"
-                 @mouseleave="$el.style.backgroundColor = 'white'">
-              <div class="d-flex align-items-center">
-                <img x-show="item.logo"
-                     :src="item.logo"
-                     :alt="item.name"
-                     class="me-2"
-                     style="width: 20px;
-                            height: 20px;
-                            object-fit: contain" />
-                {# djlint:on #}
-                <span x-text="item.name"></span>
-                <template x-if="!isMultiple && selectedItem && selectedItem.id === item.id">
-                  <i class="bi bi-check-circle-fill text-success ms-2"></i>
-                </template>
-                <template x-if="isMultiple && selectedItems.find(i => i.id === item.id)">
-                  <i class="bi bi-check-circle-fill text-success ms-2"></i>
-                </template>
-              </div>
-            </div>
-          </template>
-        </div>
-      </template>
-      <!-- No results -->
-      <div x-show="!isSearching && searchQuery.length >= 2 && results.length === 0"
-           class="p-3 text-center text-muted">
-        <p class="mb-2">No results found</p>
-        <button type="button" @click="createCustom()" class="btn btn-sm btn-primary">
-          <i class="bi bi-plus-circle"></i> Create Custom
-        </button>
-      </div>
-    </div>
-    {% if help_text %}<small class="form-text text-muted">{{ help_text }}</small>{% endif %}
   </div>
 </div>
 <script>

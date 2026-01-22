@@ -1,4 +1,4 @@
-{% load static i18n compress %}
+{% load static i18n compress cotton %}
 
 <!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}
@@ -72,7 +72,7 @@
         }
       })();
     </script>
-    <meta name="theme-color" content="#0d6efd" />
+    <meta name="theme-color" content="hsl(180, 85%, 40%)" />
     {% block css %}
       <!-- Latest compiled and minified Bootstrap CSS -->
       <link rel="stylesheet"
@@ -80,12 +80,22 @@
             integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer" />
-      <!-- Your stuff: Third-party CSS libraries go here -->
-      <!-- This file stores project-specific CSS -->
+      <!-- Select2 CSS base (cargado ANTES del tema) -->
+      <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+            rel="stylesheet" />
+      <!-- Select2 Bootstrap 5 Theme  -->
+      <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+            rel="stylesheet" />
+     
+      <!-- This file stores project-specific CSS-->
       {% compress css %}
         <link href="{% static 'css/project.css' %}" rel="stylesheet" />
       {% endcompress %}
       <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
+            rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+            rel="stylesheet" />
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
             rel="stylesheet" />
     {% endblock css %}
     <!-- Le javascript
@@ -104,25 +114,30 @@
       {% endcompress %}
     {% endblock javascript %}
   </head>
-  <body class="{% block bodyclass %}{% endblock bodyclass %}">
+  <body class="fc-body {% block bodyclass %}{% endblock bodyclass %}" style="background-color: var(--fc-background); color: var(--fc-foreground);">
     {% block body %}
-      <div class="mb-1">
-        <nav class="navbar navbar-expand-md navbar-light bg-light">
+      <header class="fc-header" style="border-bottom: 1px solid var(--fc-border); background-color: var(--fc-card); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000;">
+        <nav class="navbar navbar-expand-md" style="background-color: transparent;">
           <div class="container-fluid">
-            <button class="navbar-toggler navbar-toggler-right"
+            <a class="navbar-brand" href="{% url 'home' %}" style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.5rem; color: var(--fc-foreground); text-decoration: none;">
+              <span style="background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Footy</span>Collect
+            </a>
+            <button class="navbar-toggler"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#navbarSupportedContent"
                     aria-controls="navbarSupportedContent"
                     aria-expanded="false"
-                    aria-label="Toggle navigation">
+                    aria-label="Toggle navigation"
+                    style="border: 1px solid var(--fc-border); color: var(--fc-foreground);">
               <span class="navbar-toggler-icon"></span>
             </button>
-            <a class="navbar-brand" href="{% url 'home' %}">FootyCollect</a>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
               <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item active">
-                  <a class="nav-link" href="{% url 'home' %}">{% translate "Home" %} <span class="visually-hidden">(current)</span></a>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'home' %}" style="color: var(--fc-foreground); transition: color 0.2s ease;">
+                    {% translate "Home" %}
+                  </a>
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item dropdown">
@@ -131,102 +146,130 @@
                        id="itemsDropdown"
                        role="button"
                        data-bs-toggle="dropdown"
-                       aria-expanded="false">{% translate "Collection" %}</a>
-                    <ul class="dropdown-menu" aria-labelledby="itemsDropdown">
+                       aria-expanded="false"
+                       style="color: var(--fc-foreground); transition: color 0.2s ease;">
+                      {% translate "Collection" %}
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="itemsDropdown" style="background-color: var(--fc-card); border: 1px solid var(--fc-border);">
                       <li>
-                        <h6 class="dropdown-header">{% translate "Add Items" %}</h6>
+                        <h6 class="dropdown-header" style="color: var(--fc-muted-foreground);">{% translate "Add Items" %}</h6>
                       </li>
                       <li>
                         <a class="dropdown-item"
-                           href="{% url 'collection:jersey_create_automatic' %}">
+                           href="{% url 'collection:jersey_create_automatic' %}"
+                           style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
                           <i class="bi bi-magic me-2"></i>{% translate "Add Jersey (Automatic)" %}
-                          <small class="text-muted d-block ms-4">{% translate "From kit database" %}</small>
+                          <small class="d-block ms-4" style="color: var(--fc-muted-foreground);">{% translate "From kit database" %}</small>
                         </a>
                       </li>
                       <li>
                         <a class="dropdown-item"
-                           href="{% url 'collection:jersey_create_manual' %}">
+                           href="{% url 'collection:jersey_create_manual' %}"
+                           style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
                           <i class="bi bi-pencil me-2"></i>{% translate "Add Jersey (Manual)" %}
-                          <small class="text-muted d-block ms-4">{% translate "Not in database" %}</small>
+                          <small class="d-block ms-4" style="color: var(--fc-muted-foreground);">{% translate "Not in database" %}</small>
                         </a>
                       </li>
                       <li>
-                        <span class="dropdown-item-text text-muted">
+                        <span class="dropdown-item-text" style="color: var(--fc-muted-foreground);">
                           <i class="bi bi-plus-circle me-2"></i>{% translate "Add Other Item" %}
-                          <small class="d-block ms-4 text-muted">{% translate "Coming Soon" %}</small>
+                          <small class="d-block ms-4">{% translate "Coming Soon" %}</small>
                         </span>
                       </li>
                       <li>
-                        <hr class="dropdown-divider" />
+                        <hr class="dropdown-divider" style="border-color: var(--fc-border);" />
                       </li>
                       <li>
-                        <h6 class="dropdown-header">{% translate "Browse" %}</h6>
+                        <h6 class="dropdown-header" style="color: var(--fc-muted-foreground);">{% translate "Browse" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:item_list' %}">
+                        <a class="dropdown-item" href="{% url 'collection:item_list' %}" style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
                           <i class="bi bi-grid me-2"></i>{% translate "View My Collection" %}
                         </a>
                       </li>
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:jersey_select' %}">
+                        <a class="dropdown-item" href="{% url 'collection:jersey_select' %}" style="color: var(--fc-foreground); transition: background-color 0.2s ease;">
                           <i class="bi bi-search me-2"></i>{% translate "Browse Kit Database" %}
-                          <small class="text-muted d-block ms-4">{% translate "Search available kits" %}</small>
+                          <small class="d-block ms-4" style="color: var(--fc-muted-foreground);">{% translate "Search available kits" %}</small>
                         </a>
                       </li>
                     </ul>
                   </li>
                 {% endif %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'about' %}">{% translate "About" %}</a>
+                  <a class="nav-link" href="{% url 'about' %}" style="color: var(--fc-foreground); transition: color 0.2s ease;">
+                    {% translate "About" %}
+                  </a>
                 </li>
               </ul>
-              <ul class="navbar-nav ms-auto">
-                {% if request.user.is_authenticated %}
-                  <li class="nav-item">
-                    <a class="nav-link"
-                       href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
-                  </li>
-                  <li class="nav-item">
-                    {# URL provided by django-allauth/account/urls.py #}
-                    <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
-                  </li>
+                  <ul class="navbar-nav ms-auto d-flex align-items-center">
+                    {% if request.user.is_authenticated %}
+                      <li class="nav-item">
+                        <a class="nav-link"
+                           href="{% url 'users:detail' request.user.username %}"
+                           style="color: var(--fc-foreground); transition: color 0.2s ease;">
+                          {% translate "My Profile" %}
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <c-button variant="ghost" size="sm" as_link href="{% url 'account_logout' %}" style="display: inline-flex; align-items: center;">
+                          {% translate "Sign Out" %}
+                        </c-button>
+                      </li>
                 {% else %}
                   {% if ACCOUNT_ALLOW_REGISTRATION %}
                     <li class="nav-item">
-                      {# URL provided by django-allauth/account/urls.py #}
-                      <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
+                      <c-button variant="ghost" size="sm" as_link href="{% url 'account_signup' %}" style="margin-right: 0.5rem;">
+                        {% translate "Sign Up" %}
+                      </c-button>
                     </li>
                   {% endif %}
                   <li class="nav-item">
-                    {# URL provided by django-allauth/account/urls.py #}
-                    <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
+                    <c-button variant="default" size="sm" as_link href="{% url 'account_login' %}">
+                      {% translate "Sign In" %}
+                    </c-button>
                   </li>
                 {% endif %}
               </ul>
             </div>
           </div>
         </nav>
-      </div>
-      <div class="container">
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-              {{ message }}
-              <button type="button"
-                      class="btn-close"
-                      data-bs-dismiss="alert"
-                      aria-label="Close"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
-        {% block main %}
-          {% block content %}
-            <p>Use this document as a way to quick start any new project.</p>
-          {% endblock content %}
-        {% endblock main %}
-      </div>
+      </header>
+      <main class="fc-main fc-main-padding">
+        <div class="container">
+          {% if messages %}
+            {% for message in messages %}
+              {% if message.tags == 'error' or message.tags == 'danger' %}
+                <c-alert variant="destructive" title="{% translate 'Error' %}" dismissible>
+                  {{ message }}
+                </c-alert>
+              {% elif message.tags == 'warning' %}
+                <c-alert variant="warning" title="{% translate 'Warning' %}" dismissible>
+                  {{ message }}
+                </c-alert>
+              {% elif message.tags == 'success' %}
+                <c-alert variant="success" title="{% translate 'Success' %}" dismissible>
+                  {{ message }}
+                </c-alert>
+              {% elif message.tags == 'info' %}
+                <c-alert variant="info" title="{% translate 'Info' %}" dismissible>
+                  {{ message }}
+                </c-alert>
+              {% else %}
+                <c-alert variant="default" dismissible>
+                  {{ message }}
+                </c-alert>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {% block main %}
+            {% block content %}
+              <p>Use this document as a way to quick start any new project.</p>
+            {% endblock content %}
+          {% endblock main %}
+        </div>
+      </main>
     {% endblock body %}
-    <!-- /container -->
     {% block modal %}
     {% endblock modal %}
     {% block inline_javascript %}
@@ -242,6 +285,23 @@
     {% endblock inline_javascript %}
     {% block js %}
       {{ block.super }}
+      <script>
+        // Auto-dismiss success alerts after 3 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+          const successAlerts = document.querySelectorAll('.fc-alert-success');
+          successAlerts.forEach(function(alert) {
+            setTimeout(function() {
+              // Add fade out animation
+              alert.style.transition = 'opacity 0.3s ease-out';
+              alert.style.opacity = '0';
+              // Remove after animation
+              setTimeout(function() {
+                alert.remove();
+              }, 300);
+            }, 3000);
+          });
+        });
+      </script>
       <script src="https://code.jquery.com/jquery-3.7.1.min.js"
               integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
               crossorigin="anonymous"></script>
@@ -253,6 +313,6 @@
       <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"
               defer></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
-    {% endblock js %}
-  </body>
-</html>
+        {% endblock js %}
+      </body>
+    </html>
