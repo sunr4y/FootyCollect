@@ -762,12 +762,25 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         self._extract_competition_logos(kit_data)
 
     def _extract_brand_logo(self, kit_data):
-        """Extract brand logo from kit data."""
-        if "brand" in kit_data and kit_data["brand"] and "logo" in kit_data["brand"]:
-            brand_logo_url = kit_data["brand"]["logo"]
-            if brand_logo_url and brand_logo_url != "https://www.footballkitarchive.com/static/logos/not_found.png":
-                logger.info("Found brand logo URL: %s", brand_logo_url)
-                self.fkapi_data["brand_logo"] = brand_logo_url
+        """Extract brand logo and logo_dark from kit data."""
+        if kit_data.get("brand"):
+            brand_data = kit_data["brand"]
+            if "logo" in brand_data:
+                brand_logo_url = brand_data["logo"]
+                if (
+                    brand_logo_url
+                    and brand_logo_url != "https://www.footballkitarchive.com/static/logos/not_found.png"
+                ):
+                    logger.info("Found brand logo URL: %s", brand_logo_url)
+                    self.fkapi_data["brand_logo"] = brand_logo_url
+            if "logo_dark" in brand_data:
+                brand_logo_dark_url = brand_data["logo_dark"]
+                if (
+                    brand_logo_dark_url
+                    and brand_logo_dark_url != "https://www.footballkitarchive.com/static/logos/not_found.png"
+                ):
+                    logger.info("Found brand logo_dark URL: %s", brand_logo_dark_url)
+                    self.fkapi_data["brand_logo_dark"] = brand_logo_dark_url
 
     def _extract_team_data(self, kit_data):
         """Extract team logo and country from kit data."""
@@ -1310,24 +1323,54 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             # No FKAPI data - try to get from form
             brand_logo = cleaned_data.get("logo", "")
 
+        # Get logo_dark from FKAPI data if available
+        brand_logo_dark = ""
+        if hasattr(self, "fkapi_data") and "brand_logo_dark" in self.fkapi_data:
+            brand_logo_dark = self.fkapi_data["brand_logo_dark"]
+            logger.info("Using brand logo_dark from FKAPI: %s", brand_logo_dark)
+        else:
+            # No FKAPI data - try to get from form
+            brand_logo_dark = cleaned_data.get("logo_dark", "")
+
         brand = Brand.objects.create(
             name=brand_name,
             id_fka=cleaned_data.get("id_fka") if cleaned_data.get("id_fka") else None,
             slug=cleaned_data.get("slug") if cleaned_data.get("slug") else slugify(brand_name),
             logo=brand_logo,
-            logo_dark=cleaned_data.get("logo_dark") if cleaned_data.get("logo_dark") else "",
+            logo_dark=brand_logo_dark,
         )
-        logger.info("Created new brand: %s (ID: %s) with logo: %s", brand_name, brand.id, brand_logo)
+        logger.info(
+            "Created new brand: %s (ID: %s) with logo: %s, logo_dark: %s",
+            brand_name,
+            brand.id,
+            brand_logo,
+            brand_logo_dark,
+        )
         return brand
 
     def _update_brand_logo(self, brand, brand_name):
-        """Update existing brand with FKAPI logo if available."""
+        """Update existing brand with FKAPI logo and logo_dark if available."""
+        updated = False
+        update_fields = []
+
         if hasattr(self, "fkapi_data") and "brand_logo" in self.fkapi_data:
             brand_logo = self.fkapi_data["brand_logo"]
             if brand_logo and brand_logo != brand.logo:
                 brand.logo = brand_logo
-                brand.save(update_fields=["logo"])
+                update_fields.append("logo")
+                updated = True
                 logger.info("Updated existing brand %s with logo: %s", brand_name, brand_logo)
+
+        if hasattr(self, "fkapi_data") and "brand_logo_dark" in self.fkapi_data:
+            brand_logo_dark = self.fkapi_data["brand_logo_dark"]
+            if brand_logo_dark and brand_logo_dark != brand.logo_dark:
+                brand.logo_dark = brand_logo_dark
+                update_fields.append("logo_dark")
+                updated = True
+                logger.info("Updated existing brand %s with logo_dark: %s", brand_name, brand_logo_dark)
+
+        if updated:
+            brand.save(update_fields=update_fields)
 
     def _process_club_entity(self, form, cleaned_data):
         """Process club entity creation or retrieval."""
