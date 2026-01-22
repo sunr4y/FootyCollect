@@ -43,7 +43,12 @@ jobs:
     services:
       selenium:
         image: selenium/standalone-chrome:latest
-        options: --shm-size=2gb -p 4444:4444
+        options: >-
+          --shm-size=2gb
+          --health-cmd="curl -f http://localhost:4444/wd/hub/status || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
         ports:
           - 4444:4444
 
