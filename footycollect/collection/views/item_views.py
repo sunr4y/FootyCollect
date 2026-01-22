@@ -122,11 +122,8 @@ def home(request):
                 columns_items.append(column_items)
         else:
             columns_items = [[] for _ in range(num_columns)]
-    except Exception as e:
-        # If there's any error, just return empty list
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error in home view: {e}")
+    except (OSError, ValueError, AttributeError, TypeError, IndexError) as e:
+        logger.exception("Error in home view: %s", e)
         columns_items = [[] for _ in range(40)]
     
     context = {
