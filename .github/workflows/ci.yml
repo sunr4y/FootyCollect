@@ -40,6 +40,13 @@ jobs:
       FKA_API_IP: ${{ secrets.FKA_API_IP }}
       API_KEY: ${{ secrets.API_KEY }}
 
+    services:
+      selenium:
+        image: selenium/standalone-chrome:latest
+        options: --shm-size=2gb -p 4444:4444
+        ports:
+          - 4444:4444
+
     steps:
       - name: Checkout Code Repository
         uses: actions/checkout@v4
@@ -55,9 +62,13 @@ jobs:
           pip install -r requirements/local.txt
 
       - name: Run tests with coverage
+        env:
+          SELENIUM_HEADLESS: "true"
+          CI: "true"
+          SELENIUM_URL: http://localhost:4444/wd/hub
         run: |
-          pytest
-          coverage report
+          pytest -v --tb=short
+          coverage report --skip-covered
           coverage xml
 
       - name: Upload coverage to Codecov

@@ -151,3 +151,16 @@ ignore-names = ["_meta"]
 "config/settings/local.py" = ["S104"]
 # Ignore PD011 in test_services files
 "**/tests/test_services.py" = ["PD011"]
+# Ignore PT009 (unittest-style assertions) in E2E test files
+# Ignore style issues that are acceptable in complex E2E tests
+"footycollect/collection/tests/test_e2e_selenium.py" = [
+    "PT009",
+    "FBT003",
+    "N812",
+    "BLE001",
+    "PLR0915",
+]
+"footycollect/collection/tests/test_e2e_item_creation.py" = [
+    "PT009",
+    "FBT003",
+]

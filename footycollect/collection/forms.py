@@ -634,25 +634,12 @@ class JerseyForm(forms.ModelForm):
 
         if country_code:
             try:
-                # Convert to Country object (CountryField expects this)
-                from django_countries import countries
-
-                # CountryField accepts country code strings directly, but let's ensure it's valid
-                if isinstance(country_code, str):
-                    # Validate the country code exists
-                    if country_code.upper() in countries:
-                        base_data["country"] = country_code.upper()
-                    elif club and club.country:
-                        base_data["country"] = club.country
-                else:
-                    # Already a Country object or None
-                    base_data["country"] = country_code
+                base_data["country"] = self._convert_country_code(country_code, club)
             except (ValueError, AttributeError, KeyError, TypeError) as e:
                 import logging
 
                 logger = logging.getLogger(__name__)
                 logger.warning("Error converting country_code %s: %s", country_code, str(e))
-                # Fallback to club's country if conversion fails
                 if club and club.country:
                     base_data["country"] = club.country
         elif hasattr(self.instance, "country") and self.instance.country:
@@ -661,6 +648,15 @@ class JerseyForm(forms.ModelForm):
             base_data["country"] = club.country
 
         return base_data
+
+    def _convert_country_code(self, country_code, club):
+        """Convert country_code string to Country object."""
+        if isinstance(country_code, str):
+            if country_code.upper() in countries:
+                return country_code.upper()
+            if club and club.country:
+                return club.country
+        return country_code
 
     def _extract_jersey_data(self):
         """Extract data for Jersey creation."""
@@ -769,22 +765,7 @@ class JerseyForm(forms.ModelForm):
 
             # Create or get Kit for this jersey
             try:
-                from footycollect.collection.services.kit_service import KitService
-
-                kit_service = KitService()
-                kit_id = self.cleaned_data.get("kit_id")
-                fkapi_data = getattr(self, "fkapi_data", {})
-
-                kit = kit_service.get_or_create_kit_for_jersey(
-                    base_item=base_item,
-                    jersey=jersey,
-                    fkapi_data=fkapi_data,
-                    kit_id=kit_id,
-                )
-
-                jersey.kit = kit
-                jersey.save(update_fields=["kit"])
-                logger.info("Successfully created/linked Kit %s to Jersey %s", kit.id, jersey.pk)
+                self._create_kit_for_jersey(base_item, jersey)
             except Exception:
                 logger.exception("Error creating Kit")
 
@@ -793,6 +774,28 @@ class JerseyForm(forms.ModelForm):
         base_item = BaseItem(**base_item_data)
         jersey_data["base_item"] = base_item
         return Jersey(**jersey_data)
+
+    def _create_kit_for_jersey(self, base_item, jersey):
+        """Create and link Kit to jersey."""
+        import logging
+
+        from footycollect.collection.services.kit_service import KitService
+
+        logger = logging.getLogger(__name__)
+        kit_service = KitService()
+        kit_id = self.cleaned_data.get("kit_id")
+        fkapi_data = getattr(self, "fkapi_data", {})
+
+        kit = kit_service.get_or_create_kit_for_jersey(
+            base_item=base_item,
+            jersey=jersey,
+            fkapi_data=fkapi_data,
+            kit_id=kit_id,
+        )
+
+        jersey.kit = kit
+        jersey.save(update_fields=["kit"])
+        logger.info("Successfully created/linked Kit %s to Jersey %s", kit.id, jersey.pk)
 
 
 class JerseyFKAPIForm(JerseyForm):

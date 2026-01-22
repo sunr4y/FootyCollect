@@ -2,6 +2,8 @@
 Additional tests for jersey-related views to improve coverage.
 """
 
+from unittest.mock import MagicMock, patch
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -217,8 +219,15 @@ class JerseyViewsAdditionalTest(TestCase):
         response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
-    def test_jersey_fkapi_create_view_post_with_external_images(self):
+    @patch("requests.get")
+    def test_jersey_fkapi_create_view_post_with_external_images(self, mock_get):
         """Test JerseyFKAPICreateView POST with external images."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.iter_content.return_value = [b"fake_image_data"]
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
+
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
 
         size = SizeFactory(name="M", category="tops")
@@ -302,8 +311,15 @@ class JerseyViewsAdditionalTest(TestCase):
         response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
-    def test_jersey_fkapi_create_view_post_with_json_photo_ids(self):
+    @patch("requests.get")
+    def test_jersey_fkapi_create_view_post_with_json_photo_ids(self, mock_get):
         """Test JerseyFKAPICreateView POST with JSON photo IDs."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.iter_content.return_value = [b"fake_image_data"]
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
+
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
 
         size = SizeFactory(name="M", category="tops")
@@ -498,7 +514,7 @@ class JerseyViewsAdditionalTest(TestCase):
             "season": self.season.id,
             "size": size.id,
             "condition": 8,
-            "id_fka": 999999,  # Non-existent kit ID
+            "id_fka": 999999,
         }
 
         response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
@@ -547,8 +563,15 @@ class JerseyViewsAdditionalTest(TestCase):
         response = self.client.post(reverse("collection:jersey_create_automatic"), form_data)
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
-    def test_jersey_fkapi_create_view_post_with_image_processing(self):
+    @patch("requests.get")
+    def test_jersey_fkapi_create_view_post_with_image_processing(self, mock_get):
         """Test JerseyFKAPICreateView POST with image processing."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.iter_content.return_value = [b"fake_image_data"]
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
+
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
 
         size = SizeFactory(name="M", category="tops")

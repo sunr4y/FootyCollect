@@ -2,6 +2,8 @@
 With these settings, tests run faster.
 """
 
+import logging
+
 from .base import *
 from .base import TEMPLATES, env
 
@@ -88,9 +90,6 @@ try:
     FKA_API_IP = env("FKA_API_IP")
     API_KEY = env("API_KEY")
 except (ValueError, TypeError, AttributeError) as e:
-    # If FKA API settings are not available, skip them for tests
-    import logging
-
     logging.getLogger(__name__).debug("FKA API settings not available for tests: %s", e)
 
 # Your stuff...
