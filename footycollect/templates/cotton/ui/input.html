@@ -12,10 +12,10 @@
     {% endif %}
     <input type="{{ type }}" class="fc-input {% if errors %}fc-input--error{% endif %}" id="{{ id }}" name="{{ name }}" value="{{ value|default:'' }}" placeholder="{{ placeholder|default:'' }}" {% if required %}required{% endif %} {% if disabled %}disabled{% endif %} {{ attrs }} />
     {% if trailing_icon %}
-      <span class="fc-input-group__icon fc-input-group__icon--trailing">
-        {{ trailing_icon }}
-      </span>
-    {% endif %}
+      {# djlint:off H025 #}
+      <span class="fc-input-group__icon fc-input-group__icon--trailing">{{ trailing_icon }}</span>
+    {# djlint:on H025 #}
+      {% endif %}
   </div>
   {% if help_text %}<div class="fc-input-group__help">{{ help_text }}</div>{% endif %}
   {% if errors %}<div class="fc-input-group__error">{{ errors }}</div>{% endif %}
