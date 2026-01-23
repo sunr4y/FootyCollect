@@ -1,6 +1,6 @@
 # ruff: noqa: E501
 from .base import *
-from .base import INSTALLED_APPS, MIDDLEWARE, env
+from .base import INSTALLED_APPS, LOGGING, MIDDLEWARE, env
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -99,6 +99,23 @@ if STORAGE_BACKEND == "r2":
     AWS_S3_ENDPOINT_URL = env.str("CLOUDFLARE_R2_ENDPOINT_URL", default="https://storage.developers.cloudflare.com")
     AWS_S3_REGION_NAME = env.str("CLOUDFLARE_R2_REGION", default="auto")
     AWS_QUERYSTRING_AUTH = False
+
+    storage_domain = env.str(
+        "CLOUDFLARE_R2_CUSTOM_DOMAIN",
+        default=None,
+    )
+    if storage_domain:
+        if storage_domain.startswith(("http://", "https://")):
+            custom_domain = storage_domain.replace("https://", "").replace("http://", "")
+        else:
+            custom_domain = storage_domain
+        AWS_S3_CUSTOM_DOMAIN = custom_domain
+        MEDIA_URL = f"https://{custom_domain}/media/"
+    else:
+        endpoint_host = AWS_S3_ENDPOINT_URL.replace("https://", "").split("/")[0]
+        AWS_S3_CUSTOM_DOMAIN = None
+        MEDIA_URL = f"https://{endpoint_host}/{AWS_STORAGE_BUCKET_NAME}/media/"
+
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3.S3Storage",
@@ -108,19 +125,10 @@ if STORAGE_BACKEND == "r2":
             },
         },
         "staticfiles": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "location": "static",
-                "default_acl": "public-read",
-            },
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
-    storage_domain = env.str(
-        "CLOUDFLARE_R2_CUSTOM_DOMAIN",
-        default=AWS_S3_ENDPOINT_URL.replace("https://", "").split("/")[0],
-    )
-    MEDIA_URL = f"https://{storage_domain}/media/"
-    STATIC_URL = f"https://{storage_domain}/static/"
+    STATIC_URL = "/static/"
 elif STORAGE_BACKEND == "aws":
     # AWS S3 settings
     INSTALLED_APPS += ["storages"]
@@ -139,16 +147,14 @@ elif STORAGE_BACKEND == "aws":
             },
         },
         "staticfiles": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "location": "static",
-                "default_acl": "public-read",
-            },
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
-    storage_domain = AWS_S3_CUSTOM_DOMAIN or f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-    MEDIA_URL = f"https://{storage_domain}/media/"
-    STATIC_URL = f"https://{storage_domain}/static/"
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+    else:
+        MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/media/"
+    STATIC_URL = "/static/"
 else:
     # Local storage settings (default)
     STORAGES = {
@@ -159,3 +165,15 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+
+# LOGGING
+# ------------------------------------------------------------------------------
+# Reduce boto3/botocore logging noise in development
+LOGGING["loggers"].update(
+    {
+        "boto3": {"level": "WARNING", "handlers": ["console"], "propagate": False},
+        "botocore": {"level": "WARNING", "handlers": ["console"], "propagate": False},
+        "s3transfer": {"level": "WARNING", "handlers": ["console"], "propagate": False},
+        "urllib3": {"level": "WARNING", "handlers": ["console"], "propagate": False},
+    },
+)
