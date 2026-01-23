@@ -1,0 +1,119 @@
+<c-vars variant="default" dismissible />
+<div class="fc-alert fc-alert-{{ variant }}" role="alert" {{ attrs }}>
+  <div class="fc-alert__content">
+    {% if icon %}<div class="fc-alert__icon">{{ icon }}</div>{% endif %}
+    <div class="fc-alert__text">
+      {% if title %}<h6 class="fc-alert__title">{{ title }}</h6>{% endif %}
+      <div class="fc-alert__message">{{ slot }}</div>
+    </div>
+    {% if dismissible %}
+      <button type="button"
+              class="fc-alert__close"
+              aria-label="Close"
+              onclick="this.parentElement.parentElement.remove()">
+        <span>×</span>
+      </button>
+    {% endif %}
+  </div>
+</div>
+<style>
+  .fc-alert {
+    position: relative;
+    width: 100%;
+    border-radius: calc(var(--fc-radius) - 2px);
+    border: 1px solid;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .fc-alert__content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .fc-alert__icon {
+    font-size: 1.25rem;
+    line-height: 1.5;
+    flex-shrink: 0;
+  }
+
+  .fc-alert__text {
+    flex: 1;
+  }
+
+  .fc-alert__title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  .fc-alert__message {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .fc-alert__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.5;
+    color: inherit;
+    padding: 0;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .fc-alert__close:hover {
+    opacity: 1;
+  }
+
+  .fc-alert-default {
+    background-color: var(--fc-background);
+    border-color: var(--fc-border);
+    color: var(--fc-foreground);
+  }
+
+  .fc-alert-destructive {
+    background-color: hsla(0, 84%, 60%, 0.1);
+    border-color: var(--fc-destructive);
+    color: var(--fc-destructive);
+  }
+
+  .fc-alert-destructive .fc-alert__icon {
+    color: var(--fc-destructive);
+  }
+
+  .fc-alert-info {
+    background-color: hsla(180, 85%, 40%, 0.1);
+    border-color: var(--fc-primary);
+    color: var(--fc-primary);
+  }
+
+  .fc-alert-info .fc-alert__icon {
+    color: var(--fc-primary);
+  }
+
+  .fc-alert-success {
+    background-color: hsla(142, 71%, 45%, 0.1);
+    border-color: hsl(142, 71%, 45%);
+    color: hsl(142, 71%, 45%);
+  }
+
+  .fc-alert-success .fc-alert__icon {
+    color: hsl(142, 71%, 45%);
+  }
+
+  .fc-alert-warning {
+    background-color: hsla(38, 92%, 50%, 0.1);
+    border-color: hsl(38, 92%, 50%);
+    color: hsl(38, 92%, 50%);
+  }
+
+  .fc-alert-warning .fc-alert__icon {
+    color: hsl(38, 92%, 50%);
+  }
+</style>

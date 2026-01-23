@@ -1,15 +1,30 @@
 {% extends "base.html" %}
 
+{% load i18n %}
+
 {% block title %}
-  Forbidden (403)
+  {% trans "Forbidden (403)" %} - FootyCollect
 {% endblock title %}
 {% block content %}
-  <h1>Forbidden (403)</h1>
-  <p>
-    {% if exception %}
-      {{ exception }}
-    {% else %}
-      You're not allowed to access this page.
-    {% endif %}
-  </p>
+  <div class="fc-container-error">
+    <div class="fc-card">
+      <div class="card-body text-center fc-card-body-error">
+        <div class="mb-4">
+          <i class="bi bi-shield-exclamation fc-icon-large"></i>
+        </div>
+        <h1 class="mb-3 fc-title-medium">{% trans "Forbidden (403)" %}</h1>
+        <p class="mb-4 fc-text-muted">
+          {% if exception %}
+            {{ exception }}
+          {% else %}
+            {% trans "You're not allowed to access this page." %}
+          {% endif %}
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+          <a href="{% url 'home' %}" class="btn fc-btn-primary-large">{% trans "Go Home" %}</a>
+          <button onclick="history.back()" class="btn fc-btn-outline-secondary">{% trans "Go Back" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock content %}

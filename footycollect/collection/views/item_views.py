@@ -51,16 +51,108 @@ def demo_brand_view(request):
 
 
 def home(request):
-    """Home view showing all photos."""
-    photo_service = get_photo_service()
-    photos = photo_service.photo_repository.get_all()
-    context = {"photos": photos}
-    return render(request, "collection/item_create.html", context)
+    """Home view with animated jersey cards in background."""
+    from pathlib import Path
+
+    from footycollect.collection.models import Jersey
+
+    # Get most recent items from all users for the background animation
+    # Only include items that have physical photos on disk
+    try:
+        all_jerseys = list(
+            Jersey.objects.select_related(
+                "base_item",
+                "base_item__user",
+                "base_item__club",
+                "base_item__season",
+                "base_item__brand",
+                "base_item__main_color",
+                "size",
+            )
+            .prefetch_related(
+                "base_item__photos",
+                "base_item__competitions",
+                "base_item__secondary_colors",
+            )
+            .filter(base_item__photos__isnull=False)
+            .distinct()
+            .order_by("-base_item__created_at")[:500],  # Get most recent items
+        )
+
+        # Filter to only include items with physical photos on disk
+        jerseys_with_photos = []
+        for jersey in all_jerseys:
+            photos = jersey.base_item.photos.all()
+            for photo in photos:
+                if photo.image:
+                    try:
+                        if Path(photo.image.path).exists():
+                            jerseys_with_photos.append(jersey)
+                            break
+                    except (ValueError, AttributeError):
+                        continue
+
+        items = jerseys_with_photos
+
+        # Distribute items across columns (40 columns)
+        # Each column gets unique items starting at different positions
+        num_columns = 40
+        columns_items = []
+
+        if items and len(items) > 0:
+            import random
+
+            # Shuffle items to ensure randomness
+            shuffled_items = items.copy()
+            random.shuffle(shuffled_items)
+
+            for i in range(num_columns):
+                column_items = []
+                # Each column starts at a different offset to ensure uniqueness
+                # Use a larger step to ensure columns are more different
+                start_index = (i * max(1, len(shuffled_items) // num_columns)) % len(shuffled_items)
+
+                # Create a unique sequence for this column by cycling through items
+                # Use enough items to fill the column
+                items_per_cycle = max(len(shuffled_items), 20)  # At least 20 items per cycle
+                for j in range(items_per_cycle):
+                    item_index = (start_index + j) % len(shuffled_items)
+                    column_items.append(shuffled_items[item_index])
+
+                # Duplicate the sequence 3 times for seamless infinite scroll
+                column_items = column_items * 3
+                columns_items.append(column_items)
+        else:
+            columns_items = [[] for _ in range(num_columns)]
+    except (OSError, ValueError, AttributeError, TypeError, IndexError):
+        logger.exception("Error in home view")
+        columns_items = [[] for _ in range(40)]
+
+    context = {
+        "columns_items": columns_items,
+    }
+    return render(request, "pages/home.html", context)
 
 
 def test_dropzone(request):
     """Independent test view for Dropzone."""
     return render(request, "collection/dropzone_test_page.html")
+
+
+def image_display_test(request):
+    """Test view for comparing different image display solutions."""
+    from footycollect.collection.services import get_item_service
+
+    if request.user.is_authenticated:
+        item_service = get_item_service()
+        items = list(item_service.get_user_items(request.user)[:12])  # Limitar a 12 items para la prueba
+    else:
+        items = []
+
+    context = {
+        "items": items,
+    }
+    return render(request, "collection/image_display_test.html", context)
 
 
 # =============================================================================

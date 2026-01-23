@@ -15,9 +15,9 @@
            accept="image/jpeg,image/png,image/webp,image/gif"
            class="file-input" />
     <div class="upload-message">
-      <i class="bi bi-cloud-upload fs-1"></i>
-      <p>{% trans "Drag files here or click to select" %}</p>
-      <small class="text-muted">{% trans "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF" %}</small>
+      <i class="bi bi-cloud-upload fs-1 fc-upload-icon"></i>
+      <p class="fc-upload-text">{% trans "Drag files here or click to select" %}</p>
+      <small class="fc-upload-hint">{% trans "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF" %}</small>
     </div>
   </div>
   <!-- Photo Grid -->
@@ -290,16 +290,17 @@
 </script>
 <style>
   .photo-manager {
-    border: 2px dashed #0d6efd;
-    border-radius: 8px;
+    border: 2px dashed var(--fc-border);
+    border-radius: 0.5rem;
     padding: 20px;
-    background: #f8f9fa;
+    background: var(--fc-secondary);
     transition: all 0.3s ease;
   }
 
   .photo-manager.dragover {
-    background: #e9ecef;
-    border-color: #0b5ed7;
+    background: var(--fc-card);
+    border-color: hsla(180, 85%, 40%, 0.6);
+    box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.3);
   }
 
   .upload-area {
@@ -327,11 +328,17 @@
 
   .photo-item {
     position: relative;
-    background: white;
-    border-radius: 8px;
+    background: var(--fc-card);
+    border: 1px solid var(--fc-border);
+    border-radius: 0.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: move;
     transition: transform 0.2s ease;
+  }
+
+  .photo-item:hover {
+    border-color: hsla(180, 85%, 40%, 0.5);
+    box-shadow: 0 4px 12px hsla(180, 85%, 40%, 0.2);
   }
 
   .photo-item:hover {
@@ -416,5 +423,17 @@
   .progress {
     height: 0.5rem;
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  .fc-upload-icon {
+    color: var(--fc-primary);
+  }
+
+  .fc-upload-text {
+    color: var(--fc-foreground);
+  }
+
+  .fc-upload-hint {
+    color: var(--fc-muted-foreground);
   }
 </style>

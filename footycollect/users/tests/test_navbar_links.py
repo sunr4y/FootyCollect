@@ -72,7 +72,8 @@ class NavbarLinksTestCase(TestCase):
         self.client.login(username="testuser", password=TEST_PASSWORD)
         response = self.client.get(reverse("home"))
         assert response.status_code == HTTP_OK
-        self.assertContains(response, "FootyCollect")
+        self.assertContains(response, "Footy")
+        self.assertContains(response, "Collect")
         self.assertContains(response, "Collection")
         self.assertContains(response, "My Profile")
 
@@ -80,5 +81,6 @@ class NavbarLinksTestCase(TestCase):
         self.client.logout()
         response = self.client.get(reverse("home"))
         assert response.status_code == HTTP_OK
-        self.assertContains(response, "FootyCollect")
+        self.assertContains(response, "Footy")
+        self.assertContains(response, "Collect")
         self.assertContains(response, "Sign In")

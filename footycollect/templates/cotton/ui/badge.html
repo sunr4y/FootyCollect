@@ -1,0 +1,75 @@
+<c-vars variant="default" size="default" />
+<span class="fc-badge fc-badge-{{ variant }} fc-badge-{{ size }}" {{ attrs }}>
+  {% if icon %}<i class="{{ icon }} me-1"></i>{% endif %}
+  {{ slot }}
+</span>
+<style>
+  .fc-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .fc-badge:focus {
+    outline: 2px solid var(--fc-ring);
+    outline-offset: 2px;
+  }
+
+  .fc-badge-default {
+    background-color: var(--fc-primary);
+    color: var(--fc-primary-foreground);
+    border-color: transparent;
+  }
+
+  .fc-badge-default:hover {
+    background-color: hsl(180, 85%, 35%);
+  }
+
+  .fc-badge-secondary {
+    background-color: var(--fc-secondary);
+    color: var(--fc-secondary-foreground);
+    border-color: transparent;
+  }
+
+  .fc-badge-secondary:hover {
+    background-color: hsl(220, 15%, 20%);
+  }
+
+  .fc-badge-destructive {
+    background-color: var(--fc-destructive);
+    color: var(--fc-destructive-foreground);
+    border-color: transparent;
+  }
+
+  .fc-badge-destructive:hover {
+    background-color: hsl(0, 84%, 55%);
+  }
+
+  .fc-badge-outline {
+    background-color: transparent;
+    color: var(--fc-foreground);
+    border-color: var(--fc-border);
+  }
+
+  .fc-badge-outline:hover {
+    background-color: var(--fc-secondary);
+  }
+
+  .fc-badge-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .fc-badge-default-size {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8125rem;
+  }
+
+  .fc-badge-lg {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+</style>

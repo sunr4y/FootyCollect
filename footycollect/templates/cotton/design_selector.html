@@ -147,31 +147,45 @@
 <style>
   .design-selector-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     margin-top: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .design-selector-container {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .design-selector-container {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   .design-option {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px;
-    border: 1px solid #ddd;
+    justify-content: flex-start;
+    padding: 12px 8px;
+    border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
+    background-color: var(--fc-secondary);
   }
 
   .design-option:hover {
     transform: scale(1.05);
-    border-color: #666;
+    background-color: var(--fc-card);
   }
 
   .design-option.selected {
-    border: 2px solid #0d6efd;
-    background-color: #f8f9fa;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border: 2px solid hsla(180, 85%, 40%, 1);
+    background: linear-gradient(135deg, var(--fc-card) 0%, hsla(180, 85%, 40%, 0.1) 100%);
+    box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.3);
   }
 
   .jersey-container {
@@ -182,6 +196,7 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 8px;
+    flex-shrink: 0;
   }
 
   .design-icon {
@@ -203,6 +218,24 @@
   .design-label {
     font-size: 12px;
     text-align: center;
-    color: #333;
+    color: var(--fc-muted-foreground);
+    margin-top: 0;
+    width: 100%;
+    line-height: 1.4;
+    display: block;
+  }
+
+  .design-option.selected .design-label {
+    color: var(--fc-foreground);
+  }
+
+  .design-image {
+    opacity: 0.85;
+    filter: brightness(0.95) contrast(1.05);
+  }
+
+  .design-option.selected .design-image {
+    opacity: 1;
+    filter: brightness(1.05) contrast(1.1);
   }
 </style>

@@ -4,7 +4,8 @@
 {% load crispy_forms_tags %}
 {% load cotton %}
 
-{% block extra_css %}
+{% block css %}
+  {{ block.super }}
   {{ form.media.css }}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
@@ -354,7 +355,7 @@
       /* Bootstrap danger color on hover */
     }
   </style>
-{% endblock extra_css %}
+{% endblock css %}
 {% block content %}
   {{ form.media }}
   <div class="container py-4">

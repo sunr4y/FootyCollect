@@ -3,28 +3,354 @@
 {% load i18n static %}
 {% load crispy_forms_tags %}
 
-{% block extra_css %}
+{% block css %}
+  {{ block.super }}
   {{ form.media.css }}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-        rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
-        rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
         rel="stylesheet" />
   <style>
     /* Ensure country dropdown looks empty by default */
     #id_country_code {
-      background-color: white !important;
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+      color: var(--fc-foreground) !important;
     }
 
     #id_country_code:empty {
-      background-color: white !important;
+      background-color: var(--fc-secondary) !important;
     }
 
     .select2-container--bootstrap5 .select2-selection--single {
-      background-color: white !important;
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+      color: var(--fc-foreground) !important;
+    }
+
+    .form-control,
+    .form-select {
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+      color: var(--fc-foreground) !important;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      background-color: var(--fc-secondary) !important;
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      color: var(--fc-foreground) !important;
+      box-shadow: 0 0 0 0.2rem hsla(180, 85%, 40%, 0.25) !important;
+    }
+
+    .form-label {
+      color: var(--fc-muted-foreground) !important;
+      font-size: 0.875rem !important;
+    }
+
+    /* Toggle Switch Styles */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--fc-secondary);
+      border: 1px solid var(--fc-border);
+      transition: 0.3s;
+      border-radius: 26px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--fc-foreground);
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    .toggle-switch input:checked+.toggle-slider {
+      background-color: hsla(180, 85%, 40%, 1);
+      border-color: hsla(180, 85%, 40%, 1);
+    }
+
+    .toggle-switch input:checked+.toggle-slider:before {
+      transform: translateX(24px);
+      background-color: white;
+    }
+
+    .toggle-switch input:focus+.toggle-slider {
+      box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.25);
+    }
+
+    /* ============================================================================
+       SELECT2 DARK THEME - FOOTYCOLLECT
+       ============================================================================ */
+
+    /* Base container - máxima especificidad usando ID del campo */
+    #id_country_code.select2-hidden-accessible~.select2-container--bootstrap5,
+    #id_country_code~.select2-container--bootstrap5 {
+      width: 100% !important;
+      box-sizing: border-box;
+    }
+
+    /* SELECTION BOX - Estado normal, focus y open */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection,
+    #id_country_code~.select2-container--bootstrap5.select2-container--focus .select2-selection,
+    #id_country_code~.select2-container--bootstrap5.select2-container--open .select2-selection {
+      background-color: var(--fc-secondary, #1a1a1a) !important;
+      border: 1px solid var(--fc-border, #333333) !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+      box-shadow: none !important;
+    }
+
+    /* Single selection variant */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection--single {
+      background-color: var(--fc-secondary, #1a1a1a) !important;
+      border: 1px solid var(--fc-border, #333333) !important;
+      height: 38px !important;
+      padding: 0 !important;
+    }
+
+    /* Rendered text (selected value) */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection__rendered,
+    #id_country_code~.select2-container--bootstrap5 .select2-selection--single .select2-selection__rendered {
+      color: var(--fc-foreground, #f0f0f0) !important;
+      line-height: 38px !important;
+      padding: 0 8px !important;
+      padding-right: 30px !important;
+      background-color: transparent !important;
+      display: flex !important;
+      align-items: center !important;
+      height: 100% !important;
+    }
+
+    /* Choice tags/chips when value is selected */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection__choice {
+      background-color: var(--fc-secondary, #1a1a1a) !important;
+      border: 1px solid var(--fc-border, #333333) !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+      padding: 2px 6px !important;
+      margin: 2px 4px 2px 0 !important;
+      border-radius: 4px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      line-height: 1.4 !important;
+      max-width: 100% !important;
+    }
+
+    /* Choice remove button (X) */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection__choice__remove {
+      color: var(--fc-muted-foreground, #888888) !important;
+      margin-right: 4px !important;
+      margin-left: 0 !important;
+      padding: 0 2px !important;
+      font-size: 16px !important;
+      line-height: 1 !important;
+      height: auto !important;
+      width: auto !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    #id_country_code~.select2-container--bootstrap5 .select2-selection__choice__remove:hover {
+      color: var(--fc-foreground, #f0f0f0) !important;
+    }
+
+    /* Ensure flag icons in selection are aligned */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection__rendered .fi {
+      margin-right: 6px !important;
+      vertical-align: middle !important;
+      display: inline-block !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Selection container alignment */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection {
+      display: flex !important;
+      align-items: center !important;
+      min-height: 38px !important;
+    }
+
+    /* Arrow icon styling */
+    #id_country_code~.select2-container--bootstrap5 .select2-selection__arrow {
+      height: 36px !important;
+      width: 20px !important;
+      right: 1px !important;
+      top: 1px !important;
+      background-color: transparent !important;
+    }
+
+    #id_country_code~.select2-container--bootstrap5 .select2-selection__arrow b {
+      border-color: var(--fc-foreground, #f0f0f0) transparent transparent transparent !important;
+      border-width: 5px 4px 0 4px !important;
+      margin: 5px 2px 0 !important;
+    }
+
+    /* Arrow cuando el dropdown está abierto */
+    #id_country_code~.select2-container--bootstrap5.select2-container--open .select2-selection__arrow b {
+      border-color: transparent transparent var(--fc-foreground, #f0f0f0) transparent !important;
+      border-width: 0 4px 5px 4px !important;
+    }
+
+    /* DROPDOWN - Contenedor principal */
+    .select2-container--bootstrap5 .select2-dropdown {
+      background-color: var(--fc-card, #0f0f0f) !important;
+      border: 1px solid var(--fc-border, #333333) !important;
+      border-top: none !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .select2-container--bootstrap5 .select2-dropdown.select2-dropdown--below {
+      border-top: 1px solid var(--fc-border, #333333) !important;
+    }
+
+    /* Search field dentro del dropdown */
+    .select2-container--bootstrap5 .select2-search--dropdown {
+      background-color: var(--fc-card, #0f0f0f) !important;
+      padding: 8px !important;
+      border-bottom: 1px solid var(--fc-border, #333333) !important;
+    }
+
+    .select2-container--bootstrap5 .select2-search--dropdown .select2-search__field,
+    .select2-container--bootstrap5 .select2-search--dropdown .select2-search__field:focus {
+      background-color: var(--fc-secondary, #1a1a1a) !important;
+      border: 1px solid var(--fc-border, #333333) !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+      padding: 6px 12px !important;
+      font-size: 14px !important;
+    }
+
+    .select2-container--bootstrap5 .select2-search--dropdown .select2-search__field:focus {
+      border-color: var(--fc-primary, #32b8c6) !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(50, 184, 198, 0.25) !important;
+    }
+
+    /* RESULTS - Contenedor de opciones */
+    .select2-container--bootstrap5 .select2-results {
+      background-color: var(--fc-card, #0f0f0f) !important;
+    }
+
+    .select2-container--bootstrap5 .select2-results__options {
+      background-color: var(--fc-card, #0f0f0f) !important;
+    }
+
+    /* Opción individual */
+    .select2-container--bootstrap5 .select2-results__option,
+    .select2-container--bootstrap5 .select2-results__option[role="option"] {
+      background-color: var(--fc-card, #0f0f0f) !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+      padding: 8px 12px !important;
+      line-height: 1.5 !important;
+      transition: background-color 0.15s ease !important;
+    }
+
+    /* Opción highlighted (cuando pasas el mouse) */
+    .select2-container--bootstrap5 .select2-results__option--highlighted,
+    .select2-container--bootstrap5 .select2-results__option--highlighted[role="option"] {
+      background-color: rgba(50, 184, 198, 0.2) !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+    }
+
+    /* Opción selected */
+    .select2-container--bootstrap5 .select2-results__option[aria-selected="true"],
+    .select2-container--bootstrap5 .select2-results__option[aria-selected="true"][role="option"] {
+      background-color: rgba(50, 184, 198, 0.15) !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+    }
+
+    /* Opción selected AND highlighted */
+    .select2-container--bootstrap5 .select2-results__option[aria-selected="true"].select2-results__option--highlighted {
+      background-color: rgba(50, 184, 198, 0.3) !important;
+      color: var(--fc-foreground, #f0f0f0) !important;
+    }
+
+    /* No results message */
+    .select2-container--bootstrap5 .select2-results__message {
+      background-color: var(--fc-card, #0f0f0f) !important;
+      color: var(--fc-muted-foreground, #888888) !important;
+      padding: 8px 12px !important;
+    }
+
+    /* DISABLED state */
+    .select2-container--bootstrap5.select2-container--disabled .select2-selection {
+      background-color: var(--fc-muted, #242424) !important;
+      border-color: var(--fc-border, #333333) !important;
+      color: var(--fc-muted-foreground, #888888) !important;
+      cursor: not-allowed !important;
+    }
+
+    /* PLACEHOLDER text */
+    .select2-container--bootstrap5 .select2-selection__placeholder {
+      color: var(--fc-muted-foreground, #888888) !important;
+    }
+
+    /* Clearable button (X) */
+    .select2-container--bootstrap5 .select2-selection__clear {
+      color: var(--fc-foreground, #f0f0f0) !important;
+      margin-right: 5px !important;
+    }
+
+    /* ============================================================================
+       RESPONSIVE ADJUSTMENTS
+       ============================================================================ */
+
+    @media (max-width: 576px) {
+      .select2-container--bootstrap5 .select2-selection {
+        height: 36px !important;
+      }
+
+      .select2-container--bootstrap5 .select2-selection__rendered {
+        line-height: 36px !important;
+      }
+    }
+
+    /* Remove gap after description */
+    #div_id_description {
+      margin-bottom: 0 !important;
+    }
+
+    /* Change blue buttons to teal */
+    .btn-primary {
+      background-color: hsla(180, 85%, 40%, 1) !important;
+      border-color: hsla(180, 85%, 40%, 1) !important;
+    }
+
+    .btn-primary:hover {
+      background-color: hsla(180, 85%, 35%, 1) !important;
+      border-color: hsla(180, 85%, 35%, 1) !important;
+    }
+
+    .btn-outline-primary {
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      color: hsla(180, 85%, 40%, 1) !important;
+    }
+
+    .btn-outline-primary:hover {
+      background-color: hsla(180, 85%, 40%, 0.1) !important;
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      color: hsla(180, 85%, 40%, 1) !important;
     }
 
     /* Ensure flag icons render properly in select2 */
@@ -90,17 +416,45 @@
       margin-right: 10px;
     }
 
-    /* Styles for search results */
+    /* Styles for search results - Dark Theme */
     .kit-search-results {
       position: absolute;
       z-index: 1000;
       width: 100%;
       max-height: 300px;
       overflow-y: auto;
-      background: white;
-      border: 1px solid #ddd;
+      background: var(--fc-card, #141820) !important;
+      border: 1px solid var(--fc-border, #242c36) !important;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      color: var(--fc-foreground, #f0f0e8) !important;
+      overflow: hidden;
+    }
+
+    /* Custom scrollbar for search results - Dark Theme */
+    .kit-search-results::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .kit-search-results::-webkit-scrollbar-track {
+      background: var(--fc-secondary, #1a1f2b) !important;
       border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .kit-search-results::-webkit-scrollbar-thumb {
+      background: var(--fc-border, #242c36) !important;
+      border-radius: 4px;
+      border: 1px solid var(--fc-secondary, #1a1f2b);
+    }
+
+    .kit-search-results::-webkit-scrollbar-thumb:hover {
+      background: var(--fc-muted, #242c36) !important;
+    }
+
+    /* Firefox scrollbar */
+    .kit-search-results {
+      scrollbar-width: thin;
+      scrollbar-color: var(--fc-border, #242c36) var(--fc-secondary, #1a1f2b);
     }
 
     .kit-search-item {
@@ -108,11 +462,42 @@
       align-items: center;
       padding: 10px;
       cursor: pointer;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--fc-border, #242c36) !important;
+      color: var(--fc-foreground, #f0f0e8) !important;
+      transition: background-color 0.15s ease;
+    }
+
+    .kit-search-item:last-child {
+      border-bottom: none !important;
     }
 
     .kit-search-item:hover {
-      background-color: #f8f9fa;
+      background-color: var(--fc-secondary, #1a1f2b) !important;
+    }
+
+    .kit-search-item .fw-bold {
+      color: var(--fc-foreground, #f0f0e8) !important;
+    }
+
+    .kit-search-item .text-muted {
+      color: var(--fc-muted-foreground, #8b92a0) !important;
+    }
+
+    /* Header del dropdown de resultados */
+    .kit-search-results>.p-2 {
+      background-color: var(--fc-secondary, #1a1f2b) !important;
+      border-bottom: 1px solid var(--fc-border, #242c36) !important;
+      border-top-left-radius: 0.5rem;
+      border-top-right-radius: 0.5rem;
+    }
+
+    .kit-search-results .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%);
+      opacity: 0.7;
+    }
+
+    .kit-search-results .btn-close:hover {
+      opacity: 1;
     }
 
     .kit-search-item-img-container {
@@ -121,13 +506,13 @@
       min-width: 50px;
       min-height: 50px;
       margin-right: 10px;
-      border: 1px solid #eee;
+      border: 1px solid var(--fc-border, #242c36) !important;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
       flex-shrink: 0;
-      background-color: #f8f9fa;
+      background-color: var(--fc-secondary, #1a1f2b) !important;
       position: relative;
     }
 
@@ -140,8 +525,19 @@
     }
 
     .loading-indicator {
-      display: inline-block;
-      margin-left: 10px;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .loading-indicator .spinner-border {
+      border-color: hsla(180, 85%, 40%, 0.3) !important;
+      border-right-color: hsla(180, 85%, 40%, 1) !important;
+      width: 1rem !important;
+      height: 1rem !important;
     }
 
     .search-timestamp {
@@ -151,11 +547,11 @@
     .placeholder-img {
       width: 40px;
       height: 40px;
-      background-color: #f0f0f0;
+      background-color: var(--fc-secondary, #1a1f2b) !important;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #aaa;
+      color: var(--fc-muted-foreground, #8b92a0) !important;
       font-size: 18px;
     }
 
@@ -175,6 +571,14 @@
     .img-loading .spinner-border {
       width: 1rem;
       height: 1rem;
+    }
+
+    /* Spinner for API loading - Teal color */
+    .card-header .spinner-border {
+      border-color: hsla(180, 85%, 40%, 0.3) !important;
+      border-right-color: hsla(180, 85%, 40%, 1) !important;
+      width: 1rem !important;
+      height: 1rem !important;
     }
 
     /* Styles for the default image */
@@ -224,7 +628,7 @@
       transition: all 120ms ease-in-out;
     }
   </style>
-{% endblock extra_css %}
+{% endblock css %}
 {% block inline_javascript %}
   <script>
     // Function to debounce the searches
@@ -632,7 +1036,6 @@
         seasons: [],
         selectedSeasonId: '',
 
-        isLoadingFromApi: false,
         showClubSearch: true,
 
         kitData: null,
@@ -687,10 +1090,23 @@
             this.debouncedSearchClubs();
           });
 
-          // Load all countries by default - wait for DOM and Select2 to be ready
+          // Load countries after a short delay to ensure form.media.js has initialized Select2
+          // If Select2 is not initialized by form.media.js, we'll initialize it ourselves
           setTimeout(() => {
-            this.loadAllCountries();
-          }, 100);
+            const countrySelect = $('#id_country_code');
+            if (countrySelect.length) {
+              // Check if Select2 is already initialized
+              if (countrySelect.hasClass('select2-hidden-accessible')) {
+                // Select2 is initialized, but we need to load countries if the dropdown is empty
+                if (countrySelect.find('option').length <= 1) {
+                  this.loadAllCountries();
+                }
+              } else {
+                // Select2 is not initialized, so initialize it with countries
+                this.loadAllCountries();
+              }
+            }
+          }, 500);
         },
 
         // Mutually exclusive version toggle handlers
@@ -757,62 +1173,64 @@
         loadAllCountries() {
           console.log('Loading all countries by default...');
           const countrySelect = $('#id_country_code');
-          if (countrySelect.length) {
-            fetch('/core/country-autocomplete/')
-              .then(response => response.json())
-              .then(data => {
-                // Clear existing options
-                countrySelect.empty();
-
-                // Add all countries to the dropdown
-                data.results.forEach(country => {
-                  // Create option element manually to avoid HTML escaping
-                  const option = document.createElement('option');
-                  option.value = country.id;
-                  option.innerHTML = country.text; // Use innerHTML to render HTML
-                  countrySelect.append(option);
-                });
-
-                // Re-initialize select2 with proper template functions using django.jQuery
-                if (countrySelect.hasClass('select2-hidden-accessible')) {
-                  countrySelect.select2('destroy');
-                }
-
-                countrySelect.select2({
-                  theme: 'bootstrap5',
-                  width: '100%',
-                  placeholder: 'Select a country...',
-                  allowClear: true,
-                  templateResult: function(country) {
-                    if (!country.id) return country.text;
-                    // Return the HTML as a jQuery object - country.text already contains HTML with flag
-                    return $('<span>' + country.text + '</span>');
-                  },
-                  templateSelection: function(country) {
-                    if (!country.id) return country.text;
-                    // Return the HTML as a jQuery object - country.text already contains HTML with flag
-                    return $('<span>' + country.text + '</span>');
-                  },
-                  escapeMarkup: function(markup) {
-                    // Don't escape HTML, allow it to render
-                    return markup;
-                  }
-                });
-
-                // Clear any default selection
-                countrySelect.val(null).trigger('change');
-
-                console.log('All countries loaded with proper rendering:', data.results.length);
-              })
-              .catch(error => {
-                console.error('Error loading countries:', error);
-              });
-          } else {
-            // If select2 hasn't initialized yet, wait a bit and try again
+          if (!countrySelect.length) {
+            // If select element doesn't exist yet, wait and try again
             setTimeout(() => {
               this.loadAllCountries();
             }, 500);
+            return;
           }
+
+          fetch('/core/country-autocomplete/')
+            .then(response => response.json())
+            .then(data => {
+              // Destroy Select2 if it's already initialized to ensure clean re-initialization
+              if (countrySelect.hasClass('select2-hidden-accessible')) {
+                countrySelect.select2('destroy');
+              }
+
+              // Clear existing options
+              countrySelect.empty();
+
+              // Add all countries to the dropdown
+              data.results.forEach(country => {
+                // Create option element manually to avoid HTML escaping
+                const option = document.createElement('option');
+                option.value = country.id;
+                option.innerHTML = country.text; // Use innerHTML to render HTML
+                countrySelect.append(option);
+              });
+
+              // Re-initialize Select2 with proper template functions for flags
+              countrySelect.select2({
+                theme: 'bootstrap5',
+                width: '100%',
+                placeholder: 'Select a country...',
+                allowClear: true,
+                templateResult: function(country) {
+                  if (!country.id) return country.text;
+                  // Return the HTML as a jQuery object - country.text already contains HTML with flag
+                  return $('<span>' + country.text + '</span>');
+                },
+                templateSelection: function(country) {
+                  if (!country.id) return country.text;
+                  // Return the HTML as a jQuery object - country.text already contains HTML with flag
+                  return $('<span>' + country.text + '</span>');
+                },
+                escapeMarkup: function(markup) {
+                  // Don't escape HTML, allow it to render
+                  return markup;
+                }
+              });
+
+              // Clear any default selection
+              countrySelect.val(null).trigger('change');
+
+              console.log('All countries loaded with proper rendering:', data.results.length);
+            })
+            .catch(error => {
+              console.error('Error loading countries:', error);
+            });
         },
 
         searchKits() {
@@ -912,7 +1330,6 @@
             }
 
             // Get full kit details
-            this.isLoadingFromApi = true;
             const url = `/fkapi/kit/${kit.id}/`;
             console.log('Getting kit details with URL:', url);
 
@@ -926,14 +1343,15 @@
               })
               .then(data => {
                 console.log('Kit details:', data);
-                this.populateFormFromKit(data);
-                this.isLoadingFromApi = false;
 
-                // Save the kit ID
+                // Save the kit ID first
                 const kitIdField = document.getElementById('id_kit_id');
                 if (kitIdField) {
                   kitIdField.value = kit.id;
                 }
+
+                // Populate form synchronously (the visual updates will happen asynchronously)
+                this.populateFormFromKit(data);
 
                 try {
                   // Update the confirmation message
@@ -950,7 +1368,6 @@
               })
               .catch(error => {
                 console.error('Error getting kit details:', error);
-                this.isLoadingFromApi = false;
                 // Show an error message to the user
                 alert('Error al obtener los detalles del kit: ' + error.message);
               });
@@ -1738,13 +2155,16 @@
             const imagePreview = document.createElement('div');
             imagePreview.className = 'card mb-3 api-image-preview';
             imagePreview.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+            imagePreview.style.border = '1px solid var(--fc-border)';
+            imagePreview.style.backgroundColor = 'var(--fc-card)';
+            imagePreview.style.borderRadius = '0.5rem';
             imagePreview.innerHTML = `
-            <div class="card-header bg-primary text-white">
+            <div class="card-header" style="background-color: hsla(180, 85%, 40%, 1); color: white; border-bottom: 1px solid var(--fc-border);">
               <h5 class="card-title mb-0">Kit Image</h5>
             </div>
-            <div class="card-body text-center">
-              <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
-              <p class="text-muted mb-0 small">This image will be automatically downloaded once the jersey is created</p>
+            <div class="card-body text-center" style="background-color: var(--fc-card); padding: 1.5rem;">
+              <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.5rem;" class="mb-2" />
+              <p class="mb-0 small" style="color: var(--fc-muted-foreground);">This image will be automatically downloaded once the jersey is created</p>
             </div>
           `;
 
@@ -1793,13 +2213,16 @@
               if (form) {
                 const imagePreview = document.createElement('div');
                 imagePreview.className = 'card mb-3 api-image-preview';
+                imagePreview.style.border = '1px solid var(--fc-border)';
+                imagePreview.style.backgroundColor = 'var(--fc-card)';
+                imagePreview.style.borderRadius = '0.5rem';
                 imagePreview.innerHTML = `
-                <div class="card-header bg-primary text-white">
+                <div class="card-header" style="background-color: hsla(180, 85%, 40%, 1); color: white; border-bottom: 1px solid var(--fc-border);">
                   <h5 class="card-title mb-0">Kit Image</h5>
                 </div>
-                <div class="card-body text-center">
-                  <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain;" class="mb-2" />
-                  <p class="text-muted mb-0 small">This image will be automatically downloaded once the jersey is created</p>
+                <div class="card-body text-center" style="background-color: var(--fc-card); padding: 1.5rem;">
+                  <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.5rem;" class="mb-2" />
+                  <p class="mb-0 small" style="color: var(--fc-muted-foreground);">This image will be automatically downloaded once the jersey is created</p>
                 </div>
               `;
                 form.insertBefore(imagePreview, form.firstChild);
@@ -2070,11 +2493,211 @@
         }
       }));
     });
+
+    // ============================================================================
+    // SELECT2 DARK THEME - JavaScript Optimizado
+    // ============================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+      // Esperar a que jQuery y Select2 estén listos
+      if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+        console.warn('jQuery o Select2 no están cargados');
+        return;
+      }
+
+      // Obtener variables CSS una sola vez
+      const getCSSVar = (name, fallback = '') => {
+        return getComputedStyle(document.documentElement)
+          .getPropertyValue(name)
+          .trim() || fallback;
+      };
+
+      const colors = {
+        secondary: getCSSVar('--fc-secondary', '#1a1a1a'),
+        card: getCSSVar('--fc-card', '#0f0f0f'),
+        border: getCSSVar('--fc-border', '#333333'),
+        foreground: getCSSVar('--fc-foreground', '#f0f0f0'),
+        primary: getCSSVar('--fc-primary', '#32b8c6'),
+        mutedForeground: getCSSVar('--fc-muted-foreground', '#888888'),
+      };
+
+      // Función para aplicar estilos inline (fallback)
+      const applyInlineStyles = ($element) => {
+        if (!$element || !$element.length) return;
+
+        // Selection box
+        if ($element.hasClass('select2-selection')) {
+          $element.css({
+            'background-color': colors.secondary,
+            'border-color': colors.border,
+            'color': colors.foreground,
+          });
+
+          // Rendered text
+          $element.find('.select2-selection__rendered').css({
+            'color': colors.foreground,
+            'display': 'flex',
+            'align-items': 'center',
+            'height': '100%',
+            'padding-right': '30px',
+          });
+
+          // Style choice tags/chips
+          $element.find('.select2-selection__choice').each(function() {
+            const $choice = $(this);
+            $choice.css({
+              'background-color': colors.secondary,
+              'border-color': colors.border,
+              'color': colors.foreground,
+              'padding': '2px 6px',
+              'margin': '2px 4px 2px 0',
+              'border-radius': '4px',
+              'display': 'inline-flex',
+              'align-items': 'center',
+              'line-height': '1.4',
+              'max-width': '100%',
+            });
+
+            // Style remove button
+            $choice.find('.select2-selection__choice__remove').css({
+              'color': colors.mutedForeground,
+              'margin-right': '4px',
+              'margin-left': '0',
+              'padding': '0 2px',
+              'font-size': '16px',
+              'line-height': '1',
+              'height': 'auto',
+              'width': 'auto',
+            });
+          });
+
+          // Arrow
+          const $arrow = $element.find('.select2-selection__arrow b');
+          const $container = $element.closest('.select2-container--bootstrap5');
+          const isOpen = $container && $container.hasClass('select2-container--open');
+
+          if (isOpen) {
+            $arrow.css({
+              'border-color': `transparent transparent ${colors.foreground} transparent`,
+            });
+          } else {
+            $arrow.css({
+              'border-color': `${colors.foreground} transparent transparent transparent`,
+            });
+          }
+        }
+
+        // Dropdown
+        if ($element.hasClass('select2-dropdown')) {
+          $element.css({
+            'background-color': colors.card,
+            'border-color': colors.border,
+            'color': colors.foreground,
+          });
+
+          // Search field
+          $element.find('.select2-search__field').css({
+            'background-color': colors.secondary,
+            'border-color': colors.border,
+            'color': colors.foreground,
+          });
+
+          // Options
+          $element.find('.select2-results__option').each(function() {
+            const $option = $(this);
+            $option.css({
+              'background-color': colors.card,
+              'color': colors.foreground,
+            });
+
+            if ($option.hasClass('select2-results__option--highlighted')) {
+              $option.css('background-color', 'rgba(50, 184, 198, 0.2)');
+            }
+
+            if ($option.attr('aria-selected') === 'true') {
+              $option.css('background-color', 'rgba(50, 184, 198, 0.15)');
+            }
+          });
+        }
+      };
+
+      // Inicializar Select2 para el campo country
+      const $countrySelect = $('#id_country_code');
+
+      if ($countrySelect.length) {
+        // Aplicar estilos después de que Select2 se inicialice
+        setTimeout(() => {
+          const $container = $countrySelect.next('.select2-container');
+          if ($container.length) {
+            applyInlineStyles($container.find('.select2-selection'));
+          }
+        }, 50);
+
+        // Aplicar estilos cuando se abre el dropdown
+        $countrySelect.on('select2:open', function() {
+          setTimeout(() => {
+            const $dropdown = $('.select2-dropdown');
+            if ($dropdown.length) {
+              applyInlineStyles($dropdown);
+            }
+            // También actualizar el contenedor
+            const $container = $countrySelect.next('.select2-container');
+            if ($container.length) {
+              applyInlineStyles($container.find('.select2-selection'));
+            }
+          }, 10);
+        });
+
+        // Aplicar estilos cuando se cierra
+        $countrySelect.on('select2:close', function() {
+          const $container = $countrySelect.next('.select2-container');
+          if ($container.length) {
+            applyInlineStyles($container.find('.select2-selection'));
+          }
+        });
+
+        // Aplicar estilos cuando se selecciona un valor
+        $countrySelect.on('select2:select select2:unselect', function() {
+          setTimeout(() => {
+            const $container = $countrySelect.next('.select2-container');
+            if ($container.length) {
+              applyInlineStyles($container.find('.select2-selection'));
+            }
+          }, 10);
+        });
+      }
+
+      // MutationObserver como fallback (menos agresivo)
+      let observerTimeout;
+      const observer = new MutationObserver(function(mutations) {
+        // Debounce para evitar ejecutar múltiples veces
+        clearTimeout(observerTimeout);
+        observerTimeout = setTimeout(() => {
+          const $container = $('#id_country_code').next('.select2-container');
+          const $dropdown = $('.select2-dropdown:visible');
+
+          if ($container.length) {
+            applyInlineStyles($container.find('.select2-selection'));
+          }
+          if ($dropdown.length) {
+            applyInlineStyles($dropdown);
+          }
+        }, 10);
+      });
+
+      // Observar solo cambios de clase (más eficiente)
+      observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style'],
+        subtree: true,
+      });
+
+      console.log('✅ Select2 dark theme initialized');
+    });
   </script>
 {% endblock inline_javascript %}
 {% block content %}
-  <div class="container py-4" x-data="jerseyForm" x-init="init()">
-    <h1>{% trans "Add Jersey from Database" %}</h1>
+  <div x-data="jerseyForm" x-init="init()" class="fc-container-centered">
+    <h2 class="mb-4 fc-title-large">{% trans "Add Jersey from Database" %}</h2>
     {% if messages %}
       <div class="messages">
         {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
@@ -2082,23 +2705,24 @@
     {% endif %}
     <form method="post" enctype="multipart/form-data" id="jersey-form">
       {% csrf_token %}
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0">{% trans "Search" %}</h5>
+      <div class="fc-card mb-4">
+        <div class="fc-card-header-small">
+          <h5 class="card-title mb-0 fc-title-small">{% trans "Search" %}</h5>
         </div>
-        <div class="card-body">
+        <div class="fc-card-body-small fc-card-body-flex">
           <!-- Kit Search -->
           <div class="mb-3 position-relative">
             <label for="id_kit_search" class="form-label">{% trans "Search for a Kit" %}</label>
-            <div class="input-group">
+            <div class="input-group position-relative">
               <input type="text"
                      id="id_kit_search"
                      name="kit_search"
                      class="form-control"
                      placeholder="{% trans 'Enter at least 3 characters' %}"
                      x-model="kitSearch"
-                     autocomplete="off" />
-              <div class="loading-indicator" x-show="isSearching">
+                     autocomplete="off"
+                     class="fc-form-input fc-form-input-with-icon" />
+              <div class="loading-indicator" x-show="isSearching" x-cloak>
                 <span class="spinner-border spinner-border-sm"
                       role="status"
                       aria-hidden="true"></span>
@@ -2106,8 +2730,8 @@
             </div>
             <!-- Kit Search Results -->
             <div class="kit-search-results" x-show="kitResults.length > 0">
-              <div class="p-2 bg-light border-bottom">
-                <small class="text-muted">{% trans "Results for" %}: <span x-text="kitSearch"></span></small>
+              <div class="p-2 border-bottom fc-photo-placeholder fc-photo-placeholder-border">
+                <small class="fc-text-small">{% trans "Results for" %}: <span x-text="kitSearch"></span></small>
                 <button type="button"
                         class="btn-close float-end"
                         @click="kitResults = []"
@@ -2141,15 +2765,16 @@
           <div class="mb-3" x-show="showClubSearch">
             <p class="text-center">{% trans "Or" %}</p>
             <label for="id_club_search" class="form-label">{% trans "Search for a Club" %}</label>
-            <div class="input-group">
+            <div class="input-group position-relative">
               <input type="text"
                      id="id_club_search"
                      name="club_search"
                      class="form-control"
                      placeholder="{% trans 'Enter at least 3 characters' %}"
                      x-model="clubSearch"
-                     autocomplete="off" />
-              <div class="loading-indicator" x-show="isSearchingClub">
+                     autocomplete="off"
+                     class="fc-form-input fc-form-input-with-icon" />
+              <div class="loading-indicator" x-show="isSearchingClub" x-cloak>
                 <span class="spinner-border spinner-border-sm"
                       role="status"
                       aria-hidden="true"></span>
@@ -2157,8 +2782,8 @@
             </div>
             <!-- Club Search Results -->
             <div class="kit-search-results" x-show="clubResults.length > 0">
-              <div class="p-2 bg-light border-bottom">
-                <small class="text-muted">{% trans "Results for" %}: <span x-text="clubSearch"></span></small>
+              <div class="p-2 border-bottom fc-photo-placeholder fc-photo-placeholder-border">
+                <small class="fc-text-small">{% trans "Results for" %}: <span x-text="clubSearch"></span></small>
                 <button type="button"
                         class="btn-close float-end"
                         @click="clubResults = []"
@@ -2213,17 +2838,37 @@
         </div>
       </div>
       <!-- Form Fields -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0">{% trans "Jersey Details" %}</h5>
-          <div x-show="isLoadingFromApi" class="text-info">
-            <span class="spinner-border spinner-border-sm"
-                  role="status"
-                  aria-hidden="true"></span>
-            {% trans "Loading kit information..." %}
-          </div>
+      <div class="fc-card mb-4">
+        <div class="fc-card-header-small">
+          <h5 class="card-title mb-0 fc-title-small">{% trans "Jersey Details" %}</h5>
         </div>
-        <div class="card-body">
+        <div class="fc-card-body-flex">
+          <!-- Read-only info section (Brand, Competitions, Club, Season) -->
+          <div class="row mb-4 fc-photo-placeholder fc-photo-placeholder-rounded"
+               x-show="kitData"
+               x-cloak>
+            <div class="col-md-3 mb-2 mb-md-0">
+              <div class="text-muted small mb-1">{% trans "Brand" %}</div>
+              <div class="fw-semibold"
+                   x-text="kitData?.brand?.name || kitData?.team?.brand?.name"></div>
+            </div>
+            <div class="col-md-3 mb-2 mb-md-0">
+              <div class="text-muted small mb-1">{% trans "Competitions" %}</div>
+              <div class="fw-semibold">
+                <template x-for="comp in kitData?.competition" :key="comp.id">
+                  <div x-text="comp.name"></div>
+                </template>
+              </div>
+            </div>
+            <div class="col-md-3 mb-2 mb-md-0">
+              <div class="text-muted small mb-1">{% trans "Club" %}</div>
+              <div class="fw-semibold" x-text="kitData?.team?.name"></div>
+            </div>
+            <div class="col-md-3 mb-2 mb-md-0">
+              <div class="text-muted small mb-1">{% trans "Season" %}</div>
+              <div class="fw-semibold" x-text="kitData?.season?.year"></div>
+            </div>
+          </div>
           <!-- Cotton Components for colors and design -->
           <div class="row mb-3">
             <div class="col-md-6" id="div_id_main_color">
@@ -2236,101 +2881,38 @@
             </div>
           </div>
           <div class="row mb-3">
-            <div class="col-md-6" id="div_id_design">
+            <div class="col-12" id="div_id_design">
               <c-design-selector name="design" label="{% trans 'Design Pattern' %}" data-selected="{{ form.design.value|default:'' }}" :design_choices="{{ design_choices|safe }}">
               </c-design-selector>
             </div>
           </div>
+          <!-- Size and Condition in same row -->
+          <div class="row mb-3">
+            {% for field in form %}
+              {% if field.name == 'size' %}
+                <div class="col-md-6" id="div_id_size">{{ field|as_crispy_field }}</div>
+              {% elif field.name == 'condition' %}
+                <div class="col-md-6" id="div_id_condition">{{ field|as_crispy_field }}</div>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <!-- Detailed condition and Country in same row -->
+          <div class="row mb-3">
+            {% for field in form %}
+              {% if field.name == 'detailed_condition' %}
+                <div class="col-md-6" id="div_id_detailed_condition">{{ field|as_crispy_field }}</div>
+              {% elif field.name == 'country_code' %}
+                <div class="col-md-6" id="div_id_country_code">{{ field|as_crispy_field }}</div>
+              {% endif %}
+            {% endfor %}
+          </div>
           <!-- Renderizar el formulario excluyendo los campos que ya están como componentes Cotton -->
           {% for field in form %}
-            {% if field.name == 'brand' %}
-              <!-- Brand field -->
+            {% if field.name == 'brand' or field.name == 'club' or field.name == 'season' or field.name == 'competitions' %}
+              <!-- These fields are now shown in the read-only info section above -->
               <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-              <div class="form-group" x-show="kitData" x-cloak>
-                <label>{% trans "Brand" %}</label>
-                <div class="form-control-plaintext"
-                     x-text="kitData?.brand?.name || kitData?.team?.brand?.name"></div>
-              </div>
-            {% elif field.name == 'club' %}
-              <!-- Club field -->
-              <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-              <div class="form-group" x-show="kitData" x-cloak>
-                <label>{% trans "Club" %}</label>
-                <div class="form-control-plaintext" x-text="kitData?.team?.name"></div>
-              </div>
-            {% elif field.name == 'season' %}
-              <!-- Season field -->
-              <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-              <div class="form-group" x-show="kitData" x-cloak>
-                <label>{% trans "Season" %}</label>
-                <div class="form-control-plaintext" x-text="kitData?.season?.year"></div>
-              </div>
-            {% elif field.name == 'competitions' %}
-              <!-- Competition field -->
-              <div class="form-group" x-show="!kitData">{{ field|as_crispy_field }}</div>
-              <div class="form-group" x-show="kitData" x-cloak>
-                <label>{% trans "Competitions" %}</label>
-                <div class="form-control-plaintext">
-                  <template x-for="comp in kitData?.competition" :key="comp.id">
-                    <div x-text="comp.name"></div>
-                  </template>
-                </div>
-              </div>
-            {% elif field.name == 'country_code' %}
-              <!-- Country field with custom select2 initialization -->
-              {{ field|as_crispy_field }}
-              <!-- Version Toggle: Fan vs Player (mutually exclusive) -->
-              <div class="row mb-3 mt-2">
-                <div class="col-md-6">
-                  <div class="fw-semibold mb-1">{% trans "Jersey Version" %}</div>
-                  <div class="btn-group w-100" role="group" aria-label="Version toggle">
-                    <button type="button"
-                            class="btn"
-                            :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
-                            @click="setVersion('fan')">{% trans "Fan Version" %}</button>
-                    <button type="button"
-                            class="btn"
-                            :class="!isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
-                            @click="setVersion('player')">{% trans "Player Version" %}</button>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="fw-semibold mb-1">{% trans "Sleeve Type" %}</div>
-                  <div class="btn-group w-100" role="group" aria-label="Sleeve toggle">
-                    <button type="button"
-                            class="btn"
-                            :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
-                            @click="setSleeve('short')">{% trans "Short Sleeve" %}</button>
-                    <button type="button"
-                            class="btn"
-                            :class="!isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
-                            @click="setSleeve('long')">{% trans "Long Sleeve" %}</button>
-                  </div>
-                </div>
-              </div>
-              <!-- Binary options row (clear alignment) -->
-              <div class="row mb-3 mt-3">
-                <div class="col-md-6">
-                  <div class="form-check">
-                    <input class="form-check-input"
-                           type="checkbox"
-                           id="id_is_signed"
-                           name="is_signed"
-                           {% if form.is_signed.value %}checked{% endif %} />
-                    <label class="form-check-label" for="id_is_signed">{% trans "Include Player Signature" %}</label>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-check">
-                    <input class="form-check-input"
-                           type="checkbox"
-                           id="id_is_replica"
-                           name="is_replica"
-                           {% if form.is_replica.value %}checked{% endif %} />
-                    <label class="form-check-label" for="id_is_replica">{% trans "Is replica" %}</label>
-                  </div>
-                </div>
-              </div>
+            {% elif field.name == 'size' or field.name == 'condition' or field.name == 'detailed_condition' or field.name == 'country_code' %}
+              <!-- These fields are already rendered above in their respective rows -->
             {% elif field.name == 'club_search' %}
               <!-- Hidden duplicate club search field -->
             {% elif field.name == 'is_fan_version' %}
@@ -2343,13 +2925,71 @@
               <!-- Hidden by JS; custom nameset UI below controls this -->
               <div class="d-none">{{ field|as_crispy_field }}</div>
             {% elif field.name == 'player_name' or field.name == 'number' %}
-              <!-- Nameset fields: hidden by default, toggled via button -->
-              <div x-show="hasNameset" x-cloak>{{ field|as_crispy_field }}</div>
-            {% elif field.name != 'main_color' and field.name != 'secondary_colors' and field.name != 'design' and field.name not in 'kit_search,kit_id,brand_name,brand_id,club_name,club_id,season_name,season_id,competition_name,competition_id,competition_names,main_img_url,external_image_urls' %}
+              <!-- Nameset fields: will be rendered below the button -->
+            {% elif field.name == 'description' %}
+              <!-- Description field -->
+              <div id="div_id_description" class="mb-0">{{ field|as_crispy_field }}</div>
+            {% elif field.name != 'main_color' and field.name != 'secondary_colors' and field.name != 'design' and field.name != 'size' and field.name != 'condition' and field.name != 'detailed_condition' and field.name != 'country_code' and field.name not in 'kit_search,kit_id,brand_name,brand_id,club_name,club_id,season_name,season_id,competition_name,competition_id,competition_names,main_img_url,external_image_urls' %}
               {{ field|as_crispy_field }}
             {% endif %}
           {% endfor %}
-          <!-- Nameset toggle button -->
+          <!-- Version Toggle: Fan vs Player (mutually exclusive) -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="fc-form-label-block">{% trans "Jersey Version" %}</label>
+              <div class="btn-group w-100 fc-btn-group"
+                   role="group"
+                   aria-label="Version toggle">
+                <button type="button"
+                        class="btn fc-btn-group-item"
+                        :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setVersion('fan')">{% trans "Fan Version" %}</button>
+                <button type="button"
+                        class="btn fc-btn-group-item"
+                        :class="!isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setVersion('player')">{% trans "Player Version" %}</button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="fc-form-label-block">{% trans "Sleeve Type" %}</label>
+              <div class="btn-group w-100 fc-btn-group"
+                   role="group"
+                   aria-label="Sleeve toggle">
+                <button type="button"
+                        class="btn fc-btn-group-item"
+                        :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setSleeve('short')">{% trans "Short Sleeve" %}</button>
+                <button type="button"
+                        class="btn fc-btn-group-item"
+                        :class="!isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                        @click="setSleeve('long')">{% trans "Long Sleeve" %}</button>
+              </div>
+            </div>
+          </div>
+          <!-- Binary options row (clear alignment) - Toggle switches -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="fc-form-label-block">{% trans "Include Player Signature" %}</label>
+              <label class="toggle-switch">
+                <input type="checkbox"
+                       id="id_is_signed"
+                       name="is_signed"
+                       {% if form.is_signed.value %}checked{% endif %} />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="col-md-6">
+              <label class="fc-form-label-block">{% trans "Is replica" %}</label>
+              <label class="toggle-switch">
+                <input type="checkbox"
+                       id="id_is_replica"
+                       name="is_replica"
+                       {% if form.is_replica.value %}checked{% endif %} />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <!-- Nameset toggle button and fields -->
           <div class="mb-3">
             <button type="button"
                     class="btn btn-outline-secondary"
@@ -2363,6 +3003,16 @@
                     @click="disableNameset()">
               <i class="bi bi-x-circle"></i> Remove Nameset
             </button>
+          </div>
+          <!-- Nameset fields in same row below button -->
+          <div class="row mb-3" x-show="hasNameset" x-cloak>
+            {% for field in form %}
+              {% if field.name == 'player_name' %}
+                <div class="col-md-6" id="div_id_player_name">{{ field|as_crispy_field }}</div>
+              {% elif field.name == 'number' %}
+                <div class="col-md-6" id="div_id_number">{{ field|as_crispy_field }}</div>
+              {% endif %}
+            {% endfor %}
           </div>
           <!-- Hidden fields for creating new entities -->
           {{ form.kit_id }}
@@ -2380,11 +3030,11 @@
         </div>
       </div>
       <!-- Photo Manager -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0">{% trans "Photos" %}</h5>
+      <div class="fc-card mb-4">
+        <div class="fc-card-header-small">
+          <h5 class="card-title mb-0 fc-title-small">{% trans "Photos" %}</h5>
         </div>
-        <div class="card-body">
+        <div class="fc-card-body-small fc-card-body-flex">
           <div class="mb-3">
             <button type="button"
                     id="add-default-image"
@@ -2396,11 +3046,17 @@
           <c-collection.photo_manager></c-collection.photo_manager>
         </div>
       </div>
-      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+      <div class="d-flex justify-content-end gap-3 mt-4">
         <button type="button"
-                class="btn btn-outline-secondary me-2"
+                class="btn fc-btn-outline-secondary"
                 onclick="verifyFormData()">{% trans "Verify Form Data" %}</button>
-        <button type="submit" class="btn btn-primary">{% trans "Create Jersey" %}</button>
+        <button type="submit" id="submit-jersey-btn" class="btn fc-btn-primary">
+          <span id="submit-text">{% trans "Create Jersey" %}</span>
+          <span id="submit-spinner"
+                class="spinner-border spinner-border-sm ms-2 fc-d-none"
+                role="status"
+                aria-hidden="true"></span>
+        </button>
       </div>
     </form>
   </div>
@@ -2439,6 +3095,26 @@
         alert('Important data is missing from the form. Please check the information in the console.');
       }
     }
+
+    // Show loading spinner when form is submitted
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('jersey-form');
+      const submitBtn = document.getElementById('submit-jersey-btn');
+      const submitText = document.getElementById('submit-text');
+      const submitSpinner = document.getElementById('submit-spinner');
+      const creatingText = '{% trans "Creating..." %}';
+
+      if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+          // Show spinner and disable button
+          submitSpinner.style.display = 'inline-block';
+          submitText.textContent = creatingText;
+          submitBtn.disabled = true;
+          submitBtn.style.opacity = '0.7';
+          submitBtn.style.cursor = 'not-allowed';
+        });
+      }
+    });
   </script>
 {% endblock content %}
 {% block extra_js %}
