@@ -3,20 +3,26 @@
   {% if label %}
     <label for="{{ id }}" class="fc-input-group__label">
       {{ label }}
-      {% if required %}<span class="fc-input-group__required">*</span>{% endif %}
+      {% if required %}
+        <span class="fc-input-group__required">*</span>
+      {% endif %}
     </label>
   {% endif %}
   <div class="fc-input-group__wrapper">
     {% if leading_icon %}
       <span class="fc-input-group__icon fc-input-group__icon--leading">{{ leading_icon }}</span>
     {% endif %}
-    <input type="{{ type }}" class="fc-input {% if errors %}fc-input--error{% endif %}" id="{{ id }}" name="{{ name }}" value="{{ value|default:'' }}" placeholder="{{ placeholder|default:'' }}" {% if required %}required{% endif %} {% if disabled %}disabled{% endif %} {{ attrs }} />
+    <input type="{{ type }}" class="fc-input {% if errors %}fc-input--error{% endif %}" id="{{ id }}" name="{{ name }}" value="{{ value|default:'' }}" placeholder="{{ placeholder|default:'' }}" {% if required %}required{% endif %} {% if disabled %}disabled{% endif %} {{ attrs }}>
     {% if trailing_icon %}
       <span class="fc-input-group__icon fc-input-group__icon--trailing">{{ trailing_icon }}</span>
     {% endif %}
   </div>
-  {% if help_text %}<div class="fc-input-group__help">{{ help_text }}</div>{% endif %}
-  {% if errors %}<div class="fc-input-group__error">{{ errors }}</div>{% endif %}
+  {% if help_text %}
+    <div class="fc-input-group__help">{{ help_text }}</div>
+  {% endif %}
+  {% if errors %}
+    <div class="fc-input-group__error">{{ errors }}</div>
+  {% endif %}
 </div>
 <style>
   .fc-input-group {
