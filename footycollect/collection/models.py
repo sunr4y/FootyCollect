@@ -1,6 +1,3 @@
-from contextlib import suppress
-from pathlib import Path
-
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -95,32 +92,40 @@ class Photo(models.Model):
 
     def get_image_url(self):
         if self.image_avif:
-            # Check if the AVIF file actually exists on disk
+            # Check if the AVIF file actually exists
             try:
-                if Path(self.image_avif.path).exists():
+                if self.image_avif.storage.exists(self.image_avif.name):
                     return self.image_avif.url
-            except (ValueError, AttributeError):
-                # If path doesn't exist or field is empty, fall back to original
+            except (ValueError, AttributeError, NotImplementedError):
+                # If storage doesn't support exists() or field is empty, fall back to original
                 pass
         return self.image.url if self.image else ""
 
     def delete(self, *args, **kwargs):
-        """Override delete to remove files from filesystem."""
-        # Store file paths before deletion
-        image_path = self.image.path if self.image else None
-        avif_path = self.image_avif.path if self.image_avif else None
+        """Override delete to remove files from storage."""
+        # Store file names before deletion
+        image_name = self.image.name if self.image else None
+        avif_name = self.image_avif.name if self.image_avif else None
+        image_storage = self.image.storage if self.image else None
+        avif_storage = self.image_avif.storage if self.image_avif else None
 
         # Call parent delete to remove from database
         super().delete(*args, **kwargs)
 
-        # Remove files from filesystem
-        if image_path and Path(image_path).exists():
-            with suppress(OSError):
-                Path(image_path).unlink()
+        # Remove files from storage
+        if image_name and image_storage:
+            try:
+                if image_storage.exists(image_name):
+                    image_storage.delete(image_name)
+            except (OSError, NotImplementedError):
+                pass
 
-        if avif_path and Path(avif_path).exists():
-            with suppress(OSError):
-                Path(avif_path).unlink()
+        if avif_name and avif_storage:
+            try:
+                if avif_storage.exists(avif_name):
+                    avif_storage.delete(avif_name)
+            except (OSError, NotImplementedError):
+                pass
 
 
 # Custom manager for BaseItem

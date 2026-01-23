@@ -52,7 +52,6 @@ def demo_brand_view(request):
 
 def home(request):
     """Home view with animated jersey cards in background."""
-    from pathlib import Path
 
     from footycollect.collection.models import Jersey
 
@@ -86,10 +85,10 @@ def home(request):
             for photo in photos:
                 if photo.image:
                     try:
-                        if Path(photo.image.path).exists():
+                        if photo.image.storage.exists(photo.image.name):
                             jerseys_with_photos.append(jersey)
                             break
-                    except (ValueError, AttributeError):
+                    except (ValueError, AttributeError, NotImplementedError):
                         continue
 
         items = jerseys_with_photos
