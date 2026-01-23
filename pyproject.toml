@@ -164,3 +164,14 @@ ignore-names = ["_meta"]
     "PT009",
     "FBT003",
 ]
+# Ignore complexity warnings in management commands (acceptable for CLI tools)
+"footycollect/collection/management/commands/*.py" = [
+    "C901",
+    "PLR0912",
+    "PLR0913",
+]
+# Ignore complexity warnings in checks (acceptable for validation logic)
+"config/checks.py" = [
+    "C901",
+    "PLR0912",
+]

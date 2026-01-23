@@ -92,11 +92,70 @@ STORAGE_BACKEND = env.str("STORAGE_BACKEND", default="local")
 
 if STORAGE_BACKEND == "r2":
     # Cloudflare R2 settings
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    INSTALLED_APPS += ["storages"]
     AWS_ACCESS_KEY_ID = env.str("CLOUDFLARE_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = env.str("CLOUDFLARE_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = env.str("CLOUDFLARE_BUCKET_NAME")
-    AWS_S3_ENDPOINT_URL = "https://storage.developers.cloudflare.com"
+    AWS_S3_ENDPOINT_URL = env.str("CLOUDFLARE_R2_ENDPOINT_URL", default="https://storage.developers.cloudflare.com")
+    AWS_S3_REGION_NAME = env.str("CLOUDFLARE_R2_REGION", default="auto")
+    AWS_QUERYSTRING_AUTH = False
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "location": "media",
+                "file_overwrite": False,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "location": "static",
+                "default_acl": "public-read",
+            },
+        },
+    }
+    storage_domain = env.str(
+        "CLOUDFLARE_R2_CUSTOM_DOMAIN",
+        default=AWS_S3_ENDPOINT_URL.replace("https://", "").split("/")[0],
+    )
+    MEDIA_URL = f"https://{storage_domain}/media/"
+    STATIC_URL = f"https://{storage_domain}/static/"
+elif STORAGE_BACKEND == "aws":
+    # AWS S3 settings
+    INSTALLED_APPS += ["storages"]
+    AWS_ACCESS_KEY_ID = env.str("DJANGO_AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = env.str("DJANGO_AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = env.str("DJANGO_AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = env.str("DJANGO_AWS_S3_REGION_NAME", default=None)
+    AWS_S3_CUSTOM_DOMAIN = env.str("DJANGO_AWS_S3_CUSTOM_DOMAIN", default=None)
+    AWS_QUERYSTRING_AUTH = False
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "location": "media",
+                "file_overwrite": False,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "location": "static",
+                "default_acl": "public-read",
+            },
+        },
+    }
+    storage_domain = AWS_S3_CUSTOM_DOMAIN or f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+    MEDIA_URL = f"https://{storage_domain}/media/"
+    STATIC_URL = f"https://{storage_domain}/static/"
 else:
-    # Local storage settings
-    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    # Local storage settings (default)
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }

@@ -221,12 +221,52 @@ class TestCheckAwsS3Credentials:
             "DJANGO_AWS_ACCESS_KEY_ID": "test-key",
             "DJANGO_AWS_SECRET_ACCESS_KEY": "test-secret",
             "DJANGO_AWS_STORAGE_BUCKET_NAME": "test-bucket",
+            "STORAGE_BACKEND": "aws",
         },
         clear=True,
     )
     @patch("config.checks.settings")
     def test_s3_credentials_set_no_errors(self, mock_settings):
         """Test that all S3 credentials set raises no errors."""
+        mock_settings.STORAGES = {
+            "default": {"BACKEND": "storages.backends.s3.S3Storage"},
+        }
+
+        errors = [e for e in check_aws_s3_credentials(None) if isinstance(e, Error)]
+
+        assert len(errors) == 0
+
+    @patch.dict(
+        os.environ,
+        {
+            "STORAGE_BACKEND": "r2",
+        },
+        clear=True,
+    )
+    @patch("config.checks.settings")
+    def test_r2_missing_credentials_raises_errors(self, mock_settings):
+        """Test that missing R2 credentials raise errors."""
+        mock_settings.STORAGES = {
+            "default": {"BACKEND": "storages.backends.s3.S3Storage"},
+        }
+
+        errors = [e for e in check_aws_s3_credentials(None) if isinstance(e, Error)]
+
+        assert len(errors) >= 3  # noqa: PLR2004
+
+    @patch.dict(
+        os.environ,
+        {
+            "CLOUDFLARE_ACCESS_KEY_ID": "test-key",
+            "CLOUDFLARE_SECRET_ACCESS_KEY": "test-secret",
+            "CLOUDFLARE_BUCKET_NAME": "test-bucket",
+            "STORAGE_BACKEND": "r2",
+        },
+        clear=True,
+    )
+    @patch("config.checks.settings")
+    def test_r2_credentials_set_no_errors(self, mock_settings):
+        """Test that all R2 credentials set raises no errors."""
         mock_settings.STORAGES = {
             "default": {"BACKEND": "storages.backends.s3.S3Storage"},
         }
