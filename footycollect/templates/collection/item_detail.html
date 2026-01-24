@@ -216,6 +216,16 @@
       line-height: 1.2;
     }
 
+    .fc-title-season-group .fc-title {
+      margin-bottom: 0;
+    }
+
+    .fc-title-season-group p.fc-title {
+      color: hsl(180, 70%, 50%);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
     .fc-badges {
       display: flex;
       gap: 0.75rem;
@@ -871,7 +881,7 @@
             {% endif %}
           </div>
           <div class="fc-title-season-group">
-            <h1 class="fc-title" style="margin-bottom: 0;">
+            <h1 class="fc-title">
               {% if object.item_type == 'jersey' and object.jersey %}
                 {{ object.jersey.get_display_name_with_type }}
               {% elif object.club %}
@@ -881,10 +891,7 @@
               {% endif %}
             </h1>
             {% if object.season %}
-              <p class="fc-title"
-                 style="color: hsl(180, 70%, 50%);
-                        margin-top: 0;
-                        margin-bottom: 0">{{ object.season.year }}</p>
+              <p class="fc-title">{{ object.season.year }}</p>
             {% endif %}
           </div>
           {% if object.user %}
