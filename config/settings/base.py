@@ -515,5 +515,10 @@ SPECTACULAR_SETTINGS = {
 FKA_API_IP = env("FKA_API_IP")
 API_KEY = env("API_KEY")
 
+# Rotating Proxy Settings (for image downloads)
+ROTATING_PROXY_URL = env("ROTATING_PROXY_URL", default="")
+ROTATING_PROXY_USERNAME = env("ROTATING_PROXY_USERNAME", default="")
+ROTATING_PROXY_PASSWORD = env("ROTATING_PROXY_PASSWORD", default="")
+
 # Testing flag for conditional URL loading
 TESTING = False

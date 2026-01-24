@@ -51,84 +51,56 @@ def demo_brand_view(request):
 
 
 def home(request):
-    """Home view with animated jersey cards in background."""
+    """Home view with curated jersey cards from external API.
 
-    from footycollect.collection.models import Jersey
 
-    # Get most recent items from all users for the background animation
-    # Only include items that have physical photos on disk
+
+    Performance: Brand logos (~5), flags (SVG), and team logos (~15) are
+    cached by browser. Only kit images are unique network requests.
+    """
+    import json
+    import random
+
+    from django.conf import settings
+
+    num_columns = 8
+    kits_per_column = 5
+
+    data_path = settings.APPS_DIR / "static" / "data" / "home_kits_data.json"
+
     try:
-        all_jerseys = list(
-            Jersey.objects.select_related(
-                "base_item",
-                "base_item__user",
-                "base_item__club",
-                "base_item__season",
-                "base_item__brand",
-                "base_item__main_color",
-                "size",
-            )
-            .prefetch_related(
-                "base_item__photos",
-                "base_item__competitions",
-                "base_item__secondary_colors",
-            )
-            .filter(base_item__photos__isnull=False)
-            .distinct()
-            .order_by("-base_item__created_at")[:500],  # Get most recent items
-        )
+        with data_path.open() as f:
+            data = json.load(f)
+        kits = data.get("kits", [])
+    except FileNotFoundError:
+        logger.warning("Home kits data file not found: %s", data_path)
+        kits = []
+    except json.JSONDecodeError:
+        logger.exception("Invalid JSON in home kits data file")
+        kits = []
 
-        # Filter to only include items with physical photos on disk
-        jerseys_with_photos = []
-        for jersey in all_jerseys:
-            photos = jersey.base_item.photos.all()
-            for photo in photos:
-                if photo.image:
-                    try:
-                        if photo.image.storage.exists(photo.image.name):
-                            jerseys_with_photos.append(jersey)
-                            break
-                    except (ValueError, AttributeError, NotImplementedError):
-                        continue
+    columns_items = []
+    if kits:
+        random.seed(42)  # Consistent results
+        shuffled = kits.copy()
+        random.shuffle(shuffled)
 
-        items = jerseys_with_photos
-
-        # Distribute items across columns (40 columns)
-        # Each column gets unique items starting at different positions
-        num_columns = 40
-        columns_items = []
-
-        if items and len(items) > 0:
-            import random
-
-            # Shuffle items to ensure randomness
-            shuffled_items = items.copy()
-            random.shuffle(shuffled_items)
-
-            for i in range(num_columns):
-                column_items = []
-                # Each column starts at a different offset to ensure uniqueness
-                # Use a larger step to ensure columns are more different
-                start_index = (i * max(1, len(shuffled_items) // num_columns)) % len(shuffled_items)
-
-                # Create a unique sequence for this column by cycling through items
-                # Use enough items to fill the column
-                items_per_cycle = max(len(shuffled_items), 20)  # At least 20 items per cycle
-                for j in range(items_per_cycle):
-                    item_index = (start_index + j) % len(shuffled_items)
-                    column_items.append(shuffled_items[item_index])
-
-                # Duplicate the sequence 3 times for seamless infinite scroll
-                column_items = column_items * 3
-                columns_items.append(column_items)
-        else:
-            columns_items = [[] for _ in range(num_columns)]
-    except (OSError, ValueError, AttributeError, TypeError, IndexError):
-        logger.exception("Error in home view")
-        columns_items = [[] for _ in range(40)]
+        for i in range(num_columns):
+            # Each column gets different kits from the shuffled pool
+            start_idx = (i * kits_per_column) % len(shuffled)
+            column_kits = []
+            for j in range(kits_per_column):
+                idx = (start_idx + j) % len(shuffled)
+                column_kits.append(shuffled[idx])
+            # Triple for seamless infinite scroll
+            column_items = column_kits * 3
+            columns_items.append(column_items)
+    else:
+        columns_items = [[] for _ in range(num_columns)]
 
     context = {
         "columns_items": columns_items,
+        "use_cached_kits": True,
     }
     return render(request, "pages/home.html", context)
 
