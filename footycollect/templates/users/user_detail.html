@@ -127,6 +127,15 @@
                         {% endif %}
                         <div class="card-body d-flex flex-column">
                           <h6 class="card-title item-title">{{ item.name }}</h6>
+                          {% if item.item_type == 'jersey' and item.jersey.kit and item.jersey.kit.type %}
+                            <div class="mb-2">
+                              {% if item.jersey.kit.type.category != "match" %}
+                                <span class="badge bg-primary me-1">{{ item.jersey.kit.type.get_category_display_name }}</span>
+                              {% endif %}
+                              {% if item.jersey.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+                              <span class="badge bg-secondary">{{ item.jersey.kit.type.name }}</span>
+                            </div>
+                          {% endif %}
                           <div class="item-meta">
                             {% if item.club %}
                               <div class="d-flex align-items-center">

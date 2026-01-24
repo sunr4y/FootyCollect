@@ -251,6 +251,15 @@
                   <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="flex-grow-1">
                       <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+                      {% if item.kit and item.kit.type %}
+                        <div class="mb-2">
+                          {% if item.kit.type.category != "match" %}
+                            <span class="badge bg-primary me-1">{{ item.kit.type.get_category_display_name }}</span>
+                          {% endif %}
+                          {% if item.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+                          <span class="badge bg-secondary">{{ item.kit.type.name }}</span>
+                        </div>
+                      {% endif %}
                       <div class="item-meta">
                         {% if item.base_item.club %}
                           <div class="d-flex align-items-center">
@@ -271,25 +280,25 @@
                       </div>
                     </div>
                     <div class="text-end ms-3">
-                      {% if item.jersey.size %}
+                      {% if item.size %}
                         <div class="item-details mb-1">
-                          <small>{{ item.jersey.size.name }}</small>
+                          <small>{{ item.size.name }}</small>
                         </div>
                       {% endif %}
-                      {% if item.jersey.player_name %}
+                      {% if item.player_name %}
                         <div class="item-details mb-1">
-                          <small>{{ item.jersey.player_name }}</small>
+                          <small>{{ item.player_name }}</small>
                         </div>
                       {% endif %}
-                      {% if item.jersey.number %}
+                      {% if item.number %}
                         <div class="item-details mb-1">
-                          <small>#{{ item.jersey.number }}</small>
+                          <small>#{{ item.number }}</small>
                         </div>
                       {% endif %}
-                      {% if item.jersey.is_short_sleeve is not None %}
+                      {% if item.is_short_sleeve is not None %}
                         <div class="item-details">
                           <small>
-                            {% if item.jersey.is_short_sleeve %}
+                            {% if item.is_short_sleeve %}
                               {% trans "Short Sleeve" %}
                             {% else %}
                               {% trans "Long Sleeve" %}

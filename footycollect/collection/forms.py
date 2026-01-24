@@ -794,7 +794,7 @@ class JerseyForm(forms.ModelForm):
         )
 
         jersey.kit = kit
-        jersey.save(update_fields=["kit"])
+        jersey.save()
         logger.info("Successfully created/linked Kit %s to Jersey %s", kit.id, jersey.pk)
 
 

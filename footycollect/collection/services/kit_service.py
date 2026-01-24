@@ -147,27 +147,75 @@ class KitService:
 
         return slug
 
-    def _get_or_create_type_k(self, base_item: BaseItem, fkapi_data: dict[str, Any]) -> TypeK | None:
-        """Get or create TypeK from FKAPI data."""
+    def _extract_type_info(self, fkapi_data: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
+        """Extract type name and data from FKAPI data."""
         type_obj = fkapi_data.get("type")
         if not type_obj:
             return None
 
-        type_name = type_obj.get("name") if isinstance(type_obj, dict) else type_obj
-        if not type_name:
+        if isinstance(type_obj, str):
+            return (type_obj, {})
+        type_name = type_obj.get("name")
+        return (type_name, type_obj) if type_name else None
+
+    def _find_existing_type_k(self, type_name: str) -> TypeK | None:
+        """Find existing TypeK by name (exact or case-insensitive)."""
+        type_k = TypeK.objects.filter(name=type_name).first()
+        if not type_k:
+            type_k = TypeK.objects.filter(name__iexact=type_name).first()
+        return type_k
+
+    def _update_type_k_if_needed(
+        self,
+        type_k: TypeK,
+        category: str,
+        type_data: dict[str, Any],
+        type_name: str,
+    ) -> None:
+        """Update TypeK if category or is_goalkeeper changed."""
+        needs_update = False
+        if category and type_k.category != category:
+            type_k.category = category
+            needs_update = True
+        if "is_goalkeeper" in type_data and type_k.is_goalkeeper != type_data["is_goalkeeper"]:
+            type_k.is_goalkeeper = type_data["is_goalkeeper"]
+            needs_update = True
+
+        if needs_update:
+            type_k.save()
+            logger.info("Updated kit type: %s (ID: %s)", type_name, type_k.id)
+        else:
+            logger.info("Found existing kit type: %s (ID: %s)", type_name, type_k.id)
+
+    def _get_or_create_type_k(self, base_item: BaseItem, fkapi_data: dict[str, Any]) -> TypeK | None:
+        """Get or create TypeK from FKAPI data with full type information.
+
+        Note: Items with category="jacket" are not kits and should be handled as outerwear.
+        This method returns None for jacket items.
+        """
+        type_info = self._extract_type_info(fkapi_data)
+        if not type_info:
+            return None
+
+        type_name, type_data = type_info
+        category = type_data.get("category", "match")
+        if category == "jacket":
+            logger.info("Skipping TypeK creation for jacket item: %s (handled as outerwear)", type_name)
             return None
 
         logger.info("Processing kit type: %s", type_name)
 
         try:
-            type_k = TypeK.objects.filter(name=type_name).first()
-            if not type_k:
-                type_k = TypeK.objects.filter(name__iexact=type_name).first()
-            if not type_k:
-                type_k = TypeK.objects.create(name=type_name)
-                logger.info("Created new kit type: %s (ID: %s)", type_name, type_k.id)
+            type_k = self._find_existing_type_k(type_name)
+            if type_k:
+                self._update_type_k_if_needed(type_k, category, type_data, type_name)
             else:
-                logger.info("Found existing kit type: %s (ID: %s)", type_k.name, type_k.id)
+                type_k = TypeK.objects.create(
+                    name=type_name,
+                    category=category,
+                    is_goalkeeper=type_data.get("is_goalkeeper", False),
+                )
+                logger.info("Created new kit type: %s (ID: %s)", type_name, type_k.id)
         except Exception:
             logger.exception("Error creating kit type %s", type_name)
             return None

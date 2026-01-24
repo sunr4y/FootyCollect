@@ -297,6 +297,7 @@ class ItemListView(BaseItemListView):
                 "base_item__main_color",
                 "size",
                 "kit",
+                "kit__type",
             )
             .prefetch_related(
                 "base_item__competitions",
@@ -431,6 +432,7 @@ class ItemDetailView(BaseItemDetailView):
                     "base_item",
                     "size",
                     "kit",
+                    "kit__type",
                 )
             }
 

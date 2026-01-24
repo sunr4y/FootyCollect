@@ -1237,7 +1237,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             kit_id=kit_id,
         )
         jersey.kit = kit
-        jersey.save(update_fields=["kit"])
+        jersey.save()
         logger.info("Created/linked Kit %s to Jersey %s", kit.id, jersey.id)
 
         # If we have a kit with competitions, assign them to the jersey

@@ -209,6 +209,13 @@
       gap: 1rem;
     }
 
+    .fc-title-season-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      line-height: 1.2;
+    }
+
     .fc-badges {
       display: flex;
       gap: 0.75rem;
@@ -853,18 +860,33 @@
               <c-badge variant="outline" class="fc-badge-condition">{{ object.get_condition_display }}</c-badge>
             {% endif %}
             {% if object.main_color %}<c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>{% endif %}
-          </div>
-          <h1 class="fc-title">
-            {% if object.club %}
-              {{ object.club.name }}
-            {% else %}
-              {{ object.name }}
+            {% if object.jersey.kit and object.jersey.kit.type %}
+              {% if object.jersey.kit.type.category != "match" %}
+                <c-badge variant="filled" class="bg-primary">{{ object.jersey.kit.type.get_category_display_name }}</c-badge>
+              {% endif %}
+              {% if object.jersey.kit.type.is_goalkeeper %}
+                <c-badge variant="filled" class="bg-warning text-dark">GK</c-badge>
+              {% endif %}
+              <c-badge variant="outline">{{ object.jersey.kit.type.name }}</c-badge>
             {% endif %}
-            {% if object.season %}<span class="fc-title-gradient">{{ object.season }}</span>{% endif %}
-          </h1>
-          {% if object.club and object.name != object.club.name %}
-            <p class="fc-text-muted fc-text-lg">{{ object.name }}</p>
-          {% endif %}
+          </div>
+          <div class="fc-title-season-group">
+            <h1 class="fc-title" style="margin-bottom: 0;">
+              {% if object.item_type == 'jersey' and object.jersey %}
+                {{ object.jersey.get_display_name_with_type }}
+              {% elif object.club %}
+                {{ object.club.name }}
+              {% else %}
+                {{ object.name }}
+              {% endif %}
+            </h1>
+            {% if object.season %}
+              <p class="fc-title"
+                 style="color: hsl(180, 70%, 50%);
+                        margin-top: 0;
+                        margin-bottom: 0">{{ object.season.year }}</p>
+            {% endif %}
+          </div>
           {% if object.user %}
             <div class="fc-flex-center fc-gap-1 fc-text-sm fc-text-muted">
               <i class="bi bi-person-circle fc-icon-sm"></i>

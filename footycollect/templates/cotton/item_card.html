@@ -51,6 +51,16 @@
   <div class="card-body d-flex flex-column">
     <!-- Title -->
     <h5 class="card-title">{{ item.base_item.name }}</h5>
+    <!-- Kit type badges -->
+    {% if item.jersey.kit and item.jersey.kit.type %}
+      <div class="mb-2">
+        {% if item.jersey.kit.type.category != "match" %}
+          <span class="badge bg-primary me-1">{{ item.jersey.kit.type.get_category_display_name }}</span>
+        {% endif %}
+        {% if item.jersey.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+        <span class="badge bg-secondary">{{ item.jersey.kit.type.name }}</span>
+      </div>
+    {% endif %}
     <!-- Club name -->
     {% if item.base_item.club %}<p class="card-text text-muted mb-1">{{ item.base_item.club.name }}</p>{% endif %}
     <!-- Brand name -->
