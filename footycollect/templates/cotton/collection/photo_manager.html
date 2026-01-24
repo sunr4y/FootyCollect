@@ -9,11 +9,7 @@
      :class="{'dragover': isDragging}">
   <!-- Upload Area -->
   <div class="upload-area">
-    <input type="file"
-           multiple
-           @change="addFiles($event)"
-           accept="image/jpeg,image/png,image/webp,image/gif"
-           class="file-input" />
+    <input type="file" multiple @change="addFiles($event)" accept="image/jpeg,image/png,image/webp,image/gif" class="file-input" />
     <div class="upload-message">
       <i class="bi bi-cloud-upload fs-1 fc-upload-icon"></i>
       <p class="fc-upload-text">{% trans "Drag files here or click to select" %}</p>

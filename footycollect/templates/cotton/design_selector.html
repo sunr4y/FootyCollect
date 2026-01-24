@@ -10,8 +10,9 @@
     {% with design_choices_parsed=design_choices|parse_json %}
       {% if design_choices_parsed %}
         {% for design in design_choices_parsed %}
-          <option value="{{ design.value }}"
-                  {% if design.value == data_selected %}selected{% endif %}>{{ design.label }}</option>
+          <option value="{{ design.value }}" {% if design.value == data_selected %}selected{% endif %}>
+            {{ design.label }}
+          </option>
         {% endfor %}
       {% endif %}
     </select>
@@ -34,69 +35,37 @@
             <div class="jersey-container">
               <div class="design-icon">
                 {% if design.value == "PLAIN" %}
-                  <img src="{% static 'images/design_type/plain.svg' %}"
-                       alt="Plain"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/plain.svg' %}" alt="Plain" class="design-image" />
                 {% elif design.value == "STRIPES" %}
-                  <img src="{% static 'images/design_type/stripes.svg' %}"
-                       alt="Stripes"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/stripes.svg' %}" alt="Stripes" class="design-image" />
                 {% elif design.value == "GRAPHIC" %}
-                  <img src="{% static 'images/design_type/graphic.svg' %}"
-                       alt="Graphic"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/graphic.svg' %}" alt="Graphic" class="design-image" />
                 {% elif design.value == "CHEST_BAND" %}
-                  <img src="{% static 'images/design_type/chest-band.svg' %}"
-                       alt="Chest Band"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/chest-band.svg' %}" alt="Chest Band" class="design-image" />
                 {% elif design.value == "CONTRASTING_SLEEVES" %}
-                  <img src="{% static 'images/design_type/contrasting-sleeves.svg' %}"
-                       alt="Contrasting Sleeves"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/contrasting-sleeves.svg' %}" alt="Contrasting Sleeves" class="design-image" />
                 {% elif design.value == "PINSTRIPES" %}
-                  <img src="{% static 'images/design_type/pinstripes.svg' %}"
-                       alt="Pinstripes"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/pinstripes.svg' %}" alt="Pinstripes" class="design-image" />
                 {% elif design.value == "HOOPS" %}
-                  <img src="{% static 'images/design_type/hoops.svg' %}"
-                       alt="Hoops"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/hoops.svg' %}" alt="Hoops" class="design-image" />
                 {% elif design.value == "SINGLE_STRIPE" %}
-                  <img src="{% static 'images/design_type/single-stripe.svg' %}"
-                       alt="Single Stripe"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/single-stripe.svg' %}" alt="Single Stripe" class="design-image" />
                 {% elif design.value == "HALF_AND_HALF" %}
-                  <img src="{% static 'images/design_type/half-and-half.svg' %}"
-                       alt="Half and Half"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/half-and-half.svg' %}" alt="Half and Half" class="design-image" />
                 {% elif design.value == "SASH" %}
-                  <img src="{% static 'images/design_type/sash.svg' %}"
-                       alt="Sash"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/sash.svg' %}" alt="Sash" class="design-image" />
                 {% elif design.value == "CHEVRON" %}
-                  <img src="{% static 'images/design_type/chevron.svg' %}"
-                       alt="Chevron"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/chevron.svg' %}" alt="Chevron" class="design-image" />
                 {% elif design.value == "CHECKERS" %}
-                  <img src="{% static 'images/design_type/checkers.svg' %}"
-                       alt="Checkers"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/checkers.svg' %}" alt="Checkers" class="design-image" />
                 {% elif design.value == "GRADIENT" %}
-                  <img src="{% static 'images/design_type/gradient.svg' %}"
-                       alt="Gradient"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/gradient.svg' %}" alt="Gradient" class="design-image" />
                 {% elif design.value == "DIAGONAL" %}
-                  <img src="{% static 'images/design_type/diagonal.svg' %}"
-                       alt="Diagonal"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/diagonal.svg' %}" alt="Diagonal" class="design-image" />
                 {% elif design.value == "CROSS" %}
-                  <img src="{% static 'images/design_type/cross.svg' %}"
-                       alt="Cross"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/cross.svg' %}" alt="Cross" class="design-image" />
                 {% elif design.value == "QUARTERS" %}
-                  <img src="{% static 'images/design_type/quarters.svg' %}"
-                       alt="Quarters"
-                       class="design-image" />
+                  <img src="{% static 'images/design_type/quarters.svg' %}" alt="Quarters" class="design-image" />
                 {% endif %}
               </div>
             </div>

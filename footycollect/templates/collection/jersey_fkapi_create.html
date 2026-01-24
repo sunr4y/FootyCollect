@@ -6,10 +6,8 @@
 {% block css %}
   {{ block.super }}
   {{ form.media.css }}
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
-        rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css" rel="stylesheet" />
   <style>
     /* Ensure country dropdown looks empty by default */
     #id_country_code {
@@ -2723,29 +2721,20 @@
                      autocomplete="off"
                      class="fc-form-input fc-form-input-with-icon" />
               <div class="loading-indicator" x-show="isSearching" x-cloak>
-                <span class="spinner-border spinner-border-sm"
-                      role="status"
-                      aria-hidden="true"></span>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               </div>
             </div>
             <!-- Kit Search Results -->
             <div class="kit-search-results" x-show="kitResults.length > 0">
               <div class="p-2 border-bottom fc-photo-placeholder fc-photo-placeholder-border">
                 <small class="fc-text-small">{% trans "Results for" %}: <span x-text="kitSearch"></span></small>
-                <button type="button"
-                        class="btn-close float-end"
-                        @click="kitResults = []"
-                        aria-label="Close"></button>
+                <button type="button" class="btn-close float-end" @click="kitResults = []" aria-label="Close"></button>
               </div>
               <template x-for="kit in kitResults" :key="kit.id">
                 <div class="kit-search-item" @click="selectKit(kit)">
                   <div class="kit-search-item-img-container">
                     <template x-if="kit.main_img_url">
-                      <img :src="kit.main_img_url"
-                           :alt="kit.name"
-                           @error="handleImageError($el)"
-                           loading="lazy"
-                           class="kit-search-img" />
+                      <img :src="kit.main_img_url" :alt="kit.name" @error="handleImageError($el)" loading="lazy" class="kit-search-img" />
                     </template>
                     <template x-if="!kit.main_img_url">
                       <div class="placeholder-img">
@@ -2775,29 +2764,20 @@
                      autocomplete="off"
                      class="fc-form-input fc-form-input-with-icon" />
               <div class="loading-indicator" x-show="isSearchingClub" x-cloak>
-                <span class="spinner-border spinner-border-sm"
-                      role="status"
-                      aria-hidden="true"></span>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               </div>
             </div>
             <!-- Club Search Results -->
             <div class="kit-search-results" x-show="clubResults.length > 0">
               <div class="p-2 border-bottom fc-photo-placeholder fc-photo-placeholder-border">
                 <small class="fc-text-small">{% trans "Results for" %}: <span x-text="clubSearch"></span></small>
-                <button type="button"
-                        class="btn-close float-end"
-                        @click="clubResults = []"
-                        aria-label="Close"></button>
+                <button type="button" class="btn-close float-end" @click="clubResults = []" aria-label="Close"></button>
               </div>
               <template x-for="club in clubResults" :key="club.id">
                 <div class="kit-search-item" @click="selectClub(club)">
                   <div class="kit-search-item-img-container">
                     <template x-if="club.logo_url">
-                      <img :src="club.logo_url"
-                           :alt="club.name"
-                           @error="handleImageError($el)"
-                           loading="lazy"
-                           class="kit-search-img" />
+                      <img :src="club.logo_url" :alt="club.name" @error="handleImageError($el)" loading="lazy" class="kit-search-img" />
                     </template>
                     <template x-if="!club.logo_url">
                       <div class="placeholder-img">
@@ -2814,21 +2794,15 @@
             </div>
           </div>
           <!-- Season Selection (shows after club is selected) -->
-          <div class="mb-3"
-               x-show="showClubSearch && selectedClub && seasons.length > 0">
+          <div class="mb-3" x-show="showClubSearch && selectedClub && seasons.length > 0">
             <label for="id_season_select" class="form-label">{% trans "Select Season" %}</label>
             <div class="d-flex align-items-center mb-2" x-show="selectedClub">
               <template x-if="selectedClub && selectedClub.logo_url">
-                <img :src="selectedClub.logo_url"
-                     :alt="selectedClub.name"
-                     class="selected-club-logo" />
+                <img :src="selectedClub.logo_url" :alt="selectedClub.name" class="selected-club-logo" />
               </template>
               <span class="fw-bold" x-text="selectedClub ? selectedClub.name : ''"></span>
             </div>
-            <select id="id_season_select"
-                    class="form-select"
-                    x-model="selectedSeasonId"
-                    @change="seasonChanged()">
+            <select id="id_season_select" class="form-select" x-model="selectedSeasonId" @change="seasonChanged()">
               <option value="">{% trans "Select a season" %}</option>
               <template x-for="season in seasons" :key="season.id">
                 <option :value="season.id" x-text="season.name"></option>
@@ -2844,13 +2818,10 @@
         </div>
         <div class="fc-card-body-flex">
           <!-- Read-only info section (Brand, Competitions, Club, Season) -->
-          <div class="row mb-4 fc-photo-placeholder fc-photo-placeholder-rounded"
-               x-show="kitData"
-               x-cloak>
+          <div class="row mb-4 fc-photo-placeholder fc-photo-placeholder-rounded" x-show="kitData" x-cloak>
             <div class="col-md-3 mb-2 mb-md-0">
               <div class="text-muted small mb-1">{% trans "Brand" %}</div>
-              <div class="fw-semibold"
-                   x-text="kitData?.brand?.name || kitData?.team?.brand?.name"></div>
+              <div class="fw-semibold" x-text="kitData?.brand?.name || kitData?.team?.brand?.name"></div>
             </div>
             <div class="col-md-3 mb-2 mb-md-0">
               <div class="text-muted small mb-1">{% trans "Competitions" %}</div>
@@ -2937,9 +2908,7 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Jersey Version" %}</label>
-              <div class="btn-group w-100 fc-btn-group"
-                   role="group"
-                   aria-label="Version toggle">
+              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Version toggle">
                 <button type="button"
                         class="btn fc-btn-group-item"
                         :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
@@ -2952,9 +2921,7 @@
             </div>
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Sleeve Type" %}</label>
-              <div class="btn-group w-100 fc-btn-group"
-                   role="group"
-                   aria-label="Sleeve toggle">
+              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Sleeve toggle">
                 <button type="button"
                         class="btn fc-btn-group-item"
                         :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
@@ -2971,36 +2938,24 @@
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Include Player Signature" %}</label>
               <label class="toggle-switch">
-                <input type="checkbox"
-                       id="id_is_signed"
-                       name="is_signed"
-                       {% if form.is_signed.value %}checked{% endif %} />
+                <input type="checkbox" id="id_is_signed" name="is_signed" {% if form.is_signed.value %}checked{% endif %} />
                 <span class="toggle-slider"></span>
               </label>
             </div>
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Is replica" %}</label>
               <label class="toggle-switch">
-                <input type="checkbox"
-                       id="id_is_replica"
-                       name="is_replica"
-                       {% if form.is_replica.value %}checked{% endif %} />
+                <input type="checkbox" id="id_is_replica" name="is_replica" {% if form.is_replica.value %}checked{% endif %} />
                 <span class="toggle-slider"></span>
               </label>
             </div>
           </div>
           <!-- Nameset toggle button and fields -->
           <div class="mb-3">
-            <button type="button"
-                    class="btn btn-outline-secondary"
-                    x-show="!hasNameset"
-                    @click="enableNameset()">
+            <button type="button" class="btn btn-outline-secondary" x-show="!hasNameset" @click="enableNameset()">
               <i class="bi bi-person-badge"></i> Add Nameset
             </button>
-            <button type="button"
-                    class="btn btn-outline-danger"
-                    x-show="hasNameset"
-                    @click="disableNameset()">
+            <button type="button" class="btn btn-outline-danger" x-show="hasNameset" @click="disableNameset()">
               <i class="bi bi-x-circle"></i> Remove Nameset
             </button>
           </div>
@@ -3036,10 +2991,7 @@
         </div>
         <div class="fc-card-body-small fc-card-body-flex">
           <div class="mb-3">
-            <button type="button"
-                    id="add-default-image"
-                    class="btn btn-outline-primary mb-3"
-                    onclick="addDefaultImageToPhotos()">
+            <button type="button" id="add-default-image" class="btn btn-outline-primary mb-3" onclick="addDefaultImageToPhotos()">
               <i class="bi bi-image"></i> {% trans "Add Default Image to Photos" %}
             </button>
           </div>
@@ -3047,15 +2999,12 @@
         </div>
       </div>
       <div class="d-flex justify-content-end gap-3 mt-4">
-        <button type="button"
-                class="btn fc-btn-outline-secondary"
-                onclick="verifyFormData()">{% trans "Verify Form Data" %}</button>
+        <button type="button" class="btn fc-btn-outline-secondary" onclick="verifyFormData()">
+          {% trans "Verify Form Data" %}
+        </button>
         <button type="submit" id="submit-jersey-btn" class="btn fc-btn-primary">
           <span id="submit-text">{% trans "Create Jersey" %}</span>
-          <span id="submit-spinner"
-                class="spinner-border spinner-border-sm ms-2 fc-d-none"
-                role="status"
-                aria-hidden="true"></span>
+          <span id="submit-spinner" class="spinner-border spinner-border-sm ms-2 fc-d-none" role="status" aria-hidden="true"></span>
         </button>
       </div>
     </form>

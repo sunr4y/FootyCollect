@@ -18,9 +18,7 @@
           <div class="card-body">
             <div class="d-flex align-items-center">
               {% if object.avatar %}
-                <img src="{{ object.get_avatar_url }}"
-                     alt="{{ object.username }}'s avatar"
-                     class="rounded-circle me-3 avatar-preview" />
+                <img src="{{ object.get_avatar_url }}" alt="{{ object.username }}'s avatar" class="rounded-circle me-3 avatar-preview" />
               {% endif %}
               <div>
                 <h2 class="mb-1">{{ object.username }}</h2>
@@ -94,32 +92,23 @@
                           <div class="d-flex align-items-center w-100 position-relative">
                             <div class="d-flex align-items-center justify-content-center brand-logo-container">
                               {% if item.brand and item.brand.logo %}
-                                <img src="{{ item.brand.logo }}"
-                                     alt="{{ item.brand.name }}"
-                                     class="item-logo-small"
-                                     onerror="this.style.display='none'" />
+                                <img src="{{ item.brand.logo }}" alt="{{ item.brand.name }}" class="item-logo-small" onerror="this.style.display='none'" />
                               {% endif %}
                             </div>
                             <div>
                               {% if item.club and item.club.logo %}
-                                <img src="{{ item.club.logo }}"
-                                     alt="{{ item.club.name }}"
-                                     class="item-club-shield"
-                                     onerror="this.style.display='none'" />
+                                <img src="{{ item.club.logo }}" alt="{{ item.club.name }}" class="item-club-shield" onerror="this.style.display='none'" />
                               {% endif %}
                             </div>
                             <div class="d-flex align-items-center justify-content-center flag-logo-container">
                               {% if item.club and item.club.country %}
-                                <span class="fi fi-{{ item.club.country|lower }}"
-                                      title="{{ item.club.country }}"></span>
+                                <span class="fi fi-{{ item.club.country|lower }}" title="{{ item.club.country }}"></span>
                               {% endif %}
                             </div>
                           </div>
                         </div>
                         {% if item.photos.exists %}
-                          <img src="{{ item.photos.first.get_image_url }}"
-                               class="card-img-top item-photo"
-                               alt="{{ item.name }}" />
+                          <img src="{{ item.photos.first.get_image_url }}" class="card-img-top item-photo" alt="{{ item.name }}" />
                         {% else %}
                           <div class="card-img-top item-photo d-flex align-items-center justify-content-center bg-light">
                             <i class="bi bi-image text-muted item-placeholder-icon"></i>
@@ -127,14 +116,20 @@
                         {% endif %}
                         <div class="card-body d-flex flex-column">
                           <h6 class="card-title item-title">{{ item.name }}</h6>
+                          {% if item.item_type == 'jersey' and item.jersey.kit and item.jersey.kit.type %}
+                            <div class="mb-2">
+                              {% if item.jersey.kit.type.category != "match" %}
+                                <span class="badge bg-primary me-1">{{ item.jersey.kit.type.get_category_display_name }}</span>
+                              {% endif %}
+                              {% if item.jersey.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+                              <span class="badge bg-secondary">{{ item.jersey.kit.type.name }}</span>
+                            </div>
+                          {% endif %}
                           <div class="item-meta">
                             {% if item.club %}
                               <div class="d-flex align-items-center">
                                 {% if item.club.logo %}
-                                  <img src="{{ item.club.logo.url }}"
-                                       alt="{{ item.club.name }}"
-                                       class="club-logo"
-                                       onerror="this.style.display='none'" />
+                                  <img src="{{ item.club.logo.url }}" alt="{{ item.club.name }}" class="club-logo" onerror="this.style.display='none'" />
                                 {% else %}
                                   <div class="club-logo d-flex align-items-center justify-content-center bg-light">
                                     <i class="bi bi-shield text-muted club-icon-fallback"></i>
@@ -146,10 +141,7 @@
                             {% if item.brand %}
                               <div class="d-flex align-items-center">
                                 {% if item.brand.logo %}
-                                  <img src="{{ item.brand.logo.url }}"
-                                       alt="{{ item.brand.name }}"
-                                       class="brand-logo"
-                                       onerror="this.style.display='none'" />
+                                  <img src="{{ item.brand.logo.url }}" alt="{{ item.brand.name }}" class="brand-logo" onerror="this.style.display='none'" />
                                 {% else %}
                                   <div class="brand-logo d-flex align-items-center justify-content-center bg-light">
                                     <i class="bi bi-tag text-muted brand-icon-fallback"></i>
@@ -165,8 +157,7 @@
                             </p>
                           {% endif %}
                           <div class="mt-auto">
-                            <a href="{% url 'collection:item_detail' item.pk %}"
-                               class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                            <a href="{% url 'collection:item_detail' item.pk %}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
                           </div>
                         </div>
                       </div>

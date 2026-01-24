@@ -14,10 +14,7 @@
       <div class="mb-2">
         <template x-for="item in selectedItems" :key="item.id">
           <div class="d-flex align-items-center border rounded p-2 mb-1 autocomplete-selected-item">
-            <img x-show="item.logo_dark || item.logo"
-                 :src="item.logo_dark || item.logo"
-                 :alt="item.name"
-                 class="me-2 autocomplete-logo" />
+            <img x-show="item.logo_dark || item.logo" :src="item.logo_dark || item.logo" :alt="item.name" class="me-2 autocomplete-logo" />
             <span x-text="item.name" class="flex-grow-1 autocomplete-item-name"></span>
             <button type="button"
                     @click="removeItem(item.id)"
@@ -36,8 +33,7 @@
              :src="selectedItem ? (selectedItem.logo_dark || selectedItem.logo) : ''"
              :alt="selectedItem ? selectedItem.name : ''"
              class="me-2 autocomplete-logo" />
-        <span x-text="selectedItem ? selectedItem.name : ''"
-              class="flex-grow-1 autocomplete-item-name"></span>
+        <span x-text="selectedItem ? selectedItem.name : ''" class="flex-grow-1 autocomplete-item-name"></span>
         <button type="button"
                 @click="clearSelection()"
                 class="btn btn-sm btn-outline-danger ms-2 autocomplete-remove-btn"
@@ -62,8 +58,7 @@
          x-cloak>
       <!-- Loading state -->
       <div x-show="isSearching" class="p-3 text-center autocomplete-loading">
-        <span class="spinner-border spinner-border-sm me-2 autocomplete-spinner"
-              role="status"></span>
+        <span class="spinner-border spinner-border-sm me-2 autocomplete-spinner" role="status"></span>
         Searching...
       </div>
       <!-- Results -->
@@ -75,10 +70,7 @@
                  @mouseenter="$el.classList.add('autocomplete-result-item-hover')"
                  @mouseleave="$el.classList.remove('autocomplete-result-item-hover')">
               <div class="d-flex align-items-center">
-                <img x-show="item.logo_dark || item.logo"
-                     :src="item.logo_dark || item.logo"
-                     :alt="item.name"
-                     class="me-2 autocomplete-logo" />
+                <img x-show="item.logo_dark || item.logo" :src="item.logo_dark || item.logo" :alt="item.name" class="me-2 autocomplete-logo" />
                 <span x-text="item.name" class="autocomplete-item-name"></span>
                 <template x-if="!isMultiple && selectedItem && selectedItem.id === item.id">
                   <i class="bi bi-check-circle-fill ms-2 autocomplete-check-icon"></i>
@@ -95,38 +87,21 @@
       <div x-show="!isSearching && searchQuery.length >= 2 && results.length === 0"
            class="p-3 text-center autocomplete-no-results">
         <p class="mb-2">No results found</p>
-        <button type="button"
-                @click="createCustom()"
-                class="btn btn-sm btn-primary autocomplete-create-btn">
+        <button type="button" @click="createCustom()" class="btn btn-sm btn-primary autocomplete-create-btn">
           <i class="bi bi-plus-circle"></i> Create Custom
         </button>
       </div>
     </div>
     <!-- Hidden input for form submission -->
-    <input type="hidden"
-           name="{{ name }}"
-           id="id_{{ name }}"
-           :value="getHiddenValue()" />
+    <input type="hidden" name="{{ name }}" id="id_{{ name }}" :value="getHiddenValue()" />
     {% if name == "brand" %}
-      <input type="hidden"
-             name="brand_name"
-             id="id_brand_name"
-             :value="selectedItem ? selectedItem.name : ''" />
+      <input type="hidden" name="brand_name" id="id_brand_name" :value="selectedItem ? selectedItem.name : ''" />
     {% elif name == "club" %}
-      <input type="hidden"
-             name="club_name"
-             id="id_club_name"
-             :value="selectedItem ? selectedItem.name : ''" />
+      <input type="hidden" name="club_name" id="id_club_name" :value="selectedItem ? selectedItem.name : ''" />
     {% elif name == "season" %}
-      <input type="hidden"
-             name="season_name"
-             id="id_season_name"
-             :value="selectedItem ? selectedItem.name : ''" />
+      <input type="hidden" name="season_name" id="id_season_name" :value="selectedItem ? selectedItem.name : ''" />
     {% elif name == "competitions" %}
-      <input type="hidden"
-             name="competition_name"
-             id="id_competition_name"
-             :value="selectedItems.map(i => i.name).join(',')" />
+      <input type="hidden" name="competition_name" id="id_competition_name" :value="selectedItems.map(i => i.name).join(',')" />
     {% endif %}
   </div>
 </div>

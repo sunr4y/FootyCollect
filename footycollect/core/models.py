@@ -15,9 +15,44 @@ class Season(models.Model):
 
 class TypeK(models.Model):
     name = models.CharField(max_length=100)
+    category = models.CharField(
+        max_length=20,
+        choices=[
+            ("match", "Game"),
+            ("prematch", "Pre-match"),
+            ("preseason", "Pre-season"),
+            ("training", "Training"),
+            ("travel", "Travel"),
+        ],
+        default="match",
+        db_index=True,
+        help_text="Category for kit type classification. Note: 'jacket' items are handled as outerwear, not kits.",
+    )
+    is_goalkeeper = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="True if this is a goalkeeper kit (GK, Goalkeeper, Portero)",
+    )
+
+    class Meta:
+        ordering = ["category", "is_goalkeeper", "name"]
+        indexes = [
+            models.Index(fields=["category", "is_goalkeeper"]),
+        ]
 
     def __str__(self):
         return self.name
+
+    def get_category_display_name(self):
+        """Get user-friendly category name for frontend display."""
+        category_names = {
+            "match": "Game",
+            "prematch": "Pre-match",
+            "preseason": "Pre-season",
+            "training": "Training",
+            "travel": "Travel",
+        }
+        return category_names.get(self.category, self.category)
 
 
 class Competition(models.Model):

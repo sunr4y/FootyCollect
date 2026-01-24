@@ -317,10 +317,10 @@ class FKAPIClient:
         result = self._get(endpoint, params=params)
         return self._extract_list_from_result(result)
 
-    def get_kit_details(self, kit_id: int) -> dict | None:
+    def get_kit_details(self, kit_id: int, *, use_cache: bool = True) -> dict | None:
         """Get complete details of a kit."""
         # Use primary kit details endpoint (legacy /kit-json/{id} is still available but deprecated)
-        return self._get(f"/kits/{kit_id}")
+        return self._get(f"/kits/{kit_id}", use_cache=use_cache)
 
     def search_kits(self, query: str) -> list[dict]:
         """Search kits by name."""

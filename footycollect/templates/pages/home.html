@@ -399,8 +399,7 @@
       <div class="home-buttons">
         {% if request.user.is_authenticated %}
           <a href="{% url 'collection:item_list' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
-          <a href="{% url 'collection:item_list' %}"
-             class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
+          <a href="{% url 'collection:item_list' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
         {% else %}
           <a href="{% url 'account_signup' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
           <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
@@ -428,8 +427,7 @@
     <div class="home-background-cards">
       {% if columns_items %}
         {% for column_items in columns_items %}
-          <div class="home-card-column {% if forloop.counter|divisibleby:2 %}reverse{% endif %}"
-               data-column="{{ forloop.counter0 }}">
+          <div class="home-card-column {% if forloop.counter|divisibleby:2 %}reverse{% endif %}" data-column="{{ forloop.counter0 }}">
             {% for item in column_items %}
               <div class="home-card-item card item-card">
                 <!-- Logo row above photo -->
@@ -460,16 +458,13 @@
                     </div>
                     <div class="d-flex align-items-center justify-content-center flag-logo-container">
                       {% if item.base_item.club and item.base_item.club.country %}
-                        <span class="fi fi-{{ item.base_item.club.country|lower }}"
-                              title="{{ item.base_item.club.country }}"></span>
+                        <span class="fi fi-{{ item.base_item.club.country|lower }}" title="{{ item.base_item.club.country }}"></span>
                       {% endif %}
                     </div>
                   </div>
                 </div>
                 {% if item.base_item.photos.exists %}
-                  <img src="{{ item.base_item.photos.first.get_image_url }}"
-                       class="card-img-top item-photo"
-                       alt="{{ item.base_item.name }}" />
+                  <img src="{{ item.base_item.photos.first.get_image_url }}" class="card-img-top item-photo" alt="{{ item.base_item.name }}" />
                 {% else %}
                   <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
                     <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
@@ -479,6 +474,15 @@
                   <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
                       <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+                      {% if item.jersey.kit and item.jersey.kit.type %}
+                        <div class="mb-2">
+                          {% if item.jersey.kit.type.category != "match" %}
+                            <span class="badge bg-primary me-1">{{ item.jersey.kit.type.get_category_display_name }}</span>
+                          {% endif %}
+                          {% if item.jersey.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+                          <span class="badge bg-secondary">{{ item.jersey.kit.type.name }}</span>
+                        </div>
+                      {% endif %}
                       <div class="item-meta">
                         {% if item.base_item.club %}
                           <div class="d-flex align-items-center">

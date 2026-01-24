@@ -171,8 +171,7 @@
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h1 class="h3 mb-0">{% trans "My Collection" %}</h1>
-          <a href="{% url 'collection:item_create' %}"
-             class="btn btn-primary fc-font-space-grotesk">
+          <a href="{% url 'collection:item_create' %}" class="btn btn-primary fc-font-space-grotesk">
             <i class="bi bi-plus-circle"></i> {% trans "Add New Item" %}
           </a>
         </div>
@@ -232,16 +231,13 @@
                     </div>
                     <div class="d-flex align-items-center justify-content-center flag-logo-container">
                       {% if item.base_item.club and item.base_item.club.country %}
-                        <span class="fi fi-{{ item.base_item.club.country|lower }}"
-                              title="{{ item.base_item.club.country }}"></span>
+                        <span class="fi fi-{{ item.base_item.club.country|lower }}" title="{{ item.base_item.club.country }}"></span>
                       {% endif %}
                     </div>
                   </div>
                 </div>
                 {% if item.base_item.photos.exists %}
-                  <img src="{{ item.base_item.photos.first.get_image_url }}"
-                       class="card-img-top item-photo"
-                       alt="{{ item.base_item.name }}" />
+                  <img src="{{ item.base_item.photos.first.get_image_url }}" class="card-img-top item-photo" alt="{{ item.base_item.name }}" />
                 {% else %}
                   <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
                     <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
@@ -251,6 +247,15 @@
                   <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="flex-grow-1">
                       <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+                      {% if item.kit and item.kit.type %}
+                        <div class="mb-2">
+                          {% if item.kit.type.category != "match" %}
+                            <span class="badge bg-primary me-1">{{ item.kit.type.get_category_display_name }}</span>
+                          {% endif %}
+                          {% if item.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+                          <span class="badge bg-secondary">{{ item.kit.type.name }}</span>
+                        </div>
+                      {% endif %}
                       <div class="item-meta">
                         {% if item.base_item.club %}
                           <div class="d-flex align-items-center">
@@ -271,25 +276,25 @@
                       </div>
                     </div>
                     <div class="text-end ms-3">
-                      {% if item.jersey.size %}
+                      {% if item.size %}
                         <div class="item-details mb-1">
-                          <small>{{ item.jersey.size.name }}</small>
+                          <small>{{ item.size.name }}</small>
                         </div>
                       {% endif %}
-                      {% if item.jersey.player_name %}
+                      {% if item.player_name %}
                         <div class="item-details mb-1">
-                          <small>{{ item.jersey.player_name }}</small>
+                          <small>{{ item.player_name }}</small>
                         </div>
                       {% endif %}
-                      {% if item.jersey.number %}
+                      {% if item.number %}
                         <div class="item-details mb-1">
-                          <small>#{{ item.jersey.number }}</small>
+                          <small>#{{ item.number }}</small>
                         </div>
                       {% endif %}
-                      {% if item.jersey.is_short_sleeve is not None %}
+                      {% if item.is_short_sleeve is not None %}
                         <div class="item-details">
                           <small>
-                            {% if item.jersey.is_short_sleeve %}
+                            {% if item.is_short_sleeve %}
                               {% trans "Short Sleeve" %}
                             {% else %}
                               {% trans "Long Sleeve" %}
@@ -301,13 +306,10 @@
                   </div>
                   <div class="mt-auto">
                     <div class="btn-group w-100" role="group">
-                      <a href="{% url 'collection:item_detail' item.pk %}"
-                         class="btn btn-primary btn-sm"
-                         title="{% trans 'View Details' %}">
+                      <a href="{% url 'collection:item_detail' item.pk %}" class="btn btn-primary btn-sm" title="{% trans 'View Details' %}">
                         <i class="bi bi-eye"></i>
                       </a>
-                      <a href="{% url 'collection:item_update' item.pk %}"
-                         class="btn btn-outline-secondary btn-sm fc-font-space-grotesk">
+                      <a href="{% url 'collection:item_update' item.pk %}" class="btn btn-outline-secondary btn-sm fc-font-space-grotesk">
                         <i class="bi bi-pencil"></i> {% trans "Edit" %}
                       </a>
                     </div>
@@ -352,8 +354,7 @@
         <i class="bi bi-collection text-muted empty-state-icon"></i>
         <h3 class="mt-3 text-muted">{% trans "No items in your collection yet" %}</h3>
         <p class="text-muted mb-4">{% trans "Start building your collection by adding your first item!" %}</p>
-        <a href="{% url 'collection:item_create' %}"
-           class="btn btn-primary btn-lg">
+        <a href="{% url 'collection:item_create' %}" class="btn btn-primary btn-lg">
           <i class="bi bi-plus-circle"></i> {% trans "Add Your First Item" %}
         </a>
       </div>

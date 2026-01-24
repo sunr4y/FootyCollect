@@ -12,8 +12,7 @@
       {% endblock title %}
     </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description"
-          content="Manage your inventory of football memorabilia collection" />
+    <meta name="description" content="Manage your inventory of football memorabilia collection" />
     <meta name="author" content="sunr4y" />
     <!-- Animated SVG favicon - rotates between different shirt designs every 1 second using JavaScript -->
     <link rel="icon"
@@ -21,18 +20,10 @@
           href="data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 127.24603 127.24603' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23d00' d='m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z'/%3E%3Cpath fill='%23006' d='m42.2 2.5c-3.8.1-6.5 1-6.6 1-.3 0-.5.2-.7.3l-29.7 20.7c-2.73 1.8-3.53 5.4-1.73 8.1l10.7 16.1c1.1 1.6 2.9 2.6 4.9 2.6 1.1 0 2.2-.4 3.2-1 0-.1.1-.1.2-.2l7-5.9v62.8c0 1 1.1 2 2.5 2h20.5v-92.1h1.8c-3.9-2.8-6.6-6.94-6.7-11.3.1-.1.1-.3.1-.4.1-.7-.1-1.4-.6-1.9-.4-.5-1.1-.8-1.8-.8h-3.1zm40.7 0c-.7 0-1.4.3-1.8.8s-.7 1.2-.6 1.9c.1.1.1.3.1.4-.1 4.36-2.9 8.5-6.8 11.3h.7v92.1h21.4c1.4 0 2.5-1 2.5-2l.2-63.1 6.4 5.3v.2c1 .7 2 1 3 1 2 0 4-1 5-2.6l11-15.2c2-2.7 1-6.4-2-8.1l-28.3-20.7c-.1 0-.1-.1-.2-.1-.2-.1-2.1-1.2-4.5-1.2h-6.1z'/%3E%3C/svg%3E"
           id="favicon-svg" />
     <!-- Fallback for browsers that don't support SVG favicons -->
-    <link rel="icon"
-          type="image/gif"
-          sizes="32x32"
-          href="{% static 'images/favicons/favicon-32x32.gif' %}" />
-    <link rel="icon"
-          type="image/gif"
-          sizes="16x16"
-          href="{% static 'images/favicons/favicon-16x16.gif' %}" />
+    <link rel="icon" type="image/gif" sizes="32x32" href="{% static 'images/favicons/favicon-32x32.gif' %}" />
+    <link rel="icon" type="image/gif" sizes="16x16" href="{% static 'images/favicons/favicon-16x16.gif' %}" />
     <!-- Apple touch icon -->
-    <link rel="apple-touch-icon"
-          sizes="180x180"
-          href="{% static 'images/favicons/favicon-32x32.gif' %}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicons/favicon-32x32.gif' %}" />
     <!-- JavaScript to animate favicon by rotating between designs -->
     <script>
       (function() {
@@ -81,8 +72,7 @@
             crossorigin="anonymous"
             referrerpolicy="no-referrer" />
       <!-- Select2 CSS base (cargado ANTES del tema) -->
-      <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-            rel="stylesheet" />
+      <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
       <!-- Select2 Bootstrap 5 Theme  -->
       <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
             rel="stylesheet" />
@@ -90,12 +80,10 @@
       {% compress css %}
         <link href="{% static 'css/project.css' %}" rel="stylesheet" />
       {% endcompress %}
-      <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
-            rel="stylesheet" />
+      <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css" rel="stylesheet" />
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
             rel="stylesheet" />
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
-            rel="stylesheet" />
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
     {% endblock css %}
     <!-- Le javascript
     ================================================== -->
@@ -143,21 +131,18 @@
                        role="button"
                        data-bs-toggle="dropdown"
                        aria-expanded="false">{% translate "Collection" %}</a>
-                    <ul class="dropdown-menu fc-dropdown-menu-base"
-                        aria-labelledby="itemsDropdown">
+                    <ul class="dropdown-menu fc-dropdown-menu-base" aria-labelledby="itemsDropdown">
                       <li>
                         <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Add Items" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item fc-dropdown-item-base"
-                           href="{% url 'collection:jersey_create_automatic' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:jersey_create_automatic' %}">
                           <i class="bi bi-magic me-2"></i>{% translate "Add Jersey (Automatic)" %}
                           <small class="d-block ms-4 fc-dropdown-item-small">{% translate "From kit database" %}</small>
                         </a>
                       </li>
                       <li>
-                        <a class="dropdown-item fc-dropdown-item-base"
-                           href="{% url 'collection:jersey_create_manual' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:jersey_create_manual' %}">
                           <i class="bi bi-pencil me-2"></i>{% translate "Add Jersey (Manual)" %}
                           <small class="d-block ms-4 fc-dropdown-item-small">{% translate "Not in database" %}</small>
                         </a>
@@ -175,14 +160,12 @@
                         <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Browse" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item fc-dropdown-item-base"
-                           href="{% url 'collection:item_list' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:item_list' %}">
                           <i class="bi bi-grid me-2"></i>{% translate "View My Collection" %}
                         </a>
                       </li>
                       <li>
-                        <a class="dropdown-item fc-dropdown-item-base"
-                           href="{% url 'collection:jersey_select' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:jersey_select' %}">
                           <i class="bi bi-search me-2"></i>{% translate "Browse Kit Database" %}
                           <small class="d-block ms-4 fc-dropdown-item-small">{% translate "Search available kits" %}</small>
                         </a>
@@ -197,8 +180,7 @@
               <ul class="navbar-nav ms-auto d-flex align-items-center">
                 {% if request.user.is_authenticated %}
                   <li class="nav-item">
-                    <a class="nav-link fc-nav-link-base"
-                       href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
+                    <a class="nav-link fc-nav-link-base" href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
                   </li>
                   <li class="nav-item">
                     <c-button variant="ghost" size="sm" as_link href="{% url 'account_logout' %}" class="fc-button-inline-flex">
@@ -296,11 +278,9 @@
               crossorigin="anonymous"></script>
       <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
       <!-- Dropzone CSS and JS official -->
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
-            rel="stylesheet" />
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" rel="stylesheet" />
       <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"
-              defer></script>
+      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
     {% endblock js %}
   </body>

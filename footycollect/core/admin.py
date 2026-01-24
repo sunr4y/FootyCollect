@@ -61,5 +61,7 @@ class SeasonAdmin(ModelAdmin):
 
 @admin.register(TypeK)
 class TypeKAdmin(ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "category", "is_goalkeeper")
+    list_filter = ("category", "is_goalkeeper")
     search_fields = ("name",)
+    ordering = ("category", "is_goalkeeper", "name")

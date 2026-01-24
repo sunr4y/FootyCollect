@@ -11,10 +11,7 @@
   <div class="mb-3 color-selector-wrapper">
     <label for="id_{{ name }}" class="form-label">{{ label }}</label>
     {% if data_multiple == "true" %}
-      <select id="id_{{ name }}"
-              name="{{ name }}"
-              multiple
-              class="form-control d-none">
+      <select id="id_{{ name }}" name="{{ name }}" multiple class="form-control d-none">
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
             <option value="{{ color.value }}"
@@ -29,8 +26,7 @@
         <option value="">Select color</option>
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
-            <option value="{{ color.value }}"
-                    {% if data_selected and color.value == data_selected %}selected{% endif %}>
+            <option value="{{ color.value }}" {% if data_selected and color.value == data_selected %}selected{% endif %}>
               {{ color.label }}
             </option>
           {% endfor %}

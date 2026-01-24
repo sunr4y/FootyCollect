@@ -129,39 +129,84 @@ class ItemFKAPIService:
         if kit_reference not in current_description:
             form.cleaned_data["description"] = current_description + kit_reference
 
-    def _process_kit_information(self, form, kit_data: dict[str, Any]) -> None:
-        """Process kit information from API data."""
-        # Process kit name
+    def _process_kit_name(self, form, kit_data: dict[str, Any]) -> None:
+        """Process kit name from API data."""
         if "name" in kit_data:
             form.cleaned_data["name"] = kit_data["name"]
 
-        # Process kit description
-        if "description" in kit_data:
-            current_description = form.cleaned_data.get("description", "")
-            api_description = kit_data["description"]
+    def _process_kit_description(self, form, kit_data: dict[str, Any]) -> None:
+        """Process kit description from API data."""
+        if "description" not in kit_data:
+            return
+        current_description = form.cleaned_data.get("description", "")
+        api_description = kit_data["description"]
+        if api_description and api_description not in current_description:
+            form.cleaned_data["description"] = f"{current_description}\n\n{api_description}"
 
-            if api_description and api_description not in current_description:
-                form.cleaned_data["description"] = f"{current_description}\n\n{api_description}"
-
-        # Process kit type
+    def _process_kit_type(self, kit_data: dict[str, Any]) -> None:
+        """Process kit type from API data."""
         type_obj = kit_data.get("type")
-        if type_obj:
-            type_name = type_obj.get("name") if isinstance(type_obj, dict) else type_obj
-            if type_name:
-                logger.info("Processing kit type: %s", type_name)
-                try:
-                    type_k = TypeK.objects.filter(name=type_name).first()
-                    if not type_k:
-                        type_k = TypeK.objects.filter(name__iexact=type_name).first()
-                    if not type_k:
-                        type_k = TypeK.objects.create(name=type_name)
-                        logger.info("Created new kit type: %s (ID: %s)", type_name, type_k.id)
-                    else:
-                        logger.info("Found existing kit type: %s (ID: %s)", type_k.name, type_k.id)
-                except Exception:
-                    logger.exception("Error creating kit type %s", type_name)
+        if not type_obj:
+            return
 
-        # Process kit colors
+        if isinstance(type_obj, str):
+            type_name = type_obj
+            type_data = {}
+        else:
+            type_name = type_obj.get("name")
+            type_data = type_obj
+
+        if not type_name:
+            return
+
+        category = type_data.get("category", "match")
+        if category == "jacket":
+            logger.info("Skipping TypeK creation for jacket item: %s (handled as outerwear)", type_name)
+            return
+
+        logger.info("Processing kit type: %s", type_name)
+        try:
+            type_k = TypeK.objects.filter(name=type_name).first()
+            if not type_k:
+                type_k = TypeK.objects.filter(name__iexact=type_name).first()
+
+            if type_k:
+                self._update_existing_type_k(type_k, category, type_data, type_name)
+            else:
+                self._create_new_type_k(type_name, category, type_data)
+        except Exception:
+            logger.exception("Error creating kit type %s", type_name)
+
+    def _update_existing_type_k(self, type_k: TypeK, category: str, type_data: dict[str, Any], type_name: str) -> None:
+        """Update an existing TypeK object."""
+        needs_update = False
+        if category and type_k.category != category:
+            type_k.category = category
+            needs_update = True
+        if "is_goalkeeper" in type_data and type_k.is_goalkeeper != type_data["is_goalkeeper"]:
+            type_k.is_goalkeeper = type_data["is_goalkeeper"]
+            needs_update = True
+
+        if needs_update:
+            type_k.save()
+            logger.info("Updated kit type: %s (ID: %s)", type_name, type_k.id)
+        else:
+            logger.info("Found existing kit type: %s (ID: %s)", type_name, type_k.id)
+
+    def _create_new_type_k(self, type_name: str, category: str, type_data: dict[str, Any]) -> None:
+        """Create a new TypeK object."""
+        type_k = TypeK.objects.create(
+            name=type_name,
+            category=category,
+            is_goalkeeper=type_data.get("is_goalkeeper", False),
+        )
+        logger.info("Created new kit type: %s (ID: %s)", type_name, type_k.id)
+
+    def _process_kit_information(self, form, kit_data: dict[str, Any]) -> None:
+        """Process kit information from API data."""
+        self._process_kit_name(form, kit_data)
+        self._process_kit_description(form, kit_data)
+        self._process_kit_type(kit_data)
         if "colors" in kit_data:
             self._process_kit_colors(form, kit_data["colors"])
 
