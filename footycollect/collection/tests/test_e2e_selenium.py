@@ -469,10 +469,11 @@ class TestE2ESeleniumTests(StaticLiveServerTestCase):
             self.fail(f"Redirected to login page. Current URL: {current_url}")
 
         page_source = self.selenium.page_source
-        self.assertIn(item.name, page_source)
-        self.assertIn(self.brand.name, page_source)
+        # The template uses get_display_name_with_type() which shows "club + type"
+        # not the full item.name, so we check for individual components
         self.assertIn(self.club.name, page_source)
         self.assertIn(self.season.year, page_source)
+        self.assertIn(self.brand.name, page_source)
 
         try:
             console_logs = self.selenium.get_log("browser")

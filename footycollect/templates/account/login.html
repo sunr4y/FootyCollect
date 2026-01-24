@@ -40,8 +40,9 @@
           {% if form.remember %}
             <div class="mb-4 form-check">
               {{ form.remember }}
-              <label class="form-check-label fc-checkbox-label"
-                     for="{{ form.remember.id_for_label }}">{% trans "Remember me" %}</label>
+              <label class="form-check-label fc-checkbox-label" for="{{ form.remember.id_for_label }}">
+                {% trans "Remember me" %}
+              </label>
             </div>
           {% endif %}
           <div class="d-grid mb-4">
@@ -65,13 +66,11 @@
         <!-- Additional Links -->
         <div class="text-center fc-section-divider">
           <div class="mb-2">
-            <a href="{% url 'account_reset_password' %}"
-               class="fc-link-primary text-decoration-none">{% trans "Forgot password?" %}</a>
+            <a href="{% url 'account_reset_password' %}" class="fc-link-primary text-decoration-none">{% trans "Forgot password?" %}</a>
           </div>
           <div>
             <span class="fc-text-small">{% trans "Don't have an account?" %}</span>
-            <a href="{% url 'account_signup' %}"
-               class="fc-link-primary text-decoration-none ms-1 fw-500">{% trans "Sign up" %}</a>
+            <a href="{% url 'account_signup' %}" class="fc-link-primary text-decoration-none ms-1 fw-500">{% trans "Sign up" %}</a>
           </div>
         </div>
       </div>

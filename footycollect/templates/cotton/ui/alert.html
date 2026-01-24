@@ -7,10 +7,7 @@
       <div class="fc-alert__message">{{ slot }}</div>
     </div>
     {% if dismissible %}
-      <button type="button"
-              class="fc-alert__close"
-              aria-label="Close"
-              onclick="this.parentElement.parentElement.remove()">
+      <button type="button" class="fc-alert__close" aria-label="Close" onclick="this.parentElement.parentElement.remove()">
         <span>×</span>
       </button>
     {% endif %}

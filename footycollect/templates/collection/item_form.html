@@ -7,8 +7,7 @@
 {% block css %}
   {{ block.super }}
   {{ form.media.css }}
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <style>
     /* Toggle Switch Styles */
     .toggle-switch {
@@ -214,9 +213,7 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Jersey Version" %}</label>
-              <div class="btn-group w-100 fc-btn-group"
-                   role="group"
-                   aria-label="Version toggle">
+              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Version toggle">
                 <button type="button"
                         class="btn fc-btn-group-item"
                         :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
@@ -229,9 +226,7 @@
             </div>
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Sleeve Type" %}</label>
-              <div class="btn-group w-100 fc-btn-group"
-                   role="group"
-                   aria-label="Sleeve toggle">
+              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Sleeve toggle">
                 <button type="button"
                         class="btn fc-btn-group-item"
                         :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
@@ -248,36 +243,24 @@
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Include Player Signature" %}</label>
               <label class="toggle-switch">
-                <input type="checkbox"
-                       id="id_is_signed"
-                       name="is_signed"
-                       {% if form.is_signed.value %}checked{% endif %} />
+                <input type="checkbox" id="id_is_signed" name="is_signed" {% if form.is_signed.value %}checked{% endif %} />
                 <span class="toggle-slider"></span>
               </label>
             </div>
             <div class="col-md-6">
               <label class="fc-form-label-block">{% trans "Is replica" %}</label>
               <label class="toggle-switch">
-                <input type="checkbox"
-                       id="id_is_replica"
-                       name="is_replica"
-                       {% if form.is_replica.value %}checked{% endif %} />
+                <input type="checkbox" id="id_is_replica" name="is_replica" {% if form.is_replica.value %}checked{% endif %} />
                 <span class="toggle-slider"></span>
               </label>
             </div>
           </div>
           <!-- Nameset toggle button and fields -->
           <div class="mb-3">
-            <button type="button"
-                    class="btn btn-outline-secondary"
-                    x-show="!hasNameset"
-                    @click="hasNameset = true">
+            <button type="button" class="btn btn-outline-secondary" x-show="!hasNameset" @click="hasNameset = true">
               <i class="bi bi-person-badge"></i> {% trans "Add Nameset" %}
             </button>
-            <button type="button"
-                    class="btn btn-outline-danger"
-                    x-show="hasNameset"
-                    @click="hasNameset = false">
+            <button type="button" class="btn btn-outline-danger" x-show="hasNameset" @click="hasNameset = false">
               <i class="bi bi-x-circle"></i> {% trans "Remove Nameset" %}
             </button>
           </div>
@@ -305,14 +288,10 @@
       </div>
       <!-- Submit Button -->
       <div class="d-flex justify-content-end gap-3 mt-4">
-        <a href="{% url 'collection:item_list' %}"
-           class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
+        <a href="{% url 'collection:item_list' %}" class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
         <button type="submit" id="submit-jersey-btn" class="btn fc-btn-primary">
           <span id="submit-text">{% trans "Add Jersey" %}</span>
-          <span id="submit-spinner"
-                class="spinner-border spinner-border-sm ms-2 fc-d-none"
-                role="status"
-                aria-hidden="true"></span>
+          <span id="submit-spinner" class="spinner-border spinner-border-sm ms-2 fc-d-none" role="status" aria-hidden="true"></span>
         </button>
       </div>
     </form>

@@ -122,21 +122,15 @@
       <div class="fc-card-body-small">
         {% if user.avatar %}
           <div class="fc-avatar-preview-container">
-            <img src="{{ user.get_avatar_url }}"
-                 alt="{{ user.username }}'s avatar"
-                 class="rounded-circle fc-avatar-preview" />
+            <img src="{{ user.get_avatar_url }}" alt="{{ user.username }}'s avatar" class="rounded-circle fc-avatar-preview" />
             <p class="mt-2 mb-0 fc-text-small">{% trans "Current avatar" %}</p>
           </div>
         {% endif %}
-        <form class="form-horizontal"
-              method="post"
-              action="{% url 'users:update' %}"
-              enctype="multipart/form-data">
+        <form class="form-horizontal" method="post" action="{% url 'users:update' %}" enctype="multipart/form-data">
           {% csrf_token %}
           {% crispy form %}
           <div class="d-flex justify-content-end gap-2 fc-form-actions">
-            <a href="{% url 'users:detail' username=user.username %}"
-               class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
+            <a href="{% url 'users:detail' username=user.username %}" class="btn fc-btn-outline-secondary">{% trans "Cancel" %}</a>
             <button type="submit" class="btn fc-btn-primary">{% trans "Update Profile" %}</button>
           </div>
         </form>

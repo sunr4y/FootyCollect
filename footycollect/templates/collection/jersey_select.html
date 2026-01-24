@@ -4,8 +4,7 @@
 
 {% block css %}
   {{ block.super }}
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <style>
     .kit-search-results {
       position: absolute;
@@ -548,13 +547,9 @@
     {% if messages %}
       <div class="messages mt-3">
         {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
-               role="alert">
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
             {{ message }}
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert"
-                    aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
         {% endfor %}
       </div>
@@ -581,16 +576,11 @@
                      placeholder="{% trans 'Enter at least 3 characters' %}"
                      x-model="kitSearch"
                      autocomplete="off" />
-              <button class="btn btn-outline-secondary"
-                      type="button"
-                      @click="clearSearch()"
-                      x-show="kitSearch.length > 0">
+              <button class="btn btn-outline-secondary" type="button" @click="clearSearch()" x-show="kitSearch.length > 0">
                 <i class="bi bi-x-lg"></i>
               </button>
               <div class="loading-indicator" x-show="isSearching">
-                <span class="spinner-border spinner-border-sm"
-                      role="status"
-                      aria-hidden="true"></span>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               </div>
             </div>
           </div>
@@ -600,9 +590,7 @@
       <div x-show="showResults" x-cloak>
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">{% trans "Search Results" %}</h5>
-          <button type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  @click="clearSearch()">
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="clearSearch()">
             <i class="bi bi-x"></i> {% trans "Clear Results" %}
           </button>
         </div>
@@ -620,15 +608,10 @@
         <!-- Results grid -->
         <div class="kit-grid" x-show="!isSearching && kitResults.length > 0">
           <template x-for="kit in kitResults" :key="kit.id">
-            <div class="kit-card position-relative"
-                 :class="{ 'selected': isSelected(kit.id) }"
-                 @click="selectKit(kit)">
+            <div class="kit-card position-relative" :class="{ 'selected': isSelected(kit.id) }" @click="selectKit(kit)">
               <div class="kit-card-img-container">
                 <template x-if="kit.main_img_url">
-                  <img :src="kit.main_img_url"
-                       :alt="kit.name"
-                       class="kit-card-img"
-                       onerror="handleImageError(this)" />
+                  <img :src="kit.main_img_url" :alt="kit.name" class="kit-card-img" onerror="handleImageError(this)" />
                 </template>
                 <template x-if="!kit.main_img_url">
                   <div class="d-flex align-items-center justify-content-center h-100">
@@ -643,10 +626,7 @@
                 <div class="kit-card-title" x-text="kit.name"></div>
                 <div class="kit-card-team">
                   <template x-if="kit.team_logo">
-                    <img :src="kit.team_logo"
-                         class="kit-card-team-logo"
-                         alt="Team logo"
-                         onerror="this.style.display='none'" />
+                    <img :src="kit.team_logo" class="kit-card-team-logo" alt="Team logo" onerror="this.style.display='none'" />
                   </template>
                   <span x-text="kit.team_name"></span>
                 </div>
@@ -661,9 +641,7 @@
         <div class="selected-kit-container">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="mb-0">{% trans "Selected Jersey" %}</h3>
-            <button type="button"
-                    class="btn btn-outline-secondary btn-sm"
-                    @click="resetSelection()">
+            <button type="button" class="btn btn-outline-secondary btn-sm" @click="resetSelection()">
               <i class="bi bi-arrow-left"></i> {% trans "Search Again" %}
             </button>
           </div>
@@ -680,15 +658,11 @@
               </div>
             </template>
             <div class="selected-kit-details">
-              <div class="selected-kit-title"
-                   x-text="selectedKit ? selectedKit.name : ''"></div>
-              <div class="selected-kit-meta"
-                   x-text="selectedKit && selectedKit.season_year ? selectedKit.season_year : ''"></div>
+              <div class="selected-kit-title" x-text="selectedKit ? selectedKit.name : ''"></div>
+              <div class="selected-kit-meta" x-text="selectedKit && selectedKit.season_year ? selectedKit.season_year : ''"></div>
               <div class="selected-kit-club" x-show="selectedKit && selectedKit.team">
                 <template x-if="selectedKit && selectedKit.team && selectedKit.team.logo">
-                  <img :src="selectedKit.team.logo"
-                       :alt="selectedKit.team ? selectedKit.team.name : ''"
-                       onerror="this.style.display='none'" />
+                  <img :src="selectedKit.team.logo" :alt="selectedKit.team ? selectedKit.team.name : ''" onerror="this.style.display='none'" />
                 </template>
                 <span x-text="selectedKit && selectedKit.team ? selectedKit.team.name : ''"></span>
               </div>
@@ -698,8 +672,7 @@
                   <template x-if="selectedKit && Array.isArray(selectedKit.competition)">
                     <div>
                       <template x-for="(comp, index) in selectedKit.competition" :key="index">
-                        <span class="competition-badge"
-                              x-text="typeof comp === 'object' ? comp.name : comp"></span>
+                        <span class="competition-badge" x-text="typeof comp === 'object' ? comp.name : comp"></span>
                       </template>
                     </div>
                   </template>
@@ -720,14 +693,8 @@
             {% trans "In the next step, you'll be able to add more details, specify condition, and upload additional photos." %}
           </div>
           <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-            <button type="button"
-                    class="btn btn-primary"
-                    @click="proceedToDetails()"
-                    :disabled="isLoadingFromApi">
-              <span x-show="isLoadingFromApi"
-                    class="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"></span>
+            <button type="button" class="btn btn-primary" @click="proceedToDetails()" :disabled="isLoadingFromApi">
+              <span x-show="isLoadingFromApi" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               {% trans "Continue to Details" %} <i class="bi bi-arrow-right"></i>
             </button>
           </div>
