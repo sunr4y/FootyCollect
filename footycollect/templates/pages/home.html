@@ -5,6 +5,11 @@
 {% block css %}
   {{ block.super }}
   <style>
+    html,
+    body {
+      overflow: hidden;
+    }
+
     .card {
       border-radius: 1rem;
       border: 1px solid var(--fc-border);
@@ -179,16 +184,20 @@
 
     .home-hero {
       position: relative;
-      min-height: calc(100vh - 63px);
+      min-height: 100vh;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 4rem 1.5rem;
+      padding-top: calc(63px + 4rem);
+      /* Account for navbar */
       width: 100vw;
       max-width: 100vw !important;
       margin-left: calc(50% - 50vw);
       margin-right: calc(50% - 50vw);
+      margin-top: -63px;
+      /* Pull up behind navbar */
       left: 0;
       right: 0;
       box-sizing: border-box;
@@ -204,15 +213,17 @@
     .home-background-cards {
       position: absolute;
       top: 0;
-      left: 0;
-      width: 100%;
+      left: -150px;
+      right: -150px;
+      bottom: 0;
+      width: calc(100% + 300px);
       height: 100%;
       display: flex;
       gap: 1rem;
-      padding: 2rem;
+      padding: 0 2rem;
       opacity: 0.3;
       pointer-events: none;
-      max-width: 100% !important;
+      overflow: hidden;
     }
 
     .home-card-column {
@@ -220,35 +231,12 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      min-width: 200px;
-    }
-
-    .home-card-column.reverse {
-      animation: scrollDown 30s linear infinite;
-    }
-
-    .home-card-column:not(.reverse) {
-      animation: scrollUp 30s linear infinite;
-    }
-
-    @keyframes scrollUp {
-      0% {
-        transform: translateY(0);
-      }
-
-      100% {
-        transform: translateY(-33.333%);
-      }
-    }
-
-    @keyframes scrollDown {
-      0% {
-        transform: translateY(-33.333%);
-      }
-
-      100% {
-        transform: translateY(0);
-      }
+      min-width: 240px;
+      max-width: 280px;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      perspective: 1000px;
     }
 
     .home-content {
@@ -380,6 +368,48 @@
         font-size: 4.5rem;
       }
     }
+
+    /* Loading skeleton for images */
+    .home-card-item .item-photo {
+      background: linear-gradient(90deg, var(--fc-muted) 25%, var(--fc-border) 50%, var(--fc-muted) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      min-height: 200px;
+    }
+
+    .home-card-item .item-photo.loaded {
+      animation: none;
+      background: none;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    /* Cached kit minimal card styles */
+    .home-card-item.cached-kit .card-body {
+      padding: 0.5rem !important;
+    }
+
+    .home-card-item.cached-kit .item-title {
+      font-size: 0.8rem;
+      line-height: 1.3;
+      margin-bottom: 0.25rem !important;
+    }
+
+    .home-card-item.cached-kit .item-meta {
+      gap: 0;
+    }
+
+    .home-card-item.cached-kit .item-details {
+      font-size: 0.7rem;
+    }
   </style>
 {% endblock css %}
 {% block content %}
@@ -430,108 +460,186 @@
           <div class="home-card-column {% if forloop.counter|divisibleby:2 %}reverse{% endif %}" data-column="{{ forloop.counter0 }}">
             {% for item in column_items %}
               <div class="home-card-item card item-card">
-                <!-- Logo row above photo -->
-                <div class="item-logos-above-photo">
-                  <div class="d-flex align-items-center w-100 position-relative">
-                    <div class="d-flex align-items-center justify-content-center brand-logo-container">
-                      {% if item.base_item.brand %}
-                        {% if item.base_item.brand.logo_dark and item.base_item.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                          <img src="{{ item.base_item.brand.logo_dark }}"
-                               alt="{{ item.base_item.brand.name }}"
+                {% if use_cached_kits %}
+                  {# Card for cached API kits #}
+                  <div class="item-logos-above-photo">
+                    <div class="d-flex align-items-center w-100 position-relative">
+                      <div class="d-flex align-items-center justify-content-center brand-logo-container">
+                        {% if item.brand_logo_dark %}
+                          <img src="{{ item.brand_logo_dark }}"
+                               alt="{{ item.brand_name }}"
                                class="item-logo-small has-logo-dark"
-                               onerror="this.onerror=null; this.src='{{ item.base_item.brand.logo|default:'' }}'; this.classList.remove('has-logo-dark');" />
-                        {% elif item.base_item.brand.logo and item.base_item.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                          <img src="{{ item.base_item.brand.logo }}"
-                               alt="{{ item.base_item.brand.name }}"
+                               loading="lazy"
+                               onerror="this.onerror=null; this.src='{{ item.brand_logo|default:'' }}'; this.classList.remove('has-logo-dark');" />
+                        {% elif item.brand_logo %}
+                          <img src="{{ item.brand_logo }}"
+                               alt="{{ item.brand_name }}"
                                class="item-logo-small"
+                               loading="lazy"
                                onerror="this.style.display='none'" />
                         {% endif %}
-                      {% endif %}
-                    </div>
-                    <div>
-                      {% if item.base_item.club and item.base_item.club.logo %}
-                        <img src="{{ item.base_item.club.logo }}"
-                             alt="{{ item.base_item.club.name }}"
-                             class="item-club-shield"
-                             onerror="this.style.display='none'" />
-                      {% endif %}
-                    </div>
-                    <div class="d-flex align-items-center justify-content-center flag-logo-container">
-                      {% if item.base_item.club and item.base_item.club.country %}
-                        <span class="fi fi-{{ item.base_item.club.country|lower }}" title="{{ item.base_item.club.country }}"></span>
-                      {% endif %}
+                      </div>
+                      <div>
+                        {% if item.team_logo %}
+                          <img src="{{ item.team_logo }}"
+                               alt="{{ item.team_name }}"
+                               class="item-club-shield"
+                               loading="lazy"
+                               onerror="this.style.display='none'" />
+                        {% endif %}
+                      </div>
+                      <div class="d-flex align-items-center justify-content-center flag-logo-container">
+                        {% if item.team_country %}
+                          <span class="fi fi-{{ item.team_country|lower }}" title="{{ item.team_country }}"></span>
+                        {% endif %}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {% if item.base_item.photos.exists %}
-                  <img src="{{ item.base_item.photos.first.get_image_url }}" class="card-img-top item-photo" alt="{{ item.base_item.name }}" />
-                {% else %}
-                  <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
-                    <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
-                  </div>
-                {% endif %}
-                <div class="card-body d-flex flex-column">
-                  <div class="d-flex justify-content-between align-items-start">
+                  {% if item.image_url %}
+                    <img src="{{ item.image_url }}"
+                         class="card-img-top item-photo"
+                         alt="{{ item.name }}"
+                         loading="lazy"
+                         onload="this.classList.add('loaded')"
+                         onerror="this.onerror=null; this.src='{{ item.original_image_url }}'; this.classList.add('loaded')" />
+                  {% elif item.original_image_url %}
+                    <img src="{{ item.original_image_url }}"
+                         class="card-img-top item-photo"
+                         alt="{{ item.name }}"
+                         loading="lazy"
+                         onload="this.classList.add('loaded')" />
+                  {% else %}
+                    <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
+                      <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
+                    </div>
+                  {% endif %}
+                  <div class="card-body d-flex flex-column">
                     <div class="flex-grow-1">
-                      <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
-                      {% if item.jersey.kit and item.jersey.kit.type %}
-                        <div class="mb-2">
-                          {% if item.jersey.kit.type.category != "match" %}
-                            <span class="badge bg-primary me-1">{{ item.jersey.kit.type.get_category_display_name }}</span>
-                          {% endif %}
-                          {% if item.jersey.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
-                          <span class="badge bg-secondary">{{ item.jersey.kit.type.name }}</span>
-                        </div>
-                      {% endif %}
+                      <h6 class="card-title item-title mb-1">{{ item.name }}</h6>
                       <div class="item-meta">
-                        {% if item.base_item.club %}
+                        {% if item.team_name %}
                           <div class="d-flex align-items-center">
-                            <span class="item-details">{{ item.base_item.club.name }}</span>
+                            <span class="item-details">{{ item.team_name }}</span>
                           </div>
                         {% endif %}
-                        {% if item.base_item.brand %}
+                        {% if item.season_year %}
                           <div class="d-flex align-items-center">
-                            <span class="item-details">{{ item.base_item.brand.name }}</span>
-                          </div>
-                        {% endif %}
-                        {% if item.base_item.season %}
-                          <div class="d-flex align-items-center">
-                            <i class="bi bi-calendar me-1"></i>
-                            <span class="item-details">{{ item.base_item.season.year }}</span>
+                            <span class="item-details">{{ item.season_year }}</span>
                           </div>
                         {% endif %}
                       </div>
                     </div>
-                    <div class="text-end ms-3">
-                      {% if item.jersey.size %}
-                        <div class="item-details mb-1">
-                          <small>{{ item.jersey.size.name }}</small>
-                        </div>
-                      {% endif %}
-                      {% if item.jersey.player_name %}
-                        <div class="item-details mb-1">
-                          <small>{{ item.jersey.player_name }}</small>
-                        </div>
-                      {% endif %}
-                      {% if item.jersey.number %}
-                        <div class="item-details mb-1">
-                          <small>#{{ item.jersey.number }}</small>
-                        </div>
-                      {% endif %}
-                      {% if item.jersey.is_short_sleeve is not None %}
-                        <div class="item-details">
-                          <small>
-                            {% if item.jersey.is_short_sleeve %}
-                              {% trans "Short Sleeve" %}
-                            {% else %}
-                              {% trans "Long Sleeve" %}
-                            {% endif %}
-                          </small>
-                        </div>
-                      {% endif %}
+                  </div>
+                {% else %}
+                  {# Full card for database items - legacy support #}
+                  <div class="item-logos-above-photo">
+                    <div class="d-flex align-items-center w-100 position-relative">
+                      <div class="d-flex align-items-center justify-content-center brand-logo-container">
+                        {% if item.base_item.brand %}
+                          {% if item.base_item.brand.logo_dark and item.base_item.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                            <img src="{{ item.base_item.brand.logo_dark }}"
+                                 alt="{{ item.base_item.brand.name }}"
+                                 class="item-logo-small has-logo-dark"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='{{ item.base_item.brand.logo|default:'' }}'; this.classList.remove('has-logo-dark');" />
+                          {% elif item.base_item.brand.logo and item.base_item.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                            <img src="{{ item.base_item.brand.logo }}"
+                                 alt="{{ item.base_item.brand.name }}"
+                                 class="item-logo-small"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'" />
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                      <div>
+                        {% if item.base_item.club and item.base_item.club.logo %}
+                          <img src="{{ item.base_item.club.logo }}"
+                               alt="{{ item.base_item.club.name }}"
+                               class="item-club-shield"
+                               loading="lazy"
+                               onerror="this.style.display='none'" />
+                        {% endif %}
+                      </div>
+                      <div class="d-flex align-items-center justify-content-center flag-logo-container">
+                        {% if item.base_item.club and item.base_item.club.country %}
+                          <span class="fi fi-{{ item.base_item.club.country|lower }}" title="{{ item.base_item.club.country }}"></span>
+                        {% endif %}
+                      </div>
                     </div>
                   </div>
-                </div>
+                  {% if item.base_item.photos.exists %}
+                    <img src="{{ item.base_item.photos.first.get_image_url }}"
+                         class="card-img-top item-photo"
+                         alt="{{ item.base_item.name }}"
+                         loading="lazy" />
+                  {% else %}
+                    <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
+                      <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
+                    </div>
+                  {% endif %}
+                  <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="flex-grow-1">
+                        <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+                        {% if item.jersey.kit and item.jersey.kit.type %}
+                          <div class="mb-2">
+                            {% if item.jersey.kit.type.category != "match" %}
+                              <span class="badge bg-primary me-1">{{ item.jersey.kit.type.get_category_display_name }}</span>
+                            {% endif %}
+                            {% if item.jersey.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+                            <span class="badge bg-secondary">{{ item.jersey.kit.type.name }}</span>
+                          </div>
+                        {% endif %}
+                        <div class="item-meta">
+                          {% if item.base_item.club %}
+                            <div class="d-flex align-items-center">
+                              <span class="item-details">{{ item.base_item.club.name }}</span>
+                            </div>
+                          {% endif %}
+                          {% if item.base_item.brand %}
+                            <div class="d-flex align-items-center">
+                              <span class="item-details">{{ item.base_item.brand.name }}</span>
+                            </div>
+                          {% endif %}
+                          {% if item.base_item.season %}
+                            <div class="d-flex align-items-center">
+                              <i class="bi bi-calendar me-1"></i>
+                              <span class="item-details">{{ item.base_item.season.year }}</span>
+                            </div>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="text-end ms-3">
+                        {% if item.jersey.size %}
+                          <div class="item-details mb-1">
+                            <small>{{ item.jersey.size.name }}</small>
+                          </div>
+                        {% endif %}
+                        {% if item.jersey.player_name %}
+                          <div class="item-details mb-1">
+                            <small>{{ item.jersey.player_name }}</small>
+                          </div>
+                        {% endif %}
+                        {% if item.jersey.number %}
+                          <div class="item-details mb-1">
+                            <small>#{{ item.jersey.number }}</small>
+                          </div>
+                        {% endif %}
+                        {% if item.jersey.is_short_sleeve is not None %}
+                          <div class="item-details">
+                            <small>
+                              {% if item.jersey.is_short_sleeve %}
+                                {% trans "Short Sleeve" %}
+                              {% else %}
+                                {% trans "Long Sleeve" %}
+                              {% endif %}
+                            </small>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
               </div>
             {% endfor %}
           </div>
@@ -539,4 +647,38 @@
       {% endif %}
     </div>
   </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const columns = document.querySelectorAll('.home-card-column');
+
+      columns.forEach((column, index) => {
+        const items = column.querySelectorAll('.home-card-item');
+        if (items.length === 0) return;
+
+        const totalItems = items.length;
+        const oneThirdCount = Math.floor(totalItems / 3);
+
+        let oneThirdHeight = 0;
+        const gap = 16;
+
+        for (let i = 0; i < oneThirdCount; i++) {
+          oneThirdHeight += items[i].offsetHeight + gap;
+        }
+
+        // Create CSS animation dynamically with exact pixel values
+        const direction = index % 2 === 0 ? 'up' : 'down';
+        const duration = 45 + (index * 3); // Slightly different speeds for variety
+
+        const keyframes = direction === 'up' ?
+          `@keyframes scroll${index} { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(0, -${oneThirdHeight}px, 0); } }` :
+          `@keyframes scroll${index} { 0% { transform: translate3d(0, -${oneThirdHeight}px, 0); } 100% { transform: translate3d(0, 0, 0); } }`;
+
+        const style = document.createElement('style');
+        style.textContent = keyframes;
+        document.head.appendChild(style);
+
+        column.style.animation = `scroll${index} ${duration}s linear infinite`;
+      });
+    });
+  </script>
 {% endblock content %}

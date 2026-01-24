@@ -11,6 +11,10 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
+# Bulk endpoint constraints
+MIN_BULK_SLUGS = 2
+MAX_BULK_SLUGS = 30
+
 
 class CircuitBreaker:
     """Circuit breaker pattern to prevent cascading failures."""
@@ -384,6 +388,37 @@ class FKAPIClient:
         results = self._extract_list_from_result(result)
         logger.info("Competition search returned %s results", len(results))
         return results
+
+    def get_kits_bulk(self, slugs: list[str]) -> list[dict]:
+        """Get multiple kits by their slugs in a single request.
+
+        Args:
+            slugs: List of kit slugs (2-30 slugs supported)
+
+        Returns:
+            List of kit data with reduced response format:
+            - name, team (name, logo, country), season (year), brand (name, logo), main_img_url
+        """
+        if not slugs:
+            return []
+
+        if len(slugs) < MIN_BULK_SLUGS:
+            logger.warning("Bulk endpoint requires at least %d slugs, got %d", MIN_BULK_SLUGS, len(slugs))
+            return []
+
+        if len(slugs) > MAX_BULK_SLUGS:
+            logger.warning("Bulk endpoint supports max %d slugs, got %d. Truncating.", MAX_BULK_SLUGS, len(slugs))
+            slugs = slugs[:MAX_BULK_SLUGS]
+
+        slugs_param = ",".join(slugs)
+        logger.info("Fetching %d kits in bulk", len(slugs))
+        result = self._get("/kits/bulk", params={"slugs": slugs_param})
+        logger.debug("Bulk API raw result type: %s", type(result))
+        if result:
+            logger.debug("Bulk API result keys: %s", result.keys() if isinstance(result, dict) else "N/A (list)")
+        extracted = self._extract_list_from_result(result)
+        logger.info("Bulk API extracted %d kits", len(extracted))
+        return extracted
 
     def _extract_list_from_result(self, result: dict | list | None) -> list[dict]:
         """Extract list from API result, handling various response formats."""
