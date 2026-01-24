@@ -792,9 +792,7 @@
                        id="mainImageSrc"
                        onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
                 {% else %}
-                  <img src="{{ first_photo.image.url }}"
-                       alt="{{ object.name }}"
-                       id="mainImageSrc" />
+                  <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
                 {% endif %}
                 <div class="fc-main-image-overlay"></div>
               </div>
@@ -813,9 +811,7 @@
                            class="thumbnail-img"
                            onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
                     {% else %}
-                      <img src="{{ photo.image.url }}"
-                           alt="Thumbnail {{ forloop.counter }}"
-                           class="thumbnail-img" />
+                      <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
                     {% endif %}
                   </button>
                 {% endfor %}
@@ -831,9 +827,7 @@
                        id="mainImageSrc"
                        onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
                 {% else %}
-                  <img src="{{ first_photo.image.url }}"
-                       alt="{{ object.name }}"
-                       id="mainImageSrc" />
+                  <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
                 {% endif %}
                 <div class="fc-main-image-overlay"></div>
               </div>
@@ -852,9 +846,7 @@
                            class="thumbnail-img"
                            onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
                     {% else %}
-                      <img src="{{ photo.image.url }}"
-                           alt="Thumbnail {{ forloop.counter }}"
-                           class="thumbnail-img" />
+                      <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
                     {% endif %}
                   </button>
                 {% endfor %}
@@ -890,9 +882,7 @@
                 {{ object.name }}
               {% endif %}
             </h1>
-            {% if object.season %}
-              <p class="fc-title">{{ object.season.year }}</p>
-            {% endif %}
+            {% if object.season %}<p class="fc-title">{{ object.season.year }}</p>{% endif %}
           </div>
           {% if object.user %}
             <div class="fc-flex-center fc-gap-1 fc-text-sm fc-text-muted">
@@ -938,9 +928,7 @@
                          class="fc-brand-logo"
                          onerror="this.onerror=null; this.src='{{ object.brand.logo|default:'' }}';" />
                   {% elif object.brand.logo and object.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ object.brand.logo }}"
-                         alt="{{ object.brand.name }}"
-                         class="fc-brand-logo" />
+                    <img src="{{ object.brand.logo }}" alt="{{ object.brand.name }}" class="fc-brand-logo" />
                   {% endif %}
                   <p class="fc-detail-value">{{ object.brand.name }}</p>
                 </div>
@@ -1013,9 +1001,7 @@
               <p class="fc-detail-value">
                 {% for competition in object.competitions.all %}
                   {% if competition.logo and competition.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ competition.logo }}"
-                         alt="{{ competition.name }}"
-                         class="fc-competition-logo" />
+                    <img src="{{ competition.logo }}" alt="{{ competition.name }}" class="fc-competition-logo" />
                   {% endif %}
                   {{ competition.name }}
                   {% if not forloop.last %},{% endif %}
