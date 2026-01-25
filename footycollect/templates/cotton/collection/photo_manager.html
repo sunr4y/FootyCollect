@@ -1,8 +1,10 @@
 {% load i18n static %}
 
+<c-vars initial_photos />
 <div class="photo-manager"
-     x-data="photoManager({{ initial_photos|default:'[]'|safe }})"
-     x-init="console.log('Photo manager initialized', photos.length)"
+     id="photo-manager-container"
+     data-initial-photos='{{ initial_photos|default:"[]" }}'
+     x-data="photoManagerData"
      @dragover.prevent="isDragging = true"
      @dragleave.prevent="isDragging = false"
      @drop.prevent="handleDrop($event)"
@@ -53,221 +55,232 @@
   </template>
 </div>
 <script>
-  // Make photoManager available globally for Alpine.js
-  // Register it both as window property and Alpine data function
-  function photoManager(initialPhotos = []) {
-    return {
-      photos: initialPhotos,
-      isDragging: false,
-      draggedIndex: null,
-      acceptedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-      maxSize: 15 * 1024 * 1024, // 15MB
+  (function() {
+    // Register immediately if Alpine is already loaded, otherwise wait for alpine:init
+    function registerPhotoManager() {
+      const container = document.getElementById('photo-manager-container');
+      const initialPhotosJson = container?.dataset.initialPhotos || '[]';
+      let initialPhotos = [];
 
-      showNotification(message, type = 'danger') {
-        this.$dispatch('notify', {
-          message,
-          type
-        });
-      },
-
-      getCsrfToken() {
-        // Try multiple ways to get CSRF token
-        // Method 1: From form input
-        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-        if (csrfInput) {
-          return csrfInput.value;
-        }
-
-        // Method 2: From cookie
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'csrftoken') {
-            return value;
-          }
-        }
-
-        // Method 3: From meta tag (if present)
-        const metaTag = document.querySelector('meta[name=csrf-token]');
-        if (metaTag) {
-          return metaTag.getAttribute('content');
-        }
-
-        return null;
-      },
-
-      async uploadPhoto(file, order) {
-        // Crear un objeto temporal para la foto mientras se sube
-        const tempPhoto = {
-          file: file,
-          uploading: true,
-          progress: 0,
-          order: order,
-          tempUrl: URL.createObjectURL(file)
-        };
-
-        const photoIndex = this.photos.length;
-        this.photos.push(tempPhoto);
-
-        const formData = new FormData();
-        formData.append('photo', file);
-        formData.append('order', order);
-
-        try {
-          // Get CSRF token safely
-          const csrfToken = this.getCsrfToken();
-          if (!csrfToken) {
-            throw new Error('CSRF token not found. Please refresh the page.');
-          }
-
-          const response = await fetch('{% url "collection:upload_photo" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-CSRFToken': csrfToken
-            },
-            credentials: 'same-origin'
-          });
-
-          if (!response.ok) throw new Error('Upload failed');
-
-          const data = await response.json();
-
-          // Replace the temporary object with the actual data
-          this.photos[photoIndex] = {
-            id: data.id,
-            url: data.url,
-            thumbnail_url: data.thumbnail_url,
-            order: order,
-            uploading: false
-          };
-
-          // Clean the temporary URL
-          URL.revokeObjectURL(tempPhoto.tempUrl);
-
-        } catch (error) {
-          this.showNotification(error.message);
-          // Remove the temporary photo if it fails
-          this.photos.splice(photoIndex, 1);
-          URL.revokeObjectURL(tempPhoto.tempUrl);
-          throw error;
-        }
-      },
-
-      // Add an external image (from API)
-      addExternalImage(imageUrl, order = 0) {
-        // Check if the image already exists
-        const exists = this.photos.some(photo => photo.url === imageUrl);
-        if (exists) {
-          console.log('Image already exists in the photo manager');
-          return;
-        }
-
-        // Add the image to the photos array
-        this.photos.push({
-          id: `external_${Date.now()}`,
-          url: imageUrl,
-          thumbnail_url: imageUrl,
-          order: order,
-          uploading: false,
-          external: true
-        });
-
-        console.log('External image added to photo manager');
-      },
-
-      async processFiles(files) {
-        const validFiles = Array.from(files).filter(file => {
-          if (!this.acceptedTypes.includes(file.type)) {
-            alert(this.$t('unsupportedFileType', {
-              type: file.type
-            }));
-            return false;
-          }
-          if (file.size > this.maxSize) {
-            alert(this.$t('fileTooBig', {
-              size: (file.size / 1024 / 1024).toFixed(1)
-            }));
-            return false;
-          }
-          return true;
-        });
-
-        for (const file of validFiles) {
-          try {
-            await this.uploadPhoto(file, this.photos.length);
-          } catch (error) {
-            alert(`Error al subir ${file.name}: ${error.message}`);
-          }
-        }
-      },
-
-      // Handle file drops
-      async handleDrop(e) {
-        this.isDragging = false;
-        const files = Array.from(e.dataTransfer.files);
-        await this.processFiles(files);
-      },
-
-      // Handle file input changes
-      async addFiles(e) {
-        const files = Array.from(e.target.files || []);
-        await this.processFiles(files);
-      },
-
-      // Drag and drop ordering
-      dragStart(index) {
-        this.draggedIndex = index;
-      },
-
-      dragOver(index) {
-        if (this.draggedIndex === null) return;
-        if (this.draggedIndex !== index) {
-          const items = [...this.photos];
-          const draggedItem = items[this.draggedIndex];
-          items.splice(this.draggedIndex, 1);
-          items.splice(index, 0, draggedItem);
-          this.photos = items;
-          this.draggedIndex = index;
-        }
-      },
-
-      dragEnd() {
-        this.draggedIndex = null;
-      },
-
-      removePhoto(index) {
-        this.photos.splice(index, 1);
-      },
-
-      // Get photo IDs for form
-      getPhotoIds() {
-        return this.photos
-          .filter(photo => photo.id && !photo.uploading) // Only fully uploaded photos
-          .map((photo, index) => ({
-            id: photo.id,
-            order: index, // Use the current index as the order
-            external: photo.external || false,
-            url: photo.external ? photo.url : null
-          }));
+      try {
+        initialPhotos = JSON.parse(initialPhotosJson);
+      } catch (err) {
+        console.error('Error parsing initial photos:', err);
+        initialPhotos = [];
       }
-    };
-  }
 
-  // Make it available globally - Alpine.js will look for it in window scope
-  window.photoManager = photoManager;
+      Alpine.data('photoManagerData', () => {
+        return {
+          photos: Array.isArray(initialPhotos) ? initialPhotos : [],
+          isDragging: false,
+          draggedIndex: null,
+          acceptedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          maxSize: 15 * 1024 * 1024, // 15MB
 
-  // Also register with Alpine if it's available (for x-data="photoManager")
-  if (typeof Alpine !== 'undefined') {
-    Alpine.data('photoManager', photoManager);
-  }
+          init() {
+            console.log('PhotoManager initialized with', this.photos.length, 'photos');
+          },
 
-  // Wait for Alpine to be ready if it's not yet loaded
-  document.addEventListener('alpine:init', () => {
-    if (typeof Alpine !== 'undefined') {
-      Alpine.data('photoManager', photoManager);
+          showNotification(message, type = 'danger') {
+            this.$dispatch('notify', {
+              message,
+              type
+            });
+          },
+
+          getCsrfToken() {
+            // Try multiple ways to get CSRF token
+            // Method 1: From form input
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfInput) {
+              return csrfInput.value;
+            }
+
+            // Method 2: From cookie
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+              const [name, value] = cookie.trim().split('=');
+              if (name === 'csrftoken') {
+                return value;
+              }
+            }
+
+            // Method 3: From meta tag (if present)
+            const metaTag = document.querySelector('meta[name=csrf-token]');
+            if (metaTag) {
+              return metaTag.getAttribute('content');
+            }
+
+            return null;
+          },
+
+          async uploadPhoto(file, order) {
+            // Crear un objeto temporal para la foto mientras se sube
+            const tempPhoto = {
+              file: file,
+              uploading: true,
+              progress: 0,
+              order: order,
+              tempUrl: URL.createObjectURL(file)
+            };
+
+            const photoIndex = this.photos.length;
+            this.photos.push(tempPhoto);
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('order', order);
+
+            try {
+              // Get CSRF token safely
+              const csrfToken = this.getCsrfToken();
+              if (!csrfToken) {
+                throw new Error('CSRF token not found. Please refresh the page.');
+              }
+
+              const response = await fetch('{% url "collection:upload_photo" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-CSRFToken': csrfToken
+                },
+                credentials: 'same-origin'
+              });
+
+              if (!response.ok) throw new Error('Upload failed');
+
+              const data = await response.json();
+
+              // Replace the temporary object with the actual data
+              this.photos[photoIndex] = {
+                id: data.id,
+                url: data.url,
+                thumbnail_url: data.thumbnail_url,
+                order: order,
+                uploading: false
+              };
+
+              // Clean the temporary URL
+              URL.revokeObjectURL(tempPhoto.tempUrl);
+
+            } catch (error) {
+              this.showNotification(error.message);
+              // Remove the temporary photo if it fails
+              this.photos.splice(photoIndex, 1);
+              URL.revokeObjectURL(tempPhoto.tempUrl);
+              throw error;
+            }
+          },
+
+          // Add an external image (from API)
+          addExternalImage(imageUrl, order = 0) {
+            // Check if the image already exists
+            const exists = this.photos.some(photo => photo.url === imageUrl);
+            if (exists) {
+              console.log('Image already exists in the photo manager');
+              return;
+            }
+
+            // Add the image to the photos array
+            this.photos.push({
+              id: `external_${Date.now()}`,
+              url: imageUrl,
+              thumbnail_url: imageUrl,
+              order: order,
+              uploading: false,
+              external: true
+            });
+
+            console.log('External image added to photo manager');
+          },
+
+          async processFiles(files) {
+            const validFiles = Array.from(files).filter(file => {
+              if (!this.acceptedTypes.includes(file.type)) {
+                alert(this.$t('unsupportedFileType', {
+                  type: file.type
+                }));
+                return false;
+              }
+              if (file.size > this.maxSize) {
+                alert(this.$t('fileTooBig', {
+                  size: (file.size / 1024 / 1024).toFixed(1)
+                }));
+                return false;
+              }
+              return true;
+            });
+
+            for (const file of validFiles) {
+              try {
+                await this.uploadPhoto(file, this.photos.length);
+              } catch (error) {
+                alert(`Error al subir ${file.name}: ${error.message}`);
+              }
+            }
+          },
+
+          // Handle file drops
+          async handleDrop(e) {
+            this.isDragging = false;
+            const files = Array.from(e.dataTransfer.files);
+            await this.processFiles(files);
+          },
+
+          // Handle file input changes
+          async addFiles(e) {
+            const files = Array.from(e.target.files || []);
+            await this.processFiles(files);
+          },
+
+          // Drag and drop ordering
+          dragStart(index) {
+            this.draggedIndex = index;
+          },
+
+          dragOver(index) {
+            if (this.draggedIndex === null) return;
+            if (this.draggedIndex !== index) {
+              const items = [...this.photos];
+              const draggedItem = items[this.draggedIndex];
+              items.splice(this.draggedIndex, 1);
+              items.splice(index, 0, draggedItem);
+              this.photos = items;
+              this.draggedIndex = index;
+            }
+          },
+
+          dragEnd() {
+            this.draggedIndex = null;
+          },
+
+          removePhoto(index) {
+            this.photos.splice(index, 1);
+          },
+
+          // Get photo IDs for form
+          getPhotoIds() {
+            return this.photos
+              .filter(photo => photo.id && !photo.uploading) // Only fully uploaded photos
+              .map((photo, index) => ({
+                id: photo.id,
+                order: index, // Use the current index as the order
+                external: photo.external || false,
+                url: photo.external ? photo.url : null
+              }));
+          }
+        };
+      });
     }
-  });
+
+    // Try to register immediately if Alpine is already loaded
+    if (typeof Alpine !== 'undefined' && Alpine.data) {
+      registerPhotoManager();
+    }
+
+    // Also register on alpine:init event
+    document.addEventListener('alpine:init', registerPhotoManager);
+  })();
 
   // Handle global notifications
   document.addEventListener('alpine:init', () => {

@@ -793,12 +793,13 @@
               select.options[i].selected = false;
             }
 
-            // Select the corresponding options
+            // Select the corresponding options (exact match only)
             for (let i = 0; i < select.options.length; i++) {
-              const optionText = select.options[i].text.trim().toLowerCase();
+              const optionText = select.options[i].text.trim().toLowerCase().replace(/[_\-\s]/g, '');
               for (const val of value) {
-                const valueText = val.toString().trim().toLowerCase();
-                if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
+                const valueText = val.toString().trim().toLowerCase().replace(/[_\-\s]/g, '');
+                // Exact match only - no partial matching to avoid "blue" matching "sky_blue"
+                if (optionText === valueText) {
                   select.options[i].selected = true;
                   break;
                 }
@@ -806,17 +807,26 @@
             }
           }
 
+          // Trigger change event for multiple selects to update the visual display
+          const event = new Event('change', {
+            bubbles: true
+          });
+          select.dispatchEvent(event);
+
+          console.log(`Cotton component ${fieldName} (array) updated with value:`, value);
+
           // Update the visual component of Cotton for arrays too
           updateCottonVisual(fieldName, value);
         } else {
-          // For simple selects
-          const valueText = value.toString().trim().toLowerCase();
+          // For simple selects (exact match only)
+          const valueText = value.toString().trim().toLowerCase().replace(/[_\-\s]/g, '');
           let found = false;
 
           if (select.options && select.options.length > 0) {
             for (let i = 0; i < select.options.length; i++) {
-              const optionText = select.options[i].text.trim().toLowerCase();
-              if (optionText === valueText || optionText.includes(valueText) || valueText.includes(optionText)) {
+              const optionText = select.options[i].text.trim().toLowerCase().replace(/[_\-\s]/g, '');
+              // Exact match only - no partial matching to avoid "blue" matching "sky_blue"
+              if (optionText === valueText) {
                 select.value = select.options[i].value;
                 found = true;
                 break;
@@ -2841,16 +2851,18 @@
             </div>
           </div>
           <!-- Cotton Components for colors and design -->
+          {# djlint:off #}
           <div class="row mb-3">
             <div class="col-md-6" id="div_id_main_color">
-              <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{{ form.main_color.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+              <c-color-selector name="main_color" label="{% trans 'Main Color' %}" data-selected="{% if form.main_color.value %}{{ form.main_color.value|stringformat:'s' }}{% elif form.main_color.initial %}{{ form.main_color.initial|stringformat:'s' }}{% endif %}" :color_choices="{{ color_choices|safe }}">
               </c-color-selector>
             </div>
             <div class="col-md-6" id="div_id_secondary_colors">
-              <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" data-multiple="true" data-selected="{{ form.secondary_colors.value|default:'' }}" :color_choices="{{ color_choices|safe }}">
+              <c-color-selector name="secondary_colors" label="{% trans 'Secondary Colors' %}" data-multiple="true" data-selected="{% if form.secondary_colors.value %}{{ form.secondary_colors.value|join:',' }}{% elif form.secondary_colors.initial %}{{ form.secondary_colors.initial|join:',' }}{% endif %}" :color_choices="{{ color_choices|safe }}">
               </c-color-selector>
             </div>
           </div>
+          {# djlint:on #}
           <div class="row mb-3">
             <div class="col-12" id="div_id_design">
               <c-design-selector name="design" label="{% trans 'Design Pattern' %}" data-selected="{{ form.design.value|default:'' }}" :design_choices="{{ design_choices|safe }}">

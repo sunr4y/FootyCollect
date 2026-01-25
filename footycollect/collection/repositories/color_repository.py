@@ -55,8 +55,8 @@ class ColorRepository(BaseRepository):
         Returns:
             QuerySet of default colors
         """
-        default_hex_values = list(Color.COLOR_MAP.values())
-        return self.model.objects.filter(hex_value__in=default_hex_values)
+        default_names = list(Color.COLOR_MAP.keys())
+        return self.model.objects.filter(name__in=default_names).order_by("id")
 
     def get_colors_by_category(self, category: str) -> QuerySet[Color]:
         """

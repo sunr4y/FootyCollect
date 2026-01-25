@@ -312,6 +312,14 @@
                       <a href="{% url 'collection:item_update' item.pk %}" class="btn btn-outline-secondary btn-sm fc-font-space-grotesk">
                         <i class="bi bi-pencil"></i> {% trans "Edit" %}
                       </a>
+                      <button type="button"
+                              class="btn btn-outline-danger btn-sm"
+                              title="{% trans 'Delete' %}"
+                              data-delete-url="{% url 'collection:item_delete' item.pk %}"
+                              data-item-name="{{ item.base_item.name }}"
+                              onclick="showDeleteModal(this)">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -362,4 +370,45 @@
   </div>
 </div>
 </div>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 shadow-lg">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="deleteItemModalLabel">{% trans "Delete Item" %}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+        <p class="mt-3 mb-1 text-light">
+          {% trans "Are you sure you want to delete" %} <strong id="deleteItemName"></strong>?
+        </p>
+        <p class="text-secondary small">{% trans "This action cannot be undone." %}</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+        <form id="deleteItemForm" method="post" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="page" id="deletePageInput" value="{{ page_obj.number|default:1 }}" />
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash"></i> {% trans "Yes, delete" %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function showDeleteModal(button) {
+    const deleteUrl = button.getAttribute('data-delete-url');
+    const itemName = button.dataset.itemName;
+    document.getElementById('deleteItemName').textContent = itemName;
+    document.getElementById('deleteItemForm').action = deleteUrl;
+    // Get current page from URL or use page_obj
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPage = urlParams.get('page') || '{{ page_obj.number|default:1 }}';
+    document.getElementById('deletePageInput').value = currentPage;
+    new bootstrap.Modal(document.getElementById('deleteItemModal')).show();
+  }
+</script>
 {% endblock content %}

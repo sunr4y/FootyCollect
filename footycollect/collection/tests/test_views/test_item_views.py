@@ -804,10 +804,9 @@ class TestJerseyUpdateView(TestCase):
         url = reverse("collection:jersey_update", kwargs={"pk": self.jersey.pk})
         response = self.client.post(url, form_data)
 
-        # The form has a design issue - it always creates new items instead of updating
-        # So we expect a 200 response with form errors, not a redirect
-        assert response.status_code == HTTP_OK
-        assert "form" in response.context
+        # Should redirect after successful update
+        assert response.status_code == HTTP_REDIRECT
+        assert response.url == reverse("collection:item_list")
 
     def test_jersey_update_view_requires_authentication(self):
         """Test jersey update view requires authentication."""

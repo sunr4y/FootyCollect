@@ -216,7 +216,7 @@ class KitService:
                     is_goalkeeper=type_data.get("is_goalkeeper", False),
                 )
                 logger.info("Created new kit type: %s (ID: %s)", type_name, type_k.id)
-        except Exception:
+        except (ValueError, TypeError):
             logger.exception("Error creating kit type %s", type_name)
             return None
         else:

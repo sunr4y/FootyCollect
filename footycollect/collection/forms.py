@@ -17,6 +17,12 @@ YEAR_LENGTH = 4
 class ColorModelChoiceField(forms.ModelChoiceField):
     """ModelChoiceField that accepts color names as strings."""
 
+    def prepare_value(self, value):
+        """Ensure value is always converted to ID for template rendering."""
+        if hasattr(value, "_meta"):
+            return value.pk
+        return super().prepare_value(value)
+
     def to_python(self, value):
         """Override to handle color names in addition to IDs."""
         if value in self.empty_values:
@@ -38,33 +44,47 @@ class ColorModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     """ModelMultipleChoiceField that accepts color names as strings."""
 
     def to_python(self, value):
-        """Override to handle color names in addition to IDs."""
+        """Override to handle color names in addition to IDs.
+
+        IMPORTANT: For API flows, we need to preserve color names as strings
+        so that clean_secondary_colors can process them. Only convert to Color
+        objects if they are already IDs (numeric strings).
+        """
         if value in self.empty_values:
             return []
         if isinstance(value, (list, tuple)):
             result = []
             for v in value:
-                # Try normal lookup first
+                if not v:
+                    continue
+                # If it's already a Color object, keep it
+                if isinstance(v, Color):
+                    result.append(v)
+                    continue
+                # If it's a numeric string (ID), try to convert to Color object
                 try:
-                    result.append(super().to_python(v))
-                except ValidationError:
-                    # Try as color name
-                    # Color is already imported at module level
-                    try:
-                        result.append(Color.objects.get(name__iexact=str(v).strip()))
-                    except Color.DoesNotExist:
-                        # Keep as string - clean method will create it
-                        result.append(str(v).strip())
+                    color_id = int(v)
+                    color_obj = Color.objects.get(id=color_id)
+                    result.append(color_obj)
+                    continue
+                except (ValueError, TypeError, Color.DoesNotExist):
+                    pass
+                # Otherwise, keep as string - clean_secondary_colors will handle it
+                result.append(str(v).strip())
             return result
         # Single value
+        if isinstance(value, Color):
+            return [value]
+        # If it's a numeric string (ID), try to convert to Color object
         try:
-            return [super().to_python(value)]
-        except ValidationError:
-            # Color is already imported at module level
-            try:
-                return [Color.objects.get(name__iexact=str(value).strip())]
-            except Color.DoesNotExist:
-                return [str(value).strip()]
+            color_id = int(value)
+            color_obj = Color.objects.get(id=color_id)
+        except (ValueError, TypeError, Color.DoesNotExist):
+            pass
+        else:
+            return [color_obj]
+        # Otherwise, keep as string - clean_secondary_colors will handle it
+        return [str(value).strip()]
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -252,13 +272,58 @@ class JerseyForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
-        # Extract user from kwargs
         self.user = kwargs.pop("user", None)
 
         # Ensure we always have an instance before calling parent
         if "instance" not in kwargs:
             kwargs["instance"] = BaseItem()
         super().__init__(*args, **kwargs)
+
+        # When editing an existing item, pre-populate form fields from the instance
+        instance = self.instance
+        if instance is not None and instance.pk:
+            # BaseItem fields
+            self.fields["name"].initial = instance.name
+            self.fields["condition"].initial = instance.condition
+            self.fields["detailed_condition"].initial = instance.detailed_condition
+            self.fields["description"].initial = instance.description
+            self.fields["is_replica"].initial = instance.is_replica
+            self.fields["main_color"].initial = instance.main_color_id
+            self.fields["secondary_colors"].initial = list(
+                instance.secondary_colors.values_list("id", flat=True),
+            )
+            self.fields["design"].initial = instance.design
+            if instance.country:
+                self.fields["country_code"].initial = instance.country
+
+            # Hidden ID + name fields for brand / club / season
+            if instance.brand_id:
+                self.fields["brand"].initial = instance.brand_id
+                self.fields["brand_name"].initial = getattr(instance.brand, "name", "")
+
+            if instance.club_id:
+                self.fields["club"].initial = instance.club_id
+                self.fields["club_name"].initial = getattr(instance.club, "name", "")
+
+            if instance.season_id:
+                self.fields["season"].initial = instance.season_id
+                self.fields["season_name"].initial = getattr(instance.season, "name", "")
+
+            # Competitions: store IDs as comma-separated string for the hidden field
+            competition_ids = list(instance.competitions.values_list("id", flat=True))
+            if competition_ids:
+                self.fields["competitions"].initial = ",".join(str(cid) for cid in competition_ids)
+
+            # Jersey-specific fields from the MTI child
+            jersey = getattr(instance, "jersey", None)
+            if jersey is not None:
+                self.fields["size"].initial = jersey.size_id
+                self.fields["is_fan_version"].initial = jersey.is_fan_version
+                self.fields["is_signed"].initial = jersey.is_signed
+                self.fields["has_nameset"].initial = jersey.has_nameset
+                self.fields["player_name"].initial = jersey.player_name
+                self.fields["is_short_sleeve"].initial = jersey.is_short_sleeve
+                self.fields["number"].initial = jersey.number
 
     size = forms.ModelChoiceField(
         queryset=Size.objects.all(),
@@ -716,7 +781,84 @@ class JerseyForm(forms.ModelForm):
         }
 
     def save(self, *, commit=True):
-        """Save the form data using MTI structure."""
+        """
+        Save the form data using MTI structure.
+
+        - If instance has a primary key, update the existing BaseItem + Jersey.
+        - If not, create a new BaseItem + Jersey pair.
+        """
+        # Update existing objects when editing
+        if self.instance is not None and self.instance.pk:
+            return self._update_existing_item(commit=commit)
+
+        # Creation path for new items
+        return self._create_new_item(commit=commit)
+
+    def _update_existing_item(self, *, commit):
+        """Update an existing BaseItem and its related Jersey."""
+        base_item = self.instance
+
+        # Resolve related entities from the form / hidden fields
+        brand = self._resolve_brand()
+        club = self._resolve_club()
+        season = self._resolve_season()
+
+        # Update base item fields
+        base_item.name = self.cleaned_data.get("name", base_item.name)
+        base_item.brand = brand
+        base_item.club = club
+        base_item.season = season
+        base_item.condition = self.cleaned_data.get("condition", base_item.condition)
+        base_item.detailed_condition = self.cleaned_data.get(
+            "detailed_condition",
+            base_item.detailed_condition,
+        )
+        base_item.description = self.cleaned_data.get("description", base_item.description)
+        base_item.is_replica = self.cleaned_data.get("is_replica", base_item.is_replica)
+        base_item.main_color = self.cleaned_data.get("main_color", base_item.main_color)
+        base_item.design = self.cleaned_data.get("design", base_item.design)
+
+        # Country comes from a separate form field
+        country_code = self.cleaned_data.get("country_code")
+        if country_code:
+            base_item.country = country_code
+
+        if commit:
+            base_item.save()
+            self._update_many_to_many_relations(base_item)
+            self._update_jersey_fields(base_item)
+
+        return base_item
+
+    def _update_many_to_many_relations(self, base_item):
+        """Update ManyToMany relations for competitions and secondary colors."""
+        many_to_many_data = self._extract_many_to_many_data()
+        if many_to_many_data.get("competitions"):
+            base_item.competitions.set(many_to_many_data["competitions"])
+
+        secondary_colors = self.cleaned_data.get("secondary_colors", [])
+        if secondary_colors:
+            base_item.secondary_colors.set(secondary_colors)
+        else:
+            base_item.secondary_colors.clear()
+
+    def _update_jersey_fields(self, base_item):
+        """Update Jersey-specific fields."""
+        jersey = getattr(base_item, "jersey", None)
+        if jersey is None:
+            return
+
+        jersey.size = self.cleaned_data.get("size", jersey.size)
+        jersey.is_fan_version = self.cleaned_data.get("is_fan_version", jersey.is_fan_version)
+        jersey.is_signed = self.cleaned_data.get("is_signed", jersey.is_signed)
+        jersey.has_nameset = self.cleaned_data.get("has_nameset", jersey.has_nameset)
+        jersey.player_name = self.cleaned_data.get("player_name", jersey.player_name)
+        jersey.is_short_sleeve = self.cleaned_data.get("is_short_sleeve", jersey.is_short_sleeve)
+        jersey.number = self.cleaned_data.get("number", jersey.number)
+        jersey.save()
+
+    def _create_new_item(self, *, commit):
+        """Create a new BaseItem and Jersey pair."""
         import logging
 
         logger = logging.getLogger(__name__)
@@ -725,55 +867,54 @@ class JerseyForm(forms.ModelForm):
         jersey_data = self._extract_jersey_data()
         many_to_many_data = self._extract_many_to_many_data()
 
-        if commit:
-            # Create BaseItem with ALL fields
-            logger.debug("Creating BaseItem with data: %s", base_item_data)
-            base_item = BaseItem.objects.create(**base_item_data)
-            logger.debug("Created BaseItem %s", base_item.id)
+        if not commit:
+            # For non-commit case, create instances but don't save
+            base_item = BaseItem(**base_item_data)
+            jersey_data["base_item"] = base_item
+            return Jersey(**jersey_data)
 
-            # Remove any 'id' from jersey_data
-            jersey_data.pop("id", None)
+        # Create BaseItem with ALL fields
+        logger.debug("Creating BaseItem with data: %s", base_item_data)
+        base_item = BaseItem.objects.create(**base_item_data)
+        logger.debug("Created BaseItem %s", base_item.id)
 
-            # CRITICAL: Link Jersey to BaseItem via parent_link
-            logger.debug("Creating Jersey with base_item=%s", base_item.id)
-            jersey = Jersey.objects.create(
-                base_item=base_item,  # Link to the BaseItem we just created
-                **jersey_data,
+        # Remove any 'id' from jersey_data and create Jersey
+        jersey_data.pop("id", None)
+        logger.debug("Creating Jersey with base_item=%s", base_item.id)
+        jersey = Jersey.objects.create(base_item=base_item, **jersey_data)
+        logger.debug("Created Jersey %s", jersey.pk)
+
+        # Verify they're linked
+        if jersey.base_item.id != base_item.id:
+            logger.error("ERROR: Jersey %s not linked to BaseItem %s", jersey.pk, base_item.id)
+
+        # Set ManyToMany relations
+        self._set_many_to_many_on_create(base_item, many_to_many_data, logger)
+
+        # Create or get Kit for this jersey
+        try:
+            self._create_kit_for_jersey(base_item, jersey)
+        except (ValueError, TypeError, AttributeError):
+            logger.exception("Error creating Kit")
+
+        return base_item
+
+    def _set_many_to_many_on_create(self, base_item, many_to_many_data, logger):
+        """Set ManyToMany relations when creating a new item."""
+        if many_to_many_data.get("competitions"):
+            competitions_list = many_to_many_data["competitions"]
+            base_item.competitions.set(competitions_list)
+            logger.info(
+                "Set competitions on BaseItem %s: %s (count: %s)",
+                base_item.id,
+                [c.name for c in competitions_list],
+                len(competitions_list),
             )
-            logger.debug("Created Jersey %s", jersey.pk)
 
-            # Verify they're linked
-            if jersey.base_item.id != base_item.id:
-                logger.error("ERROR: Jersey %s not linked to BaseItem %s", jersey.pk, base_item.id)
-
-            # Now set ManyToMany on the properly-linked BaseItem
-            if many_to_many_data.get("competitions"):
-                competitions_list = many_to_many_data["competitions"]
-                base_item.competitions.set(competitions_list)
-                logger.info(
-                    "Set competitions on BaseItem %s: %s (count: %s)",
-                    base_item.id,
-                    [c.name for c in competitions_list],
-                    len(competitions_list),
-                )
-
-            # Handle secondary_colors from cleaned_data
-            secondary_colors = self.cleaned_data.get("secondary_colors", [])
-            if secondary_colors:
-                base_item.secondary_colors.set(secondary_colors)
-                logger.debug("Set secondary_colors: %s", [c.name for c in secondary_colors])
-
-            # Create or get Kit for this jersey
-            try:
-                self._create_kit_for_jersey(base_item, jersey)
-            except Exception:
-                logger.exception("Error creating Kit")
-
-            return base_item
-        # For non-commit case, create instances but don't save
-        base_item = BaseItem(**base_item_data)
-        jersey_data["base_item"] = base_item
-        return Jersey(**jersey_data)
+        secondary_colors = self.cleaned_data.get("secondary_colors", [])
+        if secondary_colors:
+            base_item.secondary_colors.set(secondary_colors)
+            logger.debug("Set secondary_colors: %s", [c.name for c in secondary_colors])
 
     def _create_kit_for_jersey(self, base_item, jersey):
         """Create and link Kit to jersey."""
@@ -849,7 +990,7 @@ class JerseyFKAPIForm(JerseyForm):
     competition_name = forms.CharField(required=False, widget=forms.HiddenInput())
 
     # Hidden field for the main image URL
-    main_img_url = forms.URLField(required=False, widget=forms.HiddenInput())
+    main_img_url = forms.URLField(required=False, widget=forms.HiddenInput(), assume_scheme="https")
 
     # Field to store external image URLs
     external_image_urls = forms.CharField(required=False, widget=forms.HiddenInput())
@@ -944,40 +1085,91 @@ class JerseyFKAPIForm(JerseyForm):
                 defaults={"name": main_color_name.strip().upper()},
             )
             logger.info("clean_main_color - returning Color: %s (created=%s)", color_obj, created)
-        except Exception:
+        except (ValueError, TypeError):
             logger.exception("clean_main_color - error")
             return None
         else:
             return color_obj
 
     def _get_secondary_colors_names(self):
-        """Extract secondary color names from form data."""
+        """Extract secondary color names from form data.
+
+        Tries multiple sources in order: getlist, direct get, cleaned_data, initial.
+        """
         import logging
 
         logger = logging.getLogger(__name__)
 
-        # Method 1: getlist for multiple values
-        if hasattr(self.data, "getlist"):
-            names = self.data.getlist("secondary_colors")
-            if names:
-                logger.debug("clean_secondary_colors - from getlist: %s", names)
-                return names
+        # Try each source in order of preference
+        result = self._get_colors_from_getlist(logger)
+        if result:
+            return result
 
-        # Method 2: Direct get (might be single value or list)
-        colors = self.data.get("secondary_colors")
-        if colors:
-            names = colors if isinstance(colors, list) else [colors]
-            logger.debug("clean_secondary_colors - from get: %s", names)
-            return names
+        result = self._get_colors_from_direct_get(logger)
+        if result:
+            return result
 
-        # Method 3: From initial data
-        colors = self.initial.get("secondary_colors")
-        if colors:
-            names = colors if isinstance(colors, list) else [colors]
-            logger.debug("clean_secondary_colors - from initial: %s", names)
-            return names
+        result = self._get_colors_from_cleaned_data(logger)
+        if result:
+            return result
+
+        result = self._get_colors_from_initial(logger)
+        if result:
+            return result
 
         return []
+
+    def _get_colors_from_getlist(self, logger):
+        """Try to get colors using getlist for multiple values."""
+        if not hasattr(self.data, "getlist"):
+            return None
+        names = self.data.getlist("secondary_colors")
+        if not names:
+            return None
+        result = [str(n).strip() for n in names if n]
+        if result:
+            logger.debug("clean_secondary_colors - from getlist: %s", names)
+        return result or None
+
+    def _get_colors_from_direct_get(self, logger):
+        """Try to get colors using direct get (single value or list)."""
+        colors = self.data.get("secondary_colors")
+        if not colors:
+            return None
+        names = colors if isinstance(colors, list) else [colors]
+        result = [str(n).strip() for n in names if n]
+        if result:
+            logger.debug("clean_secondary_colors - from get: %s", result)
+        return result or None
+
+    def _get_colors_from_cleaned_data(self, logger):
+        """Try to get colors from cleaned_data (from to_python)."""
+        if not hasattr(self, "cleaned_data") or not self.cleaned_data:
+            return None
+        colors = self.cleaned_data.get("secondary_colors")
+        if not colors:
+            return None
+        result = []
+        items = colors if isinstance(colors, list) else [colors]
+        for c in items:
+            if isinstance(c, str):
+                result.append(c.strip())
+            elif isinstance(c, Color):
+                result.append(c.name)
+        if result:
+            logger.debug("clean_secondary_colors - from cleaned_data: %s", result)
+        return result or None
+
+    def _get_colors_from_initial(self, logger):
+        """Try to get colors from initial data."""
+        colors = self.initial.get("secondary_colors")
+        if not colors:
+            return None
+        names = colors if isinstance(colors, list) else [colors]
+        result = [str(n).strip() for n in names if n]
+        if result:
+            logger.debug("clean_secondary_colors - from initial: %s", result)
+        return result or None
 
     def _convert_color_names_to_objects(self, color_names):
         """Convert color name strings to Color objects."""
@@ -989,14 +1181,31 @@ class JerseyFKAPIForm(JerseyForm):
         for color_name in color_names:
             if not color_name:
                 continue
+
+            # If it's already a Color object, add it
+            if isinstance(color_name, Color):
+                color_objects.append(color_name)
+                continue
+
+            # If it's an ID (numeric string), try to get the Color object
+            try:
+                color_id = int(color_name)
+                color_obj = Color.objects.get(id=color_id)
+                color_objects.append(color_obj)
+                logger.debug("clean_secondary_colors - found Color by ID: %s", color_obj.name)
+                continue
+            except (ValueError, TypeError, Color.DoesNotExist):
+                pass
+
+            # Otherwise, treat it as a color name and get_or_create
             try:
                 color_obj, created = Color.objects.get_or_create(
-                    name__iexact=color_name.strip(),
-                    defaults={"name": color_name.strip().upper()},
+                    name__iexact=str(color_name).strip(),
+                    defaults={"name": str(color_name).strip().upper()},
                 )
                 color_objects.append(color_obj)
-                logger.debug("clean_secondary_colors - added Color: %s (created=%s)", color_obj, created)
-            except Exception:
+                logger.debug("clean_secondary_colors - added Color: %s (created=%s)", color_obj.name, created)
+            except (ValueError, TypeError):
                 logger.exception("clean_secondary_colors - error for %s", color_name)
 
         return color_objects
@@ -1039,7 +1248,7 @@ class JerseyFKAPIForm(JerseyForm):
                     logger.debug("clean_country_code - valid: %s", country_code.upper())
                     return country_code.upper()
                 logger.warning("clean_country_code - invalid code: %s", country_code)
-            except Exception:
+            except (ValueError, AttributeError, ImportError):
                 logger.exception("clean_country_code - error")
 
         return country_code

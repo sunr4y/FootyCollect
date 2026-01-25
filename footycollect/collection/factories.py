@@ -117,6 +117,7 @@ class JerseyFactory(DjangoModelFactory):
 
     class Meta:
         model = Jersey
+        skip_postgeneration_save = True
 
     base_item = factory.SubFactory(BaseItemFactory)
     size = factory.SubFactory(SizeFactory)
@@ -175,6 +176,10 @@ class CompleteJerseyFactory(JerseyFactory):
 
 class UserWithJerseysFactory(UserFactory):
     """Factory for creating a user with multiple jerseys."""
+
+    class Meta:
+        model = User
+        skip_postgeneration_save = True
 
     @factory.post_generation
     def jerseys(self, create, extracted, **kwargs):

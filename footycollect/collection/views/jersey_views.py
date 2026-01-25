@@ -9,6 +9,7 @@ import json
 import logging
 from pathlib import Path
 
+import requests
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -120,41 +121,76 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
     def _merge_fkapi_data_to_post(self, kit_data, request):
         """Merge FKAPI data into request.POST."""
-        # Set colors from API if not already in POST
-        colors = kit_data.get("colors", [])
-        if colors:
-            if not request.POST.get("main_color"):
-                main_color = colors[0].get("name", "")
-                if main_color:
-                    request.POST["main_color"] = main_color
-                    logger.debug("Set main_color from API: %s", main_color)
-
-            has_secondary = (
-                request.POST.getlist("secondary_colors")
-                if hasattr(request.POST, "getlist")
-                else request.POST.get("secondary_colors")
-            )
-            if not has_secondary:
-                secondary_colors = [c.get("name", "") for c in colors[1:] if c.get("name")]
-                if secondary_colors:
-                    request.POST.setlist("secondary_colors", secondary_colors)
-                    logger.debug("Set secondary_colors from API: %s", secondary_colors)
-
-        # Set country from API if not already in POST
-        if not request.POST.get("country_code"):
-            team = kit_data.get("team", {})
-            country = team.get("country", "")
-            if country:
-                request.POST["country_code"] = country
-                logger.debug("Set country_code from API: %s", country)
-
-        # Set competitions from API if not already in POST
-        if not request.POST.get("competitions"):
-            competitions = kit_data.get("competition", [])
-            self._process_competitions_from_api(competitions, request)
-
-        # Store kit_data on request for later use
+        self._merge_main_color(kit_data, request)
+        self._merge_secondary_colors(kit_data, request)
+        self._merge_country(kit_data, request)
+        self._merge_competitions(kit_data, request)
         request._fkapi_kit_data = kit_data  # noqa: SLF001
+
+    def _merge_main_color(self, kit_data, request):
+        """Set main color from API if not already in POST."""
+        if request.POST.get("main_color"):
+            return
+
+        primary_color = kit_data.get("primary_color")
+        if primary_color and isinstance(primary_color, dict):
+            main_color = primary_color.get("name", "")
+        else:
+            colors = kit_data.get("colors", [])
+            main_color = colors[0].get("name", "") if colors else ""
+
+        if main_color:
+            request.POST["main_color"] = main_color
+            logger.debug("Set main_color from API: %s", main_color)
+
+    def _merge_secondary_colors(self, kit_data, request):
+        """Set secondary colors from API if not already in POST."""
+        has_secondary = (
+            request.POST.getlist("secondary_colors")
+            if hasattr(request.POST, "getlist")
+            else request.POST.get("secondary_colors")
+        )
+        if has_secondary:
+            return
+
+        secondary_colors = self._extract_secondary_colors(kit_data)
+
+        if secondary_colors:
+            request.POST.setlist("secondary_colors", secondary_colors)
+            logger.debug("Set secondary_colors from API: %s", secondary_colors)
+
+    def _extract_secondary_colors(self, kit_data):
+        """Extract secondary colors from kit_data (new or old format)."""
+        secondary_color = kit_data.get("secondary_color")
+        if secondary_color:
+            if isinstance(secondary_color, list):
+                return [c.get("name", "") for c in secondary_color if c.get("name")]
+            if isinstance(secondary_color, dict):
+                name = secondary_color.get("name", "")
+                return [name] if name else []
+
+        colors = kit_data.get("colors", [])
+        if colors and len(colors) > 1:
+            return [c.get("name", "") for c in colors[1:] if c.get("name")]
+        return []
+
+    def _merge_country(self, kit_data, request):
+        """Set country from API if not already in POST."""
+        if request.POST.get("country_code"):
+            return
+
+        team = kit_data.get("team", {})
+        country = team.get("country", "")
+        if country:
+            request.POST["country_code"] = country
+            logger.debug("Set country_code from API: %s", country)
+
+    def _merge_competitions(self, kit_data, request):
+        """Set competitions from API if not already in POST."""
+        if request.POST.get("competitions"):
+            return
+        competitions = kit_data.get("competition", [])
+        self._process_competitions_from_api(competitions, request)
 
     def _fetch_and_merge_fkapi_data(self, request):
         """Fetch FKAPI data and merge it into request.POST."""
@@ -178,7 +214,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                 logger.debug("Fetched kit data for kit_id %s", kit_id)
                 self._merge_fkapi_data_to_post(kit_data, request)
 
-        except Exception:
+        except (ValueError, TypeError, KeyError, AttributeError):
             logger.exception("Error fetching kit data")
 
     def post(self, request, *args, **kwargs):
@@ -323,12 +359,74 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
         # Add the form to context
         if hasattr(self, "form_class"):
-            context["form"] = self.get_form()
+            form = self.get_form()
+            context["form"] = form
+            # Convert color names to IDs for template if they come from API
+            self._set_main_color_initial(form)
+            self._set_secondary_colors_initial(form)
 
         # Add options for Cotton components using services
-        try:
-            import json
+        self._add_color_and_design_choices(context)
+        return context
 
+    def _set_main_color_initial(self, form):
+        """Convert main_color name to ID for template."""
+        from footycollect.collection.models import Color
+
+        main_color_value = form.data.get("main_color") or (
+            form.initial.get("main_color") if hasattr(form, "initial") else None
+        )
+        if not main_color_value:
+            return
+
+        if isinstance(main_color_value, str) and not main_color_value.isdigit():
+            try:
+                color_obj = Color.objects.get(name__iexact=main_color_value.strip())
+                form.fields["main_color"].initial = color_obj.id
+                logger.debug("Converted main_color name '%s' to ID %s", main_color_value, color_obj.id)
+            except Color.DoesNotExist:
+                logger.warning("Main color '%s' not found in database", main_color_value)
+        else:
+            form.fields["main_color"].initial = main_color_value
+            logger.debug("Set main_color initial to ID: %s", main_color_value)
+
+    def _set_secondary_colors_initial(self, form):
+        """Convert secondary_colors names to IDs for template."""
+        from footycollect.collection.models import Color
+
+        if hasattr(form.data, "getlist"):
+            secondary_colors_value = form.data.getlist("secondary_colors")
+        else:
+            secondary_colors_value = form.data.get("secondary_colors")
+            if secondary_colors_value and not isinstance(secondary_colors_value, list):
+                secondary_colors_value = [secondary_colors_value]
+
+        if not secondary_colors_value:
+            return
+
+        color_ids = []
+        for color_val in secondary_colors_value:
+            if not color_val:
+                continue
+            if isinstance(color_val, str) and not color_val.isdigit():
+                try:
+                    color_obj = Color.objects.get(name__iexact=color_val.strip())
+                    color_ids.append(color_obj.id)
+                    logger.debug("Converted secondary_color name '%s' to ID %s", color_val, color_obj.id)
+                except Color.DoesNotExist:
+                    logger.warning("Secondary color '%s' not found in database", color_val)
+            else:
+                color_ids.append(color_val)
+
+        if color_ids:
+            form.fields["secondary_colors"].initial = color_ids
+            logger.debug("Set secondary_colors initial to: %s", color_ids)
+
+    def _add_color_and_design_choices(self, context):
+        """Add color and design choices to context for Cotton components."""
+        import json
+
+        try:
             collection_service = get_collection_service()
             form_data = collection_service.get_form_data()
             logger.info("Form data from service: %s", form_data)
@@ -341,7 +439,6 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             logger.warning("Error getting form data: %s", str(e))
             context["color_choices"] = "[]"
             context["design_choices"] = "[]"
-        return context
 
     def _ensure_country_code_in_cleaned_data(self, form):
         """Ensure country_code is in cleaned_data."""
@@ -455,7 +552,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             debug_path = Path(debug_log_path)
             with debug_path.open("a", encoding="utf-8") as f:
                 f.write(debug_msg)
-        except Exception:
+        except OSError:
             logger.exception("ERROR writing debug log in form_valid")
 
         logger.info("=== FORM_VALID CALLED ===")
@@ -496,9 +593,8 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                 _("Jersey added to your collection successfully!"),
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError, KeyError) as e:
             logger.exception("Error in form_valid")
-            logger.exception("Full traceback:")
             error_msg = _("Error creating jersey: %s") % str(e)
             messages.error(self.request, error_msg)
             return self.form_invalid(form)
@@ -715,7 +811,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             # Try to find existing kit in database
             self._find_and_assign_existing_kit(form, kit_id)
 
-        except Exception:
+        except (ValueError, TypeError, KeyError, AttributeError):
             logger.exception("Error processing kit data for ID %s", kit_id)
             # Don't raise - continue with form processing
 
@@ -1012,7 +1108,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         except Country.DoesNotExist:
             logger.warning("Country not found: %s", country_code)
             return False
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             logger.exception("Error setting country")
             return False
         else:
@@ -1039,8 +1135,8 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                     )
                     main_color = color_obj
                     logger.info("Created/found Color object: %s (ID: %s)", color_obj.name, color_obj.id)
-                except Exception:
-                    logger.exception("Error creating/finding Color")
+                except (ValueError, TypeError):
+                    logger.exception("Error creating/finding main Color")
 
         if not main_color:
             logger.warning("No main_color found in any source")
@@ -1083,8 +1179,8 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                     )
                     color_objects.append(color_obj)
                     logger.info("Created/found Color object: %s (ID: %s)", color_obj.name, color_obj.id)
-                except Exception:
-                    logger.exception("Error creating/finding Color")
+                except (ValueError, TypeError):
+                    logger.exception("Error creating/finding secondary Color")
         return color_objects
 
     def _update_base_item_secondary_colors(self, base_item, secondary_colors_post, form):
@@ -1139,7 +1235,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         try:
             with debug_log_path.open("a", encoding="utf-8") as f:
                 f.write(debug_msg)
-        except Exception:
+        except OSError:
             logger.exception("ERROR writing debug log")
 
     def _save_and_finalize(self, form):
@@ -1213,7 +1309,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
         try:
             self._create_and_link_kit(jersey, form)
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             logger.exception("Error creating Kit in _save_and_finalize")
             # Don't raise - allow jersey creation to continue without kit
 
@@ -1266,7 +1362,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                     )
                     self.object.competitions.add(comp)
                     logger.info("Added additional competition %s to jersey", comp.name)
-                except Exception:
+                except (ValueError, TypeError):
                     logger.exception("Error adding competition %s", comp_name)
 
     def _process_new_entities(self, form):
@@ -1292,7 +1388,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             brand = self._find_or_create_brand(brand_name, cleaned_data)
             form.instance.brand = brand
             logger.info("Set brand to %s", brand)
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             logger.exception("Error creating brand %s", brand_name)
             messages.error(self.request, _("Error processing brand information"))
             raise
@@ -1382,7 +1478,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             club = self._find_or_create_club(club_name, cleaned_data)
             form.instance.club = club
             logger.info("Set club to %s", club)
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             logger.exception("Error creating club %s", club_name)
             messages.error(self.request, _("Error processing club information"))
             raise
@@ -1492,7 +1588,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             )
             form.instance.season = season
             logger.info("Set season to %s", season.year)
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             logger.exception("Error creating season %s", season_name)
             raise
 
@@ -1510,7 +1606,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
             # Process additional competitions if they exist
             self._process_additional_competitions(form)
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             logger.exception("Error creating competition %s", competition_name)
             messages.error(self.request, _("Error processing competition information"))
             raise
@@ -1576,7 +1672,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                         self.request,
                         _("Main image downloaded and attached successfully"),
                     )
-            except Exception:
+            except (OSError, ValueError, requests.RequestException):
                 logger.exception("Error downloading main image %s", main_img_url)
                 messages.error(
                     self.request,
@@ -1597,7 +1693,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                             # Set order to maintain image order
                             photo.order = i
                             photo.save()
-                    except Exception:
+                    except (OSError, ValueError, requests.RequestException):
                         logger.exception("Error downloading image %s", clean_url)
                         messages.error(
                             self.request,
@@ -1628,7 +1724,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             # Process existing photos
             self._associate_existing_photos(photo_id_list, order_map, base_item)
 
-        except Exception:
+        except (ValueError, TypeError, KeyError):
             logger.exception("Error processing photo IDs")
             raise
 
@@ -1698,7 +1794,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
                         photo.id,
                         photo.order,
                     )
-            except Exception:
+            except (OSError, ValueError, requests.RequestException):
                 logger.exception("Error downloading external image %s", img_data["url"])
                 messages.error(self.request, _("Error downloading image"))
 
@@ -1721,7 +1817,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         # Ensure photo IDs are integers and unique
         try:
             photo_ids_int = list({int(pid) for pid in photo_id_list if str(pid).isdigit()})
-        except Exception:
+        except (ValueError, TypeError):
             logger.exception("Failed to parse photo IDs as integers (input was: %s)", photo_id_list)
             return
 
