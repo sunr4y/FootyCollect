@@ -450,5 +450,6 @@ class TestJerseyFKAPIFormExtended(TestCase):
         # Test with list of color names
         color_objs = field.to_python(["RED", "BLUE"])
         assert len(color_objs) == EXPECTED_COLORS_COUNT
-        assert self.color in color_objs
-        assert blue_color in color_objs
+        # to_python returns strings for color names (not Color objects) for API flows
+        assert self.color.name in color_objs
+        assert blue_color.name in color_objs

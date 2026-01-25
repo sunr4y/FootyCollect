@@ -2,7 +2,7 @@
 Extended tests for jersey views with real functionality testing.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -114,7 +114,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
     def test_get_context_data_success(self):
         """Test get_context_data with successful service call."""
         with patch("footycollect.collection.views.jersey_views.get_collection_service") as mock_get_service:
-            mock_service = Mock()
+            mock_service = MagicMock()
             mock_get_service.return_value = mock_service
             mock_service.get_form_data.return_value = {
                 "colors": {"main_colors": [{"name": "Red", "hex": "#FF0000"}]},
@@ -124,6 +124,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             with patch.object(view, "get_form") as mock_get_form:
                 mock_form = Mock()
+                mock_form.data = {}
+                mock_form.initial = {}
+                mock_form.fields = {}
                 mock_get_form.return_value = mock_form
 
                 result = view.get_context_data()
@@ -141,6 +144,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             with patch.object(view, "get_form") as mock_get_form:
                 mock_form = Mock()
+                mock_form.data = {}
+                mock_form.initial = {}
+                mock_form.fields = {}
                 mock_get_form.return_value = mock_form
 
                 result = view.get_context_data()
@@ -217,7 +223,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             patch.object(view, "form_invalid") as mock_form_invalid,
             patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
         ):
-            mock_process_entities.side_effect = Exception("Processing error")
+            # Use ValueError instead of generic Exception since form_valid
+            # now catches specific exceptions (ValueError, TypeError, etc.)
+            mock_process_entities.side_effect = ValueError("Processing error")
             mock_form_invalid.return_value = Mock()
 
             result = view.form_valid(mock_form)
@@ -631,7 +639,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
         # Mock collection service
         with patch("footycollect.collection.views.jersey_views.get_collection_service") as mock_get_service:
-            mock_service = Mock()
+            mock_service = MagicMock()
             mock_get_service.return_value = mock_service
             mock_service.get_form_data.return_value = {
                 "colors": {"main_colors": [{"name": "Red", "hex": "#FF0000"}]},
@@ -641,6 +649,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             # Test context data
             with patch.object(view, "get_form") as mock_get_form:
                 mock_form = Mock()
+                mock_form.data = {}
+                mock_form.initial = {}
+                mock_form.fields = {}
                 mock_get_form.return_value = mock_form
 
                 context = view.get_context_data()

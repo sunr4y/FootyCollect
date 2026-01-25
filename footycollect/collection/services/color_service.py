@@ -31,7 +31,7 @@ class ColorService:
         """
         return self.color_repository.create_default_colors()
 
-    def get_colors_for_item_form(self) -> dict[str, list[dict[str, str]]]:
+    def get_colors_for_item_form(self) -> dict[str, list[dict[str, str | int]]]:
         """
         Get colors organized for item forms.
 
@@ -42,10 +42,10 @@ class ColorService:
 
         return {
             "main_colors": [
-                {"value": color.name, "label": color.name, "hex_value": color.hex_value} for color in default_colors
+                {"value": color.id, "label": color.name, "hex_value": color.hex_value} for color in default_colors
             ],
             "secondary_colors": [
-                {"value": color.name, "label": color.name, "hex_value": color.hex_value} for color in default_colors
+                {"value": color.id, "label": color.name, "hex_value": color.hex_value} for color in default_colors
             ],
         }
 

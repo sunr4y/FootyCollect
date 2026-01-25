@@ -1,14 +1,18 @@
-<c-vars name label required="false" api_endpoint help_text multiple="false" />
+<c-vars name label required="false" api_endpoint help_text multiple="false" initial_data="{}" />
 <div class="mb-3">
   <label for="id_{{ name }}" class="form-label">
-    {{ label }}
+    {% if label %}
+      {{ label }}
+    {% else %}
+      {{ name|title }}
+    {% endif %}
     {% if required == "true" or required == True %}*{% endif %}
   </label>
   {% if help_text %}
     <small class="form-text text-muted mb-2 d-block autocomplete-help-text">{{ help_text }}</small>
   {% endif %}
   <div class="position-relative"
-       x-data="autocompleteSearch('{{ name }}', '{{ api_endpoint }}', {{ multiple|yesno:'true,false' }})">
+       x-data="autocompleteSearch('{{ name }}', '{{ api_endpoint }}', '{{ multiple }}', {{ initial_data|default:'{}'|safe }})">
     <!-- Selected items display (multiple) -->
     <template x-if="isMultiple && selectedItems.length > 0">
       <div class="mb-2">
@@ -189,112 +193,141 @@
 <script>
   document.addEventListener('alpine:init', () => {
     if (!Alpine.data('autocompleteSearch')) {
-      Alpine.data('autocompleteSearch', (name, apiEndpoint, multiple = false) => ({
-        searchQuery: '',
-        results: [],
-        selectedItem: null,
-        selectedItems: [],
-        selectedId: null,
-        isSearching: false,
-        showDropdown: false,
-        isMultiple: multiple === true || multiple === 'true',
-        fieldName: name,
-        apiEndpoint: apiEndpoint,
+      Alpine.data('autocompleteSearch', (name, apiEndpoint, multiple = false, initialData = null) => {
+        // Initialize with provided initial data if available
+        let initialSelectedItem = null;
+        let initialSelectedItems = [];
+        let initialSelectedId = null;
 
-        search() {
-          if (this.searchQuery.length < 2) {
-            this.results = [];
-            return;
+        // Parse initialData if it's a string (JSON)
+        let parsedData = initialData;
+        if (typeof initialData === 'string') {
+          try {
+            parsedData = JSON.parse(initialData);
+          } catch (e) {
+            console.warn('Failed to parse initialData as JSON:', e);
+            parsedData = null;
           }
+        }
 
-          this.isSearching = true;
-          this.showDropdown = true;
+        if (parsedData && typeof parsedData === 'object' && parsedData[name]) {
+          const data = parsedData[name];
+          if (Array.isArray(data)) {
+            initialSelectedItems = data;
+          } else if (data && data.id) {
+            initialSelectedItem = data;
+            initialSelectedId = data.id;
+            console.log(`Initialized ${name} with:`, initialSelectedItem);
+          }
+        }
 
-          const url = `/fkapi/${this.apiEndpoint}/search/?keyword=${encodeURIComponent(this.searchQuery)}`;
+        return {
+          searchQuery: '',
+          results: [],
+          selectedItem: initialSelectedItem,
+          selectedItems: initialSelectedItems,
+          selectedId: initialSelectedId,
+          isSearching: false,
+          showDropdown: false,
+          isMultiple: multiple === true || multiple === 'true',
+          fieldName: name,
+          apiEndpoint: apiEndpoint,
 
-          fetch(url)
-            .then(response => response.json())
-            .then(data => {
-              this.results = data.results || [];
-              this.isSearching = false;
-            })
-            .catch(error => {
-              console.error('Error searching:', error);
+          search() {
+            if (this.searchQuery.length < 2) {
               this.results = [];
-              this.isSearching = false;
-            });
-        },
+              return;
+            }
 
-        selectItem(item) {
-          if (this.isMultiple) {
-            if (!this.selectedItems.find(i => i.id === item.id)) {
-              this.selectedItems.push(item);
+            this.isSearching = true;
+            this.showDropdown = true;
+
+            const url = `/fkapi/${this.apiEndpoint}/search/?keyword=${encodeURIComponent(this.searchQuery)}`;
+
+            fetch(url)
+              .then(response => response.json())
+              .then(data => {
+                this.results = data.results || [];
+                this.isSearching = false;
+              })
+              .catch(error => {
+                console.error('Error searching:', error);
+                this.results = [];
+                this.isSearching = false;
+              });
+          },
+
+          selectItem(item) {
+            if (this.isMultiple) {
+              if (!this.selectedItems.find(i => i.id === item.id)) {
+                this.selectedItems.push(item);
+                this.searchQuery = '';
+                this.results = [];
+                this.showDropdown = false;
+              }
+            } else {
+              this.selectedItem = Object.assign({}, item);
+              this.selectedId = item.id;
+              this.selectedItems = [];
               this.searchQuery = '';
               this.results = [];
               this.showDropdown = false;
             }
-          } else {
-            this.selectedItem = Object.assign({}, item);
-            this.selectedId = item.id;
+          },
+
+          clearSelection() {
+            this.selectedItem = null;
+            this.selectedId = null;
             this.selectedItems = [];
             this.searchQuery = '';
             this.results = [];
+          },
+
+          removeItem(itemId) {
+            this.selectedItems = this.selectedItems.filter(item => item.id !== itemId);
+          },
+
+          getHiddenValue() {
+            if (this.isMultiple) {
+              return this.selectedItems.map(item => item.id).join(',');
+            }
+            return this.selectedId || '';
+          },
+
+          createCustom() {
+            if (!this.searchQuery || this.searchQuery.trim().length === 0) {
+              alert('Please enter a name');
+              return;
+            }
+
+            const customName = this.searchQuery.trim();
+            const nameField = document.getElementById(`id_${this.fieldName}_name`);
+            if (nameField) {
+              nameField.value = customName;
+            }
+
+            if (this.isMultiple) {
+              this.selectedItems.push({
+                id: null,
+                name: customName,
+                logo: null
+              });
+            } else {
+              this.selectedItem = {
+                id: null,
+                name: customName,
+                logo: null
+              };
+            }
+
+            this.searchQuery = '';
+            this.results = [];
             this.showDropdown = false;
+
+            alert(`Custom item "${customName}" will be created when you submit the form`);
           }
-        },
-
-        clearSelection() {
-          this.selectedItem = null;
-          this.selectedId = null;
-          this.selectedItems = [];
-          this.searchQuery = '';
-          this.results = [];
-        },
-
-        removeItem(itemId) {
-          this.selectedItems = this.selectedItems.filter(item => item.id !== itemId);
-        },
-
-        getHiddenValue() {
-          if (this.isMultiple) {
-            return this.selectedItems.map(item => item.id).join(',');
-          }
-          return this.selectedId || '';
-        },
-
-        createCustom() {
-          if (!this.searchQuery || this.searchQuery.trim().length === 0) {
-            alert('Please enter a name');
-            return;
-          }
-
-          const customName = this.searchQuery.trim();
-          const nameField = document.getElementById(`id_${this.fieldName}_name`);
-          if (nameField) {
-            nameField.value = customName;
-          }
-
-          if (this.isMultiple) {
-            this.selectedItems.push({
-              id: null,
-              name: customName,
-              logo: null
-            });
-          } else {
-            this.selectedItem = {
-              id: null,
-              name: customName,
-              logo: null
-            };
-          }
-
-          this.searchQuery = '';
-          this.results = [];
-          this.showDropdown = false;
-
-          alert(`Custom item "${customName}" will be created when you submit the form`);
-        }
-      }));
+        };
+      });
     }
   });
 </script>

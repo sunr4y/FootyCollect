@@ -110,7 +110,7 @@ class ItemFKAPIService:
             # Process kit information
             self._process_kit_information(form, kit_data)
 
-        except Exception:
+        except (ValueError, TypeError, KeyError, AttributeError):
             logger.exception("Error processing kit data for kit_id %s", kit_id)
             raise
 
@@ -286,8 +286,8 @@ class ItemFKAPIService:
 
             logger.info("Associated %d photos with item %s", len(photo_id_list), item.id)
 
-        except Exception:
-            logger.exception("Error processing photo IDs: %s", photo_ids)
+        except (ValueError, TypeError, KeyError):
+            logger.exception("Error processing photo IDs %s", photo_ids)
             raise
 
     def get_form_data_for_item_creation(self, item_type: str = "jersey") -> dict[str, Any]:
