@@ -275,29 +275,28 @@ class Command(BaseCommand):
 
             logo_kwargs = {"dry_run": dry_run, "verbose": verbose, "skip_existing": skip_existing}
 
-            processed.append({
-                "name": name,
-                "slug": slug,
-                "team_name": team.get("name", ""),
-                "team_country": team.get("country", ""),
-                "season_year": season.get("year", ""),
-                "brand_name": brand.get("name", ""),
-                "image_path": self._process_kit_image(
-                    kit, storage_path, quality, dry_run=dry_run, verbose=verbose, skip_existing=skip_existing
-                ),
-                "team_logo_path": self._process_logo(team.get("logo", ""), "teams", logo_cache, **logo_kwargs),
-                "brand_logo_path": self._process_logo(brand.get("logo", ""), "brands", logo_cache, **logo_kwargs),
-                "brand_logo_dark_path": self._process_logo(
-                    brand.get("logo_dark", ""),
-                    "brands",
-                    logo_cache,
-                    **logo_kwargs
-                ),
-                "original_image_url": kit.get("main_img_url", ""),
-                "original_team_logo": team.get("logo", ""),
-                "original_brand_logo": brand.get("logo", ""),
-                "original_brand_logo_dark": brand.get("logo_dark", ""),
-            })
+            processed.append(
+                {
+                    "name": name,
+                    "slug": slug,
+                    "team_name": team.get("name", ""),
+                    "team_country": team.get("country", ""),
+                    "season_year": season.get("year", ""),
+                    "brand_name": brand.get("name", ""),
+                    "image_path": self._process_kit_image(
+                        kit, storage_path, quality, dry_run=dry_run, verbose=verbose, skip_existing=skip_existing
+                    ),
+                    "team_logo_path": self._process_logo(team.get("logo", ""), "teams", logo_cache, **logo_kwargs),
+                    "brand_logo_path": self._process_logo(brand.get("logo", ""), "brands", logo_cache, **logo_kwargs),
+                    "brand_logo_dark_path": self._process_logo(
+                        brand.get("logo_dark", ""), "brands", logo_cache, **logo_kwargs
+                    ),
+                    "original_image_url": kit.get("main_img_url", ""),
+                    "original_team_logo": team.get("logo", ""),
+                    "original_brand_logo": brand.get("logo", ""),
+                    "original_brand_logo_dark": brand.get("logo_dark", ""),
+                }
+            )
 
         if verbose and logo_cache:
             self.stdout.write(f"Downloaded {len(logo_cache)} unique logos")
