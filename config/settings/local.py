@@ -10,6 +10,10 @@ DEBUG = True
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
+# Add extra hosts from env if specified
+_extra_hosts = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+if _extra_hosts:
+    ALLOWED_HOSTS += _extra_hosts
 
 # CACHES
 # ------------------------------------------------------------------------------

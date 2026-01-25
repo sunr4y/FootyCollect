@@ -97,6 +97,12 @@
       border-top-right-radius: 1rem;
     }
 
+    .home-card-item .card-img-top {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
     .card-body {
       border-bottom-left-radius: 1rem;
       border-bottom-right-radius: 1rem;
@@ -187,10 +193,10 @@
       min-height: 100vh;
       overflow: hidden;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 4rem 1.5rem;
-      padding-top: calc(63px + 4rem);
+      padding: 1.5rem;
+      padding-top: calc(63px + 12vh);
       /* Account for navbar */
       width: 100vw;
       max-width: 100vw !important;
@@ -239,6 +245,104 @@
       perspective: 1000px;
     }
 
+    /* Tablet: show 4 columns, overflow like desktop */
+    @media (max-width: 1024px) {
+      .home-card-column:nth-child(n+5) {
+        display: none;
+      }
+
+      .home-background-cards {
+        left: -100px;
+        right: -100px;
+        width: calc(100% + 200px);
+      }
+    }
+
+    /* Mobile: show 3 columns, overflow like desktop */
+    @media (max-width: 768px) {
+      .home-card-column {
+        min-width: 180px;
+        max-width: 220px;
+      }
+
+      .home-card-column:nth-child(n+4) {
+        display: none;
+      }
+
+      .home-background-cards {
+        left: -80px;
+        right: -80px;
+        width: calc(100% + 160px);
+        gap: 0.75rem;
+      }
+
+      .home-card-item .item-logos-above-photo {
+        height: 50px;
+        padding: 0.5rem 0.25rem;
+      }
+
+      .home-card-item .item-logo-small {
+        width: 36px;
+      }
+
+      .home-card-item .item-club-shield {
+        width: 55px;
+        height: 55px;
+      }
+
+      .home-card-item .fi {
+        font-size: 18px;
+      }
+
+      .home-card-item .card-body {
+        padding: 0.375rem !important;
+      }
+
+      .home-card-item .item-title {
+        font-size: 0.75rem;
+        line-height: 1.2;
+      }
+
+      .home-card-item .item-details {
+        font-size: 0.65rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .home-card-column {
+        min-width: 160px;
+        max-width: 200px;
+      }
+
+      .home-background-cards {
+        left: -60px;
+        right: -60px;
+        width: calc(100% + 120px);
+        gap: 0.5rem;
+      }
+
+      .home-card-item .item-logos-above-photo {
+        height: 45px;
+      }
+
+      .home-card-item .item-logo-small {
+        width: 32px;
+      }
+
+      .home-card-item .item-club-shield {
+        width: 50px;
+        height: 50px;
+      }
+
+      .home-card-item .fi {
+        font-size: 16px;
+      }
+
+      .home-card-item .card-body {
+        display: none !important;
+      }
+    }
+
     .home-content {
       will-change: transform;
       transform: translateZ(0);
@@ -269,16 +373,16 @@
       letter-spacing: 0.1em;
       text-transform: uppercase;
       font-size: 0.875rem;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 16px rgba(0, 0, 0, 0.6);
     }
 
     .home-title {
       font-size: 3rem;
       font-weight: 700;
       color: var(--fc-foreground);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       line-height: 1.2;
-      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.5);
     }
 
     .home-title-gradient {
@@ -288,73 +392,39 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
       text-shadow: none;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
     }
 
     .home-description {
-      font-size: 1.125rem;
+      font-size: 1rem;
       color: var(--fc-muted-foreground);
-      margin-bottom: 2.5rem;
-      max-width: 600px;
+      margin-bottom: 1.5rem;
+      max-width: 500px;
       margin-left: auto;
       margin-right: auto;
-      line-height: 1.6;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      line-height: 1.5;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 16px rgba(0, 0, 0, 0.6);
     }
 
     .home-buttons {
       display: flex;
-      flex-direction: column;
-      gap: 1rem;
+      flex-direction: row;
+      gap: 0.75rem;
       align-items: center;
       justify-content: center;
     }
 
-    @media (min-width: 640px) {
-      .home-buttons {
-        flex-direction: row;
-      }
-    }
-
-    .home-stats {
-      margin-top: 4rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 3rem;
+    .home-buttons .btn {
+      padding: 0.5rem 1.5rem !important;
+      font-size: 0.875rem !important;
+      min-width: auto !important;
+      max-width: 180px;
       text-align: center;
     }
 
-    .home-stat-item {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .home-stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--fc-foreground);
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .home-stat-value.gradient {
-      background: linear-gradient(135deg, hsla(180, 85%, 40%, 1), hsla(180, 85%, 50%, 1));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: none;
-    }
-
-    .home-stat-label {
-      font-size: 0.875rem;
-      color: var(--fc-muted-foreground);
-      margin-top: 0.25rem;
-    }
-
-    .home-stat-divider {
-      width: 1px;
-      height: 2.5rem;
-      background-color: var(--fc-border);
-      opacity: 0.5;
+    .home-buttons .fc-btn-outline-primary {
+      border-width: 1px;
+      padding: 0.5rem 1.5rem !important;
     }
 
     @media (min-width: 768px) {
@@ -374,7 +444,6 @@
       background: linear-gradient(90deg, var(--fc-muted) 25%, var(--fc-border) 50%, var(--fc-muted) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
-      min-height: 200px;
     }
 
     .home-card-item .item-photo.loaded {
@@ -389,6 +458,63 @@
 
       100% {
         background-position: -200% 0;
+      }
+    }
+
+    /* Full page loading overlay */
+    .home-loader {
+      position: fixed;
+      inset: 0;
+      background: var(--fc-background);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .home-loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .home-loader-spinner {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--fc-border);
+      border-top-color: hsla(180, 85%, 40%, 1);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .home-loader-text {
+      margin-top: 1.5rem;
+      color: var(--fc-muted-foreground);
+      font-size: 0.875rem;
+      letter-spacing: 0.05em;
+    }
+
+    .home-loader-progress {
+      margin-top: 1rem;
+      width: 200px;
+      height: 4px;
+      background: var(--fc-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .home-loader-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, hsla(180, 85%, 40%, 1), hsla(180, 85%, 50%, 1));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
       }
     }
 
@@ -413,6 +539,14 @@
   </style>
 {% endblock css %}
 {% block content %}
+  <!-- Loading overlay -->
+  <div class="home-loader" id="homeLoader">
+    <div class="home-loader-spinner"></div>
+    <p class="home-loader-text">Loading jerseys...</p>
+    <div class="home-loader-progress">
+      <div class="home-loader-progress-bar" id="loaderProgress"></div>
+    </div>
+  </div>
   <div class="home-hero">
     <!-- Center content - Load first for faster rendering -->
     <div class="home-content">
@@ -434,23 +568,6 @@
           <a href="{% url 'account_signup' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
           <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
         {% endif %}
-      </div>
-      <!-- Stats -->
-      <div class="home-stats">
-        <div class="home-stat-item">
-          <p class="home-stat-value gradient">10K+</p>
-          <p class="home-stat-label">{% trans "Jerseys" %}</p>
-        </div>
-        <div class="home-stat-divider"></div>
-        <div class="home-stat-item">
-          <p class="home-stat-value">500+</p>
-          <p class="home-stat-label">{% trans "Collectors" %}</p>
-        </div>
-        <div class="home-stat-divider"></div>
-        <div class="home-stat-item">
-          <p class="home-stat-value">50+</p>
-          <p class="home-stat-label">{% trans "Countries" %}</p>
-        </div>
       </div>
     </div>
     <!-- Animated background cards -->
@@ -648,6 +765,47 @@
     </div>
   </div>
   <script>
+    // Loading progress tracker
+    (function() {
+      const loader = document.getElementById('homeLoader');
+      const progressBar = document.getElementById('loaderProgress');
+      const images = document.querySelectorAll('.home-card-item img');
+      const totalImages = images.length;
+      let loadedImages = 0;
+
+      if (totalImages === 0) {
+        loader.classList.add('hidden');
+        return;
+      }
+
+      function updateProgress() {
+        loadedImages++;
+        const percent = Math.round((loadedImages / totalImages) * 100);
+        progressBar.style.width = percent + '%';
+      }
+
+      function checkAndHide() {
+        if (loadedImages >= totalImages * 0.7) {
+          loader.classList.add('hidden');
+        }
+      }
+
+      images.forEach(img => {
+        if (img.complete) {
+          updateProgress();
+        } else {
+          img.addEventListener('load', updateProgress);
+          img.addEventListener('error', updateProgress);
+        }
+      });
+
+      // Show loader for minimum time, then hide when ready
+      setTimeout(checkAndHide, 1000);
+
+      // Fallback: hide loader after 5 seconds max
+      setTimeout(() => loader.classList.add('hidden'), 5000);
+    })();
+
     document.addEventListener('DOMContentLoaded', function() {
       const columns = document.querySelectorAll('.home-card-column');
 
