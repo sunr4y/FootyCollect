@@ -50,21 +50,11 @@ def demo_brand_view(request):
     return render(request, "collection/test_brand.html", context)
 
 
-def home(request):
-    """Home view with curated jersey cards from external API.
-
-
-
-    Performance: Brand logos (~5), flags (SVG), and team logos (~15) are
-    cached by browser. Only kit images are unique network requests.
-    """
+def _load_home_kits():
+    """Load and process home kits data from JSON file."""
     import json
-    import random
 
     from django.conf import settings
-
-    num_columns = 8
-    kits_per_column = 5
 
     data_path = settings.APPS_DIR / "static" / "data" / "home_kits_data.json"
 
@@ -74,35 +64,63 @@ def home(request):
         kits = data.get("kits", [])
     except FileNotFoundError:
         logger.warning("Home kits data file not found: %s", data_path)
-        kits = []
+        return []
     except json.JSONDecodeError:
         logger.exception("Invalid JSON in home kits data file")
-        kits = []
+        return []
 
-    columns_items = []
-    if kits:
-        random.seed(42)  # Consistent results
-        shuffled = kits.copy()
-        random.shuffle(shuffled)
+    # Resolve URLs based on storage configuration
+    media_url = getattr(settings, "MEDIA_URL", "/media/")
+    use_cdn = media_url.startswith("http")
 
-        for i in range(num_columns):
-            # Each column gets different kits from the shuffled pool
-            start_idx = (i * kits_per_column) % len(shuffled)
-            column_kits = []
-            for j in range(kits_per_column):
-                idx = (start_idx + j) % len(shuffled)
-                column_kits.append(shuffled[idx])
-            # Triple for seamless infinite scroll
-            column_items = column_kits * 3
-            columns_items.append(column_items)
-    else:
-        columns_items = [[] for _ in range(num_columns)]
+    for kit in kits:
+        for path_key, fallback_key, url_key in [
+            ("image_path", "original_image_url", "image_url"),
+            ("team_logo_path", "original_team_logo", "team_logo"),
+            ("brand_logo_path", "original_brand_logo", "brand_logo"),
+            ("brand_logo_dark_path", "original_brand_logo_dark", "brand_logo_dark"),
+        ]:
+            if use_cdn and kit.get(path_key):
+                kit[url_key] = f"{media_url.rstrip('/')}/{kit[path_key]}"
+            else:
+                kit[url_key] = kit.get(fallback_key, "")
 
-    context = {
-        "columns_items": columns_items,
-        "use_cached_kits": True,
-    }
-    return render(request, "pages/home.html", context)
+    return kits
+
+
+def _distribute_kits_to_columns(kits, num_columns, kits_per_column):
+    """Distribute kits across columns, avoiding same club in same column."""
+    import random
+
+    if not kits:
+        return [[] for _ in range(num_columns)]
+
+    random.seed(42)
+    available = kits.copy()
+    random.shuffle(available)
+
+    columns = [[] for _ in range(num_columns)]
+    columns_teams = [set() for _ in range(num_columns)]
+
+    for col_idx in range(num_columns):
+        for kit in available[:]:
+            if len(columns[col_idx]) >= kits_per_column:
+                break
+            team = kit.get("team_name", "") or kit.get("name", "").split()[0]
+            if team not in columns_teams[col_idx]:
+                columns[col_idx].append(kit)
+                columns_teams[col_idx].add(team)
+                available.remove(kit)
+
+    # Triple for infinite scroll animation
+    return [col * 3 for col in columns]
+
+
+def home(request):
+    """Home view with curated jersey cards from external API."""
+    kits = _load_home_kits()
+    columns_items = _distribute_kits_to_columns(kits, num_columns=8, kits_per_column=5)
+    return render(request, "pages/home.html", {"columns_items": columns_items, "use_cached_kits": True})
 
 
 def test_dropzone(request):

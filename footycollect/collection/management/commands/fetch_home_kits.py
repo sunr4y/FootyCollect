@@ -25,8 +25,9 @@ from footycollect.core.utils.images import optimize_image
 
 logger = logging.getLogger(__name__)
 
-# Storage path prefix for home kit images
+# Storage path prefixes
 HOME_KITS_STORAGE_PATH = "home_kits"
+LOGOS_STORAGE_PATH = "home_kits/logos"
 
 
 class Command(BaseCommand):
@@ -61,6 +62,10 @@ class Command(BaseCommand):
     def _get_storage_path(self, filename: str) -> str:
         """Get the storage path for a home kit image."""
         return f"{HOME_KITS_STORAGE_PATH}/{filename}"
+
+    def _get_logo_storage_path(self, logo_type: str, filename: str) -> str:
+        """Get the storage path for a logo (team or brand)."""
+        return f"{LOGOS_STORAGE_PATH}/{logo_type}/{filename}"
 
     def _get_image_url(self, storage_path: str) -> str:
         """Get the full URL for an image in storage."""
@@ -197,6 +202,52 @@ class Command(BaseCommand):
 
         return all_kits
 
+    def _process_logo(
+        self,
+        url: str,
+        logo_type: str,
+        logo_cache: dict,
+        *,
+        dry_run: bool,
+        verbose: bool,
+        skip_existing: bool,
+    ) -> str | None:
+        """Process a single logo: download if needed, return storage path."""
+        if dry_run or not url:
+            return None
+        if url in logo_cache:
+            return logo_cache[url]
+        downloaded_path = self.download_logo(url, logo_type, verbose=verbose, skip_existing=skip_existing)
+        if downloaded_path:
+            logo_cache[url] = downloaded_path
+        return downloaded_path
+
+    def _process_kit_image(
+        self,
+        kit: dict,
+        storage_path: str,
+        quality: int,
+        *,
+        dry_run: bool,
+        verbose: bool,
+        skip_existing: bool,
+    ) -> str | None:
+        """Process kit main image: download and compress if needed."""
+        if skip_existing and self._image_exists(storage_path):
+            if verbose:
+                self.stdout.write(f"  Skipping existing image: {storage_path}")
+            return storage_path
+
+        if dry_run:
+            return None
+
+        source_url = kit.get("main_img_url")
+        if source_url and self.download_and_save_image(source_url, storage_path, quality, verbose=verbose):
+            return storage_path
+
+        self.stdout.write(self.style.WARNING(f"  Failed to download image for: {kit.get('name', 'Unknown')}"))
+        return None
+
     def process_kits(
         self,
         kits_data: list[dict],
@@ -208,6 +259,7 @@ class Command(BaseCommand):
     ) -> list[dict]:
         """Process kits: download and compress images, prepare output data."""
         processed = []
+        logo_cache: dict[str, str] = {}
 
         for i, kit in enumerate(kits_data):
             name = kit.get("name", "Unknown")
@@ -215,49 +267,40 @@ class Command(BaseCommand):
                 self.stdout.write(f"Processing {i + 1}/{len(kits_data)}: {name}")
 
             slug = self.generate_slug(kit)
-            filename = f"{slug}.avif"
-            storage_path = self._get_storage_path(filename)
-            image_url = None
-
-            if skip_existing and self._image_exists(storage_path):
-                if verbose:
-                    self.stdout.write(f"  Skipping existing image: {storage_path}")
-                image_url = self._get_image_url(storage_path)
-            elif not dry_run:
-                source_url = kit.get("main_img_url")
-                if source_url:
-                    saved_url = self.download_and_save_image(
-                        source_url,
-                        storage_path,
-                        quality,
-                        verbose=verbose,
-                    )
-                    if saved_url:
-                        image_url = saved_url
-                    else:
-                        self.stdout.write(
-                            self.style.WARNING(f"  Failed to download image for: {name}"),
-                        )
+            storage_path = self._get_storage_path(f"{slug}.avif")
 
             team = kit.get("team", {})
             season = kit.get("season", {})
             brand = kit.get("brand", {})
 
-            processed_kit = {
+            logo_kwargs = {"dry_run": dry_run, "verbose": verbose, "skip_existing": skip_existing}
+
+            processed.append({
                 "name": name,
                 "slug": slug,
                 "team_name": team.get("name", ""),
-                "team_logo": team.get("logo", ""),
-                "team_logo_dark": team.get("logo_dark"),
                 "team_country": team.get("country", ""),
                 "season_year": season.get("year", ""),
                 "brand_name": brand.get("name", ""),
-                "brand_logo": brand.get("logo", ""),
-                "brand_logo_dark": brand.get("logo_dark"),
-                "image_url": image_url,
+                "image_path": self._process_kit_image(
+                    kit, storage_path, quality, dry_run=dry_run, verbose=verbose, skip_existing=skip_existing
+                ),
+                "team_logo_path": self._process_logo(team.get("logo", ""), "teams", logo_cache, **logo_kwargs),
+                "brand_logo_path": self._process_logo(brand.get("logo", ""), "brands", logo_cache, **logo_kwargs),
+                "brand_logo_dark_path": self._process_logo(
+                    brand.get("logo_dark", ""),
+                    "brands",
+                    logo_cache,
+                    **logo_kwargs
+                ),
                 "original_image_url": kit.get("main_img_url", ""),
-            }
-            processed.append(processed_kit)
+                "original_team_logo": team.get("logo", ""),
+                "original_brand_logo": brand.get("logo", ""),
+                "original_brand_logo_dark": brand.get("logo_dark", ""),
+            })
+
+        if verbose and logo_cache:
+            self.stdout.write(f"Downloaded {len(logo_cache)} unique logos")
 
         return processed
 
@@ -280,7 +323,7 @@ class Command(BaseCommand):
     ) -> str | None:
         """Download an image, compress it to AVIF, and save to storage.
 
-        Returns the URL of the saved image, or None if failed.
+        Returns the storage path (relative) of the saved image, or None if failed.
         """
         try:
             if verbose:
@@ -308,13 +351,11 @@ class Command(BaseCommand):
             if optimized:
                 content = ContentFile(optimized.read())
                 saved_path = default_storage.save(storage_path, content)
-                saved_url = self._get_image_url(saved_path)
 
                 if verbose:
                     self.stdout.write(f"  Saved to storage: {saved_path}")
-                    self.stdout.write(f"  URL: {saved_url}")
 
-                return saved_url
+                return saved_path  # Return relative path, not URL
             self.stdout.write(
                 self.style.WARNING(f"  Failed to optimize image from: {url}"),
             )
@@ -326,6 +367,64 @@ class Command(BaseCommand):
         except Exception:
             logger.exception("Error processing image %s", url)
             return None
+
+    def _sanitize_url(self, url: str) -> str:
+        """Fix malformed URLs like https:/ to https://"""
+        if url and url.startswith("https:/") and not url.startswith("https://"):
+            return url.replace("https:/", "https://", 1)
+        if url and url.startswith("http:/") and not url.startswith("http://"):
+            return url.replace("http:/", "http://", 1)
+        return url
+
+    def download_logo(
+        self,
+        url: str,
+        logo_type: str,
+        *,
+        verbose: bool,
+        skip_existing: bool,
+    ) -> str | None:
+        """Download a logo (team or brand) and save to storage as PNG.
+
+        Returns the storage path (relative) of the saved logo, or None if failed.
+        """
+        if not url or not url.startswith("http"):
+            return None
+
+        # Fix malformed URLs
+        url = self._sanitize_url(url)
+
+        # Extract filename from URL
+        parsed = urlparse(url)
+        path_parts = parsed.path.split("/")
+        original_filename = path_parts[-1].split("?")[0] if path_parts else "logo.png"
+
+        # Create a unique filename based on URL path
+        safe_filename = original_filename.replace(" ", "_").replace("%20", "_")
+        storage_path = self._get_logo_storage_path(logo_type, safe_filename)
+
+        # Check if exists
+        if skip_existing and self._image_exists(storage_path):
+            if verbose:
+                self.stdout.write(f"    Logo exists: {safe_filename}")
+            return storage_path  # Return relative path, not URL
+
+        try:
+            if verbose:
+                self.stdout.write(f"    Downloading logo: {safe_filename}")
+
+            response = requests.get(url, timeout=15, proxies=self.proxies)
+            response.raise_for_status()
+
+            content = ContentFile(response.content)
+        except requests.RequestException as e:
+            logger.warning("Failed to download logo %s: %s", url, e)
+            return None
+        except Exception:
+            logger.exception("Error downloading logo %s", url)
+            return None
+        else:
+            return default_storage.save(storage_path, content)
 
     def save_output(self, kits: list[dict]):
         """Save processed kit data to output JSON file."""
