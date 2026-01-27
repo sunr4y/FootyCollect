@@ -77,7 +77,7 @@ class FKAPIClient:
         self.base_url = f"http://{settings.FKA_API_IP}"
         self.api_key = settings.API_KEY
         self.cache_timeout = 3600  # 1 hour cache by default
-        self.request_timeout = 10
+        self.request_timeout = 60
         self.max_retries = 3
         self.headers = {
             "X-API-KEY": self.api_key,
@@ -223,6 +223,100 @@ class FKAPIClient:
             wait_time,
         )
         time.sleep(wait_time)
+
+    def _post(
+        self,
+        endpoint: str,
+        data: dict | None = None,
+        *,
+        use_cache: bool = False,
+    ) -> dict | None:
+        """Perform POST request with retry logic."""
+        full_url = f"{self.base_url}/api{endpoint}"
+        logger.info("Making POST request to FKAPI: %s", full_url)
+
+        last_exception = None
+        for attempt in range(self.max_retries):
+            if attempt > 0:
+                self._wait_with_backoff(attempt)
+
+            result = self._execute_post_request(full_url, data, endpoint, attempt)
+            if result.success:
+                self.circuit_breaker.record_success()
+                return result.data
+
+            last_exception = result.error
+            if result.should_stop:
+                break
+
+        self._handle_all_retries_failed(endpoint, last_exception)
+        return None
+
+    def _execute_post_request(
+        self,
+        url: str,
+        data: dict | None,
+        endpoint: str,
+        attempt: int,
+    ) -> "RequestResult":
+        """Execute a single HTTP POST request."""
+        try:
+            response = requests.post(
+                url,
+                json=data,
+                headers=self.headers,
+                timeout=self.request_timeout,
+            )
+            logger.info("FKAPI POST response status: %s for %s", response.status_code, endpoint)
+
+            if response.status_code in (200, 202):
+                response_data = response.json() if response.content else {}
+                data = self._normalize_response(response_data)
+                return RequestResult(success=True, data=data)
+            error_msg = response.text[:200] if response.text else f"{response.status_code} {response.reason}"
+            try:
+                error_data = response.json()
+                if isinstance(error_data, dict):
+                    error_msg = error_data.get("error") or error_data.get("message") or error_msg
+                elif isinstance(error_data, str):
+                    error_msg = error_data
+            except (ValueError, TypeError):
+                logger.debug("Could not parse error response as JSON")
+            error_message = f"{error_msg} for url: {url}"
+            raise requests.exceptions.HTTPError(error_message, response=response)
+
+        except requests.exceptions.Timeout:
+            logger.warning(
+                "POST request timeout (attempt %d/%d) for endpoint: %s",
+                attempt + 1,
+                self.max_retries,
+                endpoint,
+            )
+            return RequestResult(
+                success=False,
+                error=requests.exceptions.Timeout(
+                    f"Request timeout after {self.request_timeout}s",
+                ),
+            )
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(
+                "POST request error (attempt %d/%d) for endpoint %s: %s",
+                attempt + 1,
+                self.max_retries,
+                endpoint,
+                str(e),
+            )
+            return RequestResult(success=False, error=e)
+
+        except json.JSONDecodeError as e:
+            logger.exception(
+                "JSON decode error (attempt %d/%d) from FKAPI POST endpoint %s",
+                attempt + 1,
+                self.max_retries,
+                endpoint,
+            )
+            return RequestResult(success=False, error=e, should_stop=True)
 
     def _execute_request(
         self,
@@ -430,6 +524,19 @@ class FKAPIClient:
             return result.get("results", result.get("data", []))
         logger.warning("Unexpected response type: %s", type(result))
         return []
+
+    def scrape_user_collection(self, userid: int) -> dict | None:
+        """Start scraping user collection. Returns response with task_id or data."""
+        endpoint = f"/user-collection/{userid}/scrape"
+        return self._post(endpoint)
+
+    def get_user_collection(
+        self, userid: int, page: int = 1, page_size: int = 20, *, use_cache: bool = False
+    ) -> dict | None:
+        """Get user collection with pagination."""
+        endpoint = f"/user-collection/{userid}"
+        params = {"page": page, "page_size": page_size}
+        return self._get(endpoint, params=params, use_cache=use_cache)
 
 
 @dataclass

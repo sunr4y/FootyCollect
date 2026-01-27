@@ -298,6 +298,82 @@ class ItemListView(BaseItemListView):
         )
 
 
+class ItemQuickViewView(BaseItemDetailView):
+    """Quick view modal for item details."""
+
+    template_name = "collection/item_quick_view.html"
+
+    def get_queryset(self):
+        """Get queryset with optimizations for quick view."""
+        from footycollect.collection.models import Jersey
+
+        return (
+            Jersey.objects.filter(base_item__user=self.request.user)
+            .select_related(
+                "base_item",
+                "base_item__user",
+                "base_item__club",
+                "base_item__season",
+                "base_item__brand",
+                "base_item__main_color",
+                "size",
+                "kit",
+                "kit__type",
+            )
+            .prefetch_related(
+                "base_item__competitions",
+                "base_item__photos",
+                "base_item__secondary_colors",
+            )
+        )
+
+    def get_object(self, queryset=None):
+        """Override to handle BaseItem pk lookup in Jersey queryset."""
+        from django.http import Http404
+        from django.utils.translation import gettext as _
+
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        if pk is not None:
+            queryset = queryset.filter(base_item__pk=pk)
+
+        try:
+            obj = queryset.get()
+        except queryset.model.DoesNotExist:
+            verbose_name = queryset.model._meta.verbose_name
+            raise Http404(
+                _("No %(verbose_name)s found matching the query") % {"verbose_name": verbose_name},
+            ) from None
+
+        return obj
+
+    def get_context_data(self, **kwargs):
+        """Add additional context data for quick view."""
+        from django.views.generic.detail import SingleObjectMixin
+
+        from footycollect.collection.models import BaseItem
+
+        context = super(SingleObjectMixin, self).get_context_data(**kwargs)
+
+        photo_service = get_photo_service()
+
+        if isinstance(self.object, BaseItem):
+            base_item = self.object
+            context["specific_item"] = self.object.get_specific_item()
+        else:
+            base_item = self.object.base_item
+            context["specific_item"] = self.object
+
+        photos = photo_service.get_item_photos(base_item)
+        context["photos"] = list(photos)
+        context["object"] = base_item
+        context["item"] = base_item
+
+        return context
+
+
 class ItemDetailView(BaseItemDetailView):
     """Detail view for a specific item in the collection."""
 
@@ -305,10 +381,14 @@ class ItemDetailView(BaseItemDetailView):
 
     def get_queryset(self):
         """Get queryset with optimizations for detail view."""
+        from django.db.models import Q
+
         from footycollect.collection.models import Jersey
 
         return (
-            Jersey.objects.filter(base_item__user=self.request.user)
+            Jersey.objects.filter(
+                Q(base_item__user=self.request.user) | Q(base_item__is_private=False, base_item__is_draft=False)
+            )
             .select_related(
                 "base_item",
                 "base_item__user",

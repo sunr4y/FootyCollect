@@ -11,6 +11,7 @@ from .item_views import (
     ItemDeleteView,
     ItemDetailView,
     ItemListView,  # Item views
+    ItemQuickViewView,
     ItemUpdateView,
     JerseyCreateView,
     JerseySelectView,
@@ -34,6 +35,7 @@ __all__ = [
     # Item views
     "ItemListView",
     "ItemDetailView",
+    "ItemQuickViewView",
     "ItemCreateView",
     "ItemUpdateView",
     "ItemDeleteView",
