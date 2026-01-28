@@ -8,6 +8,7 @@ from .views import (
     ItemDeleteView,
     ItemDetailView,
     ItemListView,
+    ItemProcessingStatusView,
     ItemQuickViewView,
     ItemUpdateView,
     JerseyCreateView,
@@ -59,6 +60,7 @@ urlpatterns = [
     path("jersey/add/", JerseyFKAPICreateView.as_view(), name="jersey_add_automatic"),
     # Photo operations
     path("items/<int:item_id>/reorder-photos/", reorder_photos, name="reorder_photos"),
+    path("items/<int:item_id>/processing-status/", ItemProcessingStatusView.as_view(), name="item_processing_status"),
     path("upload/", file_upload, name="file_upload"),
     path("upload/photo/", upload_photo, name="upload_photo"),
     path("dropzone/files/", handle_dropzone_files, name="handle_dropzone_files"),

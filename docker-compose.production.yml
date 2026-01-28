@@ -54,15 +54,15 @@ services:
       - production_redis_data:/data
 
 
-  # celeryworker:
-  #   <<: *django
-  #   image: footycollect_production_celeryworker
-  #   command: /start-celeryworker
+  celeryworker:
+    <<: *django
+    image: footycollect_production_celeryworker
+    command: /start-celeryworker
 
-  # celerybeat:
-  #   <<: *django
-  #   image: footycollect_production_celerybeat
-  #   command: /start-celerybeat
+  celerybeat:
+    <<: *django
+    image: footycollect_production_celerybeat
+    command: /start-celerybeat
 
   flower:
     <<: *django

@@ -15,6 +15,7 @@ User = get_user_model()
 # Constants for test values
 TEST_PASSWORD = "testpass123"
 EXPECTED_COMPETITIONS_COUNT = 2
+EXPECTED_DOWNLOAD_CALLS = 3  # main_img_url + 2 external_urls
 
 
 class TestJerseyFKAPICreateViewExtended(TestCase):
@@ -483,6 +484,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             patch.object(view, "_process_external_images") as mock_process_images,
             patch.object(view, "_process_photo_ids"),
             patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
+            patch("footycollect.collection.tasks.check_item_photo_processing"),
             patch("django.conf.settings") as mock_settings,
         ):
             import tempfile
@@ -493,10 +495,12 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             view.object.refresh_from_db = Mock()
             view.object.base_item = Mock()
             view.object.base_item.id = 1
+            view.object.base_item.pk = 1
             view.object.id = 1
 
             mock_base_item = Mock()
             mock_base_item.id = 1
+            mock_base_item.pk = 1
             mock_get_base_item.return_value = mock_base_item
 
             result = view.form_valid(mock_form)
@@ -835,7 +839,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             mock_parse.assert_called_once_with(photo_ids)
             mock_external.assert_called_once_with([], view.object.base_item)
-            mock_associate.assert_called_once_with(["1", "2", "3"], {}, view.object.base_item)
+            mock_associate.assert_called_once_with(["1", "2", "3"], {}, view.object.base_item, start_order=0)
 
     def test_entity_creation_integration(self):
         """Test entity creation integration with real data."""
@@ -878,22 +882,11 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             "external_image_urls": "https://example.com/back.jpg,https://example.com/side.jpg",
         }
 
-        with (
-            patch.object(view, "_download_and_attach_image") as mock_download,
-            patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
-        ):
-            mock_photo = Mock()
-            mock_photo.id = 1
-            mock_photo.order = 0
-            mock_photo.save = Mock()
-            mock_download.return_value = mock_photo
-
+        with patch.object(view, "_download_and_attach_image") as mock_download:
             view._process_external_images(mock_form)
 
             # Verify main image processing - check that download was called
-            assert mock_download.called
-            mock_photo.save.assert_called()
-            mock_messages.success.assert_called()
+            assert mock_download.call_count == EXPECTED_DOWNLOAD_CALLS
 
     def test_kit_data_processing_integration(self):
         """Test kit data processing integration."""

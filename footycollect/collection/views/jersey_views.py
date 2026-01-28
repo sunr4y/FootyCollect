@@ -9,7 +9,6 @@ import json
 import logging
 from pathlib import Path
 
-import requests
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -529,7 +528,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         )
         return base_item
 
-    def form_valid(self, form):
+    def form_valid(self, form):  # noqa: PLR0915
         """
         Processes the form when it is valid.
         Creates the necessary entities from the API data
@@ -575,18 +574,46 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             # Get base_item for photo associations
             base_item = self._get_base_item_for_photos()
 
-            # Process external images
+            # Check if we have external images or photos that need processing
+            has_external_images = bool(form.cleaned_data.get("main_img_url")) or bool(
+                form.cleaned_data.get("external_image_urls")
+            )
+            has_photo_ids = bool(self.request.POST.get("photo_ids", ""))
+
+            if has_external_images or has_photo_ids:
+                base_item.is_processing_photos = True
+                base_item.save(update_fields=["is_processing_photos"])
+
+            # Count external images first to set correct order for local photos
+            main_img_url = form.cleaned_data.get("main_img_url")
+            external_urls = form.cleaned_data.get("external_image_urls", "")
+            external_count = 0
+            if main_img_url:
+                external_count += 1
+            if external_urls:
+                urls = [u.strip() for u in external_urls.split(",") if u.strip() and u.strip() != main_img_url]
+                external_count += len(urls)
+
+            # Process external images first
             self._process_external_images(form, base_item)
 
-            # Process uploaded photos through the dropzone
+            # Process uploaded photos through the dropzone (local photos start after externals)
             photo_ids = self.request.POST.get("photo_ids", "")
             if photo_ids:
-                self._process_photo_ids(photo_ids, base_item)
+                self._process_photo_ids(photo_ids, base_item, start_order=external_count)
 
             # Mark as not draft
             self.object.is_draft = False
             self.object.save()
             logger.info("Jersey marked as not draft")
+
+            if has_external_images or has_photo_ids:
+                from footycollect.collection.tasks import check_item_photo_processing
+
+                check_item_photo_processing.apply_async(
+                    args=[base_item.pk],
+                    countdown=5,
+                )
 
             messages.success(
                 self.request,
@@ -1658,49 +1685,35 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         if base_item is None:
             base_item = self.object.base_item if hasattr(self.object, "base_item") else self.object
 
-        # Process main image if it exists
+        # Process main image if it exists (order=0)
         main_img_url = form.cleaned_data.get("main_img_url")
         if main_img_url:
             try:
-                photo = self._download_and_attach_image(base_item, main_img_url)
-                if photo:
-                    # Set as main image
-                    photo.order = 0
-                    photo.save()
-                    logger.info("Main image saved with ID: %s", photo.id)
-                    messages.success(
-                        self.request,
-                        _("Main image downloaded and attached successfully"),
-                    )
-            except (OSError, ValueError, requests.RequestException):
-                logger.exception("Error downloading main image %s", main_img_url)
+                self._download_and_attach_image(base_item, main_img_url, order=0)
+                logger.info("Main image queued for download with order=0")
+            except Exception:
+                logger.exception("Error queuing main image download %s", main_img_url)
                 messages.error(
                     self.request,
                     _("Error downloading main image"),
                 )
 
-        # Process additional external images
+        # Process additional external images (order=1, 2, 3...)
         external_urls = form.cleaned_data.get("external_image_urls", "")
         if external_urls:
-            urls = external_urls.split(",")
-            # Start from 1 to keep 0 for main image
+            urls = [u.strip() for u in external_urls.split(",") if u.strip() and u.strip() != main_img_url]
             for i, url in enumerate(urls, start=1):
-                clean_url = url.strip()
-                if clean_url and clean_url != main_img_url:  # Avoid duplicates with main image
-                    try:
-                        photo = self._download_and_attach_image(base_item, clean_url)
-                        if photo:
-                            # Set order to maintain image order
-                            photo.order = i
-                            photo.save()
-                    except (OSError, ValueError, requests.RequestException):
-                        logger.exception("Error downloading image %s", clean_url)
-                        messages.error(
-                            self.request,
-                            _("Error downloading image"),
-                        )
+                try:
+                    self._download_and_attach_image(base_item, url, order=i)
+                    logger.info("External image queued for download with order=%s", i)
+                except Exception:
+                    logger.exception("Error queuing external image download %s", url)
+                    messages.error(
+                        self.request,
+                        _("Error downloading image"),
+                    )
 
-    def _process_photo_ids(self, photo_ids, base_item=None):
+    def _process_photo_ids(self, photo_ids, base_item=None, start_order=0):
         """
         Process photo IDs uploaded through the dropzone.
         Associate existing photos with the jersey.
@@ -1708,6 +1721,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         Args:
             photo_ids: String with JSON of photos or IDs separated by commas
             base_item: The BaseItem instance to associate photos with (defaults to self.object.base_item)
+            start_order: Starting order for local photos (after external images)
         """
         if base_item is None:
             base_item = self.object.base_item if hasattr(self.object, "base_item") else self.object
@@ -1718,11 +1732,14 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             if not photo_id_list and not external_images:
                 return
 
-            # Process external images first
+            # Process external images first (they get order 0, 1, 2...)
+            external_count = len(external_images)
             self._process_external_images_from_photo_ids(external_images, base_item)
 
-            # Process existing photos
-            self._associate_existing_photos(photo_id_list, order_map, base_item)
+            # Process existing photos (local photos start after externals)
+            self._associate_existing_photos(
+                photo_id_list, order_map, base_item, start_order=start_order + external_count
+            )
 
         except (ValueError, TypeError, KeyError):
             logger.exception("Error processing photo IDs")
@@ -1783,28 +1800,27 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
             return
 
         logger.info("Processing external images: %s", external_images)
-        for img_data in external_images:
+        for idx, img_data in enumerate(external_images):
             try:
-                photo = self._download_and_attach_image(base_item, img_data["url"])
-                if photo:
-                    photo.order = img_data.get("order", 0)
-                    photo.save()
-                    logger.info(
-                        "External image downloaded and attached with ID: %s, order: %s",
-                        photo.id,
-                        photo.order,
-                    )
-            except (OSError, ValueError, requests.RequestException):
-                logger.exception("Error downloading external image %s", img_data["url"])
+                order = img_data.get("order", idx)
+                self._download_and_attach_image(base_item, img_data["url"], order=order)
+                logger.info(
+                    "External image queued for download: %s, order: %s",
+                    img_data["url"],
+                    order,
+                )
+            except Exception:
+                logger.exception("Error queuing external image download %s", img_data["url"])
                 messages.error(self.request, _("Error downloading image"))
 
-    def _associate_existing_photos(self, photo_id_list, order_map, base_item=None):
+    def _associate_existing_photos(self, photo_id_list, order_map, base_item=None, start_order=0):
         """Associate existing photos with the jersey and set their order.
 
         Args:
             photo_id_list: List of photo IDs to associate
             order_map: Dictionary mapping photo IDs to their order
             base_item: The BaseItem instance to associate photos with (defaults to self.object.base_item)
+            start_order: Starting order for local photos (after external images)
         """
         if base_item is None:
             base_item = self.object.base_item if hasattr(self.object, "base_item") else self.object
@@ -1812,7 +1828,7 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
         if not photo_id_list:
             return
 
-        logger.info("Attempting to associate existing photos, IDs: %s", photo_id_list)
+        logger.info("Attempting to associate existing photos, IDs: %s, start_order: %s", photo_id_list, start_order)
 
         # Ensure photo IDs are integers and unique
         try:
@@ -1843,13 +1859,17 @@ class JerseyFKAPICreateView(PhotoProcessorMixin, LoginRequiredMixin, CreateView)
 
         content_type = ContentType.objects.get_for_model(BaseItem)
 
-        for photo in photos:
+        for idx, photo in enumerate(photos):
             # Associate the photo with the base_item (GenericRelation is on BaseItem, not Jersey)
             photo.content_type = content_type
             photo.object_id = base_item.id
 
-            # Set the order
-            photo.order = order_map.get(str(photo.id), photo.order or 0)
+            # Set the order: use order_map if provided, otherwise use start_order + index
+            if str(photo.id) in order_map:
+                mapped_order = order_map[str(photo.id)]
+                photo.order = start_order + mapped_order if mapped_order is not None else start_order + idx
+            else:
+                photo.order = start_order + idx
 
             photo.save()
             logger.info(

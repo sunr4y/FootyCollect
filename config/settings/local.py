@@ -80,10 +80,8 @@ if env("USE_DOCKER", default="no") == "yes":
 # ------------------------------------------------------------------------------
 # https://django-extensions.readthedocs.io/en/latest/installation_instructions.html#configuration
 INSTALLED_APPS += ["django_extensions"]
-# Celery
-# ------------------------------------------------------------------------------
-
-# https://docs.celeryq.dev/en/stable/userguide/configuration.html#task-eager-propagates
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default="redis://redis:6379/0"))
+CELERY_TASK_ALWAYS_EAGER = False
 CELERY_TASK_EAGER_PROPAGATES = True
 # Your stuff...
 # ------------------------------------------------------------------------------
