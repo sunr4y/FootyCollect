@@ -76,8 +76,33 @@ class Photo(models.Model):
         return f"Photo {self.order} of {self.content_object}"
 
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        is_new = self.pk is None
+
+        if not is_new:
+            try:
+                old_photo = Photo.objects.get(pk=self.pk)
+                old_image = old_photo.image
+            except Photo.DoesNotExist:
+                old_image = None
+        else:
+            old_image = None
+
         super().save(*args, **kwargs)
-        self.create_avif_version()
+
+        should_process = False
+        if update_fields:
+            if "image_avif" in update_fields:
+                should_process = False
+            elif "image" in update_fields:
+                should_process = True
+        elif is_new and self.image or old_image != self.image and self.image:
+            should_process = True
+
+        if should_process and not self.image_avif:
+            from .tasks import process_photo_to_avif
+
+            process_photo_to_avif.delay(self.pk)
 
     def create_avif_version(self):
         if not self.image_avif and self.image:
@@ -258,6 +283,7 @@ class BaseItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_draft = models.BooleanField(default=True)
+    is_processing_photos = models.BooleanField(default=False, db_index=True)
     design = models.CharField(
         max_length=20,
         choices=DESIGN_CHOICES,

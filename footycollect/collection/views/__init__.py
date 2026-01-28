@@ -25,6 +25,7 @@ from .item_views import (
 )
 from .jersey_views import JerseyFKAPICreateView
 from .photo_views import (
+    ItemProcessingStatusView,
     PhotoProcessorMixin,
     file_upload,
     handle_dropzone_files,
@@ -49,6 +50,7 @@ __all__ = [
     "JerseySelectView",
     "JerseyFKAPICreateView",
     # Photo views
+    "ItemProcessingStatusView",
     "reorder_photos",
     "upload_photo",
     "file_upload",

@@ -92,5 +92,13 @@ try:
 except (ValueError, TypeError, AttributeError) as e:
     logging.getLogger(__name__).debug("FKA API settings not available for tests: %s", e)
 
+# CELERY
+# ------------------------------------------------------------------------------
+# Execute tasks synchronously during tests (no Redis/Celery worker needed)
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_URL = "memory://"
+CELERY_RESULT_BACKEND = "cache+memory://"
+
 # Your stuff...
 # ------------------------------------------------------------------------------

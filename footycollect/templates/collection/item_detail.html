@@ -629,6 +629,28 @@
       opacity: 0.6;
     }
 
+    .fc-processing-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .fc-processing-badge .spinner-border-sm {
+      width: 1rem;
+      height: 1rem;
+      border-width: 0.15em;
+    }
+
     .fc-thumbnails-container {
       display: flex;
       gap: 0.75rem;
@@ -785,7 +807,7 @@
           {% if photos|length > 0 %}
             {% with photos|first as first_photo %}
               <div class="fc-main-image-wrapper" id="mainImage">
-                {% if first_photo.image_avif %}
+                {% if first_photo.image_avif.name %}
                   <img src="{{ first_photo.image.url }}"
                        data-avif="{{ first_photo.image_avif.url }}"
                        alt="{{ object.name }}"
@@ -795,18 +817,24 @@
                   <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
                 {% endif %}
                 <div class="fc-main-image-overlay"></div>
+                {% if object.is_processing_photos %}
+                  <div id="processingBadge" class="fc-processing-badge">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    {% trans "Processing photos..." %}
+                  </div>
+                {% endif %}
               </div>
             {% endwith %}
             {% if photos|length > 1 %}
               <div class="fc-thumbnails-container">
                 {% for photo in photos %}
                   <button type="button"
-                          onclick="changeImage('{{ photo.image.url }}', '{{ photo.image_avif.url|default:'' }}', this)"
+                          onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
                           class="fc-thumbnail {% if forloop.first %}active{% endif %}"
                           data-image-url="{{ photo.image.url }}"
-                          data-avif-url="{{ photo.image_avif.url|default:'' }}">
-                    {% if photo.image_avif %}
-                      <img src="{{ photo.image_avif.url|default:photo.image.url }}"
+                          data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
+                    {% if photo.image_avif.name %}
+                      <img src="{{ photo.image_avif.url }}"
                            alt="Thumbnail {{ forloop.counter }}"
                            class="thumbnail-img"
                            onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
@@ -820,7 +848,7 @@
           {% else %}
             {% with object.photos.all|first as first_photo %}
               <div class="fc-main-image-wrapper" id="mainImage">
-                {% if first_photo.image_avif %}
+                {% if first_photo.image_avif.name %}
                   <img src="{{ first_photo.image.url }}"
                        data-avif="{{ first_photo.image_avif.url }}"
                        alt="{{ object.name }}"
@@ -830,18 +858,24 @@
                   <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
                 {% endif %}
                 <div class="fc-main-image-overlay"></div>
+                {% if object.is_processing_photos %}
+                  <div id="processingBadge" class="fc-processing-badge">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    {% trans "Processing photos..." %}
+                  </div>
+                {% endif %}
               </div>
             {% endwith %}
             {% if object.photos.count > 1 %}
               <div class="fc-thumbnails-container">
                 {% for photo in object.photos.all %}
                   <button type="button"
-                          onclick="changeImage('{{ photo.image.url }}', '{{ photo.image_avif.url|default:'' }}', this)"
+                          onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
                           class="fc-thumbnail {% if forloop.first %}active{% endif %}"
                           data-image-url="{{ photo.image.url }}"
-                          data-avif-url="{{ photo.image_avif.url|default:'' }}">
-                    {% if photo.image_avif %}
-                      <img src="{{ photo.image_avif.url|default:photo.image.url }}"
+                          data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
+                    {% if photo.image_avif.name %}
+                      <img src="{{ photo.image_avif.url }}"
                            alt="Thumbnail {{ forloop.counter }}"
                            class="thumbnail-img"
                            onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
@@ -1135,5 +1169,63 @@
         thumbnail.classList.add('active');
       }
     }
+
+    function showProcessingBadge() {
+      const badge = document.getElementById('processingBadge');
+      if (badge) {
+        badge.style.display = 'flex';
+      }
+    }
+
+    function hideProcessingBadge() {
+      const badge = document.getElementById('processingBadge');
+      if (badge) {
+        badge.style.display = 'none';
+      }
+    }
+
+    function reloadPhotos() {
+      window.location.reload();
+    }
+
+    function checkPhotoProcessing(itemId, useDebug) {
+      var url = '/collection/items/' + itemId + '/processing-status/';
+      if (useDebug) { url += '?debug=1'; }
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          console.log('Processing status:', data);
+          if (data._debug) { console.log('Debug (kit/base_item/photos):', data._debug); }
+          if (data.error) {
+            console.warn('Processing status error:', data.error);
+            hideProcessingBadge();
+            return;
+          }
+          if (data.all_processed) {
+            hideProcessingBadge();
+            if (data.has_photos) {
+              setTimeout(reloadPhotos, 500);
+            }
+          } else if (data.is_processing) {
+            showProcessingBadge();
+            setTimeout(function() { checkPhotoProcessing(itemId, useDebug); }, 2000);
+          } else {
+            hideProcessingBadge();
+          }
+        })
+        .catch(function(err) {
+          console.error('Error checking photo processing:', err);
+          setTimeout(function() { checkPhotoProcessing(itemId, useDebug); }, 5000);
+        });
+    }
+
+    {% if object.is_processing_photos %}
+      checkPhotoProcessing({{ object.pk }}, true);
+    {% else %}
+      const badge = document.getElementById('processingBadge');
+      if (badge) {
+        badge.style.display = 'none';
+      }
+    {% endif %}
   </script>
 {% endblock content %}

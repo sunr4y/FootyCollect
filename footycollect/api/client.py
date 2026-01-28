@@ -525,10 +525,16 @@ class FKAPIClient:
         logger.warning("Unexpected response type: %s", type(result))
         return []
 
+    def post_scrape_user_collection(self, userid: int) -> dict | None:
+        """POST to scrape user collection endpoint. Returns API response."""
+        return self._post(f"/user-collection/{userid}/scrape")
+
     def scrape_user_collection(self, userid: int) -> dict | None:
         """Start scraping user collection. Returns response with task_id or data."""
-        endpoint = f"/user-collection/{userid}/scrape"
-        return self._post(endpoint)
+        from .tasks import scrape_user_collection_task
+
+        scrape_user_collection_task.delay(userid)
+        return {"status": "queued"}
 
     def get_user_collection(
         self, userid: int, page: int = 1, page_size: int = 20, *, use_cache: bool = False

@@ -7,11 +7,43 @@ from unittest.mock import patch
 import pytest
 from django.test import TestCase
 
+from footycollect.collection.models import Photo
 from footycollect.collection.tasks import (
     cleanup_all_orphaned_photos,
     cleanup_old_incomplete_photos,
     cleanup_orphaned_photos,
+    process_photo_to_avif,
 )
+from footycollect.users.tests.factories import UserFactory
+
+pytestmark = pytest.mark.django_db
+
+
+def test_process_photo_to_avif(settings, tmp_path):
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+    settings.CELERY_BROKER_URL = "memory://"
+    settings.CELERY_RESULT_BACKEND = "cache+memory://"
+
+    from io import BytesIO
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image as PILImage
+
+    user = UserFactory()
+    img = PILImage.new("RGB", (100, 100), color="red")
+    img_buffer = BytesIO()
+    img.save(img_buffer, format="JPEG")
+    img_buffer.seek(0)
+
+    image_file = SimpleUploadedFile("test.jpg", img_buffer.read(), content_type="image/jpeg")
+    photo = Photo.objects.create(user=user, image=image_file)
+
+    result = process_photo_to_avif.delay(photo.pk)
+    result.get(timeout=10)
+
+    photo.refresh_from_db()
+    assert photo.image_avif
 
 
 class TestCleanupOrphanedPhotos(TestCase):
