@@ -1,0 +1,1 @@
+"""Jersey-related views module."""
