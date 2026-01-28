@@ -95,12 +95,9 @@
 {% endblock title %}
 {% block content %}
   <div class="container">
-
     {% if messages %}
       <div class="mb-3">
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
       </div>
     {% endif %}
     <div class="row">

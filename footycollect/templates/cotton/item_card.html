@@ -2,7 +2,10 @@
 {% load i18n %}
 
 <c-vars item show_user show_edit show_delete quick_view_enabled />
-<div class="col-sm-6 col-md-4 col-xl-4 col-xxl-3" data-item-id="{{ item.base_item.pk }}" style="overflow: visible; margin-bottom: 2rem;">
+<div class="col-sm-6 col-md-4 col-xl-4 col-xxl-3"
+     data-item-id="{{ item.base_item.pk }}"
+     style="overflow: visible;
+            margin-bottom: 2rem">
   <div class="card h-100 item-card"
        style="cursor: pointer"
        {% if quick_view_enabled %}onclick="if (!event.target.closest('.btn-group, a, button')) { openQuickView({{ item.base_item.pk }}); }"{% endif %}>
@@ -56,7 +59,9 @@
               <img src="{{ item.base_item.user.get_avatar_url }}"
                    alt="{{ item.base_item.user.name|default:item.base_item.user.username }}"
                    class="rounded-circle"
-                   style="width: 32px; height: 32px; object-fit: cover" />
+                   style="width: 32px;
+                          height: 32px;
+                          object-fit: cover" />
             {% else %}
               <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                 <i class="bi bi-person text-white" style="font-size: 0.875rem;"></i>
@@ -129,11 +134,14 @@
       <div class="mt-auto" onclick="event.stopPropagation();">
         {% if show_edit or show_delete %}
           <div class="btn-group w-100" role="group">
-            <a href="{% url 'collection:item_detail' item.base_item.pk %}" class="btn btn-primary btn-sm" title="{% trans 'View Details' %}">
+            <a href="{% url 'collection:item_detail' item.base_item.pk %}"
+               class="btn btn-primary btn-sm"
+               title="{% trans 'View Details' %}">
               <i class="bi bi-eye"></i>
             </a>
             {% if show_edit %}
-              <a href="{% url 'collection:item_update' item.base_item.pk %}" class="btn btn-outline-secondary btn-sm fc-font-space-grotesk">
+              <a href="{% url 'collection:item_update' item.base_item.pk %}"
+                 class="btn btn-outline-secondary btn-sm fc-font-space-grotesk">
                 <i class="bi bi-pencil"></i> {% trans "Edit" %}
               </a>
             {% endif %}
@@ -149,7 +157,9 @@
             {% endif %}
           </div>
         {% else %}
-          <a href="{% url 'collection:item_detail' item.base_item.pk %}" class="btn btn-primary btn-sm w-100" title="{% trans 'View Details' %}">
+          <a href="{% url 'collection:item_detail' item.base_item.pk %}"
+             class="btn btn-primary btn-sm w-100"
+             title="{% trans 'View Details' %}">
             <i class="bi bi-eye"></i> {% trans "View Details" %}
           </a>
         {% endif %}
@@ -157,7 +167,6 @@
     </div>
   </div>
 </div>
-
 <style>
   .item-card {
     border-radius: 1rem;

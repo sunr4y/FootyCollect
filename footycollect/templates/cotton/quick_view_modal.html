@@ -6,7 +6,9 @@
      style="z-index: 1050"
      onclick="if(event.target === this) closeQuickViewModal()">
   <div class="quick-view-modal-content p-4 m-4"
-       style="max-height: 90vh; overflow-y: auto; position: relative"
+       style="max-height: 90vh;
+              overflow-y: auto;
+              position: relative"
        onclick="event.stopPropagation()">
     <div id="quickViewLogosPopup" class="quick-view-logos-popup" style="display: none;"></div>
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -22,7 +24,6 @@
     </div>
   </div>
 </div>
-
 <style>
   #quickViewModal {
     background: rgba(0, 0, 0, 0.85);
@@ -78,7 +79,6 @@
     padding-top: 1rem;
   }
 </style>
-
 <script>
   function moveLogosToPopup() {
     const content = document.getElementById('quickViewModalContent');

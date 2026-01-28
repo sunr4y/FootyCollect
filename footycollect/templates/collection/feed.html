@@ -267,7 +267,6 @@
                      placeholder="{% trans 'Search kits...' %}"
                      value="{{ active_filters.q|default:'' }}" />
             </div>
-
             <!-- Sort -->
             <div class="filter-section">
               <h6>{% trans "Sort By" %}</h6>
@@ -277,7 +276,6 @@
                 <option value="popular" {% if sort_type == 'popular' %}selected{% endif %}>{% trans "Popular" %}</option>
               </select>
             </div>
-
             <!-- Country -->
             <div class="filter-section">
               <h6>{% trans "Country" %}</h6>
@@ -287,7 +285,6 @@
                      placeholder="{% trans 'Country code (e.g., ES, GB)' %}"
                      value="{{ active_filters.country|default:'' }}" />
             </div>
-
             <!-- Club -->
             <div class="filter-section">
               <h6>{% trans "Club" %}</h6>
@@ -297,7 +294,6 @@
                      placeholder="{% trans 'Search club name...' %}"
                      value="{{ active_filters.club|default:'' }}" />
             </div>
-
             <!-- Brand -->
             <div class="filter-section">
               <h6>{% trans "Brand" %}</h6>
@@ -307,7 +303,6 @@
                      placeholder="{% trans 'Search brand name...' %}"
                      value="{{ active_filters.brand|default:'' }}" />
             </div>
-
             <!-- Season -->
             <div class="filter-section">
               <h6>{% trans "Season" %}</h6>
@@ -317,13 +312,15 @@
                      placeholder="{% trans 'e.g., 2020-21' %}"
                      value="{{ active_filters.season|default:'' }}" />
             </div>
-
             <!-- Competition -->
             <div class="filter-section">
               <h6>{% trans "Competition" %}</h6>
-              <input type="text" name="competition" class="form-control" placeholder="{% trans 'Search competition name...' %}" value="{{ active_filters.competition|default:'' }}" />
+              <input type="text"
+                     name="competition"
+                     class="form-control"
+                     placeholder="{% trans 'Search competition name...' %}"
+                     value="{{ active_filters.competition|default:'' }}" />
             </div>
-
             <!-- Kit Type -->
             <div class="filter-section">
               <h6>{% trans "Kit Type" %}</h6>
@@ -333,53 +330,58 @@
                      placeholder="{% trans 'e.g., Home, Away' %}"
                      value="{{ active_filters.kit_type|default:'' }}" />
             </div>
-
             <!-- Category -->
             <div class="filter-section">
               <h6>{% trans "Category" %}</h6>
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="category" value="match" id="cat_match" {% if active_filters.category == 'match' %}checked{% endif %} />
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="match"
+                       id="cat_match"
+                       {% if active_filters.category == 'match' %}checked{% endif %} />
                 <label class="form-check-label" for="cat_match">{% trans "Match" %}</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="category" value="training" id="cat_training" {% if active_filters.category == 'training' %}checked{% endif %} />
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="training"
+                       id="cat_training"
+                       {% if active_filters.category == 'training' %}checked{% endif %} />
                 <label class="form-check-label" for="cat_training">{% trans "Training" %}</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="category" value="prematch" id="cat_prematch" {% if active_filters.category == 'prematch' %}checked{% endif %} />
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="prematch"
+                       id="cat_prematch"
+                       {% if active_filters.category == 'prematch' %}checked{% endif %} />
                 <label class="form-check-label" for="cat_prematch">{% trans "Pre-match" %}</label>
               </div>
             </div>
-
             <!-- Main Color -->
             <div class="filter-section">
               <h6>{% trans "Main Color" %}</h6>
               {% include "cotton/color_selector.html" with name="main_color" label="Main Color" color_choices=color_choices_json data_selected=active_filters.main_color|default:'' hide_label=True %}
             </div>
-
             <!-- Secondary Colors -->
             <div class="filter-section">
               <h6>{% trans "Secondary Colors" %}</h6>
               {% include "cotton/color_selector.html" with name="secondary_color" label="Secondary Colors" color_choices=color_choices_json data_multiple="true" data_selected=active_filters.secondary_color|default:'' hide_label=True %}
             </div>
-
             <button type="submit" class="btn btn-primary w-100 mt-3">{% trans "Apply Filters" %}</button>
           </form>
         </div>
       </div>
-
       <!-- Main Content -->
       <div class="col-lg-10 col-xl-10">
         <!-- Mobile Filter Toggle -->
-        <button type="button"
-                class="btn btn-outline-primary filter-mobile-toggle mb-3 d-lg-none"
-                onclick="toggleMobileFilters()">
+        <button type="button" class="btn btn-outline-primary filter-mobile-toggle mb-3 d-lg-none" onclick="toggleMobileFilters()">
           <i class="bi bi-funnel"></i> {% trans "Filters" %}
-          {% if filter_count > 0 %}
-            <span class="badge bg-primary ms-2">{{ filter_count }}</span>
-          {% endif %}
+          {% if filter_count > 0 %}<span class="badge bg-primary ms-2">{{ filter_count }}</span>{% endif %}
         </button>
-
         <!-- Mobile Filter Overlay -->
         <div class="filter-mobile-overlay d-lg-none" id="mobileFilterOverlay" onclick="toggleMobileFilters()"></div>
         <div class="filter-mobile-panel d-lg-none" id="mobileFilterPanel">
@@ -391,7 +393,11 @@
             <!-- Same filter fields as desktop -->
             <div class="filter-section">
               <h6>{% trans "Search" %}</h6>
-              <input type="text" name="q" class="form-control" placeholder="{% trans 'Search kits...' %}" value="{{ active_filters.q|default:'' }}" />
+              <input type="text"
+                     name="q"
+                     class="form-control"
+                     placeholder="{% trans 'Search kits...' %}"
+                     value="{{ active_filters.q|default:'' }}" />
             </div>
             <div class="filter-section">
               <h6>{% trans "Sort By" %}</h6>
@@ -403,19 +409,35 @@
             </div>
             <div class="filter-section">
               <h6>{% trans "Country" %}</h6>
-              <input type="text" name="country" class="form-control" placeholder="{% trans 'Country code' %}" value="{{ active_filters.country|default:'' }}" />
+              <input type="text"
+                     name="country"
+                     class="form-control"
+                     placeholder="{% trans 'Country code' %}"
+                     value="{{ active_filters.country|default:'' }}" />
             </div>
             <div class="filter-section">
               <h6>{% trans "Club" %}</h6>
-              <input type="text" name="club" class="form-control" placeholder="{% trans 'Search club name...' %}" value="{{ active_filters.club|default:'' }}" />
+              <input type="text"
+                     name="club"
+                     class="form-control"
+                     placeholder="{% trans 'Search club name...' %}"
+                     value="{{ active_filters.club|default:'' }}" />
             </div>
             <div class="filter-section">
               <h6>{% trans "Brand" %}</h6>
-              <input type="text" name="brand" class="form-control" placeholder="{% trans 'Search brand name...' %}" value="{{ active_filters.brand|default:'' }}" />
+              <input type="text"
+                     name="brand"
+                     class="form-control"
+                     placeholder="{% trans 'Search brand name...' %}"
+                     value="{{ active_filters.brand|default:'' }}" />
             </div>
             <div class="filter-section">
               <h6>{% trans "Season" %}</h6>
-              <input type="text" name="season" class="form-control" placeholder="{% trans 'e.g., 2020-21' %}" value="{{ active_filters.season|default:'' }}" />
+              <input type="text"
+                     name="season"
+                     class="form-control"
+                     placeholder="{% trans 'e.g., 2020-21' %}"
+                     value="{{ active_filters.season|default:'' }}" />
             </div>
             <div class="filter-section">
               <h6>{% trans "Main Color" %}</h6>
@@ -431,85 +453,100 @@
             </div>
           </form>
         </div>
-
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h1 class="h3 mb-0">{% trans "Discover Kits" %}</h1>
         </div>
-
         <!-- Filter Chips -->
         {% if active_filters %}
           <div class="filter-chips mb-4" style="margin-bottom: 2.5rem !important;">
             {% if active_filters.q %}
               <div class="filter-chip">
                 <span>{% trans "Search" %}: {{ active_filters.q }}</span>
-                <button type="button" onclick="removeFilter('q')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('q')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.country %}
               <div class="filter-chip">
                 <span>{% trans "Country" %}: {{ active_filters.country }}</span>
-                <button type="button" onclick="removeFilter('country')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('country')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.club %}
               <div class="filter-chip">
                 <span>{% trans "Club" %}: {{ filter_display_names.club|default:active_filters.club }}</span>
-                <button type="button" onclick="removeFilter('club')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('club')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.brand %}
               <div class="filter-chip">
                 <span>{% trans "Brand" %}: {{ filter_display_names.brand|default:active_filters.brand }}</span>
-                <button type="button" onclick="removeFilter('brand')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('brand')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.competition %}
               <div class="filter-chip">
                 <span>{% trans "Competition" %}: {{ active_filters.competition }}</span>
-                <button type="button" onclick="removeFilter('competition')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('competition')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.season %}
               <div class="filter-chip">
                 <span>{% trans "Season" %}: {{ active_filters.season }}</span>
-                <button type="button" onclick="removeFilter('season')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('season')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.kit_type %}
               <div class="filter-chip">
                 <span>{% trans "Kit Type" %}: {{ active_filters.kit_type }}</span>
-                <button type="button" onclick="removeFilter('kit_type')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('kit_type')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.category %}
               <div class="filter-chip">
                 <span>{% trans "Category" %}: {{ active_filters.category }}</span>
-                <button type="button" onclick="removeFilter('category')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('category')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.main_color %}
               <div class="filter-chip">
                 <span>{% trans "Main Color" %}: {{ filter_display_names.main_color|default:active_filters.main_color }}</span>
-                <button type="button" onclick="removeFilter('main_color')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('main_color')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if active_filters.secondary_color %}
               <div class="filter-chip">
                 <span>{% trans "Secondary Colors" %}: {{ filter_display_names.secondary_color|join:', '|default:active_filters.secondary_color }}</span>
-                <button type="button" onclick="removeFilter('secondary_color')"><i class="bi bi-x"></i></button>
+                <button type="button" onclick="removeFilter('secondary_color')">
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
             {% endif %}
             {% if filter_count > 1 %}
               <div class="filter-chip">
-                <button type="button" onclick="clearAllFilters()" class="text-primary">
-                  {% trans "Clear All" %}
-                </button>
+                <button type="button" onclick="clearAllFilters()" class="text-primary">{% trans "Clear All" %}</button>
               </div>
             {% endif %}
           </div>
         {% endif %}
-
         <!-- Items Grid -->
         {% if items %}
           <div class="row" id="items-grid" style="row-gap: 0.75rem;">
@@ -517,7 +554,6 @@
               {% include "cotton/item_card.html" with item=item show_user=True quick_view_enabled=True %}
             {% endfor %}
           </div>
-
           <!-- Infinite Scroll Trigger -->
           {% if page_obj.has_next %}
             <div id="infinite-scroll-trigger" class="text-center py-4" data-page-number="{{ page_obj.number }}" data-has-next="true">
@@ -532,19 +568,14 @@
             <i class="bi bi-collection text-muted empty-state-icon" style="font-size: 4rem;"></i>
             <h3 class="mt-3 text-muted">{% trans "No kits found" %}</h3>
             <p class="text-muted mb-4">{% trans "Try adjusting your filters to see more results." %}</p>
-            <a href="{% url 'collection:feed' %}" class="btn btn-primary">
-              {% trans "Clear Filters" %}
-            </a>
+            <a href="{% url 'collection:feed' %}" class="btn btn-primary">{% trans "Clear Filters" %}</a>
           </div>
         {% endif %}
       </div>
     </div>
   </div>
-
   {% include "cotton/quick_view_modal.html" %}
-
   <script>
-
     function toggleMobileFilters() {
       const overlay = document.getElementById('mobileFilterOverlay');
       const panel = document.getElementById('mobileFilterPanel');
@@ -569,7 +600,7 @@
       if (filterName === 'competition' || filterName === 'secondary_color') {
         url.searchParams.delete(filterName + '[]');
       }
-      
+
       const cleanParams = new URLSearchParams();
       for (const [key, value] of url.searchParams.entries()) {
         if (!key || key.startsWith('hidden_')) {
@@ -580,7 +611,7 @@
           cleanParams.append(key, trimmedValue);
         }
       }
-      
+
       const cleanQueryString = cleanParams.toString();
       const cleanUrl = url.pathname + (cleanQueryString ? '?' + cleanQueryString : '');
       window.location.href = cleanUrl;
@@ -592,15 +623,15 @@
 
     function cleanFormData(form) {
       const cleanData = {};
-      
+
       const allInputs = form.querySelectorAll('input, select, textarea');
-      
+
       for (const element of allInputs) {
         const name = element.name;
         if (!name || name.startsWith('hidden_')) {
           continue;
         }
-        
+
         if (element.type === 'checkbox') {
           if (element.checked && element.value) {
             const trimmedValue = element.value.toString().trim();
@@ -618,7 +649,7 @@
           }
           continue;
         }
-        
+
         if (element.type === 'radio') {
           if (element.checked && element.value) {
             const trimmedValue = element.value.toString().trim();
@@ -628,7 +659,7 @@
           }
           continue;
         }
-        
+
         if (element.tagName === 'SELECT') {
           if (element.multiple) {
             const selectedOptions = Array.from(element.selectedOptions);
@@ -648,7 +679,7 @@
           }
           continue;
         }
-        
+
         if (element.type === 'text' || element.type === 'search' || !element.type) {
           const value = element.value ? element.value.toString().trim() : '';
           if (value && value !== 'null' && value !== 'undefined') {
@@ -657,22 +688,22 @@
           continue;
         }
       }
-      
+
       return cleanData;
     }
 
     function buildCleanUrl(baseUrl, params) {
       const urlParams = new URLSearchParams();
-      
+
       for (const [key, value] of Object.entries(params)) {
         if (!key || key.startsWith('hidden_')) {
           continue;
         }
-        
+
         if (value === null || value === undefined) {
           continue;
         }
-        
+
         if (Array.isArray(value)) {
           const nonEmptyValues = value
             .filter(v => v !== null && v !== undefined && v !== '')
@@ -690,17 +721,17 @@
           }
         }
       }
-      
+
       const queryString = urlParams.toString();
       return queryString ? `${baseUrl}?${queryString}` : baseUrl;
     }
 
     function syncColorSelectors() {
       const forms = [document.getElementById('filterForm'), document.getElementById('mobileFilterForm')];
-      
+
       forms.forEach(form => {
         if (!form) return;
-        
+
         const mainColorSelect = document.getElementById('id_main_color');
         if (mainColorSelect) {
           const mainColorValue = mainColorSelect.value ? mainColorSelect.value.trim() : '';
@@ -749,7 +780,7 @@
           }
         }
       });
-      
+
       return true;
     }
 
@@ -757,7 +788,7 @@
       const url = new URL(window.location);
       const cleanParams = new URLSearchParams();
       let hasChanges = false;
-      
+
       for (const [key, value] of url.searchParams.entries()) {
         if (!key || key.startsWith('hidden_')) {
           hasChanges = true;
@@ -770,7 +801,7 @@
           hasChanges = true;
         }
       }
-      
+
       if (hasChanges) {
         const cleanQueryString = cleanParams.toString();
         const cleanUrl = url.pathname + (cleanQueryString ? '?' + cleanQueryString : '');
@@ -782,10 +813,10 @@
 
     document.addEventListener('DOMContentLoaded', function() {
       cleanUrlOnLoad();
-      
+
       const filterForm = document.getElementById('filterForm');
       const mobileFilterForm = document.getElementById('mobileFilterForm');
-      
+
       function setupCategoryCheckboxes(form) {
         const categoryCheckboxes = form.querySelectorAll('input[type="checkbox"][name="category"]');
         categoryCheckboxes.forEach(checkbox => {
@@ -800,21 +831,21 @@
           });
         });
       }
-      
+
       function handleFormSubmit(e) {
         e.preventDefault();
         syncColorSelectors();
-        
+
         const form = e.target;
         const formData = cleanFormData(form);
-        
+
         const sortSelect = form.querySelector('select[name="sort"]');
         if (sortSelect && sortSelect.value && sortSelect.value.trim() !== '') {
           formData.sort = sortSelect.value.trim();
         } else if (formData.sort && formData.sort.trim() === '') {
           delete formData.sort;
         }
-        
+
         const categoryCheckboxes = form.querySelectorAll('input[type="checkbox"][name="category"]:checked');
         if (categoryCheckboxes.length > 0) {
           const checkedCategories = Array.from(categoryCheckboxes).map(cb => cb.value.trim()).filter(v => v);
@@ -826,13 +857,13 @@
         } else {
           delete formData.category;
         }
-        
+
         const baseUrl = form.action;
         const cleanUrl = buildCleanUrl(baseUrl, formData);
-        
+
         window.location.href = cleanUrl;
       }
-      
+
       if (filterForm) {
         setupCategoryCheckboxes(filterForm);
         filterForm.addEventListener('submit', handleFormSubmit);
@@ -865,7 +896,7 @@
     function buildQueryString() {
       const urlParams = new URLSearchParams(window.location.search);
       urlParams.delete('page');
-      
+
       const cleanParams = new URLSearchParams();
       for (const [key, value] of urlParams.entries()) {
         if (!key || key.startsWith('hidden_')) {
@@ -876,7 +907,7 @@
           cleanParams.append(key, trimmedValue);
         }
       }
-      
+
       return cleanParams.toString();
     }
 
@@ -913,31 +944,31 @@
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');
           const newItemsGrid = doc.getElementById('items-grid');
-          
+
           if (!newItemsGrid) {
             console.error('items-grid not found in response');
             if (trigger) trigger.style.minHeight = 'auto';
             return;
           }
-          
+
           const newItems = newItemsGrid.querySelectorAll('.col-md-6.col-lg-3, .col-md-6');
           console.log('Found', newItems.length, 'new items');
-          
+
           if (newItems.length > 0) {
             newItems.forEach(item => {
               const clonedItem = item.cloneNode(true);
               itemsGrid.appendChild(clonedItem);
             });
-            
+
             console.log('Inserted', newItems.length, 'items into grid');
-            
+
             const newTrigger = doc.getElementById('infinite-scroll-trigger');
             const pageInfo = newTrigger ? newTrigger : doc.querySelector('[data-page-number]');
-            
+
             if (pageInfo) {
               currentPage = parseInt(pageInfo.dataset.pageNumber) || nextPage;
               const hasNext = pageInfo.dataset.hasNext === 'true';
-              
+
               if (hasNext && newTrigger) {
                 if (trigger) {
                   trigger.setAttribute('data-page-number', newTrigger.dataset.pageNumber);
