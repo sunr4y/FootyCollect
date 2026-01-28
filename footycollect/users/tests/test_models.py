@@ -2,12 +2,15 @@
 Tests for users models.
 """
 
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
+from footycollect.users.models import avatar_file_name
 from footycollect.users.tests.factories import (
     AdminUserFactory,
     InactiveUserFactory,
@@ -144,6 +147,27 @@ class TestUserModel:
         """Test that user is not superuser by default."""
         user = UserFactory()
         assert user.is_superuser is False
+
+    @patch("footycollect.users.models.uuid.uuid4")
+    def test_avatar_file_name_generates_uuid_based_path(self, mock_uuid):
+        """avatar_file_name should generate a path under avatars/ with a 10-char UUID prefix."""
+        # Arrange
+        mock_uuid.return_value.hex = "abcdef1234567890abcdef1234567890"
+        user = UserFactory()
+
+        # Act
+        result = avatar_file_name(user, "my_photo.png")
+
+        # Assert
+        # Path should be avatars/<10 hex chars>.png
+        # Normalize path separators for cross-platform compatibility
+        uuid_prefix_length = 10
+        normalized_result = result.replace("\\", "/")
+        assert normalized_result.startswith("avatars/")
+        filename = normalized_result.split("avatars/")[1]
+        assert filename.endswith(".png")
+        name_without_ext = filename[: -len(".png")]
+        assert len(name_without_ext) == uuid_prefix_length
 
 
 @pytest.mark.django_db
