@@ -103,14 +103,14 @@
        SELECT2 DARK THEME - FOOTYCOLLECT
        ============================================================================ */
 
-    /* Base container - máxima especificidad usando ID del campo */
+    /* Base container - maximum specificity using the field ID */
     #id_country_code.select2-hidden-accessible~.select2-container--bootstrap5,
     #id_country_code~.select2-container--bootstrap5 {
       width: 100% !important;
       box-sizing: border-box;
     }
 
-    /* SELECTION BOX - Estado normal, focus y open */
+    /* SELECTION BOX - Normal, focus and open */
     #id_country_code~.select2-container--bootstrap5 .select2-selection,
     #id_country_code~.select2-container--bootstrap5.select2-container--focus .select2-selection,
     #id_country_code~.select2-container--bootstrap5.select2-container--open .select2-selection {
@@ -204,13 +204,13 @@
       margin: 5px 2px 0 !important;
     }
 
-    /* Arrow cuando el dropdown está abierto */
+    /* Arrow when the dropdown is open */
     #id_country_code~.select2-container--bootstrap5.select2-container--open .select2-selection__arrow b {
       border-color: transparent transparent var(--fc-foreground, #f0f0f0) transparent !important;
       border-width: 0 4px 5px 4px !important;
     }
 
-    /* DROPDOWN - Contenedor principal */
+    /* DROPDOWN - Main container */
     .select2-container--bootstrap5 .select2-dropdown {
       background-color: var(--fc-card, #0f0f0f) !important;
       border: 1px solid var(--fc-border, #333333) !important;
@@ -223,7 +223,7 @@
       border-top: 1px solid var(--fc-border, #333333) !important;
     }
 
-    /* Search field dentro del dropdown */
+    /* Search field inside the dropdown */
     .select2-container--bootstrap5 .select2-search--dropdown {
       background-color: var(--fc-card, #0f0f0f) !important;
       padding: 8px !important;
@@ -245,7 +245,7 @@
       box-shadow: 0 0 0 3px rgba(50, 184, 198, 0.25) !important;
     }
 
-    /* RESULTS - Contenedor de opciones */
+    /* RESULTS - Options container */
     .select2-container--bootstrap5 .select2-results {
       background-color: var(--fc-card, #0f0f0f) !important;
     }
@@ -254,7 +254,7 @@
       background-color: var(--fc-card, #0f0f0f) !important;
     }
 
-    /* Opción individual */
+    /* Individual option */
     .select2-container--bootstrap5 .select2-results__option,
     .select2-container--bootstrap5 .select2-results__option[role="option"] {
       background-color: var(--fc-card, #0f0f0f) !important;
@@ -264,21 +264,21 @@
       transition: background-color 0.15s ease !important;
     }
 
-    /* Opción highlighted (cuando pasas el mouse) */
+    /* Option highlighted (when passing the mouse) */
     .select2-container--bootstrap5 .select2-results__option--highlighted,
     .select2-container--bootstrap5 .select2-results__option--highlighted[role="option"] {
       background-color: rgba(50, 184, 198, 0.2) !important;
       color: var(--fc-foreground, #f0f0f0) !important;
     }
 
-    /* Opción selected */
+    /* Option selected */
     .select2-container--bootstrap5 .select2-results__option[aria-selected="true"],
     .select2-container--bootstrap5 .select2-results__option[aria-selected="true"][role="option"] {
       background-color: rgba(50, 184, 198, 0.15) !important;
       color: var(--fc-foreground, #f0f0f0) !important;
     }
 
-    /* Opción selected AND highlighted */
+    /* Option selected AND highlighted */
     .select2-container--bootstrap5 .select2-results__option[aria-selected="true"].select2-results__option--highlighted {
       background-color: rgba(50, 184, 198, 0.3) !important;
       color: var(--fc-foreground, #f0f0f0) !important;
@@ -648,13 +648,13 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Wait a moment for Alpine.js to initialize the components
       setTimeout(function() {
-        console.log('Verificando el estado del componente photo_manager...');
+        console.log('Checking the state of the photo_manager...');
         const photoManager = document.querySelector('.photo-manager');
 
         if (photoManager) {
           console.log('Componente photo_manager encontrado');
         } else {
-          console.log('No se encontró el componente photo_manager');
+          console.log('Component photo_manager not found');
         }
       }, 1000);
     });
@@ -759,7 +759,7 @@
           // Show a success message
           alert('{% trans "Default image added successfully! It will be processed when you submit the form." %}');
 
-          console.log('Imagen añadida correctamente');
+          console.log('Image added successfully');
           return;
         } catch (error) {
           console.error('Error creating the visual element:', error);
@@ -780,7 +780,7 @@
         console.log(`🚀 updateCottonComponent - fieldName type: ${typeof fieldName}, value: ${fieldName}`);
         const select = document.getElementById(`id_${fieldName}`);
         if (!select) {
-          console.warn(`No se encontró el select para el campo ${fieldName}`);
+          console.warn(`Select for field ${fieldName} not found`);
           return;
         }
 
@@ -847,7 +847,7 @@
           updateCottonVisual(fieldName, value);
         }
       } catch (error) {
-        console.error(`Error al actualizar el componente Cotton ${fieldName}:`, error);
+        console.error(`Error updating the Cotton component ${fieldName}:`, error);
       }
     }
 
@@ -1078,7 +1078,7 @@
               return;
             }
 
-            // Usar la función de búsqueda con debounce
+            // Use the search function with debounce
             if (!this.debouncedSearchKits) {
               this.debouncedSearchKits = debounce(this.searchKits.bind(this), 500);
             }
@@ -1091,7 +1091,7 @@
               return;
             }
 
-            // Usar la función de búsqueda con debounce
+            // Use the search function with debounce
             if (!this.debouncedSearchClubs) {
               this.debouncedSearchClubs = debounce(this.searchClubs.bind(this), 500);
             }
@@ -1244,7 +1244,7 @@
         searchKits() {
           if (this.kitSearch.length < 3) return;
 
-          // Crear un timestamp para esta búsqueda
+          // Create a timestamp for this search
           const searchTimestamp = Date.now();
           this.lastSearchTimestamp = searchTimestamp;
 
@@ -1261,7 +1261,7 @@
               return response.json();
             })
             .then(data => {
-              // Solo actualizar los resultados si esta es la búsqueda más reciente
+              // Only update the results if this is the most recent search
               if (searchTimestamp === this.lastSearchTimestamp) {
                 console.log('Kit search results:', data);
 
@@ -1289,7 +1289,7 @@
               console.error('Error searching kits:', error);
               this.isSearching = false;
               // Show an error message to the user
-              alert('Error al buscar kits: ' + error.message);
+              alert('Error searching kits: ' + error.message);
             });
         },
 
@@ -1311,8 +1311,8 @@
                   const confirmationMessage = document.createElement('div');
                   confirmationMessage.className = 'alert alert-success mt-3';
                   confirmationMessage.innerHTML = `
-                  <strong><i class="bi bi-check-circle-fill"></i> Kit seleccionado:</strong> ${kit.name}
-                  <p class="mb-0 small">Los datos del kit se están cargando...</p>
+                  <strong><i class="bi bi-check-circle-fill"></i> Kit selected:</strong> ${kit.name}
+                  <p class="mb-0 small">The kit data is being loaded...</p>
                 `;
 
                   const cardBody = searchCard.querySelector('.card-body');
@@ -1334,7 +1334,7 @@
                 }
               }
             } catch (error) {
-              console.error('Error al mostrar mensaje de confirmación:', error);
+              console.error('Error showing confirmation message:', error);
             }
 
             // Get full kit details
@@ -1366,28 +1366,28 @@
                   const confirmationMessage = document.querySelector('.alert.alert-success');
                   if (confirmationMessage) {
                     confirmationMessage.innerHTML = `
-                    <strong><i class="bi bi-check-circle-fill"></i> Kit seleccionado:</strong> ${kit.name}
-                    <p class="mb-0 small">Datos cargados correctamente. Puedes continuar con el formulario.</p>
+                    <strong><i class="bi bi-check-circle-fill"></i> Kit selected:</strong> ${kit.name}
+                    <p class="mb-0 small">The kit data has been loaded correctly. You can continue with the form.</p>
                   `;
                   }
                 } catch (error) {
-                  console.error('Error al actualizar mensaje de confirmación:', error);
+                  console.error('Error updating confirmation message:', error);
                 }
               })
               .catch(error => {
                 console.error('Error getting kit details:', error);
                 // Show an error message to the user
-                alert('Error al obtener los detalles del kit: ' + error.message);
+                alert('Error getting kit details: ' + error.message);
               });
           } catch (error) {
-            console.error('Error en selectKit:', error);
-            alert('Error al seleccionar el kit: ' + error.message);
+            console.error('Error in selectKit:', error);
+            alert('Error selecting kit: ' + error.message);
           }
         },
 
         populateFormFromKit(kitData) {
           this.kitData = kitData;
-          console.log('Populando formulario con datos:', kitData);
+          console.log('Populating form with data:', kitData);
           console.log('🎯 populateFormFromKit - main_color:', kitData?.primary_color);
           console.log('🎯 populateFormFromKit - secondary_colors:', kitData?.secondary_colors);
           console.log('🎯 populateFormFromKit - Starting color processing...');
@@ -1796,11 +1796,11 @@
 
             // If kit type not found, create it dynamically
             if (!found) {
-              console.log(`El tipo de kit "${typeValue}" no se encontró. Creando opción dinámicamente...`);
+              console.log(`The kit type "${typeValue}" not found. Creating option dynamically...`);
               this.createKitTypeOption(typeValue);
             }
 
-            // Mostrar el valor en el campo
+            // Show the value in the field
             this.displayFieldValue('kit_type', typeValue);
           }
 
@@ -1893,7 +1893,7 @@
               searchCard.closest('.card').style.display = 'none';
             }
           } catch (error) {
-            console.error('Error al ocultar la tarjeta de búsqueda:', error);
+            console.error('Error hiding the search card:', error);
           }
         },
 
@@ -1913,7 +1913,7 @@
         displayFieldValue(fieldName, value, isColor = false) {
           const fieldContainer = document.getElementById(`div_id_${fieldName}`);
           if (!fieldContainer) {
-            console.warn(`No se encontró el contenedor para el campo ${fieldName}`);
+            console.warn(`Container for field ${fieldName} not found`);
 
             // For kit_type specifically, try to find it with a different approach
             if (fieldName === 'kit_type') {
@@ -1997,7 +1997,7 @@
               }
             }
           } catch (error) {
-            console.error(`Error al mostrar el valor del campo ${fieldName}:`, error);
+            console.error(`Error showing the value of the field ${fieldName}:`, error);
           }
         },
 
@@ -2084,7 +2084,7 @@
           try {
             const select = document.getElementById(selectId);
             if (!select) {
-              console.warn(`No se encontró el elemento select con ID ${selectId}`);
+              console.warn(`Select with ID ${selectId} not found`);
               return false;
             }
 
@@ -2143,7 +2143,7 @@
 
             return true;
           } catch (error) {
-            console.error(`Error al crear nueva opción para ${entityType}:`, error);
+            console.error(`Error creating new option for ${entityType}:`, error);
             return false;
           }
         },
@@ -2214,7 +2214,7 @@
               });
             }, 500);
           } catch (error) {
-            console.error('Error al mostrar la imagen principal:', error);
+            console.error('Error showing the main image:', error);
             // As an alternative, insert it at the beginning of the form
             try {
               const form = document.getElementById('jersey-form');
@@ -2236,7 +2236,7 @@
                 form.insertBefore(imagePreview, form.firstChild);
               }
             } catch (innerError) {
-              console.error('Error al intentar mostrar la imagen como último recurso:', innerError);
+              console.error('Error trying to show the image as a last resort:', innerError);
             }
           }
         },
@@ -2285,7 +2285,7 @@
 
           // If we still don't find, show a message
           if (!found) {
-            console.warn(`No se encontró ninguna opción que coincida con "${text}" en el selector ${selectId}`);
+            console.warn(`No option found that matches "${text}" in the selector ${selectId}`);
           }
 
           return found;
@@ -2300,7 +2300,7 @@
             let found = false;
 
             if (!select.options || select.options.length === 0) {
-              console.warn('El elemento select no tiene opciones');
+              console.warn('The select element has no options');
               return false;
             }
 
@@ -2321,7 +2321,7 @@
 
             return found;
           } catch (error) {
-            console.error(`Error al seleccionar opción por texto "${text}":`, error);
+            console.error(`Error selecting option by text "${text}":`, error);
             return false;
           }
         },
@@ -2382,7 +2382,7 @@
 
             return found;
           } catch (error) {
-            console.error(`Error al seleccionar opción por texto parcial "${text}":`, error);
+            console.error(`Error selecting option by partial text "${text}":`, error);
             return false;
           }
         },
@@ -2434,8 +2434,8 @@
             .catch(error => {
               console.error('Error searching clubs:', error);
               this.isSearchingClub = false;
-              // Mostrar un mensaje de error al usuario
-              alert('Error al buscar clubs: ' + error.message);
+              // Show an error message to the user
+              alert('Error searching clubs: ' + error.message);
             });
         },
 
@@ -2446,7 +2446,7 @@
 
           // Save the logo URL to display in the form
           if (club.logo) {
-            console.log('Logo URL del club seleccionado:', club.logo);
+            console.log('Selected club logo URL:', club.logo);
             // Ensure the club has the logo_url property
             this.selectedClub.logo_url = club.logo;
           }
@@ -2495,24 +2495,24 @@
             })
             .catch(error => {
               console.error('Error getting kits for season:', error);
-              // Mostrar un mensaje de error al usuario
-              alert('Error al obtener kits para la temporada: ' + error.message);
+              // Show an error message to the user
+              alert('Error getting kits for season: ' + error.message);
             });
         }
       }));
     });
 
     // ============================================================================
-    // SELECT2 DARK THEME - JavaScript Optimizado
+    // SELECT2 DARK THEME - Optimized JavaScript
     // ============================================================================
     document.addEventListener('DOMContentLoaded', function() {
-      // Esperar a que jQuery y Select2 estén listos
+      // Wait for jQuery and Select2 to be ready
       if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
-        console.warn('jQuery o Select2 no están cargados');
+        console.warn('jQuery or Select2 are not loaded');
         return;
       }
 
-      // Obtener variables CSS una sola vez
+      // Get CSS variables once
       const getCSSVar = (name, fallback = '') => {
         return getComputedStyle(document.documentElement)
           .getPropertyValue(name)
@@ -2528,7 +2528,7 @@
         mutedForeground: getCSSVar('--fc-muted-foreground', '#888888'),
       };
 
-      // Función para aplicar estilos inline (fallback)
+      // Function to apply inline styles (fallback)
       const applyInlineStyles = ($element) => {
         if (!$element || !$element.length) return;
 
@@ -2628,11 +2628,11 @@
         }
       };
 
-      // Inicializar Select2 para el campo country
+      // Initialize Select2 for the country field
       const $countrySelect = $('#id_country_code');
 
       if ($countrySelect.length) {
-        // Aplicar estilos después de que Select2 se inicialice
+        // Apply styles after Select2 is initialized
         setTimeout(() => {
           const $container = $countrySelect.next('.select2-container');
           if ($container.length) {
@@ -2640,14 +2640,14 @@
           }
         }, 50);
 
-        // Aplicar estilos cuando se abre el dropdown
+        // Apply styles when the dropdown is opened
         $countrySelect.on('select2:open', function() {
           setTimeout(() => {
             const $dropdown = $('.select2-dropdown');
             if ($dropdown.length) {
               applyInlineStyles($dropdown);
             }
-            // También actualizar el contenedor
+            // Also update the container
             const $container = $countrySelect.next('.select2-container');
             if ($container.length) {
               applyInlineStyles($container.find('.select2-selection'));
@@ -2655,7 +2655,7 @@
           }, 10);
         });
 
-        // Aplicar estilos cuando se cierra
+        // Apply styles when the dropdown is closed
         $countrySelect.on('select2:close', function() {
           const $container = $countrySelect.next('.select2-container');
           if ($container.length) {
@@ -2663,7 +2663,7 @@
           }
         });
 
-        // Aplicar estilos cuando se selecciona un valor
+        // Apply styles when a value is selected
         $countrySelect.on('select2:select select2:unselect', function() {
           setTimeout(() => {
             const $container = $countrySelect.next('.select2-container');
@@ -2674,10 +2674,10 @@
         });
       }
 
-      // MutationObserver como fallback (menos agresivo)
+      // MutationObserver as fallback (less aggressive)
       let observerTimeout;
       const observer = new MutationObserver(function(mutations) {
-        // Debounce para evitar ejecutar múltiples veces
+        // Debounce to avoid executing multiple times
         clearTimeout(observerTimeout);
         observerTimeout = setTimeout(() => {
           const $container = $('#id_country_code').next('.select2-container');
@@ -2692,7 +2692,7 @@
         }, 10);
       });
 
-      // Observar solo cambios de clase (más eficiente)
+      // Observe only class changes (more efficient)
       observer.observe(document.body, {
         attributes: true,
         attributeFilter: ['class', 'style'],
@@ -2889,7 +2889,7 @@
               {% endif %}
             {% endfor %}
           </div>
-          <!-- Renderizar el formulario excluyendo los campos que ya están como componentes Cotton -->
+          <!-- Render the form excluding the fields that are already as Cotton components -->
           {% for field in form %}
             {% if field.name == 'brand' or field.name == 'club' or field.name == 'season' or field.name == 'competitions' %}
               <!-- These fields are now shown in the read-only info section above -->

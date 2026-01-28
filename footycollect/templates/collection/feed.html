@@ -1,0 +1,1035 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'css/collection.css' %}" rel="stylesheet" />
+  <link href="{% static 'css/users.css' %}" rel="stylesheet" />
+  <style>
+    .text-primary {
+      color: var(--fc-primary) !important;
+    }
+
+    .text-muted {
+      color: var(--fc-muted-foreground) !important;
+    }
+
+    .page-link {
+      border-color: var(--fc-border);
+      background: var(--fc-card);
+      color: var(--fc-foreground);
+    }
+
+    .page-link:hover {
+      background-color: hsla(220, 15%, 15%, 0.3);
+      border-color: hsla(180, 85%, 40%, 0.5);
+      color: var(--fc-foreground);
+    }
+
+    .page-item.active .page-link {
+      background-color: var(--fc-primary);
+      border-color: var(--fc-primary);
+      color: var(--fc-primary-foreground);
+    }
+
+    h1,
+    h3 {
+      color: var(--fc-foreground);
+    }
+
+    .empty-state-icon {
+      color: var(--fc-muted-foreground);
+    }
+
+    [x-cloak] {
+      display: none !important;
+    }
+
+    .filter-sidebar {
+      background: var(--fc-card);
+      border: 1px solid var(--fc-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      position: sticky;
+      top: 1rem;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      overflow-x: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .filter-sidebar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .filter-sidebar::-webkit-scrollbar-track {
+      background: var(--fc-secondary);
+      border-radius: 4px;
+    }
+
+    .filter-sidebar::-webkit-scrollbar-thumb {
+      background: var(--fc-border);
+      border-radius: 4px;
+      border: 1px solid var(--fc-secondary);
+    }
+
+    .filter-sidebar::-webkit-scrollbar-thumb:hover {
+      background: var(--fc-muted-foreground);
+    }
+
+    .filter-sidebar {
+      scrollbar-width: thin;
+      scrollbar-color: var(--fc-border) var(--fc-secondary);
+    }
+
+    .filter-section {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--fc-border);
+    }
+
+    .filter-section:last-child {
+      border-bottom: none;
+    }
+
+    .filter-section h6 {
+      color: var(--fc-foreground);
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-chips.mb-4 {
+      margin-bottom: 2.5rem !important;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: var(--fc-secondary);
+      border: 1px solid var(--fc-border);
+      border-radius: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--fc-foreground);
+    }
+
+    .filter-chip button {
+      background: none;
+      border: none;
+      color: var(--fc-foreground);
+      cursor: pointer;
+      padding: 0;
+      margin-left: 0.25rem;
+      opacity: 0.7;
+    }
+
+    .filter-chip button:hover {
+      opacity: 1;
+    }
+
+    .filter-mobile-toggle {
+      display: none;
+    }
+
+    .filter-mobile-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1040;
+    }
+
+    .filter-mobile-panel {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--fc-card);
+      border-top: 1px solid var(--fc-border);
+      border-radius: 1rem 1rem 0 0;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1050;
+      padding: 1.5rem;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .filter-mobile-panel::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .filter-mobile-panel::-webkit-scrollbar-track {
+      background: var(--fc-secondary);
+      border-radius: 4px;
+    }
+
+    .filter-mobile-panel::-webkit-scrollbar-thumb {
+      background: var(--fc-border);
+      border-radius: 4px;
+      border: 1px solid var(--fc-secondary);
+    }
+
+    .filter-mobile-panel::-webkit-scrollbar-thumb:hover {
+      background: var(--fc-muted-foreground);
+    }
+
+    .filter-mobile-panel {
+      scrollbar-width: thin;
+      scrollbar-color: var(--fc-border) var(--fc-secondary);
+    }
+
+    @media (max-width: 991.98px) {
+      .filter-sidebar {
+        display: none;
+      }
+
+      .filter-mobile-toggle {
+        display: block;
+      }
+
+      .filter-mobile-overlay.show {
+        display: block;
+      }
+
+      .filter-mobile-panel.show {
+        display: block;
+        transform: translateY(0);
+      }
+    }
+
+    .form-check-input:checked {
+      background-color: var(--fc-primary);
+      border-color: var(--fc-primary);
+    }
+
+    .form-select {
+      background-color: var(--fc-secondary);
+      border-color: var(--fc-border);
+      color: var(--fc-foreground);
+    }
+
+    .form-control {
+      background-color: var(--fc-secondary);
+      border-color: var(--fc-border);
+      color: var(--fc-foreground);
+    }
+
+    .form-control:focus {
+      background-color: var(--fc-secondary);
+      border-color: var(--fc-primary);
+      color: var(--fc-foreground);
+    }
+  </style>
+{% endblock css %}
+{% block title %}
+  {% trans "Discover Kits" %}
+{% endblock title %}
+{% block content %}
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Filter Sidebar - Desktop -->
+      <div class="col-lg-2 col-xl-2 d-none d-lg-block ps-lg-0">
+        <div class="filter-sidebar">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">{% trans "Filters" %}</h5>
+            {% if filter_count > 0 %}
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">
+                {% trans "Clear All" %}
+              </button>
+            {% endif %}
+          </div>
+          <form method="get" action="{% url 'collection:feed' %}" id="filterForm">
+            <!-- Search -->
+            <div class="filter-section">
+              <h6>{% trans "Search" %}</h6>
+              <input type="text"
+                     name="q"
+                     class="form-control"
+                     placeholder="{% trans 'Search kits...' %}"
+                     value="{{ active_filters.q|default:'' }}" />
+            </div>
+            <!-- Sort -->
+            <div class="filter-section">
+              <h6>{% trans "Sort By" %}</h6>
+              <select name="sort" class="form-select">
+                <option value="random" {% if sort_type == 'random' %}selected{% endif %}>{% trans "Random" %}</option>
+                <option value="newest" {% if sort_type == 'newest' %}selected{% endif %}>{% trans "Newest" %}</option>
+                <option value="popular" {% if sort_type == 'popular' %}selected{% endif %}>{% trans "Popular" %}</option>
+              </select>
+            </div>
+            <!-- Country -->
+            <div class="filter-section">
+              <h6>{% trans "Country" %}</h6>
+              <input type="text"
+                     name="country"
+                     class="form-control"
+                     placeholder="{% trans 'Country code (e.g., ES, GB)' %}"
+                     value="{{ active_filters.country|default:'' }}" />
+            </div>
+            <!-- Club -->
+            <div class="filter-section">
+              <h6>{% trans "Club" %}</h6>
+              <input type="text"
+                     name="club"
+                     class="form-control"
+                     placeholder="{% trans 'Search club name...' %}"
+                     value="{{ active_filters.club|default:'' }}" />
+            </div>
+            <!-- Brand -->
+            <div class="filter-section">
+              <h6>{% trans "Brand" %}</h6>
+              <input type="text"
+                     name="brand"
+                     class="form-control"
+                     placeholder="{% trans 'Search brand name...' %}"
+                     value="{{ active_filters.brand|default:'' }}" />
+            </div>
+            <!-- Season -->
+            <div class="filter-section">
+              <h6>{% trans "Season" %}</h6>
+              <input type="text"
+                     name="season"
+                     class="form-control"
+                     placeholder="{% trans 'e.g., 2020-21' %}"
+                     value="{{ active_filters.season|default:'' }}" />
+            </div>
+            <!-- Competition -->
+            <div class="filter-section">
+              <h6>{% trans "Competition" %}</h6>
+              <input type="text"
+                     name="competition"
+                     class="form-control"
+                     placeholder="{% trans 'Search competition name...' %}"
+                     value="{{ active_filters.competition|default:'' }}" />
+            </div>
+            <!-- Kit Type -->
+            <div class="filter-section">
+              <h6>{% trans "Kit Type" %}</h6>
+              <input type="text"
+                     name="kit_type"
+                     class="form-control"
+                     placeholder="{% trans 'e.g., Home, Away' %}"
+                     value="{{ active_filters.kit_type|default:'' }}" />
+            </div>
+            <!-- Category -->
+            <div class="filter-section">
+              <h6>{% trans "Category" %}</h6>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="match"
+                       id="cat_match"
+                       {% if active_filters.category == 'match' %}checked{% endif %} />
+                <label class="form-check-label" for="cat_match">{% trans "Match" %}</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="training"
+                       id="cat_training"
+                       {% if active_filters.category == 'training' %}checked{% endif %} />
+                <label class="form-check-label" for="cat_training">{% trans "Training" %}</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="prematch"
+                       id="cat_prematch"
+                       {% if active_filters.category == 'prematch' %}checked{% endif %} />
+                <label class="form-check-label" for="cat_prematch">{% trans "Pre-match" %}</label>
+              </div>
+            </div>
+            <!-- Main Color -->
+            <div class="filter-section">
+              <h6>{% trans "Main Color" %}</h6>
+              {% include "cotton/color_selector.html" with name="main_color" label="Main Color" color_choices=color_choices_json data_selected=active_filters.main_color|default:'' hide_label=True %}
+            </div>
+            <!-- Secondary Colors -->
+            <div class="filter-section">
+              <h6>{% trans "Secondary Colors" %}</h6>
+              {% include "cotton/color_selector.html" with name="secondary_color" label="Secondary Colors" color_choices=color_choices_json data_multiple="true" data_selected=active_filters.secondary_color|default:'' hide_label=True %}
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mt-3">{% trans "Apply Filters" %}</button>
+          </form>
+        </div>
+      </div>
+      <!-- Main Content -->
+      <div class="col-lg-10 col-xl-10">
+        <!-- Mobile Filter Toggle -->
+        <button type="button" class="btn btn-outline-primary filter-mobile-toggle mb-3 d-lg-none" onclick="toggleMobileFilters()">
+          <i class="bi bi-funnel"></i> {% trans "Filters" %}
+          {% if filter_count > 0 %}<span class="badge bg-primary ms-2">{{ filter_count }}</span>{% endif %}
+        </button>
+        <!-- Mobile Filter Overlay -->
+        <div class="filter-mobile-overlay d-lg-none" id="mobileFilterOverlay" onclick="toggleMobileFilters()"></div>
+        <div class="filter-mobile-panel d-lg-none" id="mobileFilterPanel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">{% trans "Filters" %}</h5>
+            <button type="button" class="btn-close btn-close-white" onclick="toggleMobileFilters()"></button>
+          </div>
+          <form method="get" action="{% url 'collection:feed' %}" id="mobileFilterForm">
+            <!-- Same filter fields as desktop -->
+            <div class="filter-section">
+              <h6>{% trans "Search" %}</h6>
+              <input type="text"
+                     name="q"
+                     class="form-control"
+                     placeholder="{% trans 'Search kits...' %}"
+                     value="{{ active_filters.q|default:'' }}" />
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Sort By" %}</h6>
+              <select name="sort" class="form-select">
+                <option value="random" {% if sort_type == 'random' %}selected{% endif %}>{% trans "Random" %}</option>
+                <option value="newest" {% if sort_type == 'newest' %}selected{% endif %}>{% trans "Newest" %}</option>
+                <option value="popular" {% if sort_type == 'popular' %}selected{% endif %}>{% trans "Popular" %}</option>
+              </select>
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Country" %}</h6>
+              <input type="text"
+                     name="country"
+                     class="form-control"
+                     placeholder="{% trans 'Country code' %}"
+                     value="{{ active_filters.country|default:'' }}" />
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Club" %}</h6>
+              <input type="text"
+                     name="club"
+                     class="form-control"
+                     placeholder="{% trans 'Search club name...' %}"
+                     value="{{ active_filters.club|default:'' }}" />
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Brand" %}</h6>
+              <input type="text"
+                     name="brand"
+                     class="form-control"
+                     placeholder="{% trans 'Search brand name...' %}"
+                     value="{{ active_filters.brand|default:'' }}" />
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Season" %}</h6>
+              <input type="text"
+                     name="season"
+                     class="form-control"
+                     placeholder="{% trans 'e.g., 2020-21' %}"
+                     value="{{ active_filters.season|default:'' }}" />
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Main Color" %}</h6>
+              {% include "cotton/color_selector.html" with name="main_color" label="Main Color" color_choices=color_choices_json data_selected=active_filters.main_color|default:'' hide_label=True %}
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Secondary Colors" %}</h6>
+              {% include "cotton/color_selector.html" with name="secondary_color" label="Secondary Colors" color_choices=color_choices_json data_multiple="true" data_selected=active_filters.secondary_color|default:'' hide_label=True %}
+            </div>
+            <div class="d-flex gap-2 mt-3">
+              <button type="submit" class="btn btn-primary flex-grow-1">{% trans "Apply" %}</button>
+              <button type="button" class="btn btn-outline-secondary" onclick="clearAllFilters()">{% trans "Clear" %}</button>
+            </div>
+          </form>
+        </div>
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 class="h3 mb-0">{% trans "Discover Kits" %}</h1>
+        </div>
+        <!-- Filter Chips -->
+        {% if active_filters %}
+          <div class="filter-chips mb-4" style="margin-bottom: 2.5rem !important;">
+            {% if active_filters.q %}
+              <div class="filter-chip">
+                <span>{% trans "Search" %}: {{ active_filters.q }}</span>
+                <button type="button" onclick="removeFilter('q')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.country %}
+              <div class="filter-chip">
+                <span>{% trans "Country" %}: {{ active_filters.country }}</span>
+                <button type="button" onclick="removeFilter('country')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.club %}
+              <div class="filter-chip">
+                <span>{% trans "Club" %}: {{ filter_display_names.club|default:active_filters.club }}</span>
+                <button type="button" onclick="removeFilter('club')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.brand %}
+              <div class="filter-chip">
+                <span>{% trans "Brand" %}: {{ filter_display_names.brand|default:active_filters.brand }}</span>
+                <button type="button" onclick="removeFilter('brand')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.competition %}
+              <div class="filter-chip">
+                <span>{% trans "Competition" %}: {{ active_filters.competition }}</span>
+                <button type="button" onclick="removeFilter('competition')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.season %}
+              <div class="filter-chip">
+                <span>{% trans "Season" %}: {{ active_filters.season }}</span>
+                <button type="button" onclick="removeFilter('season')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.kit_type %}
+              <div class="filter-chip">
+                <span>{% trans "Kit Type" %}: {{ active_filters.kit_type }}</span>
+                <button type="button" onclick="removeFilter('kit_type')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.category %}
+              <div class="filter-chip">
+                <span>{% trans "Category" %}: {{ active_filters.category }}</span>
+                <button type="button" onclick="removeFilter('category')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.main_color %}
+              <div class="filter-chip">
+                <span>{% trans "Main Color" %}: {{ filter_display_names.main_color|default:active_filters.main_color }}</span>
+                <button type="button" onclick="removeFilter('main_color')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if active_filters.secondary_color %}
+              <div class="filter-chip">
+                <span>{% trans "Secondary Colors" %}: {{ filter_display_names.secondary_color|join:', '|default:active_filters.secondary_color }}</span>
+                <button type="button" onclick="removeFilter('secondary_color')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
+            {% if filter_count > 1 %}
+              <div class="filter-chip">
+                <button type="button" onclick="clearAllFilters()" class="text-primary">{% trans "Clear All" %}</button>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        <!-- Items Grid -->
+        {% if items %}
+          <div class="row" id="items-grid" style="row-gap: 0.75rem;">
+            {% for item in items %}
+              {% include "cotton/item_card.html" with item=item show_user=True quick_view_enabled=True %}
+            {% endfor %}
+          </div>
+          <!-- Infinite Scroll Trigger -->
+          {% if page_obj.has_next %}
+            <div id="infinite-scroll-trigger" class="text-center py-4" data-page-number="{{ page_obj.number }}" data-has-next="true">
+              <div class="spinner-border text-primary" role="status" id="loading-spinner" style="display: none;">
+                <span class="visually-hidden">{% trans "Loading..." %}</span>
+              </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <!-- Empty State -->
+          <div class="text-center py-5">
+            <i class="bi bi-collection text-muted empty-state-icon" style="font-size: 4rem;"></i>
+            <h3 class="mt-3 text-muted">{% trans "No kits found" %}</h3>
+            <p class="text-muted mb-4">{% trans "Try adjusting your filters to see more results." %}</p>
+            <a href="{% url 'collection:feed' %}" class="btn btn-primary">{% trans "Clear Filters" %}</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% include "cotton/quick_view_modal.html" %}
+  <script>
+    function toggleMobileFilters() {
+      const overlay = document.getElementById('mobileFilterOverlay');
+      const panel = document.getElementById('mobileFilterPanel');
+      if (overlay && panel) {
+        const isShowing = overlay.classList.contains('show');
+        if (isShowing) {
+          overlay.classList.remove('show');
+          panel.classList.remove('show');
+          document.body.style.overflow = '';
+        } else {
+          overlay.classList.add('show');
+          panel.classList.add('show');
+          document.body.style.overflow = 'hidden';
+        }
+      }
+    }
+
+    function removeFilter(filterName) {
+      const url = new URL(window.location);
+      url.searchParams.delete(filterName);
+      url.searchParams.delete('hidden_' + filterName);
+      if (filterName === 'competition' || filterName === 'secondary_color') {
+        url.searchParams.delete(filterName + '[]');
+      }
+
+      const cleanParams = new URLSearchParams();
+      for (const [key, value] of url.searchParams.entries()) {
+        if (!key || key.startsWith('hidden_')) {
+          continue;
+        }
+        const trimmedValue = value ? value.toString().trim() : '';
+        if (trimmedValue && trimmedValue !== 'null' && trimmedValue !== 'undefined') {
+          cleanParams.append(key, trimmedValue);
+        }
+      }
+
+      const cleanQueryString = cleanParams.toString();
+      const cleanUrl = url.pathname + (cleanQueryString ? '?' + cleanQueryString : '');
+      window.location.href = cleanUrl;
+    }
+
+    function clearAllFilters() {
+      window.location.href = "{% url 'collection:feed' %}";
+    }
+
+    function cleanFormData(form) {
+      const cleanData = {};
+
+      const allInputs = form.querySelectorAll('input, select, textarea');
+
+      for (const element of allInputs) {
+        const name = element.name;
+        if (!name || name.startsWith('hidden_')) {
+          continue;
+        }
+
+        if (element.type === 'checkbox') {
+          if (element.checked && element.value) {
+            const trimmedValue = element.value.toString().trim();
+            if (trimmedValue && trimmedValue !== 'null' && trimmedValue !== 'undefined') {
+              if (name in cleanData) {
+                if (Array.isArray(cleanData[name])) {
+                  cleanData[name].push(trimmedValue);
+                } else {
+                  cleanData[name] = [cleanData[name], trimmedValue];
+                }
+              } else {
+                cleanData[name] = trimmedValue;
+              }
+            }
+          }
+          continue;
+        }
+
+        if (element.type === 'radio') {
+          if (element.checked && element.value) {
+            const trimmedValue = element.value.toString().trim();
+            if (trimmedValue && trimmedValue !== 'null' && trimmedValue !== 'undefined') {
+              cleanData[name] = trimmedValue;
+            }
+          }
+          continue;
+        }
+
+        if (element.tagName === 'SELECT') {
+          if (element.multiple) {
+            const selectedOptions = Array.from(element.selectedOptions);
+            if (selectedOptions.length > 0) {
+              const selectedValues = selectedOptions
+                .map(opt => opt.value.trim())
+                .filter(v => v && v !== 'null' && v !== 'undefined');
+              if (selectedValues.length > 0) {
+                cleanData[name] = selectedValues;
+              }
+            }
+          } else {
+            const value = element.value ? element.value.toString().trim() : '';
+            if (value && value !== 'null' && value !== 'undefined') {
+              cleanData[name] = value;
+            }
+          }
+          continue;
+        }
+
+        if (element.type === 'text' || element.type === 'search' || !element.type) {
+          const value = element.value ? element.value.toString().trim() : '';
+          if (value && value !== 'null' && value !== 'undefined') {
+            cleanData[name] = value;
+          }
+          continue;
+        }
+      }
+
+      return cleanData;
+    }
+
+    function buildCleanUrl(baseUrl, params) {
+      const urlParams = new URLSearchParams();
+
+      for (const [key, value] of Object.entries(params)) {
+        if (!key || key.startsWith('hidden_')) {
+          continue;
+        }
+
+        if (value === null || value === undefined) {
+          continue;
+        }
+
+        if (Array.isArray(value)) {
+          const nonEmptyValues = value
+            .filter(v => v !== null && v !== undefined && v !== '')
+            .map(v => v.toString().trim())
+            .filter(v => v && v !== 'null' && v !== 'undefined');
+          if (nonEmptyValues.length > 0) {
+            nonEmptyValues.forEach(v => {
+              urlParams.append(key, v);
+            });
+          }
+        } else {
+          const stringValue = value.toString().trim();
+          if (stringValue && stringValue !== 'null' && stringValue !== 'undefined') {
+            urlParams.set(key, stringValue);
+          }
+        }
+      }
+
+      const queryString = urlParams.toString();
+      return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+    }
+
+    function syncColorSelectors() {
+      const forms = [document.getElementById('filterForm'), document.getElementById('mobileFilterForm')];
+
+      forms.forEach(form => {
+        if (!form) return;
+
+        const mainColorSelect = document.getElementById('id_main_color');
+        if (mainColorSelect) {
+          const mainColorValue = mainColorSelect.value ? mainColorSelect.value.trim() : '';
+          if (mainColorValue) {
+            let existingInput = form.querySelector('input[name="main_color"]');
+            if (!existingInput) {
+              existingInput = document.createElement('input');
+              existingInput.type = 'hidden';
+              existingInput.name = 'main_color';
+              form.appendChild(existingInput);
+            }
+            existingInput.value = mainColorValue;
+          } else {
+            const existingInput = form.querySelector('input[name="main_color"]');
+            if (existingInput) {
+              existingInput.remove();
+            }
+          }
+        }
+
+        const secondaryColorSelect = document.getElementById('id_secondary_color');
+        if (secondaryColorSelect) {
+          let value = '';
+          if (secondaryColorSelect.multiple) {
+            const selected = Array.from(secondaryColorSelect.selectedOptions)
+              .map(opt => opt.value.trim())
+              .filter(v => v);
+            value = selected.join(',');
+          } else {
+            value = secondaryColorSelect.value ? secondaryColorSelect.value.trim() : '';
+          }
+          if (value) {
+            let existingInput = form.querySelector('input[name="secondary_color"]');
+            if (!existingInput) {
+              existingInput = document.createElement('input');
+              existingInput.type = 'hidden';
+              existingInput.name = 'secondary_color';
+              form.appendChild(existingInput);
+            }
+            existingInput.value = value;
+          } else {
+            const existingInput = form.querySelector('input[name="secondary_color"]');
+            if (existingInput) {
+              existingInput.remove();
+            }
+          }
+        }
+      });
+
+      return true;
+    }
+
+    function cleanUrlOnLoad() {
+      const url = new URL(window.location);
+      const cleanParams = new URLSearchParams();
+      let hasChanges = false;
+
+      for (const [key, value] of url.searchParams.entries()) {
+        if (!key || key.startsWith('hidden_')) {
+          hasChanges = true;
+          continue;
+        }
+        const trimmedValue = value ? value.toString().trim() : '';
+        if (trimmedValue && trimmedValue !== 'null' && trimmedValue !== 'undefined') {
+          cleanParams.append(key, trimmedValue);
+        } else {
+          hasChanges = true;
+        }
+      }
+
+      if (hasChanges) {
+        const cleanQueryString = cleanParams.toString();
+        const cleanUrl = url.pathname + (cleanQueryString ? '?' + cleanQueryString : '');
+        if (cleanUrl !== window.location.pathname + window.location.search) {
+          window.history.replaceState({}, '', cleanUrl);
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      cleanUrlOnLoad();
+
+      const filterForm = document.getElementById('filterForm');
+      const mobileFilterForm = document.getElementById('mobileFilterForm');
+
+      function setupCategoryCheckboxes(form) {
+        const categoryCheckboxes = form.querySelectorAll('input[type="checkbox"][name="category"]');
+        categoryCheckboxes.forEach(checkbox => {
+          checkbox.addEventListener('change', function() {
+            if (this.checked) {
+              categoryCheckboxes.forEach(cb => {
+                if (cb !== this) {
+                  cb.checked = false;
+                }
+              });
+            }
+          });
+        });
+      }
+
+      function handleFormSubmit(e) {
+        e.preventDefault();
+        syncColorSelectors();
+
+        const form = e.target;
+        const formData = cleanFormData(form);
+
+        const sortSelect = form.querySelector('select[name="sort"]');
+        if (sortSelect && sortSelect.value && sortSelect.value.trim() !== '') {
+          formData.sort = sortSelect.value.trim();
+        } else if (formData.sort && formData.sort.trim() === '') {
+          delete formData.sort;
+        }
+
+        const categoryCheckboxes = form.querySelectorAll('input[type="checkbox"][name="category"]:checked');
+        if (categoryCheckboxes.length > 0) {
+          const checkedCategories = Array.from(categoryCheckboxes).map(cb => cb.value.trim()).filter(v => v);
+          if (checkedCategories.length > 0) {
+            formData.category = checkedCategories[0];
+          } else {
+            delete formData.category;
+          }
+        } else {
+          delete formData.category;
+        }
+
+        const baseUrl = form.action;
+        const cleanUrl = buildCleanUrl(baseUrl, formData);
+
+        window.location.href = cleanUrl;
+      }
+
+      if (filterForm) {
+        setupCategoryCheckboxes(filterForm);
+        filterForm.addEventListener('submit', handleFormSubmit);
+        const sortSelect = filterForm.querySelector('select[name="sort"]');
+        if (sortSelect) {
+          sortSelect.addEventListener('change', function() {
+            filterForm.dispatchEvent(new Event('submit'));
+          });
+        }
+      }
+      if (mobileFilterForm) {
+        setupCategoryCheckboxes(mobileFilterForm);
+        mobileFilterForm.addEventListener('submit', handleFormSubmit);
+        const sortSelectMobile = mobileFilterForm.querySelector('select[name="sort"]');
+        if (sortSelectMobile) {
+          sortSelectMobile.addEventListener('change', function() {
+            mobileFilterForm.dispatchEvent(new Event('submit'));
+          });
+        }
+      }
+    });
+
+    let isLoading = false;
+    let currentPage = {{ page_obj.number|default:1 }};
+    let totalPages = {{ page_obj.paginator.num_pages|default:1 }};
+    const itemsGrid = document.getElementById('items-grid');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    let trigger = document.getElementById('infinite-scroll-trigger');
+
+    function buildQueryString() {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.delete('page');
+
+      const cleanParams = new URLSearchParams();
+      for (const [key, value] of urlParams.entries()) {
+        if (!key || key.startsWith('hidden_')) {
+          continue;
+        }
+        const trimmedValue = value ? value.toString().trim() : '';
+        if (trimmedValue && trimmedValue !== 'null' && trimmedValue !== 'undefined') {
+          cleanParams.append(key, trimmedValue);
+        }
+      }
+
+      return cleanParams.toString();
+    }
+
+    function loadMoreItems() {
+      if (isLoading || currentPage >= totalPages) {
+        console.log('Skipping load: isLoading=', isLoading, 'currentPage=', currentPage, 'totalPages=', totalPages);
+        return;
+      }
+
+      console.log('Loading page', currentPage + 1);
+      isLoading = true;
+      if (loadingSpinner) {
+        loadingSpinner.style.display = 'block';
+      }
+      if (trigger) trigger.style.minHeight = '100px';
+
+      const queryString = buildQueryString();
+      const nextPage = currentPage + 1;
+      const url = `{% url 'collection:feed' %}?${queryString}${queryString ? '&' : ''}page=${nextPage}`;
+
+      fetch(url, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'text/html',
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newItemsGrid = doc.getElementById('items-grid');
+
+          if (!newItemsGrid) {
+            console.error('items-grid not found in response');
+            if (trigger) trigger.style.minHeight = 'auto';
+            return;
+          }
+
+          const newItems = newItemsGrid.querySelectorAll('.col-md-6.col-lg-3, .col-md-6');
+          console.log('Found', newItems.length, 'new items');
+
+          if (newItems.length > 0) {
+            newItems.forEach(item => {
+              const clonedItem = item.cloneNode(true);
+              itemsGrid.appendChild(clonedItem);
+            });
+
+            console.log('Inserted', newItems.length, 'items into grid');
+
+            const newTrigger = doc.getElementById('infinite-scroll-trigger');
+            const pageInfo = newTrigger ? newTrigger : doc.querySelector('[data-page-number]');
+
+            if (pageInfo) {
+              currentPage = parseInt(pageInfo.dataset.pageNumber) || nextPage;
+              const hasNext = pageInfo.dataset.hasNext === 'true';
+
+              if (hasNext && newTrigger) {
+                if (trigger) {
+                  trigger.setAttribute('data-page-number', newTrigger.dataset.pageNumber);
+                  trigger.setAttribute('data-has-next', newTrigger.dataset.hasNext);
+                } else {
+                  trigger = newTrigger.cloneNode(true);
+                  if (itemsGrid && itemsGrid.parentElement) {
+                    itemsGrid.parentElement.insertBefore(trigger, itemsGrid.nextSibling);
+                  } else {
+                    itemsGrid.appendChild(trigger);
+                  }
+                  observer.observe(trigger);
+                }
+              } else {
+                if (trigger) {
+                  trigger.remove();
+                  trigger = null;
+                }
+                totalPages = currentPage;
+              }
+            } else {
+              if (trigger) {
+                trigger.remove();
+                trigger = null;
+              }
+              totalPages = currentPage;
+            }
+          } else {
+            console.log('No new items found');
+            if (trigger) {
+              trigger.remove();
+              trigger = null;
+            }
+            totalPages = currentPage;
+          }
+        })
+        .catch(error => {
+          console.error('Error loading more items:', error);
+          if (trigger) trigger.style.minHeight = 'auto';
+          isLoading = false;
+          if (loadingSpinner) loadingSpinner.style.display = 'none';
+        })
+        .finally(() => {
+          isLoading = false;
+          if (loadingSpinner) loadingSpinner.style.display = 'none';
+        });
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !isLoading && currentPage < totalPages) {
+          console.log('Trigger intersecting, loading more items');
+          loadMoreItems();
+        }
+      });
+    }, {
+      rootMargin: '300px'
+    });
+
+    if (trigger) {
+      observer.observe(trigger);
+    }
+  </script>
+{% endblock content %}

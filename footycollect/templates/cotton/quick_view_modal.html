@@ -1,0 +1,152 @@
+{% load static %}
+{% load i18n %}
+
+<div id="quickViewModal"
+     class="quick-view-modal position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+     style="z-index: 1050"
+     onclick="if(event.target === this) closeQuickViewModal()">
+  <div class="quick-view-modal-content p-4 m-4"
+       style="max-height: 90vh;
+              overflow-y: auto;
+              position: relative"
+       onclick="event.stopPropagation()">
+    <div id="quickViewLogosPopup" class="quick-view-logos-popup" style="display: none;"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">{% trans "Quick View" %}</h5>
+      <button type="button" onclick="closeQuickViewModal()" class="btn-close btn-close-white" aria-label="Close"></button>
+    </div>
+    <div id="quickViewModalContent" class="quick-view-content">
+      <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">{% trans "Loading..." %}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  #quickViewModal {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: none !important;
+  }
+
+  #quickViewModal.show {
+    display: flex !important;
+  }
+
+  .quick-view-modal-content {
+    background: var(--fc-card);
+    border: 1px solid var(--fc-border);
+    border-radius: 1.5rem;
+    max-width: 600px;
+    width: 90%;
+    margin: 2rem auto;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .quick-view-logos-popup {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--fc-card);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+  }
+
+  .quick-view-logo {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    height: 40px;
+    width: auto;
+  }
+
+  .quick-view-shield {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+    height: 50px;
+    width: 50px;
+    object-fit: contain;
+  }
+
+  .quick-view-content {
+    padding-top: 1rem;
+  }
+</style>
+<script>
+  function moveLogosToPopup() {
+    const content = document.getElementById('quickViewModalContent');
+    const logosPopup = document.getElementById('quickViewLogosPopup');
+    if (!content || !logosPopup) return;
+
+    const logosData = content.querySelector('.quick-view-logos-data[data-logos="true"]');
+    if (logosData) {
+      const logosHTML = logosData.innerHTML.trim();
+      if (logosHTML && logosHTML.length > 10) {
+        logosPopup.innerHTML = logosHTML;
+        logosPopup.style.display = 'flex';
+        logosData.remove();
+        return true;
+      }
+    }
+
+    if (logosPopup.innerHTML.trim() && logosPopup.innerHTML.trim().length > 20) {
+      logosPopup.style.display = 'flex';
+      return true;
+    }
+    return false;
+  }
+
+  function openQuickView(itemId) {
+    const modal = document.getElementById('quickViewModal');
+    const content = document.getElementById('quickViewModalContent');
+    const logosPopup = document.getElementById('quickViewLogosPopup');
+    if (!modal || !content) return;
+
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    if (logosPopup) logosPopup.style.display = 'none';
+    modal.classList.add('show');
+
+    fetch(`/collection/items/${itemId}/quick-view/`)
+      .then(response => response.text())
+      .then(html => {
+        content.innerHTML = html;
+        setTimeout(moveLogosToPopup, 100);
+      })
+      .catch(error => {
+        console.error('Error loading quick view:', error);
+        content.innerHTML = '<div class="text-center py-4 text-danger">Error loading content</div>';
+      });
+  }
+
+  function closeQuickViewModal() {
+    const modal = document.getElementById('quickViewModal');
+    if (modal) {
+      modal.classList.remove('show');
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeQuickViewModal();
+    }
+  });
+
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target && event.detail.target.id === 'quickViewModalContent') {
+      setTimeout(moveLogosToPopup, 150);
+    }
+  });
+
+  document.body.addEventListener('htmx:load', function(event) {
+    if (event.detail.target && event.detail.target.id === 'quickViewModalContent') {
+      setTimeout(moveLogosToPopup, 150);
+    }
+  });
+</script>

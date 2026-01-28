@@ -1,12 +1,12 @@
 {% load list_filters %}
 
-<c-vars color_choices data_selected data_multiple name label />
+<c-vars color_choices data_selected data_multiple name label hide_label />
 {% with color_choices_parsed=color_choices|parse_json %}
   <div class="mb-3 color-selector-wrapper"
        id="color-selector-{{ name }}"
        data-selector-name="{{ name }}"
        data-selector-multiple="{{ data_multiple|default:'false' }}">
-    <label for="id_{{ name }}" class="form-label">{{ label }}</label>
+    {% if not hide_label %}<label for="id_{{ name }}" class="form-label">{{ label }}</label>{% endif %}
     {% if data_multiple == "true" %}
       <select id="id_{{ name }}"
               name="{{ name }}"
@@ -180,6 +180,9 @@
   <style>
     .color-selector-wrapper {
       margin-bottom: 1rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .color-selector-box {
@@ -188,12 +191,29 @@
       background-color: var(--fc-secondary);
       padding: 0.75rem;
       margin-top: 0.5rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .filter-sidebar .color-selector-box {
+      /* Asegura que nada se salga visualmente del recuadro */
+      overflow: hidden;
     }
 
     .color-selector-container {
       display: grid;
       grid-template-columns: repeat(9, 1fr);
       gap: 6px;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .filter-sidebar .color-selector-container {
+      /* 5 columnas de color, sin desbordar el recuadro */
+      grid-template-columns: repeat(5, auto);
+      justify-content: flex-start;
+      gap: 4px;
     }
 
     @media (max-width: 992px) {
@@ -211,11 +231,22 @@
     .color-option {
       width: 30px;
       height: 30px;
+      min-width: 30px;
+      max-width: 30px;
       border-radius: 50%;
       cursor: pointer;
       transition: all 0.2s;
       position: relative;
       border: 2px solid rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .filter-sidebar .color-option {
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      max-width: 22px;
     }
 
     .color-option:hover {

@@ -3,10 +3,12 @@ from django.urls import path
 
 from .views import (
     DropzoneTestView,
+    FeedView,
     ItemCreateView,
     ItemDeleteView,
     ItemDetailView,
     ItemListView,
+    ItemQuickViewView,
     ItemUpdateView,
     JerseyCreateView,
     JerseyFKAPICreateView,
@@ -34,6 +36,8 @@ app_name = "collection"
 urlpatterns = [
     # Home and test views
     path("", home, name="home"),
+    # Feed
+    path("feed/", FeedView.as_view(), name="feed"),
     path("test/country/", demo_country_view, name="test_country"),
     path("test/brand/", demo_brand_view, name="test_brand"),
     path("test/dropzone/", test_dropzone, name="test_dropzone"),
@@ -41,6 +45,7 @@ urlpatterns = [
     # Item CRUD operations
     path("items/", ItemListView.as_view(), name="item_list"),
     path("items/<int:pk>/", ItemDetailView.as_view(), name="item_detail"),
+    path("items/<int:pk>/quick-view/", ItemQuickViewView.as_view(), name="item_quick_view"),
     path("items/create/", ItemCreateView.as_view(), name="item_create"),
     path("items/<int:pk>/update/", ItemUpdateView.as_view(), name="item_update"),
     path("items/<int:pk>/delete/", ItemDeleteView.as_view(), name="item_delete"),

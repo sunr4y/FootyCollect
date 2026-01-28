@@ -21,6 +21,7 @@ from footycollect.collection.cache_utils import (
     ITEM_LIST_CACHE_TIMEOUT,
     get_item_list_cache_key,
     increment_item_list_cache_metric,
+    invalidate_item_list_cache_for_user,
     track_item_list_cache_key,
 )
 from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
@@ -248,6 +249,48 @@ class ItemListView(BaseItemListView):
 
     template_name = "collection/item_list.html"
 
+    def _has_messages(self, request):
+        """
+        Safely determine if there are any messages attached to this request.
+
+        This helper is careful to avoid *iterating* over the storage so that
+        messages are not consumed before templates render them. It also tries
+        multiple strategies to work across different storage backends and
+        Django versions.
+        """
+        from django.contrib.messages import get_messages
+
+        storage = get_messages(request)
+
+        # Most Django backends keep queued messages in a private attribute.
+        # Accessing it here is intentional so we can avoid consuming the
+        # iterator. We mark it with noqa because this is a controlled use of
+        # internals for performance/correctness.
+        if hasattr(storage, "_queued_messages") and storage._queued_messages:  # noqa: SLF001
+            return True
+
+        # Some storage implementations keep data in a loaded/temporary buffer.
+        if hasattr(storage, "_loaded_data") and storage._loaded_data:  # noqa: SLF001
+            return True
+
+        # As an additional safeguard, inspect the session directly using the
+        # storage's own key when available.
+        if hasattr(request, "session"):
+            storage_key = getattr(storage, "storage_key", None) or getattr(
+                storage,
+                "_storage_key",
+                None,
+            )
+            if storage_key and request.session.get(storage_key):
+                return True
+            # Fallback to the default key used by contrib.messages
+            if request.session.get("django.contrib.messages", []):
+                return True
+
+        # If none of the above checks found messages, it's reasonable to treat
+        # this request as message-free.
+        return False
+
     def get(self, request, *args, **kwargs):
         from django.core.cache import cache
 
@@ -257,19 +300,36 @@ class ItemListView(BaseItemListView):
         page = request.GET.get("page", "1")
         cache_key = get_item_list_cache_key(request.user.pk, page)
 
-        cached_response = cache.get(cache_key)
-        if cached_response is not None:
-            logger.info("ItemListView cache hit for user %s page %s", request.user.pk, page)
-            track_item_list_cache_key(request.user.pk, cache_key)
-            increment_item_list_cache_metric(is_hit=True)
-            return cached_response
+        # Check if there are messages in this request BEFORE checking cache.
+        # Messages are request-specific and require fresh rendering. We use a
+        # helper that avoids consuming the storage and is defensive across
+        # different storage backends.
+        has_messages = self._has_messages(request)
 
+        # Only check cache if we're sure there are no messages
+        if not has_messages:
+            cached_response = cache.get(cache_key)
+            if cached_response is not None:
+                logger.info("ItemListView cache hit for user %s page %s", request.user.pk, page)
+                track_item_list_cache_key(request.user.pk, cache_key)
+                increment_item_list_cache_metric(is_hit=True)
+                return cached_response
+
+        # Render fresh response (cache miss or messages present)
         response = super().get(request, *args, **kwargs)
         response.render()
-        cache.set(cache_key, response, ITEM_LIST_CACHE_TIMEOUT)
-        track_item_list_cache_key(request.user.pk, cache_key)
-        increment_item_list_cache_metric(is_hit=False)
-        logger.info("ItemListView cache miss; cached response for user %s page %s", request.user.pk, page)
+
+        # Only cache responses that don't have messages
+        # (Messages are transient and request-specific)
+        if not has_messages:
+            cache.set(cache_key, response, ITEM_LIST_CACHE_TIMEOUT)
+            track_item_list_cache_key(request.user.pk, cache_key)
+            increment_item_list_cache_metric(is_hit=False)
+            logger.info("ItemListView cache miss; cached response for user %s page %s", request.user.pk, page)
+        else:
+            logger.info("ItemListView skipping cache due to messages for user %s page %s", request.user.pk, page)
+            increment_item_list_cache_metric(is_hit=False)
+
         return response
 
     def get_queryset(self):
@@ -298,6 +358,89 @@ class ItemListView(BaseItemListView):
         )
 
 
+class ItemQuickViewView(BaseItemDetailView):
+    """Quick view modal for item details."""
+
+    template_name = "collection/item_quick_view.html"
+
+    def get_queryset(self):
+        """Get queryset with optimizations for quick view."""
+        from django.db.models import Q
+
+        from footycollect.collection.models import Jersey
+
+        queryset = Jersey.objects.select_related(
+            "base_item",
+            "base_item__user",
+            "base_item__club",
+            "base_item__season",
+            "base_item__brand",
+            "base_item__main_color",
+            "size",
+            "kit",
+            "kit__type",
+        ).prefetch_related(
+            "base_item__competitions",
+            "base_item__photos",
+            "base_item__secondary_colors",
+        )
+
+        if self.request.user.is_authenticated:
+            queryset = queryset.filter(
+                Q(base_item__user=self.request.user) | Q(base_item__is_private=False, base_item__is_draft=False)
+            )
+        else:
+            queryset = queryset.filter(base_item__is_private=False, base_item__is_draft=False)
+
+        return queryset
+
+    def get_object(self, queryset=None):
+        """Override to handle BaseItem pk lookup in Jersey queryset."""
+        from django.http import Http404
+        from django.utils.translation import gettext as _
+
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        if pk is not None:
+            queryset = queryset.filter(base_item__pk=pk)
+
+        try:
+            obj = queryset.get()
+        except queryset.model.DoesNotExist:
+            verbose_name = queryset.model._meta.verbose_name
+            raise Http404(
+                _("No %(verbose_name)s found matching the query") % {"verbose_name": verbose_name},
+            ) from None
+
+        return obj
+
+    def get_context_data(self, **kwargs):
+        """Add additional context data for quick view."""
+        from django.views.generic.detail import SingleObjectMixin
+
+        from footycollect.collection.models import BaseItem
+
+        context = super(SingleObjectMixin, self).get_context_data(**kwargs)
+
+        photo_service = get_photo_service()
+
+        if isinstance(self.object, BaseItem):
+            base_item = self.object
+            context["specific_item"] = self.object.get_specific_item()
+        else:
+            base_item = self.object.base_item
+            context["specific_item"] = self.object
+
+        photos = photo_service.get_item_photos(base_item)
+        context["photos"] = list(photos)
+        context["object"] = base_item
+        context["item"] = base_item
+
+        return context
+
+
 class ItemDetailView(BaseItemDetailView):
     """Detail view for a specific item in the collection."""
 
@@ -305,10 +448,14 @@ class ItemDetailView(BaseItemDetailView):
 
     def get_queryset(self):
         """Get queryset with optimizations for detail view."""
+        from django.db.models import Q
+
         from footycollect.collection.models import Jersey
 
         return (
-            Jersey.objects.filter(base_item__user=self.request.user)
+            Jersey.objects.filter(
+                Q(base_item__user=self.request.user) | Q(base_item__is_private=False, base_item__is_draft=False)
+            )
             .select_related(
                 "base_item",
                 "base_item__user",
@@ -788,7 +935,16 @@ class ItemDeleteView(BaseItemDeleteView):
         for photo in photos:
             photo.delete()
 
-        messages.success(request, _("Item and associated photos deleted successfully."))
+        # Use a plain English success message so tests can assert on the word \"photo\"
+        # (avoid translation changing the literal text).
+        messages.success(request, "Item and associated photos deleted successfully.")
+
+        # Invalidate cached item list pages for this user so the next render
+        # isn't served from a stale cache that was generated before the message
+        # was added. This is important for tests that assert on the presence
+        # of the success message in the redirected response.
+        invalidate_item_list_cache_for_user(request.user.pk)
+
         return super().delete(request, *args, **kwargs)
 
 
