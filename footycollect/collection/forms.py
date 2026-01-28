@@ -17,91 +17,17 @@ from .forms_base import (
     ItemTypeForm,
     ItemTypeSpecificFormMixin,
 )
+from .forms_items import (
+    OtherItemForm,
+    OuterwearForm,
+    PantsForm,
+    ShortsForm,
+    TrackSuitForm,
+)
 from .forms_jersey_base import JerseyForm
 from .forms_jersey_fkapi import JerseyFKAPIForm
-from .models import BaseItem
 
 MAX_PHOTOS = 10
-
-
-class OuterwearForm(ItemTypeSpecificFormMixin, forms.ModelForm):
-    class Meta:
-        model = BaseItem
-        fields = [
-            "name",
-            "club",
-            "season",
-            "brand",
-            "condition",
-            "description",
-            "competitions",
-            "main_color",
-            "secondary_colors",
-        ]
-
-
-class ShortsForm(ItemTypeSpecificFormMixin, forms.ModelForm):
-    class Meta:
-        model = BaseItem
-        fields = [
-            "name",
-            "club",
-            "season",
-            "brand",
-            "condition",
-            "description",
-            "competitions",
-            "main_color",
-            "secondary_colors",
-        ]
-
-
-class TrackSuitForm(ItemTypeSpecificFormMixin, forms.ModelForm):
-    class Meta:
-        model = BaseItem
-        fields = [
-            "name",
-            "club",
-            "season",
-            "brand",
-            "condition",
-            "description",
-            "competitions",
-            "main_color",
-            "secondary_colors",
-        ]
-
-
-class PantsForm(ItemTypeSpecificFormMixin, forms.ModelForm):
-    class Meta:
-        model = BaseItem
-        fields = [
-            "name",
-            "club",
-            "season",
-            "brand",
-            "condition",
-            "description",
-            "competitions",
-            "main_color",
-            "secondary_colors",
-        ]
-
-
-class OtherItemForm(ItemTypeSpecificFormMixin, forms.ModelForm):
-    class Meta:
-        model = BaseItem
-        fields = [
-            "name",
-            "club",
-            "season",
-            "brand",
-            "condition",
-            "description",
-            "competitions",
-            "main_color",
-            "secondary_colors",
-        ]
 
 
 class ItemPhotosForm(forms.Form):
