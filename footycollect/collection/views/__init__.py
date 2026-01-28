@@ -5,6 +5,7 @@ This package contains all the views for the collection app, organized by functio
 """
 
 # Import all views explicitly to avoid import issues
+from .feed_views import FeedView
 from .item_views import (
     DropzoneTestView,
     ItemCreateView,
@@ -32,6 +33,8 @@ from .photo_views import (
 )
 
 __all__ = [
+    # Feed views
+    "FeedView",
     # Item views
     "ItemListView",
     "ItemDetailView",

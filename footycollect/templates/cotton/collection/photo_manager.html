@@ -115,7 +115,7 @@
           },
 
           async uploadPhoto(file, order) {
-            // Crear un objeto temporal para la foto mientras se sube
+            // Create a temporary object for the photo while uploading
             const tempPhoto = {
               file: file,
               uploading: true,
@@ -215,7 +215,7 @@
               try {
                 await this.uploadPhoto(file, this.photos.length);
               } catch (error) {
-                alert(`Error al subir ${file.name}: ${error.message}`);
+                alert(`Error uploading ${file.name}: ${error.message}`);
               }
             }
           },

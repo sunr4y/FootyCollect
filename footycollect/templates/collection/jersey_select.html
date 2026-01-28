@@ -252,7 +252,7 @@
 {% endblock css %}
 {% block inline_javascript %}
   <script>
-    // Función de debounce para retrasar las búsquedas
+    // Function to debounce the searches
     function debounce(func, wait) {
       let timeout;
       return function(...args) {
@@ -276,7 +276,7 @@
       img.parentNode.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100"><i class="bi bi-image fs-1 text-muted"></i></div>';
     }
 
-    // Definir el componente jerseySelect para Alpine.js
+    // Define the jerseySelect component for Alpine.js
     document.addEventListener('alpine:init', () => {
       Alpine.data('jerseySelect', () => ({
         kitSearch: '',
@@ -300,7 +300,7 @@
               return;
             }
 
-            // Usar la función de búsqueda con debounce
+            // Use the search function with debounce
             if (!this.debouncedSearchKits) {
               this.debouncedSearchKits = debounce(this.searchKits.bind(this), 500);
             }
@@ -311,7 +311,7 @@
         searchKits() {
           if (this.kitSearch.length < 3) return;
 
-          // Crear un timestamp para esta búsqueda
+          // Create a timestamp for this search
           const searchTimestamp = Date.now();
           this.lastSearchTimestamp = searchTimestamp;
 
@@ -329,7 +329,7 @@
               return response.json();
             })
             .then(data => {
-              // Solo actualizar los resultados si esta es la búsqueda más reciente
+              // Only update the results if this is the most recent search
               if (searchTimestamp === this.lastSearchTimestamp) {
                 console.log('Kit search results:', data);
 
@@ -381,14 +381,14 @@
             .catch(error => {
               console.error('Error searching kits:', error);
               this.isSearching = false;
-              // Mostrar un mensaje de error al usuario
-              alert('Error al buscar kits: ' + error.message);
+              // Show an error message to the user
+              alert('Error searching kits: ' + error.message);
             });
         },
 
         selectKit(kit) {
           try {
-            // Si ya está seleccionado, deseleccionar
+            // If already selected, deselect
             if (this.selectedKit && this.selectedKit.id === kit.id) {
               console.log('Deselecting kit:', kit.id);
               this.selectedKit = null;
@@ -420,7 +420,7 @@
                 // Check if the response is valid
                 if (!data || typeof data !== 'object') {
                   console.error('Invalid kit details response:', data);
-                  alert('Error: Respuesta de detalles de kit inválida');
+                  alert('Error: Invalid kit details response');
                   this.isLoadingFromApi = false;
                   return;
                 }
@@ -474,11 +474,11 @@
               .catch(error => {
                 console.error('Error getting kit details:', error);
                 this.isLoadingFromApi = false;
-                alert('Error al obtener los detalles del kit: ' + error.message);
+                alert('Error getting kit details: ' + error.message);
               });
           } catch (error) {
-            console.error('Error en selectKit:', error);
-            alert('Error al seleccionar el kit: ' + error.message);
+            console.error('Error in selectKit:', error);
+            alert('Error selecting kit: ' + error.message);
           }
         },
 
@@ -528,7 +528,7 @@
           const kitId = parseInt(this.selectedKit.id);
           if (isNaN(kitId) || kitId <= 0) {
             console.error('Invalid kit ID:', this.selectedKit.id);
-            alert('Error: ID de kit inválido');
+            alert('Error: Invalid kit ID');
             return;
           }
 

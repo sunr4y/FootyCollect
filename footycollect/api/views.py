@@ -196,3 +196,96 @@ def _build_season_entry(season_year: str, season_id: int | None) -> dict:
         "name": season_year,
         "logo": None,
     }
+
+
+@ratelimit(key="ip", rate="100/h", method="GET")
+@require_GET
+def get_filter_options(request):
+    """
+    Get available filter options with item counts.
+
+    Returns filter options (brands, clubs, competitions, etc.) with counts
+    of how many items match each option, optionally filtered by other active filters.
+    """
+    if getattr(request, "limited", False):
+        return _rate_limited_response(request)
+
+    filter_type = request.GET.get("filter_type")
+    if not filter_type:
+        return JsonResponse({"error": "filter_type parameter is required"}, status=400)
+
+    from django.db.models import Count, Q
+
+    from footycollect.collection.models import Jersey
+    from footycollect.core.models import Brand, Club, Competition, TypeK
+
+    base_queryset = Jersey.objects.filter(base_item__is_private=False, base_item__is_draft=False)
+
+    country = request.GET.get("country")
+    if country:
+        base_queryset = base_queryset.filter(Q(base_item__club__country=country) | Q(base_item__country=country))
+
+    if filter_type == "brand":
+        brands = (
+            Brand.objects.filter(baseitem__jersey__in=base_queryset)
+            .annotate(item_count=Count("baseitem__jersey", distinct=True))
+            .filter(item_count__gt=0)
+            .order_by("-item_count", "name")[:50]
+        )
+        results = [
+            {"id": brand.id, "name": brand.name, "logo": brand.logo or "", "count": brand.item_count}
+            for brand in brands
+        ]
+    elif filter_type == "club":
+        clubs = (
+            Club.objects.filter(baseitem__jersey__in=base_queryset)
+            .annotate(item_count=Count("baseitem__jersey", distinct=True))
+            .filter(item_count__gt=0)
+            .order_by("-item_count", "name")[:50]
+        )
+        results = [
+            {
+                "id": club.id,
+                "name": club.name,
+                "logo": club.logo or "",
+                "country": str(club.country) if club.country else None,
+                "count": club.item_count,
+            }
+            for club in clubs
+        ]
+    elif filter_type == "competition":
+        competitions = (
+            Competition.objects.filter(collection_baseitem_competitions__jersey__in=base_queryset)
+            .annotate(item_count=Count("collection_baseitem_competitions__jersey", distinct=True))
+            .filter(item_count__gt=0)
+            .order_by("-item_count", "name")[:50]
+        )
+        results = [
+            {
+                "id": comp.id,
+                "name": comp.name,
+                "logo": comp.logo or "",
+                "count": comp.item_count,
+            }
+            for comp in competitions
+        ]
+    elif filter_type == "kit_type":
+        kit_types = (
+            TypeK.objects.filter(kit__jersey__in=base_queryset)
+            .annotate(item_count=Count("kit__jersey", distinct=True))
+            .filter(item_count__gt=0)
+            .order_by("-item_count", "name")[:50]
+        )
+        results = [
+            {
+                "id": kt.id,
+                "name": kt.name,
+                "category": kt.category,
+                "count": kt.item_count,
+            }
+            for kt in kit_types
+        ]
+    else:
+        return JsonResponse({"error": f"Unknown filter_type: {filter_type}"}, status=400)
+
+    return JsonResponse({"results": results})

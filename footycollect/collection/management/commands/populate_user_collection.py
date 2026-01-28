@@ -138,9 +138,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"  ✗ Error processing entry {entry_id}: {e!s}"))
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\nCompleted: {created_count} created, {skipped_count} skipped, {error_count} errors"
-            )
+            self.style.SUCCESS(f"\nCompleted: {created_count} created, {skipped_count} skipped, {error_count} errors")
         )
 
     def _fetch_user_collection(  # noqa: PLR0915
@@ -210,6 +208,7 @@ class Command(BaseCommand):
                     page_response = client.get_user_collection(userid, page=page, page_size=page_size, use_cache=False)
                 except Exception:
                     import traceback
+
                     tb = traceback.format_exc()
                     self.stdout.write(self.style.ERROR(f"Error fetching page {page}:\n{tb}"))
                     logger.exception("Error fetching page %s", page)
@@ -246,6 +245,7 @@ class Command(BaseCommand):
             return {"entries": all_entries}, user_info  # noqa: TRY300
         except Exception:
             import traceback
+
             tb = traceback.format_exc()
             self.stdout.write(self.style.ERROR(f"Error in _fetch_user_collection:\n{tb}"))
             logger.exception("Error in _fetch_user_collection")
@@ -327,7 +327,6 @@ class Command(BaseCommand):
         if not kit_data:
             logger.warning("Entry %s has no kit data", entry.get("id"))
             return False
-
 
         with transaction.atomic():
             brand = self._get_or_create_brand(kit_data.get("brand_name"), kit_data, dry_run=dry_run)
@@ -627,16 +626,14 @@ class Command(BaseCommand):
             return None
 
         if kit and not dry_run:
-            existing_jersey = Jersey.objects.filter(
-                base_item__user=user,
-                kit=kit
-            ).select_related("base_item", "kit").first()
+            existing_jersey = (
+                Jersey.objects.filter(base_item__user=user, kit=kit).select_related("base_item", "kit").first()
+            )
 
             if existing_jersey:
                 entry_id = entry.get("id", "unknown")
                 logger.info(
-                    "Item already exists for user %s and kit %s (entry %s), skipping",
-                    user.username, kit.id, entry_id
+                    "Item already exists for user %s and kit %s (entry %s), skipping", user.username, kit.id, entry_id
                 )
                 return existing_jersey.base_item
 

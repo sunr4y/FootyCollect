@@ -116,7 +116,7 @@ class BrandWidget(select2_widgets.ModelSelect2):
         attrs.update(
             {
                 "data-minimum-input-length": 0,
-                "data-placeholder": "Buscar marca...",
+                "data-placeholder": "Search for brand...",
             },
         )
         return attrs
@@ -1408,21 +1408,21 @@ class TestCountryForm(forms.Form):
             url="core:country-autocomplete",
             attrs={
                 "data-html": True,
-                "data-placeholder": "Selecciona un país...",
+                "data-placeholder": "Select a country...",
             },
         ),
     )
 
 
 class TestBrandForm(forms.Form):
-    """Form simple para probar Select2 con Brand"""
+    """Form simple to test Select2 with Brand"""
 
     brand = forms.ModelChoiceField(
         queryset=Brand.objects.none(),  # Will be set in __init__
         widget=autocomplete.ModelSelect2(
             url="core:brand-autocomplete",
             attrs={
-                "data-placeholder": "Buscar marca...",
+                "data-placeholder": "Search for brand...",
                 "data-minimum-input-length": 0,
             },
         ),

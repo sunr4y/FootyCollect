@@ -34,8 +34,7 @@ LANGUAGE_CODE = "en-us"
 # from django.utils.translation import gettext_lazy as _
 # LANGUAGES = [
 #     ('en', _('English')),
-#     ('fr-fr', _('French')),
-#     ('pt-br', _('Portuguese')),
+#     ('es', _('Spanish')),
 # ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1

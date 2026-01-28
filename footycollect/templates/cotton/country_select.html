@@ -1,16 +1,16 @@
 <c-vars name url selected />
 <div class="mb-3">
-  <label class="form-label">País</label>
+  <label class="form-label">Country</label>
   <select class="form-select select2-country"
           name="{{ name }}"
-          data-placeholder="Selecciona un país..."
+          data-placeholder="Select a country..."
           data-minimum-input-length="0"
           data-html="true"
           data-url="{{ url }}"
           {% if selected %}data-selected="{{ selected }}"{% endif %}></select>
 </div>
 <style>
-  /* Estilos mínimos necesarios para las banderas */
+  /* Minimum styles for the flags */
   .fi {
     margin-right: 8px;
     width: 1.3em;
@@ -18,7 +18,7 @@
     vertical-align: middle;
   }
 
-  /* Estilos mínimos para el select2 con bootstrap5 */
+  /* Minimum styles for the select2 with bootstrap5 */
   .select2-container--bootstrap5 .select2-selection {
     min-height: 38px;
     border: 1px solid #dee2e6;
@@ -49,7 +49,7 @@
         },
         processResults: function(data) {
           console.log('Received data:', data);
-          // Transformar los resultados al formato que espera Select2
+          // Transform the results to the format that Select2 expects
           const results = data.results.map(item => ({
             id: item.id,
             text: item.text,
@@ -69,34 +69,34 @@
       },
       templateResult: function(data) {
         if (data.loading) return data.text;
-        // Asegurarnos de que el HTML de la bandera se renderiza correctamente
+        // Make sure the HTML of the flag is rendered correctly
         if (data.html) {
           return $(data.html);
         }
         return data.text;
       },
       templateSelection: function(data) {
-        // Asegurarnos de que el HTML de la bandera se renderiza correctamente
+        // Make sure the HTML of the flag is rendered correctly
         if (data.html) {
           return $(data.html);
         }
         return data.text;
       },
-      // Configuración adicional para mejorar la experiencia
+      // Additional configuration to improve the experience
       minimumInputLength: 0,
       allowClear: true,
-      placeholder: 'Selecciona un país...',
+      placeholder: 'Select a country...',
     }).on('change', function() {
       const selectedValue = $(this).val();
       console.log('Selected value:', selectedValue);
       $('#id_details-country_code').val(selectedValue);
     });
 
-    // Establecer valor inicial si existe
+    // Set initial value if it exists
     const selected = $('.select2-country').data('selected');
     if (selected) {
       console.log('Initial value:', selected);
-      // Hacer una llamada AJAX inicial para obtener los datos del país seleccionado
+      // Make an initial AJAX call to get the country selected data
       $.ajax({
         url: $('.select2-country').data('url'),
         data: {

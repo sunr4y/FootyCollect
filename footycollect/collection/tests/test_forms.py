@@ -288,7 +288,7 @@ class TestBrandWidget(TestCase):
         widget = BrandWidget()
         attrs = widget.build_attrs({}, {})
         assert attrs["data-minimum-input-length"] == 0
-        assert attrs["data-placeholder"] == "Buscar marca..."
+        assert attrs["data-placeholder"] == "Search for brand..."
         # Check if class attribute exists before asserting
         if "class" in attrs:
             assert "form-control" in attrs["class"]
