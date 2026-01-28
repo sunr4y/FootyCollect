@@ -128,19 +128,17 @@ class Command(BaseCommand):
                 self.stdout.write(f"\n[{idx}/{len(entries)}] Processing entry {entry_id} - {kit_name}...")
                 if self._process_entry(entry, target_user, dry_run=dry_run):
                     created_count += 1
-                    self.stdout.write(self.style.SUCCESS(f"  ✓ Entry {entry_id} processed successfully"))
+                    self.stdout.write(self.style.SUCCESS(f"  [OK] Entry {entry_id} processed successfully"))
                 else:
                     skipped_count += 1
                     self.stdout.write(self.style.WARNING(f"  ⚠ Entry {entry_id} skipped"))
             except Exception as e:
                 error_count += 1
                 logger.exception("Error processing entry %s", entry_id)
-                self.stdout.write(self.style.ERROR(f"  ✗ Error processing entry {entry_id}: {e!s}"))
+                self.stdout.write(self.style.ERROR(f"  [ERROR] Error processing entry {entry_id}: {e!s}"))
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\nCompleted: {created_count} created, {skipped_count} skipped, {error_count} errors"
-            )
+            self.style.SUCCESS(f"\nCompleted: {created_count} created, {skipped_count} skipped, {error_count} errors")
         )
 
     def _fetch_user_collection(  # noqa: PLR0915
@@ -166,12 +164,19 @@ class Command(BaseCommand):
                 msg = f"Failed to start scraping: No response from API (userid: {userid})"
                 self._raise_scraping_error(msg)
 
-            self.stdout.write(f"Scrape response: {scrape_response}")
+            status = scrape_response.get("status", "unknown")
+            self.stdout.write(f"Scrape response status: {status}")
 
             if scrape_response.get("status") == "error" or "error" in scrape_response:
                 error_msg = scrape_response.get("error", "Unknown error")
                 msg = f"Failed to start scraping: {error_msg}"
                 self._raise_scraping_error(msg)
+
+            if scrape_response.get("status") == "cached":
+                cached_data = scrape_response.get("data", {})
+                if cached_data.get("entries"):
+                    user_info = cached_data.get("user")
+                    return {"entries": cached_data.get("entries", [])}, user_info
 
             task_id = scrape_response.get("task_id")
             if task_id:
@@ -210,6 +215,7 @@ class Command(BaseCommand):
                     page_response = client.get_user_collection(userid, page=page, page_size=page_size, use_cache=False)
                 except Exception:
                     import traceback
+
                     tb = traceback.format_exc()
                     self.stdout.write(self.style.ERROR(f"Error fetching page {page}:\n{tb}"))
                     logger.exception("Error fetching page %s", page)
@@ -219,9 +225,14 @@ class Command(BaseCommand):
                         self.stdout.write(f"Page {page} returned no data, stopping pagination")
                         break
 
+                    if page == 1 and user_info is None:
+                        data = page_response.get("data", {})
+                        user_info = data.get("user")
+                        break
+
                     data = page_response.get("data", {})
                     if page == 1:
-                        user_info = page_response.get("user")
+                        user_info = data.get("user") or page_response.get("user")
 
                     page_entries = data.get("entries", [])
                     if not page_entries:
@@ -246,10 +257,75 @@ class Command(BaseCommand):
             return {"entries": all_entries}, user_info  # noqa: TRY300
         except Exception:
             import traceback
+
             tb = traceback.format_exc()
             self.stdout.write(self.style.ERROR(f"Error in _fetch_user_collection:\n{tb}"))
             logger.exception("Error in _fetch_user_collection")
             raise
+
+    def _find_existing_user(self, fka_userid: int) -> User | None:
+        """Find existing user by email or username."""
+        fallback_email = f"user_{fka_userid}@footballkitarchive.com"
+        existing_user = User.objects.filter(email=fallback_email).first()
+
+        if not existing_user:
+            fka_username = f"fka_user_{fka_userid}"
+            existing_user = User.objects.filter(username=fka_username).first()
+
+        return existing_user
+
+    def _generate_username_from_name(self, user_name: str, fka_userid: int) -> str:
+        """Generate username from user name with conflict handling."""
+        name_slug = slugify(user_name)
+        if name_slug:
+            base_username = name_slug
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            return username
+        return f"user_{fka_userid}"
+
+    def _update_existing_user(
+        self, user: User, user_name: str | None, avatar_url: str | None, *, dry_run: bool
+    ) -> None:
+        """Update existing user with name and avatar."""
+        if user_name:
+            user.name = user_name
+        if avatar_url and not user.avatar:
+            self._download_user_avatar(user, avatar_url, dry_run=dry_run)
+        if not dry_run:
+            user.save()
+            avatar_status = "downloaded" if avatar_url and not user.avatar else "unchanged"
+            self.stdout.write(
+                f"Updated user {user.username} " f"(name: {user_name or 'unchanged'}, avatar: {avatar_status})"
+            )
+
+    def _create_new_user(self, username: str, user_name: str | None, avatar_url: str | None, *, dry_run: bool) -> User:
+        """Create new user with name and avatar."""
+        user, created = User.objects.get_or_create(username=username)
+
+        if created and not dry_run:
+            user.email = f"{username}@footballkitarchive.com"
+            if user_name:
+                user.name = user_name
+            if avatar_url:
+                self._download_user_avatar(user, avatar_url, dry_run=dry_run)
+            user.save()
+            self.stdout.write(f"Created user: {username}")
+        elif not dry_run:
+            updated = False
+            if user_name and not user.name:
+                user.name = user_name
+                updated = True
+            if avatar_url and not user.avatar:
+                self._download_user_avatar(user, avatar_url, dry_run=dry_run)
+                updated = True
+            if updated:
+                user.save()
+
+        return user
 
     def _get_or_create_target_user(
         self,
@@ -266,29 +342,27 @@ class Command(BaseCommand):
                 self.stdout.write(f"Created user: {target_username}")
             return user
 
-        username = None
+        user_name = None
         avatar_url = None
 
         if user_info:
-            username = user_info.get("username")
-            avatar_url = user_info.get("avatar") or user_info.get("avatar_url") or user_info.get("photo")
+            user_name = user_info.get("name")
+            avatar_url = (
+                user_info.get("image")
+                or user_info.get("avatar")
+                or user_info.get("avatar_url")
+                or user_info.get("photo")
+            )
 
-        if not username:
-            username = f"fka_user_{fka_userid}"
+        existing_user = self._find_existing_user(fka_userid)
 
-        user, created = User.objects.get_or_create(username=username)
+        if existing_user:
+            self._update_existing_user(existing_user, user_name, avatar_url, dry_run=dry_run)
+            return existing_user
 
-        if created and not dry_run:
-            user.email = f"{username}@footballkitarchive.com"
-            if avatar_url:
-                self._download_user_avatar(user, avatar_url, dry_run=dry_run)
-            user.save()
-            self.stdout.write(f"Created user: {username}")
-        elif not dry_run and avatar_url and not user.avatar:
-            self._download_user_avatar(user, avatar_url, dry_run=dry_run)
-            user.save()
+        username = self._generate_username_from_name(user_name, fka_userid) if user_name else f"user_{fka_userid}"
 
-        return user
+        return self._create_new_user(username, user_name, avatar_url, dry_run=dry_run)
 
     def _download_user_avatar(self, user: User, avatar_url: str, *, dry_run: bool) -> None:
         """Download and set user avatar."""
@@ -328,7 +402,6 @@ class Command(BaseCommand):
             logger.warning("Entry %s has no kit data", entry.get("id"))
             return False
 
-
         with transaction.atomic():
             brand = self._get_or_create_brand(kit_data.get("brand_name"), kit_data, dry_run=dry_run)
             club = self._get_or_create_club(kit_data, dry_run=dry_run)
@@ -360,15 +433,30 @@ class Command(BaseCommand):
             if not base_item:
                 return False
 
+            user_images = entry.get("images", [])
+            kit_images = kit_data.get("images", [])
+
+            if not user_images and kit_images:
+                logger.info("User has no photos, using kit images as fallback (limited to 2)")
+                images_to_use = kit_images[:2]
+            else:
+                images_to_use = user_images
+
             if hasattr(base_item, "jersey") and base_item.jersey:
-                logger.info("Item already exists, skipping creation of Jersey and photos")
+                logger.info("Item already exists, checking if photos need to be created")
+                existing_photos_count = base_item.photos.count()
+                if existing_photos_count == 0:
+                    logger.info("Item exists but has no photos, creating photos now")
+                    self._create_photos(images_to_use, base_item, user, dry_run=dry_run)
+                else:
+                    logger.info("Item already exists with %d photos, skipping", existing_photos_count)
                 return True
 
             jersey = self._create_jersey(entry, base_item, kit, size, dry_run=dry_run)
             if not jersey:
                 return False
 
-            self._create_photos(entry.get("images", []), base_item, user, dry_run=dry_run)
+            self._create_photos(images_to_use, base_item, user, dry_run=dry_run)
 
             if dry_run:
                 transaction.set_rollback(True)
@@ -626,17 +714,30 @@ class Command(BaseCommand):
             logger.warning("Cannot create BaseItem without brand")
             return None
 
-        if kit and not dry_run:
-            existing_jersey = Jersey.objects.filter(
-                base_item__user=user,
-                kit=kit
-            ).select_related("base_item", "kit").first()
+        if not dry_run:
+            if kit:
+                existing_jersey = (
+                    Jersey.objects.filter(base_item__user=user, kit=kit)
+                    .select_related("base_item", "kit")
+                    .order_by("-base_item__created_at")
+                    .first()
+                )
+            else:
+                existing_jersey = (
+                    Jersey.objects.filter(base_item__user=user, kit__isnull=True)
+                    .select_related("base_item")
+                    .order_by("-base_item__created_at")
+                    .first()
+                )
 
             if existing_jersey:
                 entry_id = entry.get("id", "unknown")
+                kit_info = f"kit {kit.id}" if kit else "kit=None"
                 logger.info(
-                    "Item already exists for user %s and kit %s (entry %s), skipping",
-                    user.username, kit.id, entry_id
+                    "Item already exists for user %s and %s (entry %s), skipping duplicate",
+                    user.username,
+                    kit_info,
+                    entry_id,
                 )
                 return existing_jersey.base_item
 
