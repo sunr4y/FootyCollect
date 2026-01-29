@@ -6,19 +6,18 @@ This package contains all the views for the collection app, organized by functio
 
 # Import all views explicitly to avoid import issues
 from .demo_views import home
+from .detail_views import ItemDetailView, ItemQuickViewView
 from .feed_views import FeedView
 from .item_views import (
     ItemCreateView,
     ItemDeleteView,
-    ItemDetailView,
-    ItemListView,
-    ItemQuickViewView,
     ItemUpdateView,
     JerseyCreateView,
     JerseySelectView,
     JerseyUpdateView,
 )
 from .jersey_views import JerseyFKAPICreateView
+from .list_views import ItemListView
 from .photo_views import (
     ItemProcessingStatusView,
     PhotoProcessorMixin,

@@ -20,13 +20,13 @@ from django.urls import reverse
 from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import BaseItem, Brand, Club, Color, Jersey, Season, Size
 from footycollect.collection.views.demo_views import home
+from footycollect.collection.views.detail_views import ItemDetailView
 from footycollect.collection.views.item_views import (
-    ItemDetailView,
-    ItemListView,
     JerseyCreateView,
     JerseySelectView,
     JerseyUpdateView,
 )
+from footycollect.collection.views.list_views import ItemListView
 
 User = get_user_model()
 
