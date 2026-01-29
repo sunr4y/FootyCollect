@@ -5,23 +5,18 @@ This package contains all the views for the collection app, organized by functio
 """
 
 # Import all views explicitly to avoid import issues
+from .demo_views import home
 from .feed_views import FeedView
 from .item_views import (
-    DropzoneTestView,
     ItemCreateView,
     ItemDeleteView,
     ItemDetailView,
-    ItemListView,  # Item views
+    ItemListView,
     ItemQuickViewView,
     ItemUpdateView,
     JerseyCreateView,
     JerseySelectView,
     JerseyUpdateView,
-    PostCreateView,
-    demo_brand_view,
-    demo_country_view,  # Demo views
-    home,
-    test_dropzone,
 )
 from .jersey_views import JerseyFKAPICreateView
 from .photo_views import (
@@ -45,8 +40,6 @@ __all__ = [
     "ItemDeleteView",
     "JerseyCreateView",
     "JerseyUpdateView",
-    "PostCreateView",
-    "DropzoneTestView",
     "JerseySelectView",
     "JerseyFKAPICreateView",
     # Photo views
@@ -57,8 +50,5 @@ __all__ = [
     "handle_dropzone_files",
     "PhotoProcessorMixin",
     # Demo views
-    "demo_country_view",
-    "demo_brand_view",
     "home",
-    "test_dropzone",
 ]

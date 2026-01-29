@@ -10,11 +10,8 @@ import logging
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from django.views import View
 from django.views.generic import TemplateView
 
 from footycollect.collection.cache_utils import (
@@ -24,7 +21,7 @@ from footycollect.collection.cache_utils import (
     invalidate_item_list_cache_for_user,
     track_item_list_cache_key,
 )
-from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
+from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import Jersey
 from footycollect.collection.services import get_photo_service
 
@@ -34,188 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
-# FUNCTION-BASED VIEWS
-# =============================================================================
-
-
-def demo_country_view(request):
-    """Demo view for country form."""
-    form = TestCountryForm()
-    return render(request, "collection/test_country.html", {"form": form})
-
-
-def demo_brand_view(request):
-    """Demo view for brand form."""
-    form = TestBrandForm()
-    context = {"form": form}
-    return render(request, "collection/test_brand.html", context)
-
-
-def _load_home_kits():
-    """Load and process home kits data from JSON file."""
-    import json
-
-    from django.conf import settings
-
-    data_path = settings.APPS_DIR / "static" / "data" / "home_kits_data.json"
-
-    try:
-        with data_path.open() as f:
-            data = json.load(f)
-        kits = data.get("kits", [])
-    except FileNotFoundError:
-        logger.warning("Home kits data file not found: %s", data_path)
-        return []
-    except json.JSONDecodeError:
-        logger.exception("Invalid JSON in home kits data file")
-        return []
-
-    # Resolve URLs based on storage configuration
-    media_url = getattr(settings, "MEDIA_URL", "/media/")
-    use_cdn = media_url.startswith("http")
-
-    for kit in kits:
-        for path_key, fallback_key, url_key in [
-            ("image_path", "original_image_url", "image_url"),
-            ("team_logo_path", "original_team_logo", "team_logo"),
-            ("brand_logo_path", "original_brand_logo", "brand_logo"),
-            ("brand_logo_dark_path", "original_brand_logo_dark", "brand_logo_dark"),
-        ]:
-            if use_cdn and kit.get(path_key):
-                kit[url_key] = f"{media_url.rstrip('/')}/{kit[path_key]}"
-            else:
-                kit[url_key] = kit.get(fallback_key, "")
-
-    return kits
-
-
-def _distribute_kits_to_columns(kits, num_columns, kits_per_column):
-    """Distribute kits across columns, avoiding same club in same column."""
-    import random
-
-    if not kits:
-        return [[] for _ in range(num_columns)]
-
-    random.seed(42)
-    available = kits.copy()
-    random.shuffle(available)
-
-    columns = [[] for _ in range(num_columns)]
-    columns_teams = [set() for _ in range(num_columns)]
-
-    for col_idx in range(num_columns):
-        for kit in available[:]:
-            if len(columns[col_idx]) >= kits_per_column:
-                break
-            team = kit.get("team_name", "") or kit.get("name", "").split()[0]
-            if team not in columns_teams[col_idx]:
-                columns[col_idx].append(kit)
-                columns_teams[col_idx].add(team)
-                available.remove(kit)
-
-    # Triple for infinite scroll animation
-    return [col * 3 for col in columns]
-
-
-def home(request):
-    """Home view with curated jersey cards from external API."""
-    kits = _load_home_kits()
-    columns_items = _distribute_kits_to_columns(kits, num_columns=8, kits_per_column=5)
-    return render(request, "pages/home.html", {"columns_items": columns_items, "use_cached_kits": True})
-
-
-def test_dropzone(request):
-    """Independent test view for Dropzone."""
-    return render(request, "collection/dropzone_test_page.html")
-
-
-def image_display_test(request):
-    """Test view for comparing different image display solutions."""
-    from footycollect.collection.services import get_item_service
-
-    if request.user.is_authenticated:
-        item_service = get_item_service()
-        items = list(item_service.get_user_items(request.user)[:12])  # Limitar a 12 items para la prueba
-    else:
-        items = []
-
-    context = {
-        "items": items,
-    }
-    return render(request, "collection/image_display_test.html", context)
-
-
-# =============================================================================
 # CLASS-BASED VIEWS
 # =============================================================================
-
-
-class PostCreateView(LoginRequiredMixin, View):
-    """View for creating posts with file uploads."""
-
-    template_name = "collection/item_create.html"
-    form_class = JerseyForm
-    success_url = reverse_lazy("collection:item_list")
-    success_message = _("Item created successfully")
-
-    def get(self, request, *args, **kwargs):
-        form = self.form_class()
-        return render(request, self.template_name, {"form": form})
-
-    def post(self, request, *args, **kwargs):
-        """Override post to log POST requests."""
-        logger.info("=== POST METHOD CALLED ===")
-        logger.info("POST data keys: %s", list(request.POST.keys()))
-        logger.info("FILES data keys: %s", list(request.FILES.keys()))
-        logger.info("CSRF token in POST: %s", "csrfmiddlewaretoken" in request.POST)
-        logger.info("Content type: %s", request.content_type)
-        logger.info("Request META keys: %s", list(request.META.keys()))
-
-        # Log some POST data (be careful with sensitive data)
-        for key, value in request.POST.items():
-            if key != "csrfmiddlewaretoken":
-                logger.info("POST %s: %s", key, value)
-
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            # Use service to create item with photos
-            photo_service = get_photo_service()
-
-            # Create item
-            new_item = form.save(commit=False)
-            new_item.base_item.user = request.user
-            new_item.base_item.save()
-            new_item.save()
-            # No need for save_m2m() as JerseyForm doesn't have many-to-many fields
-
-            # Process uploaded files using service
-            photo_files = request.FILES.getlist("images")
-            if photo_files:
-                photo_service.create_photos_for_item(new_item, photo_files)
-
-            messages.success(request, self.success_message)
-            return JsonResponse(
-                {
-                    "url": reverse(
-                        "collection:item_detail",
-                        kwargs={"pk": new_item.pk},
-                    ),
-                },
-            )
-
-        return JsonResponse(
-            {
-                "error": form.errors.as_json(),
-                "url": str(self.success_url),
-            },
-            status=400,
-        )
-
-
-class DropzoneTestView(TemplateView):
-    """Template view for testing Dropzone functionality."""
-
-    template_name = "collection/dropzone_test_page.html"
 
 
 class JerseySelectView(LoginRequiredMixin, TemplateView):
