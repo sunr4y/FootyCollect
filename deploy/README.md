@@ -8,9 +8,32 @@ This directory contains configuration files and scripts for deploying FootyColle
 - `gunicorn.service` - Systemd service file for Gunicorn
 - `deploy.sh` - Automated deployment script
 - `setup.sh` - Initial server setup script
-- `env.example` - Environment variables template
+- `env.example` - Environment variables template (production / full reference)
 
-## Quick Start
+## Environment templates (why two?)
+
+- **`deploy/env.example`** – Full production template: single reference with all variables (Django, DB, Redis, SendGrid, Sentry, S3/R2, FKAPI, etc.). Use on bare metal (copy to `.env` on the server) or as reference to fill `.envs/.production/.django` and `.envs/.production/.postgres` for Docker production.
+- **`.envs/.local/.django.example`** – Local development only. Copy to `.envs/.local/.django`. Read by `config/settings/base.py` and used by `docker-compose.local.yml` and local env (postgres in `.envs/.local/.postgres`). Mostly local overrides (USE_DOCKER, REDIS_URL with `redis:6379`, STORAGE_BACKEND=local, Flower, FKAPI). For the full variable list, see `deploy/env.example`.
+
+## Deployment with Docker (production)
+
+Build and run the full stack (Django, Postgres, Redis, Traefik, Celery) with Docker Compose. Build context must be the **repository root**.
+
+```bash
+# From repository root
+docker compose -f docker-compose.production.yml build
+
+# Env files required: .envs/.production/.django and .envs/.production/.postgres
+# Copy deploy/env.example and adjust; split vars into those two files as needed.
+
+docker compose -f docker-compose.production.yml up -d
+```
+
+- **Images:** `compose/production/django/Dockerfile` (multi-stage), Postgres, Nginx, Traefik, AWS CLI for backups.
+- **Entrypoint:** Waits for Postgres, then runs the given command (`/start` runs collectstatic + Gunicorn).
+- **Static/media in production:** S3/R2 via `config.settings.production`; collectstatic runs at container start and uploads to object storage.
+
+## Quick Start (bare metal)
 
 ### 1. Initial Server Setup
 
