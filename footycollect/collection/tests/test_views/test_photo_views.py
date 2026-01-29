@@ -334,7 +334,7 @@ class TestPhotoViews(TestCase):
 
     def test_photo_processor_mixin_initialization(self):
         """Test PhotoProcessorMixin initialization and lazy loading."""
-        from footycollect.collection.views.photo_views import PhotoProcessorMixin
+        from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
 
         # Create a test class that uses the mixin
         class TestView(PhotoProcessorMixin):
@@ -352,7 +352,7 @@ class TestPhotoViews(TestCase):
 
     def test_photo_processor_mixin_download_image_success(self):
         """Test PhotoProcessorMixin download and attach image functionality."""
-        from footycollect.collection.views.photo_views import PhotoProcessorMixin
+        from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
 
         # Create a test class that uses the mixin
         class TestView(PhotoProcessorMixin):
@@ -370,7 +370,7 @@ class TestPhotoViews(TestCase):
 
     def test_photo_processor_mixin_integration_with_error_handling(self):
         """Test PhotoProcessorMixin integration with comprehensive error handling."""
-        from footycollect.collection.views.photo_views import PhotoProcessorMixin
+        from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
 
         # Create a test class that uses the mixin
         class TestView(PhotoProcessorMixin):

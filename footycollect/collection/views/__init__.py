@@ -13,12 +13,12 @@ from .item_views import JerseySelectView
 from .jersey_crud_views import JerseyCreateView, JerseyUpdateView
 from .jersey_views import JerseyFKAPICreateView
 from .list_views import ItemListView
+from .photo_processor_mixin import PhotoProcessorMixin
 from .photo_views import (
     ItemProcessingStatusView,
-    PhotoProcessorMixin,
     file_upload,
     handle_dropzone_files,
-    reorder_photos,  # Photo views
+    reorder_photos,
     upload_photo,
 )
 

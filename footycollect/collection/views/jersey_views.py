@@ -28,7 +28,7 @@ from .jersey.mixins import (
     KitDataProcessingMixin,
     PhotoProcessingMixin,
 )
-from .photo_views import PhotoProcessorMixin
+from .photo_processor_mixin import PhotoProcessorMixin
 
 logger = logging.getLogger(__name__)
 

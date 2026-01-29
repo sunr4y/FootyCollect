@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from footycollect.collection.services.jersey_fkapi_service import ItemFKAPIService
+from footycollect.collection.services.item_fkapi_service import ItemFKAPIService
 
 User = get_user_model()
 
@@ -34,7 +34,7 @@ class TestItemFKAPIService(TestCase):
         assert self.service.item_service is not None
         assert self.service.photo_service is not None
 
-    @patch("footycollect.collection.services.jersey_fkapi_service.logger")
+    @patch("footycollect.collection.services.item_fkapi_service.logger")
     def test_process_item_creation_success(self, mock_logger):
         """Test successful item creation process."""
         # Mock form
@@ -58,7 +58,7 @@ class TestItemFKAPIService(TestCase):
         assert mock_form.instance.user == self.user
         mock_form.save.assert_called_once()
 
-    @patch("footycollect.collection.services.jersey_fkapi_service.logger")
+    @patch("footycollect.collection.services.item_fkapi_service.logger")
     def test_process_item_creation_with_kit_id(self, mock_logger):
         """Test item creation with kit ID."""
         # Mock form
@@ -157,6 +157,7 @@ class TestItemFKAPIService(TestCase):
         """Test _process_kit_information method."""
         mock_form = Mock()
         mock_form.cleaned_data = {"description": "Original description"}
+        mock_form.data = {}
 
         kit_data = {
             "name": "API Kit Name",
@@ -172,9 +173,9 @@ class TestItemFKAPIService(TestCase):
             mock_process_colors.assert_called_once_with(mock_form, kit_data["colors"])
 
     def test_process_kit_colors(self):
-        """Test _process_kit_colors method."""
+        """Test _process_kit_colors method (item_fkapi writes to form.data)."""
         mock_form = Mock()
-        mock_form.cleaned_data = {}
+        mock_form.data = {}
 
         colors = [
             {"name": "Red"},
@@ -184,32 +185,31 @@ class TestItemFKAPIService(TestCase):
 
         self.service._process_kit_colors(mock_form, colors)
 
-        assert mock_form.cleaned_data["main_color"] == "Red"
-        assert mock_form.cleaned_data["secondary_colors"] == ["White", "Blue"]
+        assert mock_form.data["main_color"] == "Red"
+        assert mock_form.data.get("secondary_colors") == ["White", "Blue"]
 
     def test_process_kit_colors_single(self):
-        """Test _process_kit_colors method with single color."""
+        """Test _process_kit_colors method with single color (item_fkapi writes to form.data)."""
         mock_form = Mock()
-        mock_form.cleaned_data = {}
+        mock_form.data = {}
 
         colors = [{"name": "Red"}]
 
         self.service._process_kit_colors(mock_form, colors)
 
-        assert mock_form.cleaned_data["main_color"] == "Red"
-        assert "secondary_colors" not in mock_form.cleaned_data
+        assert mock_form.data["main_color"] == "Red"
+        assert "secondary_colors" not in mock_form.data
 
     def test_process_kit_colors_empty(self):
-        """Test _process_kit_colors method with empty colors."""
+        """Test _process_kit_colors method with empty colors (item_fkapi returns early)."""
         mock_form = Mock()
-        mock_form.cleaned_data = {}
+        mock_form.data = {}
 
         colors = []
 
         self.service._process_kit_colors(mock_form, colors)
 
-        # Should not modify cleaned_data
-        assert mock_form.cleaned_data == {}
+        assert mock_form.data == {}
 
     def test_process_photo_ids_success(self):
         """Test _process_photo_ids method success."""
@@ -235,7 +235,7 @@ class TestItemFKAPIService(TestCase):
         """Test _process_photo_ids method with invalid IDs."""
         mock_item = Mock()
 
-        with patch("footycollect.collection.services.jersey_fkapi_service.logger") as mock_logger:
+        with patch("footycollect.collection.services.item_fkapi_service.logger") as mock_logger:
             # This should raise an exception due to invalid ID
             with suppress(ValueError):
                 self.service._process_photo_ids("999,invalid", mock_item)
@@ -244,7 +244,7 @@ class TestItemFKAPIService(TestCase):
     def test_get_form_data_for_item_creation(self):
         """Test get_form_data_for_item_creation method."""
         # Mock the ItemService.get_form_data method
-        with patch("footycollect.collection.services.jersey_fkapi_service.ItemService") as mock_item_service_class:
+        with patch("footycollect.collection.services.item_fkapi_service.ItemService") as mock_item_service_class:
             mock_item_service = Mock()
             mock_item_service.get_form_data.return_value = {
                 "colors": {
