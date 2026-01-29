@@ -93,6 +93,7 @@ THIRD_PARTY_APPS = [
     "taggit",
     "django_cotton",
     "formtools",
+    "csp",
 ]
 
 LOCAL_APPS = [
@@ -153,6 +154,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
+    "config.middleware.SecurityHeadersMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -242,15 +245,66 @@ FIXTURE_DIRS = (str(APPS_DIR / "fixtures"),)
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-httponly
 SESSION_COOKIE_HTTPONLY = True
+# https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-samesite
+SESSION_COOKIE_SAMESITE = env.str("DJANGO_SESSION_COOKIE_SAMESITE", default="Lax")
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-httponly
 CSRF_COOKIE_HTTPONLY = True
+# https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-samesite
+CSRF_COOKIE_SAMESITE = env.str("DJANGO_CSRF_COOKIE_SAMESITE", default="Lax")
 # https://docs.djangoproject.com/en/dev/ref/settings/#x-frame-options
 X_FRAME_OPTIONS = "DENY"
 
 # Additional security headers
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
+REFERRER_POLICY = env.str("DJANGO_REFERRER_POLICY", default="strict-origin-when-cross-origin")
+PERMISSIONS_POLICY = env.str(
+    "DJANGO_PERMISSIONS_POLICY",
+    default="geolocation=(), microphone=(), camera=(), payment=()",
+)
 
+
+# Content-Security-Policy (django-csp 4.0). Set DJANGO_CSP_ENABLED=True to enable.
+# Use comma-separated values in env vars; CSP keywords must be quoted (e.g. 'self').
+def _csp_sources(name: str, default: str) -> list:
+    raw = env.str(name, default=default)
+    return [s.strip() for s in raw.split(",") if s.strip()]
+
+
+if env.bool("DJANGO_CSP_ENABLED", default=False):
+    CONTENT_SECURITY_POLICY = {
+        "DIRECTIVES": {
+            "default-src": _csp_sources(
+                "DJANGO_CSP_DEFAULT_SRC",
+                "'self'",
+            ),
+            "script-src": _csp_sources(
+                "DJANGO_CSP_SCRIPT_SRC",
+                "'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
+            ),
+            "style-src": _csp_sources(
+                "DJANGO_CSP_STYLE_SRC",
+                "'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            ),
+            "font-src": _csp_sources(
+                "DJANGO_CSP_FONT_SRC",
+                "'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+            ),
+            "img-src": _csp_sources(
+                "DJANGO_CSP_IMG_SRC",
+                "'self' data: blob: https://www.gravatar.com",
+            ),
+            "connect-src": _csp_sources(
+                "DJANGO_CSP_CONNECT_SRC",
+                "'self'",
+            ),
+            "frame-ancestors": _csp_sources(
+                "DJANGO_CSP_FRAME_ANCESTORS",
+                "'self'",
+            ),
+            "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
+        },
+    }
 
 # EMAIL
 # ------------------------------------------------------------------------------
