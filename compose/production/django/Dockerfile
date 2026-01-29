@@ -2,23 +2,21 @@
 # define an alias for the specific python version used in this file.
 FROM docker.io/python:3.12.5-slim-bookworm AS python
 
-# Python build stage
+# Python build stage (build context must be repository root)
 FROM python AS python-build-stage
 
 ARG BUILD_ENVIRONMENT=production
 
-# Install apt packages
 RUN apt-get update && apt-get install --no-install-recommends -y \
-  # dependencies for building Python packages
   build-essential \
-  # psycopg dependencies
-  libpq-dev
+  libpq-dev \
+  && rm -rf /var/lib/apt/lists/*
 
-# Requirements are installed here to ensure they will be cached.
+WORKDIR /build
+
 COPY ./requirements .
 
-# Create Python Dependency and Sub-Dependency Wheels.
-RUN pip wheel --wheel-dir /usr/src/app/wheels  \
+RUN pip wheel --no-cache-dir --wheel-dir /usr/src/app/wheels \
   -r ${BUILD_ENVIRONMENT}.txt
 
 

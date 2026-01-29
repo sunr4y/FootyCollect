@@ -514,13 +514,13 @@
         proceedToDetails() {
           if (!this.selectedKit) {
             console.error('No kit selected');
-            alert('Por favor, selecciona un kit primero');
+            alert('Please select a kit first');
             return;
           }
 
           if (!this.selectedKit.id) {
             console.error('Selected kit has no ID:', this.selectedKit);
-            alert('Error: El kit seleccionado no tiene ID');
+            alert('Error: Selected kit has no ID');
             return;
           }
 

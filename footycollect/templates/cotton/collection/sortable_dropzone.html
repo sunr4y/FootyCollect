@@ -70,7 +70,7 @@
 
         for (const file of newFiles) {
           if (await this.isDuplicate(file)) {
-            alert(`El archivo ${file.name} ya fue agregado`);
+            alert(`File ${file.name} was already added`);
             continue;
           }
           this.files.push(file);
@@ -83,7 +83,7 @@
 
         for (const file of newFiles) {
           if (await this.isDuplicate(file)) {
-            alert(`El archivo ${file.name} ya fue agregado`);
+            alert(`File ${file.name} was already added`);
             continue;
           }
           this.files.push(file);
