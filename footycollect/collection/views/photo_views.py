@@ -120,6 +120,7 @@ def file_upload(request):
     return HttpResponse("")
 
 
+@login_required
 @require_http_methods(["POST", "DELETE"])
 def handle_dropzone_files(request):
     """Handles file upload and deletion for Dropzone."""

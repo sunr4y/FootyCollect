@@ -193,7 +193,16 @@ class ItemDetailView(BaseItemDetailView):
             BaseItem.objects.filter(club=base_item.club)
             .exclude(id=base_item.id)
             .select_related("club", "season", "brand", "user", "main_color")
-            .prefetch_related("competitions", "photos")
+            .prefetch_related(
+                "competitions",
+                "photos",
+                "jersey",
+                "shorts",
+                "outerwear",
+                "tracksuit",
+                "pants",
+                "otheritem",
+            )
             .order_by("-created_at")[:5]
         )
 

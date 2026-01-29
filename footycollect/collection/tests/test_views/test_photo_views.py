@@ -320,7 +320,7 @@ class TestPhotoViews(TestCase):
         assert "deleted" in data["message"]
 
     def test_handle_dropzone_files_unauthorized_access(self):
-        """Test dropzone file handling without authentication."""
+        """Test dropzone file handling requires authentication."""
         response = self.client.post(
             reverse("collection:handle_dropzone_files"),
             {
@@ -329,8 +329,8 @@ class TestPhotoViews(TestCase):
             headers={"x-requested-with": "XMLHttpRequest"},
         )
 
-        # The view doesn't have @login_required decorator, so it works without authentication
-        assert response.status_code == HTTP_OK
+        assert response.status_code == HTTP_FOUND
+        assert response.url.startswith(reverse("account_login"))
 
     def test_photo_processor_mixin_initialization(self):
         """Test PhotoProcessorMixin initialization and lazy loading."""
@@ -372,22 +372,18 @@ class TestPhotoViews(TestCase):
         """Test PhotoProcessorMixin integration with comprehensive error handling."""
         from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
 
-        # Create a test class that uses the mixin
         class TestView(PhotoProcessorMixin):
             pass
 
         view = TestView()
 
-        # Test with invalid URL - should handle gracefully
-        with patch("requests.get") as mock_get:
+        with patch("footycollect.collection.tasks.requests.get") as mock_get:
             mock_get.side_effect = Exception("Connection error")
 
-            result = view._download_and_attach_image(self.jersey, "invalid-url")
+            result = view._download_and_attach_image(self.jersey, "https://example.com/image.jpg")
             assert result is None
 
-            # Verify that the method was called with the correct parameters
-            # The method adds https:// prefix and stream=True, timeout=30 parameters
-            mock_get.assert_called_once_with("https://invalid-url", stream=True, timeout=30)
+            mock_get.assert_called_once_with("https://example.com/image.jpg", stream=True, timeout=30)
 
         # Test with HTTP error - should handle gracefully
         with patch("requests.get") as mock_get:

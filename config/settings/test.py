@@ -84,13 +84,17 @@ MEDIA_URL = "http://media.testserver/"
 
 # Football Kit Archive API Settings for Testing
 # ------------------------------------------------------------------------------
-# Skip FKA API settings in test environment since they're not used in tests
-# and require external API access
 try:
     FKA_API_IP = env("FKA_API_IP")
     API_KEY = env("API_KEY")
 except (ValueError, TypeError, AttributeError) as e:
     logging.getLogger(__name__).debug("FKA API settings not available for tests: %s", e)
+
+ALLOWED_EXTERNAL_IMAGE_HOSTS = [
+    "cdn.footballkitarchive.com",
+    "www.footballkitarchive.com",
+    "example.com",
+]
 
 # CELERY
 # ------------------------------------------------------------------------------
