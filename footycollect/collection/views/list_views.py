@@ -103,6 +103,7 @@ class ItemListView(BaseItemListView):
                 "base_item__competitions",
                 "base_item__photos",
                 "base_item__secondary_colors",
+                "base_item__tags",
             )
             .order_by("-base_item__created_at")
         )

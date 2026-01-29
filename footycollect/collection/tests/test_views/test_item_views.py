@@ -12,9 +12,9 @@ This module tests the real functionality of item views including:
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
-
-# HTTP status constants
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from footycollect.collection.forms import JerseyForm
@@ -34,6 +34,7 @@ User = get_user_model()
 TEST_PASSWORD = "testpass123"
 HTTP_OK = 200
 HTTP_REDIRECT = 302
+MAX_ITEM_LIST_RESPONSE_MS = 5000
 
 
 class TestFunctionBasedViews(TestCase):
@@ -232,6 +233,53 @@ class TestItemListView(TestCase):
         assert items.count() == 1
         assert self.jersey in items
         assert self.other_jersey not in items
+
+    def test_item_list_view_query_count_bounded(self):
+        """ItemListView uses select_related/prefetch_related; query count does not grow with items (no N+1)."""
+        from footycollect.core.models import Kit, TypeK
+
+        type_k = TypeK.objects.create(name="Home", category="match")
+        kit = Kit.objects.create(
+            team=self.club,
+            season=self.season,
+            type=type_k,
+            name="Home Kit",
+            slug="home-kit",
+            main_img_url="https://example.com/img.png",
+        )
+        for i in range(5):
+            bi = BaseItem.objects.create(
+                user=self.user,
+                name=f"Jersey {i}",
+                brand=self.brand,
+                club=self.club,
+                season=self.season,
+            )
+            Jersey.objects.create(base_item=bi, size=self.size, kit=kit)
+
+        self.client.login(username="testuser", password=TEST_PASSWORD)
+        url = reverse("collection:item_list")
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(url)
+        assert response.status_code == HTTP_OK
+        max_queries = 20
+        assert (
+            len(ctx.captured_queries) <= max_queries
+        ), f"Expected at most {max_queries} queries (no N+1); got {len(ctx.captured_queries)}"
+
+    def test_item_list_view_response_time_bounded(self):
+        """ItemListView responds in reasonable time (sanity check; 200ms target is for manual verification)."""
+        import time
+
+        self.client.login(username="testuser", password=TEST_PASSWORD)
+        url = reverse("collection:item_list")
+        start = time.perf_counter()
+        response = self.client.get(url)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        assert response.status_code == HTTP_OK
+        assert (
+            elapsed_ms < MAX_ITEM_LIST_RESPONSE_MS
+        ), f"Item list page took {elapsed_ms:.0f}ms (sanity limit {MAX_ITEM_LIST_RESPONSE_MS}ms)"
 
 
 class TestItemDetailView(TestCase):
