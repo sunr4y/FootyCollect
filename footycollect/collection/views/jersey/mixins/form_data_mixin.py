@@ -20,8 +20,6 @@ class FormDataMixin:
     _update_club_country and _create_club_from_api_data methods.
     """
 
-    """Mixin for form data manipulation functionality."""
-
     def _set_main_color_initial(self, form):
         """Convert main_color name to ID for template."""
         main_color_value = form.data.get("main_color") or (
@@ -137,10 +135,64 @@ class FormDataMixin:
         self._ensure_secondary_colors_in_cleaned_data(form)
 
     def _fill_form_with_api_data(self, form):
-        """Fill form fields with API data."""
+        """Fill form fields with API data. Makes form.data mutable and sets name if needed."""
+        try:
+            form.data = form.data.copy()
+        except AttributeError:
+            form.data = dict(form.data)
+
+        if not form.data.get("name") and form.instance.name:
+            form.data["name"] = form.instance.name
+
         self._fill_club_field(form)
         self._fill_brand_field(form)
         self._fill_season_field(form)
+
+    def _setup_form_instance(self, form):
+        """Set up form instance for jersey creation (STI)."""
+        from footycollect.collection.models import BaseItem
+
+        if form.instance is None:
+            if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):
+                form.instance = form._meta.model()
+            else:
+                form.instance = BaseItem()
+
+        form.instance.item_type = "jersey"
+
+        if not form.instance.name:
+            name = form.data.get("name")
+            if not name:
+                club_name = form.data.get("club_name", "")
+                season_name = form.data.get("season_name", "")
+                if club_name and season_name:
+                    form.instance.name = f"{club_name} {season_name}"
+                else:
+                    form.instance.name = "Jersey"
+            else:
+                form.instance.name = name
+
+        if not form.data.get("name") and form.instance.name:
+            try:
+                form.data = form.data.copy()
+            except AttributeError:
+                form.data = dict(form.data)
+            form.data["name"] = form.instance.name
+
+        if hasattr(self, "request") and self.request and hasattr(self.request, "user"):
+            form.instance.user = self.request.user
+
+        if form.data.get("country_code"):
+            form.instance.country = form.data["country_code"]
+            logger.info("Set country to %s", form.data["country_code"])
+
+    def _preprocess_form_data(self, form):
+        """Set up form instance, process kit data if kit_id present, then fill from API."""
+        self._setup_form_instance(form)
+        kit_id = form.data.get("kit_id")
+        if kit_id:
+            self._process_kit_data(form, kit_id)
+        self._fill_form_with_api_data(form)
 
     def _fill_club_field(self, form):
         """Fill club field from API data."""

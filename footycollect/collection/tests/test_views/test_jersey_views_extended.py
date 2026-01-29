@@ -730,7 +730,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         with (
             patch("footycollect.collection.views.jersey_views.CreateView.form_valid") as mock_super,
             patch(
-                "footycollect.collection.views.jersey_views.Competition.objects.get_or_create",
+                "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.Competition.objects.get_or_create",
             ) as mock_get_or_create,
             patch("footycollect.collection.models.Color.objects.get_or_create") as mock_color_get_or_create,
         ):

@@ -12,12 +12,11 @@ from pathlib import Path
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView
 
 from footycollect.collection.forms import JerseyFKAPIForm
-from footycollect.collection.models import BaseItem, Competition, Jersey
+from footycollect.collection.models import BaseItem, Jersey
 from footycollect.collection.services import get_collection_service
 
 from .jersey.mixins import (
@@ -336,121 +335,6 @@ class JerseyFKAPICreateView(
 
         return response
 
-    def _preprocess_form_data(self, form):
-        """
-        Preprocess form data before validation.
-        Sets up form instance and processes kit data if available.
-        """
-        self._setup_form_instance(form)
-        kit_id = form.data.get("kit_id")
-        if kit_id:
-            self._process_kit_data(form, kit_id)
-        self._fill_form_with_api_data(form)
-
-    def _fill_form_with_api_data(self, form):
-        """Fill form fields with data from API."""
-        # Create a mutable copy of form.data
-        try:
-            form.data = form.data.copy()
-        except AttributeError:
-            # If copy doesn't exist, create a mutable dict
-            form.data = dict(form.data)
-
-        # Fill name field if empty
-        if not form.data.get("name") and form.instance.name:
-            form.data["name"] = form.instance.name
-
-        # Fill other fields from API data
-        self._fill_club_field(form)
-        self._fill_brand_field(form)
-        self._fill_season_field(form)
-
-    def _fill_club_field(self, form):
-        """Fill club field from API data."""
-        if not form.data.get("club_name") or form.data.get("club"):
-            return
-
-        from footycollect.core.models import Club
-
-        try:
-            club = Club.objects.get(name=form.data["club_name"])
-            self._update_club_country(club)
-            form.data["club"] = club.id
-        except Club.DoesNotExist:
-            club = self._create_club_from_api_data(form)
-            form.data["club"] = club.id
-
-    def _fill_brand_field(self, form):
-        """Fill brand field from API data."""
-        if not form.data.get("brand_name") or form.data.get("brand"):
-            return
-
-        from footycollect.core.models import Brand
-
-        try:
-            brand = Brand.objects.get(name=form.data["brand_name"])
-            form.data["brand"] = brand.id
-        except Brand.DoesNotExist:
-            # Check if brand with same slug already exists
-            slug = form.data["brand_name"].lower().replace(" ", "-")
-            try:
-                brand = Brand.objects.get(slug=slug)
-                form.data["brand"] = brand.id
-            except Brand.DoesNotExist:
-                brand = Brand.objects.create(
-                    name=form.data["brand_name"],
-                    slug=slug,
-                )
-                form.data["brand"] = brand.id
-
-    def _setup_form_instance(self, form):
-        """Setup basic form instance attributes."""
-        # For STI structure, we need to create BaseItem first
-        # The form will handle creating both BaseItem and Jersey
-
-        # Ensure form has an instance
-        if form.instance is None:
-            # Check if form is a ModelForm and has _meta
-            if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):
-                form.instance = form._meta.model()
-            else:
-                # For non-ModelForm or if _meta is None, create a BaseItem instance
-                from footycollect.collection.models import BaseItem
-
-                form.instance = BaseItem()
-
-        # Set item_type for BaseItem
-        form.instance.item_type = "jersey"
-
-        # Fill required fields from form data (use form.data before validation)
-        if not form.instance.name:
-            # Try to get name from form data
-            name = form.data.get("name")
-            if not name:
-                # Generate name from API data
-                club_name = form.data.get("club_name", "")
-                season_name = form.data.get("season_name", "")
-                if club_name and season_name:
-                    form.instance.name = f"{club_name} {season_name}"
-                else:
-                    form.instance.name = "Jersey"
-            else:
-                form.instance.name = name
-
-        # Also set the form field value
-        if not form.data.get("name") and form.instance.name:
-            form.data = form.data.copy()
-            form.data["name"] = form.instance.name
-
-        # Set user
-        if hasattr(self, "request") and self.request and hasattr(self.request, "user"):
-            form.instance.user = self.request.user
-
-        # Assign country if selected
-        if form.data.get("country_code"):
-            form.instance.country = form.data["country_code"]
-            logger.info("Set country to %s", form.data["country_code"])
-
     def _write_debug_log(self, form, method_name):
         """Write debug log for form processing."""
 
@@ -545,73 +429,9 @@ class JerseyFKAPICreateView(
 
         self._create_kit_if_needed(jersey, form)
 
-        # Process additional competitions if they exist
         self._process_additional_competitions(form)
 
         return response
-
-    def _create_kit_if_needed(self, jersey, form):
-        """Create Kit if jersey doesn't have one."""
-        if jersey.kit:
-            return
-
-        try:
-            self._create_and_link_kit(jersey, form)
-        except (ValueError, TypeError, AttributeError):
-            logger.exception("Error creating Kit in _save_and_finalize")
-            # Don't raise - allow jersey creation to continue without kit
-
-    def _create_and_link_kit(self, jersey, form):
-        """Create and link Kit to jersey."""
-        from footycollect.collection.services.kit_service import KitService
-
-        kit_service = KitService()
-        kit_id = form.cleaned_data.get("kit_id")
-        fkapi_data = getattr(form, "fkapi_data", {})
-        fkapi_keys = list(fkapi_data.keys()) if fkapi_data else []
-        logger.info(
-            "Creating Kit in _save_and_finalize - kit_id: %s, fkapi_data keys: %s",
-            kit_id,
-            fkapi_keys,
-        )
-        kit = kit_service.get_or_create_kit_for_jersey(
-            base_item=self.object,
-            jersey=jersey,
-            fkapi_data=fkapi_data,
-            kit_id=kit_id,
-        )
-        jersey.kit = kit
-        jersey.save()
-        logger.info("Created/linked Kit %s to Jersey %s", kit.id, jersey.id)
-
-        # If we have a kit with competitions, assign them to the jersey
-        if jersey.kit and jersey.kit.competition.exists():
-            competitions = jersey.kit.competition.all()
-            self.object.competitions.add(*competitions)
-            logger.info(
-                "Added %s competitions from kit to jersey",
-                competitions.count(),
-            )
-
-        # CORREGIDO: Guardar las competiciones del formulario en el ManyToManyField
-        if hasattr(self, "competition") and self.competition:
-            self.object.competitions.add(self.competition)
-            logger.info("Added competition %s to jersey competitions", self.competition.name)
-
-        # CORREGIDO: Procesar competiciones adicionales del formulario
-        all_competitions = self.request.POST.get("all_competitions", "")
-        if all_competitions and "," in all_competitions:
-            competition_names = [name.strip() for name in all_competitions.split(",") if name.strip()]
-            for comp_name in competition_names:
-                try:
-                    comp, created = Competition.objects.get_or_create(
-                        name=comp_name,
-                        defaults={"slug": slugify(comp_name)},
-                    )
-                    self.object.competitions.add(comp)
-                    logger.info("Added additional competition %s to jersey", comp.name)
-                except (ValueError, TypeError):
-                    logger.exception("Error adding competition %s", comp_name)
 
     def form_invalid(self, form):
         """Handle invalid form submission."""

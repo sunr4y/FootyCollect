@@ -8,10 +8,12 @@ from FKAPI to form instances.
 import logging
 
 from django.contrib import messages
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from footycollect.api.client import FKAPIClient
 from footycollect.collection.models import Kit
+from footycollect.core.models import Competition
 
 logger = logging.getLogger(__name__)
 
@@ -216,3 +218,62 @@ class KitDataProcessingMixin:
             logger.info("Assigned competitions from kit to jersey")
         else:
             logger.warning("No competitions found in kit")
+
+    def _create_kit_if_needed(self, jersey, form):
+        """Create and link Kit to jersey if it does not have one."""
+        if jersey.kit:
+            return
+
+        try:
+            self._create_and_link_kit(jersey, form)
+        except (ValueError, TypeError, AttributeError):
+            logger.exception("Error creating Kit in _save_and_finalize")
+
+    def _create_and_link_kit(self, jersey, form):
+        """Create and link Kit to jersey via KitService; add competitions from kit and form."""
+        from footycollect.collection.services.kit_service import KitService
+
+        kit_service = KitService()
+        kit_id = form.cleaned_data.get("kit_id")
+        fkapi_data = getattr(form, "fkapi_data", {})
+        fkapi_keys = list(fkapi_data.keys()) if fkapi_data else []
+        logger.info(
+            "Creating Kit in _save_and_finalize - kit_id: %s, fkapi_data keys: %s",
+            kit_id,
+            fkapi_keys,
+        )
+        kit = kit_service.get_or_create_kit_for_jersey(
+            base_item=self.object,
+            jersey=jersey,
+            fkapi_data=fkapi_data,
+            kit_id=kit_id,
+        )
+        jersey.kit = kit
+        jersey.save()
+        logger.info("Created/linked Kit %s to Jersey %s", kit.id, jersey.id)
+
+        if jersey.kit and jersey.kit.competition.exists():
+            competitions = jersey.kit.competition.all()
+            self.object.competitions.add(*competitions)
+            logger.info(
+                "Added %s competitions from kit to jersey",
+                competitions.count(),
+            )
+
+        if hasattr(self, "competition") and self.competition:
+            self.object.competitions.add(self.competition)
+            logger.info("Added competition %s to jersey competitions", self.competition.name)
+
+        all_competitions = self.request.POST.get("all_competitions", "")
+        if all_competitions and "," in all_competitions:
+            competition_names = [name.strip() for name in all_competitions.split(",") if name.strip()]
+            for comp_name in competition_names:
+                try:
+                    comp, created = Competition.objects.get_or_create(
+                        name=comp_name,
+                        defaults={"slug": slugify(comp_name)},
+                    )
+                    self.object.competitions.add(comp)
+                    logger.info("Added additional competition %s to jersey", comp.name)
+                except (ValueError, TypeError):
+                    logger.exception("Error adding competition %s", comp_name)
