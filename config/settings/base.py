@@ -553,5 +553,10 @@ ROTATING_PROXY_URL = env("ROTATING_PROXY_URL", default="")
 ROTATING_PROXY_USERNAME = env("ROTATING_PROXY_USERNAME", default="")
 ROTATING_PROXY_PASSWORD = env("ROTATING_PROXY_PASSWORD", default="")
 
+ALLOWED_EXTERNAL_IMAGE_HOSTS = env.list(
+    "DJANGO_ALLOWED_EXTERNAL_IMAGE_HOSTS",
+    default=["cdn.footballkitarchive.com", "www.footballkitarchive.com"],
+)
+
 # Testing flag for conditional URL loading
 TESTING = False
