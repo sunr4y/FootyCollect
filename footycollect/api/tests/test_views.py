@@ -108,7 +108,7 @@ class TestAPIViews:
             assert data["results"] == []
 
     def test_search_clubs_rate_limited_returns_429(self):
-        """Test that rate-limited search_clubs returns 429."""
+        """Test that rate-limited search_clubs returns 429 and rate limit headers."""
         request = self.factory.get(
             "/api/clubs/search/?keyword=hammarby",
             HTTP_ACCEPT="application/json",
@@ -120,6 +120,9 @@ class TestAPIViews:
         assert response.status_code == HTTP_TOO_MANY_REQUESTS
         data = json.loads(response.content)
         assert data["error"] == "Rate limit exceeded"
+        assert response["X-RateLimit-Limit"] == "100/h"
+        assert response["X-RateLimit-Remaining"] == "0"
+        assert response["Retry-After"] == "3600"
 
     def test_search_kits_rate_limited_returns_429(self):
         """Test that rate-limited search_kits returns 429."""

@@ -434,9 +434,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "100/hour",
-        "anon": "20/hour",
+        "user": env.str("DJANGO_DRF_USER_THROTTLE_RATE", default="100/hour"),
+        "anon": env.str("DJANGO_DRF_ANON_THROTTLE_RATE", default="20/hour"),
     },
+    "EXCEPTION_HANDLER": "config.exceptions.drf_exception_handler",
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup

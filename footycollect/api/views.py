@@ -14,12 +14,25 @@ logger = logging.getLogger(__name__)
 HTTP_TOO_MANY_REQUESTS = 429
 
 
+FKAPI_RATE_LIMIT = "100/h"
+
+
 def _rate_limited_response(request):
-    """Return a user-friendly response when the rate limit is exceeded."""
     accept = request.headers.get("Accept", "")
+    headers = {
+        "X-RateLimit-Limit": FKAPI_RATE_LIMIT,
+        "X-RateLimit-Remaining": "0",
+        "Retry-After": "3600",
+    }
     if "application/json" in accept:
-        return JsonResponse({"error": "Rate limit exceeded"}, status=HTTP_TOO_MANY_REQUESTS)
-    return render(request, "429.html", status=HTTP_TOO_MANY_REQUESTS)
+        resp = JsonResponse({"error": "Rate limit exceeded"}, status=HTTP_TOO_MANY_REQUESTS)
+        for k, v in headers.items():
+            resp[k] = v
+        return resp
+    resp = render(request, "429.html", status=HTTP_TOO_MANY_REQUESTS)
+    for k, v in headers.items():
+        resp[k] = v
+    return resp
 
 
 @ratelimit(key="ip", rate="100/h", method="GET")
