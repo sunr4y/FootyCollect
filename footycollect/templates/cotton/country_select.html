@@ -30,9 +30,7 @@
   }
 </style>
 <script>
-  console.log('Cotton component loaded');
   $(document).ready(function() {
-    console.log('jQuery ready in Cotton component');
     $('.select2-country').select2({
       theme: 'bootstrap5',
       width: '100%',
@@ -41,14 +39,12 @@
         dataType: 'json',
         delay: 250,
         data: function(params) {
-          console.log('Searching for:', params.term);
           return {
             q: params.term,
             page: params.page || 1
           };
         },
         processResults: function(data) {
-          console.log('Received data:', data);
           // Transform the results to the format that Select2 expects
           const results = data.results.map(item => ({
             id: item.id,
@@ -88,14 +84,12 @@
       placeholder: 'Select a country...',
     }).on('change', function() {
       const selectedValue = $(this).val();
-      console.log('Selected value:', selectedValue);
       $('#id_details-country_code').val(selectedValue);
     });
 
     // Set initial value if it exists
     const selected = $('.select2-country').data('selected');
     if (selected) {
-      console.log('Initial value:', selected);
       // Make an initial AJAX call to get the country selected data
       $.ajax({
         url: $('.select2-country').data('url'),

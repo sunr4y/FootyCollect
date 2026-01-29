@@ -266,7 +266,6 @@
     function ensureFullUrl(url) {
       if (!url) return '';
       if (url.startsWith('http')) return url;
-      console.log('Converting relative URL to absolute:', url);
       return `http://${url}`;
     }
 
@@ -318,11 +317,9 @@
           this.isSearching = true;
           this.showResults = true;
           const url = `/fkapi/kits/search/?keyword=${encodeURIComponent(this.kitSearch)}`;
-          console.log('Searching kits with URL:', url);
 
           fetch(url)
             .then(response => {
-              console.log('Kit search response status:', response.status);
               if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
               }
@@ -331,7 +328,6 @@
             .then(data => {
               // Only update the results if this is the most recent search
               if (searchTimestamp === this.lastSearchTimestamp) {
-                console.log('Kit search results:', data);
 
                 // Check if we have any results
                 let resultsArray = [];
@@ -351,9 +347,7 @@
                 // Log a sample kit if available
                 if (resultsArray.length > 0) {
                   const sampleKit = resultsArray[0];
-                  console.log('Sample kit image URL:', sampleKit.main_img_url);
                   if (sampleKit.team_logo) {
-                    console.log('Sample team logo URL:', sampleKit.team_logo);
                   }
                 }
 
@@ -374,7 +368,6 @@
 
                 this.kitResults = processedResults;
               } else {
-                console.log('Ignoring outdated search results');
               }
               this.isSearching = false;
             })
@@ -390,12 +383,10 @@
           try {
             // If already selected, deselect
             if (this.selectedKit && this.selectedKit.id === kit.id) {
-              console.log('Deselecting kit:', kit.id);
               this.selectedKit = null;
               return;
             }
 
-            console.log('Selecting kit:', kit.id, kit.name);
             this.selectedKit = kit;
 
             // Hide search results
@@ -404,18 +395,15 @@
             // Get full kit details
             this.isLoadingFromApi = true;
             const url = `/fkapi/kit/${kit.id}/`;
-            console.log('Getting kit details with URL:', url);
 
             fetch(url)
               .then(response => {
-                console.log('Kit details response status:', response.status);
                 if (!response.ok) {
                   throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
               })
               .then(data => {
-                console.log('Kit details:', data);
 
                 // Check if the response is valid
                 if (!data || typeof data !== 'object') {
@@ -430,13 +418,10 @@
                   console.error('Kit details response missing ID:', data);
                   // Try to use the ID from the URL
                   data.id = kit.id;
-                  console.log('Using ID from URL:', data.id);
                 }
 
                 // Check the image URLs in the kit details
-                console.log('Kit details image URL:', data.main_img_url);
                 if (data.team && data.team.logo) {
-                  console.log('Kit details team logo URL:', data.team.logo);
                 }
 
                 // Process the kit details to ensure we have the correct image URLs
@@ -449,14 +434,12 @@
                   data.team.logo = ensureFullUrl(data.team.logo);
                 }
 
-                console.log('Setting selectedKit with processed data:', data.id, data.name);
                 this.selectedKit = data;
 
                 // Verify that selectedKit was properly set
                 if (!this.selectedKit) {
                   console.error('Failed to set selectedKit');
                 } else {
-                  console.log('selectedKit successfully set:', this.selectedKit.id, this.selectedKit.name);
                 }
 
                 this.isLoadingFromApi = false;
@@ -532,7 +515,6 @@
             return;
           }
 
-          console.log('Proceeding to details with kit ID:', kitId);
 
           // Redirect to the details form with the kit ID
           window.location.href = `/collection/jersey/create/details/${kitId}/`;

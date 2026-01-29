@@ -681,11 +681,9 @@
 
     function loadMoreItems() {
       if (isLoading || currentPage >= totalPages) {
-        console.log('Skipping load: isLoading=', isLoading, 'currentPage=', currentPage, 'totalPages=', totalPages);
         return;
       }
 
-      console.log('Loading page', currentPage + 1);
       isLoading = true;
       if (loadingSpinner) {
         loadingSpinner.style.display = 'block';
@@ -720,7 +718,6 @@
           }
 
           const newItems = newItemsGrid.querySelectorAll('.col-md-6.col-lg-3, .col-md-6');
-          console.log('Found', newItems.length, 'new items');
 
           if (newItems.length > 0) {
             newItems.forEach(item => {
@@ -728,7 +725,6 @@
               itemsGrid.appendChild(clonedItem);
             });
 
-            console.log('Inserted', newItems.length, 'items into grid');
 
             const newTrigger = doc.getElementById('infinite-scroll-trigger');
             const pageInfo = newTrigger ? newTrigger : doc.querySelector('[data-page-number]');
@@ -765,7 +761,6 @@
               totalPages = currentPage;
             }
           } else {
-            console.log('No new items found');
             if (trigger) {
               trigger.remove();
               trigger = null;
@@ -788,7 +783,6 @@
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && !isLoading && currentPage < totalPages) {
-          console.log('Trigger intersecting, loading more items');
           loadMoreItems();
         }
       });
