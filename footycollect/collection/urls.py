@@ -21,12 +21,6 @@ from .views import (
     upload_photo,
 )
 
-# Keep original views for fallback
-# Choose which views to use:
-# - Use original views.py: from . import views
-# - Use modular views: from .views import *
-# For testing modular structure:
-
 app_name = "collection"
 
 urlpatterns = [
@@ -55,7 +49,4 @@ urlpatterns = [
     path("upload/", file_upload, name="file_upload"),
     path("upload/photo/", upload_photo, name="upload_photo"),
     path("dropzone/files/", handle_dropzone_files, name="handle_dropzone_files"),
-    # Fallback to original views if needed
-    # path("jersey/create/details/<int:kit_id>/",
-    # original_views.JerseyDetailsView.as_view(), name="jersey_details"),
 ]

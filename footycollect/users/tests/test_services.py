@@ -47,24 +47,25 @@ class TestUserService(TestCase):
             assert service.item_service == mock_service
             mock_get_service.assert_called_once()
 
+    @patch("footycollect.collection.models.Jersey")
     @patch("footycollect.users.services.get_item_service")
-    def test_get_user_profile_data_public_user(self, mock_get_service):
+    def test_get_user_profile_data_public_user(self, mock_get_service, mock_jersey_model):
         """Test get_user_profile_data with public user."""
         mock_item_service = Mock()
         mock_get_service.return_value = mock_item_service
 
-        # Mock user items
         mock_items = Mock()
         mock_items.count.return_value = EXPECTED_ITEMS_COUNT_5
         mock_items.filter.return_value.values.return_value.distinct.return_value.count.return_value = (
             EXPECTED_ITEMS_COUNT_3
         )
-
-        # Mock the queryset slicing
-        mock_queryset = Mock()
-        mock_queryset.__getitem__ = Mock(return_value=[])
-        mock_items.select_related.return_value.order_by.return_value = mock_queryset
         mock_item_service.get_user_items.return_value = mock_items
+
+        mock_recent_qs = Mock()
+        mock_recent_qs.__getitem__ = Mock(return_value=[])
+        (
+            mock_jersey_model.objects.filter.return_value.select_related.return_value.prefetch_related.return_value.order_by.return_value
+        ) = mock_recent_qs
 
         service = UserService()
         result = service.get_user_profile_data(self.user, self.other_user)
@@ -74,7 +75,7 @@ class TestUserService(TestCase):
         assert result["total_items"] == 5  # noqa: PLR2004
         assert result["total_teams"] == 3  # noqa: PLR2004
         assert result["total_competitions"] == 3  # noqa: PLR2004
-        assert result["recent_items"] == []
+        assert list(result["recent_items"]) == []
 
     @patch("footycollect.users.services.get_item_service")
     def test_get_user_profile_data_private_user(self, mock_get_service):
@@ -92,24 +93,26 @@ class TestUserService(TestCase):
         assert not result["show_details"]
         assert result["user"] == self.user
 
+    @patch("footycollect.collection.models.Jersey")
     @patch("footycollect.users.services.get_item_service")
-    def test_get_user_profile_data_own_profile(self, mock_get_service):
+    def test_get_user_profile_data_own_profile(self, mock_get_service, mock_jersey_model):
         """Test get_user_profile_data with own profile."""
         mock_item_service = Mock()
         mock_get_service.return_value = mock_item_service
 
-        # Make user private but viewing own profile
         self.user.is_private = True
         self.user.save()
 
         mock_items = Mock()
         mock_items.count.return_value = 2
         mock_items.filter.return_value.values.return_value.distinct.return_value.count.return_value = 1
-        # Mock the queryset slicing
-        mock_queryset = Mock()
-        mock_queryset.__getitem__ = Mock(return_value=[])
-        mock_items.select_related.return_value.order_by.return_value = mock_queryset
         mock_item_service.get_user_items.return_value = mock_items
+
+        mock_recent_qs = Mock()
+        mock_recent_qs.__getitem__ = Mock(return_value=[])
+        (
+            mock_jersey_model.objects.filter.return_value.select_related.return_value.prefetch_related.return_value.order_by.return_value
+        ) = mock_recent_qs
 
         service = UserService()
         result = service.get_user_profile_data(self.user, self.user)

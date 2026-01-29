@@ -563,7 +563,7 @@
       <div class="home-buttons">
         {% if request.user.is_authenticated %}
           <a href="{% url 'collection:item_list' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
-          <a href="{% url 'collection:item_list' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
+          <a href="{% url 'collection:feed' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
         {% else %}
           <a href="{% url 'account_signup' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
           <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
