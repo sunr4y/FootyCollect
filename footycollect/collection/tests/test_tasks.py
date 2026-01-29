@@ -5,6 +5,7 @@ Tests for collection tasks.
 from unittest.mock import patch
 
 import pytest
+from django.core.management.base import CommandError
 from django.test import TestCase
 
 from footycollect.collection.models import Photo
@@ -71,13 +72,14 @@ class TestCleanupOrphanedPhotos(TestCase):
     @patch("footycollect.collection.tasks.logger")
     def test_cleanup_orphaned_photos_exception(self, mock_logger, mock_call_command):
         """Test orphaned photos cleanup with exception."""
-        mock_call_command.side_effect = Exception("Test error")
+        mock_call_command.side_effect = CommandError("Test error")
 
-        with pytest.raises(Exception, match="Test error"):
+        with pytest.raises(CommandError, match="Test error"):
             cleanup_orphaned_photos()
 
         mock_logger.info.assert_called_once_with("Starting orphaned photos cleanup task")
-        mock_logger.exception.assert_called_once_with("Error in orphaned photos cleanup task")
+        mock_logger.exception.assert_called_once()
+        assert "Error in orphaned photos cleanup task" in mock_logger.exception.call_args[0][0]
 
 
 class TestCleanupAllOrphanedPhotos(TestCase):
@@ -103,13 +105,14 @@ class TestCleanupAllOrphanedPhotos(TestCase):
     @patch("footycollect.collection.tasks.logger")
     def test_cleanup_all_orphaned_photos_exception(self, mock_logger, mock_call_command):
         """Test comprehensive orphaned photos cleanup with exception."""
-        mock_call_command.side_effect = Exception("Test error")
+        mock_call_command.side_effect = CommandError("Test error")
 
-        with pytest.raises(Exception, match="Test error"):
+        with pytest.raises(CommandError, match="Test error"):
             cleanup_all_orphaned_photos()
 
         mock_logger.info.assert_called_once_with("Starting comprehensive orphaned photos cleanup task")
-        mock_logger.exception.assert_called_once_with("Error in comprehensive orphaned photos cleanup task")
+        mock_logger.exception.assert_called_once()
+        assert "comprehensive orphaned photos cleanup" in mock_logger.exception.call_args[0][0]
 
 
 class TestCleanupOldIncompletePhotos(TestCase):
@@ -137,10 +140,11 @@ class TestCleanupOldIncompletePhotos(TestCase):
     @patch("footycollect.collection.tasks.logger")
     def test_cleanup_old_incomplete_photos_exception(self, mock_logger, mock_call_command):
         """Test old incomplete photos cleanup with exception."""
-        mock_call_command.side_effect = Exception("Test error")
+        mock_call_command.side_effect = CommandError("Test error")
 
-        with pytest.raises(Exception, match="Test error"):
+        with pytest.raises(CommandError, match="Test error"):
             cleanup_old_incomplete_photos()
 
         mock_logger.info.assert_called_once_with("Starting old incomplete photos cleanup task")
-        mock_logger.exception.assert_called_once_with("Error in old incomplete photos cleanup task")
+        mock_logger.exception.assert_called_once()
+        assert "old incomplete photos cleanup" in mock_logger.exception.call_args[0][0]

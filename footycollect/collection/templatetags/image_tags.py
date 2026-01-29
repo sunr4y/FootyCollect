@@ -1,4 +1,5 @@
 from django import template
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 register = template.Library()
@@ -7,8 +8,9 @@ register = template.Library()
 @register.simple_tag
 def responsive_image(photo, css_class=""):
     original_url = photo.image.url if photo.image else ""
+    caption = escape(photo.caption or "")
+    css_class_safe = escape(css_class)
 
-    # Only include AVIF source if the file actually exists
     avif_url = ""
     if photo.image_avif:
         try:
@@ -21,10 +23,10 @@ def responsive_image(photo, css_class=""):
         html = f"""
         <picture>
             <source srcset="{avif_url}" type="image/avif">
-            <img src="{original_url}" class="{css_class}" alt="{photo.caption}">
+            <img src="{original_url}" class="{css_class_safe}" alt="{caption}">
         </picture>
         """
     else:
-        html = f'<img src="{original_url}" class="{css_class}" alt="{photo.caption}">'
+        html = f'<img src="{original_url}" class="{css_class_safe}" alt="{caption}">'
 
     return mark_safe(html)  # noqa: S308

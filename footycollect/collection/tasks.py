@@ -10,17 +10,34 @@ from urllib.parse import urlparse
 
 import requests
 from celery import shared_task
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.db.models import Max
+from django.db.utils import OperationalError
 
 from footycollect.core.utils.images import optimize_image
 
 from .models import BaseItem, Photo
 
 logger = logging.getLogger(__name__)
+
+
+def _is_allowed_image_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower()
+        allowed = getattr(
+            settings,
+            "ALLOWED_EXTERNAL_IMAGE_HOSTS",
+            ["cdn.footballkitarchive.com", "www.footballkitarchive.com"],
+        )
+        return hostname in [h.lower() for h in allowed]
+    except (ValueError, AttributeError):
+        return False
 
 
 @shared_task
@@ -33,7 +50,7 @@ def cleanup_orphaned_photos():
             "--older-than-hours=24",
             verbosity=1,
         )
-    except Exception:
+    except (CommandError, OSError, OperationalError):
         logger.exception("Error in orphaned photos cleanup task")
         raise
     else:
@@ -49,7 +66,7 @@ def cleanup_all_orphaned_photos():
             "cleanup_orphaned_photos",
             verbosity=1,
         )
-    except Exception:
+    except (CommandError, OSError, OperationalError):
         logger.exception("Error in comprehensive orphaned photos cleanup task")
         raise
     else:
@@ -67,7 +84,7 @@ def cleanup_old_incomplete_photos():
             "--older-than-hours=168",
             verbosity=1,
         )
-    except Exception:
+    except (CommandError, OSError, OperationalError):
         logger.exception("Error in old incomplete photos cleanup task")
         raise
     else:
@@ -80,6 +97,11 @@ def download_external_image_and_attach(app_label, model_name, object_id, image_u
     try:
         if not image_url.startswith("http"):
             image_url = f"https://{image_url}"
+
+        if not _is_allowed_image_url(image_url):
+            logger.warning("Blocked download from untrusted host: %s", image_url)
+            msg = "URL from untrusted source: " + str(image_url)
+            raise ValueError(msg)  # noqa: TRY301
 
         logger.info("Downloading image from URL: %s", image_url)
 
@@ -115,7 +137,7 @@ def download_external_image_and_attach(app_label, model_name, object_id, image_u
             args=[object_id],
             countdown=3,
         )
-    except Exception:
+    except (ValueError, requests.RequestException, OSError):
         logger.exception("Error downloading image %s", image_url)
         check_item_photo_processing.delay(object_id)
         raise

@@ -7,7 +7,8 @@ This service handles filtering and sorting operations for the global kits feed.
 from contextlib import suppress
 from typing import Any
 
-from django.db.models import Q, QuerySet
+from django.db.models import F, Q, QuerySet
+from django.db.models.functions import Mod
 
 from footycollect.collection.models import Jersey
 
@@ -132,20 +133,24 @@ class FeedFilterService:
         Returns:
             Sorted queryset
         """
+        if seed is not None:
+            try:
+                seed = int(seed) % 2147483647
+            except (ValueError, TypeError):
+                seed = None
+
         if sort_type == "newest":
             return queryset.order_by("-base_item__created_at")
         if sort_type == "popular":
             if hasattr(queryset.model.base_item.related.related_model, "view_count"):
                 return queryset.order_by("-base_item__view_count")
             if seed is not None:
-                return queryset.extra(  # noqa: S610
-                    select={"random_order": f'("collection_jersey"."base_item_id" * {seed}) %% 2147483647'}
-                ).order_by("random_order")
+                return queryset.annotate(random_order=Mod(F("base_item_id") * seed, 2147483647)).order_by(
+                    "random_order"
+                )
             return queryset.order_by("?")
         if seed is not None:
-            return queryset.extra(  # noqa: S610
-                select={"random_order": f'("collection_jersey"."base_item_id" * {seed}) %% 2147483647'}
-            ).order_by("random_order")
+            return queryset.annotate(random_order=Mod(F("base_item_id") * seed, 2147483647)).order_by("random_order")
         return queryset.order_by("?")
 
     def parse_filters_from_request(self, request) -> dict[str, Any]:  # noqa: C901
