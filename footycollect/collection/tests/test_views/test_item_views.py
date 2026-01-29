@@ -21,9 +21,9 @@ from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import BaseItem, Brand, Club, Color, Jersey, Season, Size
 from footycollect.collection.views.demo_views import home
 from footycollect.collection.views.detail_views import ItemDetailView
-from footycollect.collection.views.item_views import (
+from footycollect.collection.views.item_views import JerseySelectView
+from footycollect.collection.views.jersey_crud_views import (
     JerseyCreateView,
-    JerseySelectView,
     JerseyUpdateView,
 )
 from footycollect.collection.views.list_views import ItemListView

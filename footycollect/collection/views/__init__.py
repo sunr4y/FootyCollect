@@ -9,7 +9,8 @@ from .crud_views import ItemCreateView, ItemDeleteView, ItemUpdateView
 from .demo_views import home
 from .detail_views import ItemDetailView, ItemQuickViewView
 from .feed_views import FeedView
-from .item_views import JerseyCreateView, JerseySelectView, JerseyUpdateView
+from .item_views import JerseySelectView
+from .jersey_crud_views import JerseyCreateView, JerseyUpdateView
 from .jersey_views import JerseyFKAPICreateView
 from .list_views import ItemListView
 from .photo_views import (
