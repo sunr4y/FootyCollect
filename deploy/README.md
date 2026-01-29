@@ -299,6 +299,47 @@ sudo nginx -t
 sudo ls -la /var/www/footycollect/staticfiles/
 ```
 
+## Static and media files (S3 / CDN)
+
+When using production settings with S3 (or Cloudflare R2), static and media files are served from object storage and optionally a CDN.
+
+### Verification
+
+Before or after deployment, verify static files configuration and that `collectstatic` would run correctly:
+
+```bash
+source venv/bin/activate
+
+# Check STORAGES config and run collectstatic in dry-run (no upload)
+python manage.py verify_staticfiles
+
+# Only check config, skip dry-run
+python manage.py verify_staticfiles --skip-dry-run
+```
+
+### Collecting static files to S3
+
+With production settings (`config.settings.production`), `collectstatic` uploads to the configured bucket. [Collectfasta](https://github.com/jasongi/collectfasta) is used to speed up uploads by only transferring changed files.
+
+```bash
+# Collect static files to S3 (or R2)
+python manage.py collectstatic --noinput
+
+# Optional: clear existing files in the static/ prefix before uploading
+python manage.py collectstatic --noinput --clear
+```
+
+Required environment variables for S3:
+
+- **AWS S3**: `DJANGO_AWS_ACCESS_KEY_ID`, `DJANGO_AWS_SECRET_ACCESS_KEY`, `DJANGO_AWS_STORAGE_BUCKET_NAME`, and optionally `DJANGO_AWS_S3_REGION_NAME`, `DJANGO_AWS_S3_CUSTOM_DOMAIN`
+- **Cloudflare R2**: `STORAGE_BACKEND=r2`, `CLOUDFLARE_ACCESS_KEY_ID`, `CLOUDFLARE_SECRET_ACCESS_KEY`, `CLOUDFLARE_BUCKET_NAME`, `CLOUDFLARE_R2_ENDPOINT_URL`, and optionally `CLOUDFLARE_R2_CUSTOM_DOMAIN`
+
+### File permissions and CDN
+
+- Static files use `public-read` ACL so they are accessible via the bucket URL or custom domain (CDN).
+- Media files (user uploads) use the default bucket ACL; ensure the bucket policy or CDN allows access if they are served publicly.
+- `STATIC_URL` and `MEDIA_URL` are set from the configured custom domain or bucket endpoint in `config/settings/production.py`.
+
 ## Support
 
 For issues or questions, please open an issue on GitHub.

@@ -296,8 +296,6 @@ def check_aws_s3_credentials(app_configs, **kwargs):
 
     return errors + warnings
 
-    return errors + warnings
-
 
 @register(deploy=True)
 def check_allowed_hosts_configured(app_configs, **kwargs):
