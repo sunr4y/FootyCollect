@@ -76,19 +76,11 @@ class TestItemFKAPIService(TestCase):
         mock_form.save.return_value = mock_item
 
         # Mock FKAPI client
-        with patch.object(self.service, "_fetch_kit_data_from_api") as mock_fetch:
-            mock_fetch.return_value = {
-                "name": "API Kit Name",
-                "description": "API Description",
-                "colors": [{"name": "Red"}, {"name": "White"}],
-            }
-
-            # Test the method
+        with patch.object(self.service.kit_processor, "process_kit_data") as mock_process_kit:
             result = self.service.process_item_creation(mock_form, self.user, "jersey")
 
-            # Assertions
             assert result == mock_item
-            mock_fetch.assert_called_once_with("123")
+            mock_process_kit.assert_called_once_with(mock_form, "123")
 
     def test_setup_form_instance(self):
         """Test _setup_form_instance method."""
@@ -112,49 +104,48 @@ class TestItemFKAPIService(TestCase):
         # The method only sets country if country_code exists in cleaned_data
 
     def test_fetch_kit_data_from_api_success(self):
-        """Test _fetch_kit_data_from_api method success."""
+        """Test kit_processor.fetch_kit_data method success."""
         mock_kit_data = {"name": "Test Kit", "brand": "Nike"}
 
-        with patch.object(self.service.fkapi_client, "get_kit_details") as mock_get:
+        with patch.object(self.service.kit_processor.fkapi_client, "get_kit_details") as mock_get:
             mock_get.return_value = mock_kit_data
 
-            result = self.service._fetch_kit_data_from_api("123")
+            result = self.service.kit_processor.fetch_kit_data("123")
 
             assert result == mock_kit_data
             mock_get.assert_called_once_with("123")
 
     def test_fetch_kit_data_from_api_error(self):
-        """Test _fetch_kit_data_from_api method with API unavailable."""
-        with patch.object(self.service.fkapi_client, "get_kit_details") as mock_get:
+        """Test kit_processor.fetch_kit_data method with API unavailable."""
+        with patch.object(self.service.kit_processor.fkapi_client, "get_kit_details") as mock_get:
             mock_get.return_value = None
 
-            result = self.service._fetch_kit_data_from_api("123")
+            result = self.service.kit_processor.fetch_kit_data("123")
 
             assert result is None
             mock_get.assert_called_once_with("123")
 
     def test_add_kit_id_to_description(self):
-        """Test _add_kit_id_to_description method."""
+        """Test kit_processor._add_kit_id_to_description method."""
         mock_form = Mock()
         mock_form.cleaned_data = {"description": "Original description"}
 
-        self.service._add_kit_id_to_description(mock_form, "123")
+        self.service.kit_processor._add_kit_id_to_description(mock_form, "123")
 
         expected_description = "Original description\n\n[Kit ID: 123]"
         assert mock_form.cleaned_data["description"] == expected_description
 
     def test_add_kit_id_to_description_existing(self):
-        """Test _add_kit_id_to_description method with existing kit ID."""
+        """Test kit_processor._add_kit_id_to_description method with existing kit ID."""
         mock_form = Mock()
         mock_form.cleaned_data = {"description": "Original description\n\n[Kit ID: 123]"}
 
-        self.service._add_kit_id_to_description(mock_form, "123")
+        self.service.kit_processor._add_kit_id_to_description(mock_form, "123")
 
-        # Should not add duplicate
         assert mock_form.cleaned_data["description"] == "Original description\n\n[Kit ID: 123]"
 
     def test_process_kit_information(self):
-        """Test _process_kit_information method."""
+        """Test kit_processor._process_kit_information method."""
         mock_form = Mock()
         mock_form.cleaned_data = {"description": "Original description"}
         mock_form.data = {}
@@ -165,15 +156,15 @@ class TestItemFKAPIService(TestCase):
             "colors": [{"name": "Red"}, {"name": "White"}],
         }
 
-        with patch.object(self.service, "_process_kit_colors") as mock_process_colors:
-            self.service._process_kit_information(mock_form, kit_data)
+        with patch.object(self.service.kit_processor, "_process_kit_colors") as mock_process_colors:
+            self.service.kit_processor._process_kit_information(mock_form, kit_data)
 
             assert mock_form.cleaned_data["name"] == "API Kit Name"
             assert "API Description" in mock_form.cleaned_data["description"]
             mock_process_colors.assert_called_once_with(mock_form, kit_data["colors"])
 
     def test_process_kit_colors(self):
-        """Test _process_kit_colors method (item_fkapi writes to form.data)."""
+        """Test kit_processor._process_kit_colors method (writes to form.data)."""
         mock_form = Mock()
         mock_form.data = {}
 
@@ -183,31 +174,31 @@ class TestItemFKAPIService(TestCase):
             {"name": "Blue"},
         ]
 
-        self.service._process_kit_colors(mock_form, colors)
+        self.service.kit_processor._process_kit_colors(mock_form, colors)
 
         assert mock_form.data["main_color"] == "Red"
         assert mock_form.data.get("secondary_colors") == ["White", "Blue"]
 
     def test_process_kit_colors_single(self):
-        """Test _process_kit_colors method with single color (item_fkapi writes to form.data)."""
+        """Test kit_processor._process_kit_colors method with single color."""
         mock_form = Mock()
         mock_form.data = {}
 
         colors = [{"name": "Red"}]
 
-        self.service._process_kit_colors(mock_form, colors)
+        self.service.kit_processor._process_kit_colors(mock_form, colors)
 
         assert mock_form.data["main_color"] == "Red"
         assert "secondary_colors" not in mock_form.data
 
     def test_process_kit_colors_empty(self):
-        """Test _process_kit_colors method with empty colors (item_fkapi returns early)."""
+        """Test kit_processor._process_kit_colors method with empty colors."""
         mock_form = Mock()
         mock_form.data = {}
 
         colors = []
 
-        self.service._process_kit_colors(mock_form, colors)
+        self.service.kit_processor._process_kit_colors(mock_form, colors)
 
         assert mock_form.data == {}
 
