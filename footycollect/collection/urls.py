@@ -2,7 +2,6 @@
 from django.urls import path
 
 from .views import (
-    DropzoneTestView,
     FeedView,
     ItemCreateView,
     ItemDeleteView,
@@ -15,14 +14,10 @@ from .views import (
     JerseyFKAPICreateView,
     JerseySelectView,
     JerseyUpdateView,
-    PostCreateView,
-    demo_brand_view,
-    demo_country_view,
     file_upload,
     handle_dropzone_files,
     home,
     reorder_photos,
-    test_dropzone,
     upload_photo,
 )
 
@@ -35,14 +30,10 @@ from .views import (
 app_name = "collection"
 
 urlpatterns = [
-    # Home and test views
+    # Home
     path("", home, name="home"),
     # Feed
     path("feed/", FeedView.as_view(), name="feed"),
-    path("test/country/", demo_country_view, name="test_country"),
-    path("test/brand/", demo_brand_view, name="test_brand"),
-    path("test/dropzone/", test_dropzone, name="test_dropzone"),
-    path("test/dropzone-page/", DropzoneTestView.as_view(), name="dropzone_test_page"),
     # Item CRUD operations
     path("items/", ItemListView.as_view(), name="item_list"),
     path("items/<int:pk>/", ItemDetailView.as_view(), name="item_detail"),
@@ -64,8 +55,6 @@ urlpatterns = [
     path("upload/", file_upload, name="file_upload"),
     path("upload/photo/", upload_photo, name="upload_photo"),
     path("dropzone/files/", handle_dropzone_files, name="handle_dropzone_files"),
-    # Post creation (legacy)
-    path("post/create/", PostCreateView.as_view(), name="post_create"),
     # Fallback to original views if needed
     # path("jersey/create/details/<int:kit_id>/",
     # original_views.JerseyDetailsView.as_view(), name="jersey_details"),

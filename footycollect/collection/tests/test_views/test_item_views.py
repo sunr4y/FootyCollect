@@ -2,8 +2,8 @@
 Tests for item views.
 
 This module tests the real functionality of item views including:
-- Function-based views (home, demo_country_view, demo_brand_view, test_dropzone)
-- Class-based views (PostCreateView, ItemListView, ItemDetailView, etc.)
+- Function-based views (home)
+- Class-based views (ItemListView, ItemDetailView, etc.)
 - Form handling and validation
 - Photo processing
 - User authentication and permissions
@@ -17,20 +17,16 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
+from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import BaseItem, Brand, Club, Color, Jersey, Season, Size
-from footycollect.collection.views.item_views import (
-    DropzoneTestView,
-    ItemDetailView,
-    ItemListView,
+from footycollect.collection.views.demo_views import home
+from footycollect.collection.views.detail_views import ItemDetailView
+from footycollect.collection.views.item_views import JerseySelectView
+from footycollect.collection.views.jersey_crud_views import (
     JerseyCreateView,
-    JerseySelectView,
     JerseyUpdateView,
-    demo_brand_view,
-    demo_country_view,
-    home,
-    test_dropzone,
 )
+from footycollect.collection.views.list_views import ItemListView
 
 User = get_user_model()
 
@@ -52,66 +48,22 @@ class TestFunctionBasedViews(TestCase):
         )
 
     def test_home_view(self):
-        """Test home view returns photos."""
-        with patch("footycollect.collection.views.item_views.get_photo_service") as mock_service:
-            mock_photo_service = Mock()
-            mock_photos = [Mock(), Mock()]
-            mock_photo_service.photo_repository.get_all.return_value = mock_photos
-            mock_service.return_value = mock_photo_service
-
-            from django.test import RequestFactory
-
-            factory = RequestFactory()
-            request = factory.get("/")
-            response = home(request)
-
-            assert response.status_code == HTTP_OK
-            # Home view returns a TemplateResponse, so we can check context
-            if hasattr(response, "context"):
-                assert "photos" in response.context
-                assert response.context["photos"] == mock_photos
-
-    def test_demo_country_view(self):
-        """Test demo_country_view returns country form."""
+        """Test home view returns home page with kits data."""
         from django.test import RequestFactory
 
         factory = RequestFactory()
         request = factory.get("/")
-        response = demo_country_view(request)
+        response = home(request)
 
         assert response.status_code == HTTP_OK
-        # Demo views return TemplateResponse, so we can check context
+        # Home view returns a TemplateResponse, so we can check context
         if hasattr(response, "context"):
-            assert "form" in response.context
-            assert isinstance(response.context["form"], TestCountryForm)
-
-    def test_demo_brand_view(self):
-        """Test demo_brand_view returns brand form."""
-        from django.test import RequestFactory
-
-        factory = RequestFactory()
-        request = factory.get("/")
-        response = demo_brand_view(request)
-
-        assert response.status_code == HTTP_OK
-        # Demo views return TemplateResponse, so we can check context
-        if hasattr(response, "context"):
-            assert "form" in response.context
-            assert isinstance(response.context["form"], TestBrandForm)
-
-    def test_test_dropzone_view(self):
-        """Test test_dropzone view returns dropzone test page."""
-        from django.test import RequestFactory
-
-        factory = RequestFactory()
-        request = factory.get("/")
-        response = test_dropzone(request)
-
-        assert response.status_code == HTTP_OK
+            assert "columns_items" in response.context
+            assert "use_cached_kits" in response.context
 
 
-class TestPostCreateView(TestCase):
-    """Test PostCreateView functionality."""
+class TestItemViews(TestCase):
+    """Test ItemCreateView functionality."""
 
     def setUp(self):
         """Set up test data."""
@@ -154,7 +106,7 @@ class TestPostCreateView(TestCase):
             "detailed_condition": "EXCELLENT",
         }
 
-        with patch("footycollect.collection.views.item_views.get_photo_service") as mock_service:
+        with patch("footycollect.collection.services.get_photo_service") as mock_service:
             mock_photo_service = Mock()
             mock_service.return_value = mock_photo_service
 
@@ -843,12 +795,3 @@ class TestJerseySelectView(TestCase):
         """Test that prefetch_related_fields is configured correctly."""
         view = JerseySelectView()
         assert view.prefetch_related_fields == []
-
-
-class TestDropzoneTestView(TestCase):
-    """Test DropzoneTestView functionality."""
-
-    def test_template_name_configuration(self):
-        """Test that template_name is configured correctly."""
-        view = DropzoneTestView()
-        assert view.template_name == "collection/dropzone_test_page.html"

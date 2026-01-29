@@ -7,8 +7,9 @@ from unittest.mock import MagicMock, Mock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from footycollect.collection.models import Brand, Club, Competition, Jersey, Season, Size
+from footycollect.collection.models import Brand, Competition, Jersey, Season, Size
 from footycollect.collection.views.jersey_views import JerseyFKAPICreateView
+from footycollect.core.models import Club
 
 User = get_user_model()
 
@@ -277,7 +278,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         mock_form = Mock()
         mock_form.data = {"club_name": "Real Madrid", "club": ""}
 
-        with patch("footycollect.collection.views.jersey_views.Club.objects.get") as mock_get:
+        with patch("footycollect.core.models.Club.objects.get") as mock_get:
             mock_club = Mock()
             mock_club.id = 1
             mock_get.return_value = mock_club
@@ -295,7 +296,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         mock_form = Mock()
         mock_form.data = {"club_name": "New Club", "club": ""}
 
-        with patch("footycollect.collection.views.jersey_views.Club.objects.get") as mock_get:
+        with patch("footycollect.core.models.Club.objects.get") as mock_get:
             mock_get.side_effect = Club.DoesNotExist()
 
             with patch.object(view, "_create_club_from_api_data") as mock_create:
@@ -310,7 +311,11 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
     def test_fetch_kit_data_from_api_success(self):
         """Test _fetch_kit_data_from_api method with success."""
-        with patch("footycollect.collection.views.jersey_views.FKAPIClient") as mock_client_class:
+        with (
+            patch(
+                "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.FKAPIClient"
+            ) as mock_client_class,
+        ):
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.get_kit_details.return_value = {"kit": "data"}
@@ -325,9 +330,11 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
     def test_fetch_kit_data_from_api_error(self):
         """Test _fetch_kit_data_from_api method with error."""
         with (
-            patch("footycollect.collection.views.jersey_views.FKAPIClient") as mock_client_class,
-            patch("footycollect.collection.views.jersey_views.logger") as mock_logger,
-            patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
+            patch(
+                "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.FKAPIClient"
+            ) as mock_client_class,
+            patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger,
+            patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.messages") as mock_messages,
         ):
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -382,7 +389,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             "brand": {"logo": "https://example.com/logo.png"},
         }
 
-        with patch("footycollect.collection.views.jersey_views.logger") as mock_logger:
+        with patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger:
             view._extract_brand_logo(kit_data)
 
             assert hasattr(view, "fkapi_data")
@@ -400,7 +407,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             },
         }
 
-        with patch("footycollect.collection.views.jersey_views.logger") as mock_logger:
+        with patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger:
             view._extract_team_data(kit_data)
 
             assert hasattr(view, "fkapi_data")
@@ -419,7 +426,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             ],
         }
 
-        with patch("footycollect.collection.views.jersey_views.logger") as mock_logger:
+        with patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger:
             view._extract_competition_logos(kit_data)
 
             assert hasattr(view, "fkapi_data")
@@ -432,7 +439,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view = JerseyFKAPICreateView()
         mock_form = Mock()
 
-        with patch("footycollect.collection.views.jersey_views.Kit.objects.get") as mock_get:
+        with patch("footycollect.collection.models.Kit.objects.get") as mock_get:
             mock_kit = Mock()
             mock_get.return_value = mock_kit
 
@@ -617,7 +624,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view = JerseyFKAPICreateView()
 
         # Mock FKAPI client
-        with patch("footycollect.collection.views.jersey_views.FKAPIClient") as mock_client_class:
+        with patch(
+            "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.FKAPIClient"
+        ) as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.get_kit_details.return_value = {
@@ -721,7 +730,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         with (
             patch("footycollect.collection.views.jersey_views.CreateView.form_valid") as mock_super,
             patch(
-                "footycollect.collection.views.jersey_views.Competition.objects.get_or_create",
+                "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.Competition.objects.get_or_create",
             ) as mock_get_or_create,
             patch("footycollect.collection.models.Color.objects.get_or_create") as mock_color_get_or_create,
         ):
