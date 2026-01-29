@@ -44,16 +44,34 @@ class UserService:
                 "user": user,
             }
 
-        # Get user's items using service
-        user_items = self.item_service.get_user_items(user)
+        from footycollect.collection.models import Jersey
 
-        # Calculate stats
+        user_items = self.item_service.get_user_items(user)
         total_items = user_items.count()
         total_teams = user_items.filter(club__isnull=False).values("club").distinct().count()
         total_competitions = user_items.filter(competitions__isnull=False).values("competitions").distinct().count()
 
-        # Get recent items for display
-        recent_items = user_items.select_related("club", "brand", "season").order_by("-created_at")[:10]
+        recent_items = (
+            Jersey.objects.filter(base_item__user=user)
+            .select_related(
+                "base_item",
+                "base_item__user",
+                "base_item__club",
+                "base_item__season",
+                "base_item__brand",
+                "base_item__main_color",
+                "size",
+                "kit",
+                "kit__type",
+            )
+            .prefetch_related(
+                "base_item__competitions",
+                "base_item__photos",
+                "base_item__secondary_colors",
+                "base_item__tags",
+            )
+            .order_by("-base_item__created_at")[:10]
+        )
 
         return {
             "show_details": True,

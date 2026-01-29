@@ -8,90 +8,13 @@
   {{ block.super }}
   <link href="{% static 'css/collection.css' %}" rel="stylesheet" />
   <link href="{% static 'css/users.css' %}" rel="stylesheet" />
-  <style>
-    .text-primary {
-      color: var(--fc-primary) !important;
-    }
-
-    .text-success {
-      color: var(--fc-foreground) !important;
-    }
-
-    .text-muted {
-      color: var(--fc-muted-foreground) !important;
-    }
-
-    .btn-primary {
-      background-color: var(--fc-primary);
-      border-color: var(--fc-primary);
-      color: var(--fc-primary-foreground);
-    }
-
-    .btn-primary:hover {
-      background-color: hsla(180, 85%, 40%, 0.9);
-      border-color: hsla(180, 85%, 40%, 0.9);
-    }
-
-    .btn-outline-secondary {
-      border-color: var(--fc-border);
-      color: var(--fc-foreground);
-    }
-
-    .btn-outline-secondary:hover {
-      background-color: hsla(220, 15%, 15%, 0.3);
-      border-color: hsla(180, 85%, 40%, 0.5);
-      color: var(--fc-foreground);
-    }
-
-    .page-link {
-      border-color: var(--fc-border);
-      background: var(--fc-card);
-      color: var(--fc-foreground);
-    }
-
-    .page-link:hover {
-      background-color: hsla(220, 15%, 15%, 0.3);
-      border-color: hsla(180, 85%, 40%, 0.5);
-      color: var(--fc-foreground);
-    }
-
-    .page-item.active .page-link {
-      background-color: var(--fc-primary);
-      border-color: var(--fc-primary);
-      color: var(--fc-primary-foreground);
-    }
-
-    h1,
-    h3 {
-      color: var(--fc-foreground);
-    }
-
-    .empty-state-icon {
-      color: var(--fc-muted-foreground);
-    }
-
-    .stats-card {
-      background: var(--fc-card) !important;
-      border: 1px solid var(--fc-border) !important;
-      color: var(--fc-foreground) !important;
-    }
-
-    .stats-card .card-body {
-      background: var(--fc-card) !important;
-      color: var(--fc-foreground) !important;
-    }
-
-    .stats-row.mb-4 {
-      margin-bottom: 2.5rem !important;
-    }
-
-    [x-cloak] {
-      display: none !important;
-    }
-  </style>
 {% endblock css %}
 {% block title %}
-  {% trans "My Collection" %}
+  {% if is_user_collection %}
+    {% blocktrans with username=profile_user.username %}Collection of {{ username }}{% endblocktrans %}
+  {% else %}
+    {% trans "My Collection" %}
+  {% endif %}
 {% endblock title %}
 {% block content %}
   <div class="container">
@@ -104,41 +27,78 @@
       <div class="col-lg-12">
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="h3 mb-0">{% trans "My Collection" %}</h1>
-          <a href="{% url 'collection:item_create' %}" class="btn btn-primary fc-font-space-grotesk">
-            <i class="bi bi-plus-circle"></i> {% trans "Add New Item" %}
-          </a>
+          <h1 class="h3 mb-0">
+            {% if is_user_collection %}
+              {% blocktrans with username=profile_user.username %}Collection of {{ username }}{% endblocktrans %}
+            {% else %}
+              {% trans "My Collection" %}
+            {% endif %}
+          </h1>
+          {% if not is_user_collection or profile_user == request.user %}
+            <a href="{% url 'collection:jersey_create_automatic' %}" class="btn btn-primary fc-font-space-grotesk">
+              <i class="bi bi-plus-circle"></i> {% trans "Add New Item" %}
+            </a>
+          {% endif %}
         </div>
         <!-- Collection Stats -->
-        {% cache 600 collection_stats request.user.pk %}
-        <div class="row mb-4 stats-row" style="margin-bottom: 2.5rem !important;">
-          <div class="col-md-3">
-            <div class="card text-center stats-card">
-              <div class="card-body">
-                <h5 class="card-title text-primary">{{ total_items }}</h5>
-                <p class="card-text text-muted">{% trans "Total Items" %}</p>
+        {% if is_user_collection %}
+          <div class="row mb-4 stats-row" style="margin-bottom: 2.5rem !important;">
+            <div class="col-md-3">
+              <div class="card text-center stats-card">
+                <div class="card-body">
+                  <h5 class="card-title text-primary">{{ total_items }}</h5>
+                  <p class="card-text text-muted">{% trans "Total Items" %}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center stats-card">
+                <div class="card-body">
+                  <h5 class="card-title text-success">{{ items|length }}</h5>
+                  <p class="card-text text-muted">{% trans "On This Page" %}</p>
+                </div>
               </div>
             </div>
           </div>
-          <div class="col-md-3">
-            <div class="card text-center stats-card">
-              <div class="card-body">
-                <h5 class="card-title text-success">{{ items|length }}</h5>
-                <p class="card-text text-muted">{% trans "On This Page" %}</p>
+        {% else %}
+          {% cache 600 collection_stats request.user.pk %}
+          <div class="row mb-4 stats-row" style="margin-bottom: 2.5rem !important;">
+            <div class="col-md-3">
+              <div class="card text-center stats-card">
+                <div class="card-body">
+                  <h5 class="card-title text-primary">{{ total_items }}</h5>
+                  <p class="card-text text-muted">{% trans "Total Items" %}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center stats-card">
+                <div class="card-body">
+                  <h5 class="card-title text-success">{{ items|length }}</h5>
+                  <p class="card-text text-muted">{% trans "On This Page" %}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      {% endcache %}
+        {% endcache %}
+      {% endif %}
       <!-- Items Grid -->
       {% if items %}
-        {% cache 300 collection_items_grid request.user.pk page_obj.number %}
-        <div class="row" style="row-gap: 0.75rem;">
-          {% for item in items %}
-            {% include "cotton/item_card.html" with item=item show_user=False show_edit=True show_delete=True quick_view_enabled=True %}
-          {% endfor %}
-        </div>
-      {% endcache %}
+        {% if is_user_collection %}
+          <div class="row" style="row-gap: 0.75rem;">
+            {% for item in items %}
+              {% include "cotton/item_card.html" with item=item show_user=False show_edit=can_edit_items show_delete=can_edit_items quick_view_enabled=True %}
+            {% endfor %}
+          </div>
+        {% else %}
+          {% cache 300 collection_items_grid request.user.pk page_obj.number %}
+          <div class="row" style="row-gap: 0.75rem;">
+            {% for item in items %}
+              {% include "cotton/item_card.html" with item=item show_user=False show_edit=True show_delete=True quick_view_enabled=True %}
+            {% endfor %}
+          </div>
+        {% endcache %}
+      {% endif %}
       <!-- Pagination -->
       {% if is_paginated %}
         <nav aria-label="{% trans 'Collection pagination' %}">
@@ -171,46 +131,59 @@
       <!-- Empty State -->
       <div class="text-center py-5">
         <i class="bi bi-collection text-muted empty-state-icon"></i>
-        <h3 class="mt-3 text-muted">{% trans "No items in your collection yet" %}</h3>
-        <p class="text-muted mb-4">{% trans "Start building your collection by adding your first item!" %}</p>
-        <a href="{% url 'collection:item_create' %}" class="btn btn-primary btn-lg">
-          <i class="bi bi-plus-circle"></i> {% trans "Add Your First Item" %}
-        </a>
+        {% if is_user_collection %}
+          <h3 class="mt-3 text-muted">{% trans "This user has no items yet" %}</h3>
+          <p class="text-muted mb-4">
+            {% blocktrans with username=profile_user.username %}{{ username }} has not added any items to their collection.{% endblocktrans %}
+          </p>
+          {% if can_edit_items %}
+            <a href="{% url 'collection:item_create' %}" class="btn btn-primary btn-lg">
+              <i class="bi bi-plus-circle"></i> {% trans "Add Your First Item" %}
+            </a>
+          {% endif %}
+        {% else %}
+          <h3 class="mt-3 text-muted">{% trans "No items in your collection yet" %}</h3>
+          <p class="text-muted mb-4">{% trans "Start building your collection by adding your first item!" %}</p>
+          <a href="{% url 'collection:item_create' %}" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle"></i> {% trans "Add Your First Item" %}
+          </a>
+        {% endif %}
       </div>
     {% endif %}
   </div>
 </div>
 </div>
 {% include "cotton/quick_view_modal.html" %}
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-light border-0 shadow-lg">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="deleteItemModalLabel">{% trans "Delete Item" %}</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center py-4">
-        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
-        <p class="mt-3 mb-1 text-light">
-          {% trans "Are you sure you want to delete" %} <strong id="deleteItemName"></strong>?
-        </p>
-        <p class="text-secondary small">{% trans "This action cannot be undone." %}</p>
-      </div>
-      <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
-        <form id="deleteItemForm" method="post" class="d-inline">
-          {% csrf_token %}
-          <input type="hidden" name="page" id="deletePageInput" value="{{ page_obj.number|default:1 }}" />
-          <button type="submit" class="btn btn-danger">
-            <i class="bi bi-trash"></i> {% trans "Yes, delete" %}
-          </button>
-        </form>
+{% if not is_user_collection or can_edit_items %}
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-light border-0 shadow-lg">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="deleteItemModalLabel">{% trans "Delete Item" %}</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+          <p class="mt-3 mb-1 text-light">
+            {% trans "Are you sure you want to delete" %} <strong id="deleteItemName"></strong>?
+          </p>
+          <p class="text-secondary small">{% trans "This action cannot be undone." %}</p>
+        </div>
+        <div class="modal-footer border-0 justify-content-center">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+          <form id="deleteItemForm" method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="page" id="deletePageInput" value="{{ page_obj.number|default:1 }}" />
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> {% trans "Yes, delete" %}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
-<script>
+  <script>
   function showDeleteModal(button) {
     const deleteUrl = button.getAttribute('data-delete-url');
     const itemName = button.dataset.itemName;
@@ -222,5 +195,6 @@
     document.getElementById('deletePageInput').value = currentPage;
     new bootstrap.Modal(document.getElementById('deleteItemModal')).show();
   }
-</script>
+  </script>
+{% endif %}
 {% endblock content %}
