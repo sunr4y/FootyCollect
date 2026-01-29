@@ -44,7 +44,7 @@ class ItemRepository(BaseRepository):
 
         return (
             queryset.select_related("user", "club", "season", "brand", "main_color")
-            .prefetch_related("photos", "competitions", "secondary_colors")
+            .prefetch_related("photos", "competitions", "secondary_colors", "tags")
             .order_by("-created_at")
         )
 
@@ -66,7 +66,7 @@ class ItemRepository(BaseRepository):
 
         return (
             queryset.select_related("user", "club", "season", "brand", "main_color")
-            .prefetch_related("photos", "competitions", "secondary_colors")
+            .prefetch_related("photos", "competitions", "secondary_colors", "tags")
             .order_by("-created_at")
         )
 
@@ -91,7 +91,7 @@ class ItemRepository(BaseRepository):
         return (
             queryset.filter(search_filter)
             .select_related("user", "club", "season", "brand", "main_color")
-            .prefetch_related("photos", "competitions", "secondary_colors")
+            .prefetch_related("photos", "competitions", "secondary_colors", "tags")
             .order_by("-created_at")
         )
 
@@ -111,7 +111,7 @@ class ItemRepository(BaseRepository):
 
         return (
             queryset.select_related("user", "club", "season", "brand", "main_color")
-            .prefetch_related("photos", "competitions", "secondary_colors")
+            .prefetch_related("photos", "competitions", "secondary_colors", "tags")
             .order_by("-created_at")
         )
 
@@ -131,7 +131,7 @@ class ItemRepository(BaseRepository):
 
         return (
             queryset.select_related("user", "club", "season", "brand", "main_color")
-            .prefetch_related("photos", "competitions", "secondary_colors")
+            .prefetch_related("photos", "competitions", "secondary_colors", "tags")
             .order_by("-created_at")
         )
 
@@ -151,7 +151,7 @@ class ItemRepository(BaseRepository):
 
         return (
             queryset.select_related("user", "club", "season", "brand", "main_color")
-            .prefetch_related("photos", "competitions", "secondary_colors")
+            .prefetch_related("photos", "competitions", "secondary_colors", "tags")
             .order_by("-created_at")
         )
 
@@ -171,7 +171,7 @@ class ItemRepository(BaseRepository):
 
         return (
             queryset.select_related("user", "club", "season", "brand", "main_color")
-            .prefetch_related("photos", "competitions", "secondary_colors")
+            .prefetch_related("photos", "competitions", "secondary_colors", "tags")
             .order_by("-created_at")[:limit]
         )
 
