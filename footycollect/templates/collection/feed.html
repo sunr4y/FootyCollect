@@ -222,7 +222,7 @@
           </form>
         </div>
         <!-- Page Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-5 pb-2">
           <h1 class="h3 mb-0">{% trans "Discover Kits" %}</h1>
         </div>
         <!-- Filter Chips -->
@@ -717,7 +717,7 @@
             return;
           }
 
-          const newItems = newItemsGrid.querySelectorAll('.col-md-6.col-lg-3, .col-md-6');
+          const newItems = Array.from(newItemsGrid.children);
 
           if (newItems.length > 0) {
             newItems.forEach(item => {

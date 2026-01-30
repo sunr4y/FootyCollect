@@ -43,8 +43,8 @@ __all__ = [
     "upload_photo",
     "file_upload",
     "handle_dropzone_files",
-    "proxy_image",
     "PhotoProcessorMixin",
+    "proxy_image",
     # Demo views
     "home",
 ]

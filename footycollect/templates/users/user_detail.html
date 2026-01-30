@@ -85,9 +85,10 @@
           </div>
           <!-- Recent Items (Cotton item_card, same grid as item_list) -->
           {% if recent_items %}
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center fc-recent-items-header mb-4">
               <h3 class="h5 mb-0">{% trans "Recent Items" %}</h3>
-              <a href="{% url 'users:user_items' username=object.username %}" class="btn btn-outline-primary btn-sm">
+              <a href="{% url 'users:user_items' username=object.username %}"
+                 class="btn btn-outline-primary btn-sm fc-btn-view-collection">
                 {% blocktrans count counter=total_items %}View full collection ({{ counter }} item){% plural %}View full collection ({{ counter }} items){% endblocktrans %}
               </a>
             </div>
@@ -98,7 +99,7 @@
             </div>
           {% elif total_items %}
             <div class="mb-3">
-              <a href="{% url 'users:user_items' username=object.username %}" class="btn btn-outline-primary">
+              <a href="{% url 'users:user_items' username=object.username %}" class="btn btn-outline-primary fc-btn-view-collection">
                 {% blocktrans count counter=total_items %}View full collection ({{ counter }} item){% plural %}View full collection ({{ counter }} items){% endblocktrans %}
               </a>
             </div>
