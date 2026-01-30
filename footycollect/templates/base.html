@@ -1,4 +1,4 @@
-{% load static i18n compress %}
+{% load static i18n compress cotton %}
 
 <!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}
@@ -12,22 +12,73 @@
       {% endblock title %}
     </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description"
-          content="Manage your inventory of football memorabilia collection" />
+    <meta name="description" content="Manage your inventory of football memorabilia collection" />
     <meta name="author" content="sunr4y" />
-    <!-- Animated favicons for different devices and sizes -->
+    <!-- Animated SVG favicon - rotates between different shirt designs every 1 second using JavaScript -->
     <link rel="icon"
-          type="image/gif"
-          sizes="16x16"
-          href="{% static 'images/favicons/favicon-16x16.gif' %}" />
-    <link rel="icon"
-          type="image/gif"
-          sizes="32x32"
-          href="{% static 'images/favicons/favicon-32x32.gif' %}" />
-    <link rel="apple-touch-icon"
-          sizes="180x180"
-          href="{% static 'images/favicons/favicon-32x32.gif' %}" />
-    <meta name="theme-color" content="#0d6efd" />
+          type="image/svg+xml"
+          href="data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 127.24603 127.24603' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23d00' d='m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z'/%3E%3Cpath fill='%23006' d='m42.2 2.5c-3.8.1-6.5 1-6.6 1-.3 0-.5.2-.7.3l-29.7 20.7c-2.73 1.8-3.53 5.4-1.73 8.1l10.7 16.1c1.1 1.6 2.9 2.6 4.9 2.6 1.1 0 2.2-.4 3.2-1 0-.1.1-.1.2-.2l7-5.9v62.8c0 1 1.1 2 2.5 2h20.5v-92.1h1.8c-3.9-2.8-6.6-6.94-6.7-11.3.1-.1.1-.3.1-.4.1-.7-.1-1.4-.6-1.9-.4-.5-1.1-.8-1.8-.8h-3.1zm40.7 0c-.7 0-1.4.3-1.8.8s-.7 1.2-.6 1.9c.1.1.1.3.1.4-.1 4.36-2.9 8.5-6.8 11.3h.7v92.1h21.4c1.4 0 2.5-1 2.5-2l.2-63.1 6.4 5.3v.2c1 .7 2 1 3 1 2 0 4-1 5-2.6l11-15.2c2-2.7 1-6.4-2-8.1l-28.3-20.7c-.1 0-.1-.1-.2-.1-.2-.1-2.1-1.2-4.5-1.2h-6.1z'/%3E%3C/svg%3E"
+          id="favicon-svg" />
+    <!-- Fallback for browsers that don't support SVG favicons -->
+    <link rel="icon" type="image/gif" sizes="32x32" href="{% static 'images/favicons/favicon-32x32.gif' %}" />
+    <link rel="icon" type="image/gif" sizes="16x16" href="{% static 'images/favicons/favicon-16x16.gif' %}" />
+    <!-- Apple touch icon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicons/favicon-32x32.gif' %}" />
+    <!-- JavaScript to animate favicon by rotating between designs -->
+    <script>
+      (function() {
+        const designs = [
+          // Design 1: Vertical Navy-Red
+          '%3Csvg width=\'32\' height=\'32\' viewBox=\'0 0 127.24603 127.24603\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath fill=\'%23d00\' d=\'m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z\'/%3E%3Cpath fill=\'%23006\' d=\'m42.2 2.5c-3.8.1-6.5 1-6.6 1-.3 0-.5.2-.7.3l-29.7 20.7c-2.73 1.8-3.53 5.4-1.73 8.1l10.7 16.1c1.1 1.6 2.9 2.6 4.9 2.6 1.1 0 2.2-.4 3.2-1 0-.1.1-.1.2-.2l7-5.9v62.8c0 1 1.1 2 2.5 2h20.5v-92.1h1.8c-3.9-2.8-6.6-6.94-6.7-11.3.1-.1.1-.3.1-.4.1-.7-.1-1.4-.6-1.9-.4-.5-1.1-.8-1.8-.8h-3.1zm40.7 0c-.7 0-1.4.3-1.8.8s-.7 1.2-.6 1.9c.1.1.1.3.1.4-.1 4.36-2.9 8.5-6.8 11.3h.7v92.1h21.4c1.4 0 2.5-1 2.5-2l.2-63.1 6.4 5.3v.2c1 .7 2 1 3 1 2 0 4-1 5-2.6l11-15.2c2-2.7 1-6.4-2-8.1l-28.3-20.7c-.1 0-.1-.1-.2-.1-.2-.1-2.1-1.2-4.5-1.2h-6.1z\'/%3E%3C/svg%3E',
+          // Design 2: Band Blue-White-Red
+          '%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20127.24603%20127.24603%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%3E%3Cpath%20fill%3D%22%23d00%22%20d%3D%22m32%20109c-1.4%200-2.5-1.1-2.5-2.5v-62.6l-7%205.9c-.1.1-.2.1-.2.2-1%20.6-2.1%201-3.2%201-2%200-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3%201.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1%200%202.8-.9%206.6-1h3.1c.7%200%201.4.3%201.8.8.5.5.7%201.2.6%201.9%200%20.1%200%20.3-.1.4.2%207.5%208.1%2014.5%2016.5%2014.5s16.3-7%2016.5-14.5c0-.1%200-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8%201.8-.8h6.1c2.4%200%204.3%201.1%204.5%201.2.1%200%20.1.1.2.1l28.7%2020.7c2.6%201.7%203.4%205.4%201.6%208.1l-10.7%2015.2c-1%201.6-2.9%202.6-4.9%202.6-1.2%200-2.3-.3-3.2-1-.1%200-.1-.1-0.2-.2l-6.4-5.3-.2%2062.9c0%201.4-1.1%202.5-2.5%202.5h-63.9z%22%2F%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22m42.2%202.5c-3.8.1-6.5%201-6.6%201-.3%200-.5.20-.7.30l-29.7%2020.7c-2.73%201.8-3.53%205.4-1.73%208.1l10.7%2016.1c1.1%201.6%202.9%202.6%204.9%202.6%201.1%200%202.2-.4%203.2-1%200-.1.1-.1.2-.2l7-5.9v62.8c0%201%201.1%202%202.5%202h63.9c1.4%200%202.5-1%202.5-2l.2-63.1%206.4%205.3v.2c1%20.7%202%201%203%201%202%200%204-1%205-2.6l11-15.2c2-2.7%201-6.4-2-8.1l-28.3-20.7c-.1%200-.1-.10-.2-.10-.2-.10-2.1-1.2-4.5-1.2h-6.1c-.7%200-1.4.30-1.8.80s-.7%201.2-.6%201.9c.1.10.1.30.1.40-.2%207.5-8.1%2014.5-16.5%2014.5s-16.3-7-16.5-14.5c.1-.10.1-.30.1-.40.1-.70-.1-1.4-.6-1.9-.4-.50-1.1-.80-1.8-.80h-3.1zm-11.9%2047.7h66.8v9h-66.8v-9z%22%2F%3E%3Cpath%20fill%3D%22%2333f%22%20d%3D%22m42.2%202.5c-3.8.1-6.5%201-6.6%201-.3%200-.5.20-.7.30l-29.7%2020.7c-2.73%201.8-3.53%205.4-1.73%208.1l10.7%2016.1c1.1%201.6%202.9%202.6%204.9%202.6%201.1%200%202.2-.4%203.2-1%200-.1.1-.1.2-.2l7-5.9v62.8c0%201%201.1%202%202.5%202h63.9c1.4%200%202.5-1%202.5-2l.2-63.1%206.4%205.3v.2c1%20.7%202%201%203%201%202%200%204-1%205-2.6l11-15.2c2-2.7%201-6.4-2-8.1l-28.3-20.7c-.1%200-.1-.10-.2-.10-.2-.10-2.1-1.2-4.5-1.2h-6.1c-.7%200-1.4.30-1.8.80s-.7%201.2-.6%201.9c.1.10.1.30.1.40-.2%207.5-8.1%2014.5-16.5%2014.5s-16.3-7-16.5-14.5c.1-.10.1-.30.1-.40.1-.70-.1-1.4-.6-1.9-.4-.50-1.1-.80-1.8-.80h-3.1zm-11.4%2038.7h65.6v26.8h-65.6v-26.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E',
+          // Design 3: Hoops Red-White
+          '%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20127.24603%20127.24603%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%3E%3Cpath%20fill%3D%22%23d00%22%20d%3D%22m32%20109c-1.4%200-2.5-1.1-2.5-2.5v-62.6l-7%205.9c-.1.1-.2.1-.2.2-1%20.6-2.1%201-3.2%201-2%200-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3%201.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1%200%202.8-.9%206.6-1h3.1c.7%200%201.4.3%201.8.8.5.5.7%201.2.6%201.9%200%20.1%200%20.3-.1.4.2%207.5%208.1%2014.5%2016.5%2014.5s16.3-7%2016.5-14.5c0-.1%200-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8%201.8-.8h6.1c2.4%200%204.3%201.1%204.5%201.2.1%200%20.1.1.2.1l28.7%2020.7c2.6%201.7%203.4%205.4%201.6%208.1l-10.7%2015.2c-1%201.6-2.9%202.6-4.9%202.6-1.2%200-2.3-.3-3.2-1-.1%200-.1-.1-0.2-.2l-6.4-5.3-.2%2062.9c0%201.4-1.1%202.5-2.5%202.5h-63.9z%22%2F%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22m42.2%202.5c-3.8.1-6.5%201-6.6%201-.3%200-.5.20-.7.30l-22.3%2015.5h46.6c-6.4-2-11.5-7.7-11.6-13.7.1-.10.1-.30.1-.40.1-.70-.1-1.4-.6-1.9-.4-.50-1.1-.80-1.8-.80h-3.1zm40.7%200c-.7%200-1.4.30-1.8.80s-.7%201.2-.6%201.9c.1.10.1.30.1.40-.2%206-5.3%2011.7-11.6%2013.7h46l-21.3-15.5c-.1%200-.1-.10-.2-.10-.2-.10-2.1-1.2-4.5-1.2h-6.1zm-78.6%2031.3l9.63%2014.5h10.7l4.9-4.1v4.1h69.1v-4.4l5.4%204.4h9v-.5l10-14h-119zm25.2%2029v14.5h69v-14.5h-69zm0%2029v15.2c0%201%201.1%202%202.5%202h63.9c1.4%200%202.5-1%202.5-2v-15.2h-68.9z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E',
+          // Design 4: Stripes Gold-Maroon
+          '%3Csvg width=\'32\' height=\'32\' viewBox=\'0 0 127.24603 127.24603\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath fill=\'%23fa0\' d=\'m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z\'/%3E%3Cpath fill=\'%23900\' d=\'m44.7 2.5v106l13 1v-90.2c-5.7-2.4-10-7.7-10.1-13.2.1-.10.1-.30.1-.40.1-.70-.1-1.4-.6-1.9-.4-.50-1.1-.80-1.8-.80h-.6zm38.2 0c-.7 0-1.4.30-1.8.80s-.7 1.2-.6 1.9c.1.10.1.30.1.40-.2 5.5-4.5 10.8-10.1 13.2v90.2h12.6v-106l-.2-.5z\'/%3E%3C/svg%3E',
+          // Design 5: Quarters White-Blue
+          '%3Csvg width=\'32\' height=\'32\' viewBox=\'0 0 127.24603 127.24603\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath fill=\'%23ffffff\' d=\'m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z\'/%3E%3Cpath fill=\'%23006\' d=\'m42.2 2.5c-3.8.1-6.5 1-6.6 1-.3 0-.5.20-.7.30l-5 3.48 33.5 27.9 34.3-28.5-4-2.9c-.1 0-.1-.10-.2-.10-.2-.10-2.1-1.2-4.5-1.2h-6.1c-.7 0-1.4.30-1.8.80s-.7 1.2-.6 1.9c.1.10.1.30.1.40-.2 7.5-8.1 14.5-16.5 14.5s-16.3-7-16.5-14.5c.1-.10.1-.30.1-.40.1-.70-.1-1.4-.6-1.9-.4-.50-1.1-.80-1.8-.80h-3.1zm66.8 12.5l-45.6 38.2-45.3-37.7-12.9 9c-2.73 1.8-3.53 5.4-1.73 8.1l10.7 16.1c1.1 1.6 2.9 2.6 4.9 2.6 1.1 0 2.2-.4 3.2-1 0-.1.1-.1.2-.2l7-5.9v62.8c0 1 1.1 2 2.5 2h63.9c1.4 0 2.5-1 2.5-2l.2-63.1 6.4 5.3v.2c1 .7 2 1 3 1 2 0 4-1 5-2.6l11-15.2c2-2.7 1-6.4-2-8.1l-13-9.5z\'/%3E%3C/svg%3E',
+          // Design 6: Diagonal White-Red
+          '%3Csvg width=\'32\' height=\'32\' viewBox=\'0 0 127.24603 127.24603\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath fill=\'%23ffffff\' d=\'m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z\'/%3E%3Cpath fill=\'%23d00\' d=\'m42.2 2.5c-3.8.1-6.5 1-6.6 1-.3 0-.5.20-.7.30l-5 3.47 66.2 102c1.3 0 2.3-1 2.3-2l.2-63.1 6.4 5.3v.2c1 .7 2 1 3 1 2 0 4-1 5-2.6l11-15.2c2-2.7 1-6.4-2-8.1l-28.3-20.7c-.1 0-.1-.10-.2-.10-.2-.10-2.1-1.2-4.5-1.2h-6.1c-.7 0-1.4.30-1.8.80s-.7 1.2-.6 1.9c.1.10.1.30.1.40-.2 7.5-8.1 14.5-16.5 14.5s-16.3-7-16.5-14.5c.1-.10.1-.30.1-.40.1-.70-.1-1.4-.6-1.9-.4-.50-1.1-.80-1.8-.80h-3.1z\'/%3E%3C/svg%3E',
+          // Design 7: Halves Blue-Navy
+          '%3Csvg width=\'32\' height=\'32\' viewBox=\'0 0 127.24603 127.24603\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath fill=\'%2333f\' d=\'m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z\'/%3E%3Cpath fill=\'%23ffffff\' d=\'m82.9 2.5c-.7 0-1.4.30-1.8.80s-.7 1.2-.6 1.9c.1.10.1.30.1.40-.2 7.5-8.1 14.5-16.5 14.5h-.2v36.3h34.6v-2.2h-2.6v-48.8l-2.2-1.6c-.1 0-.1-.10-.2-.10-.2-.10-2.1-1.2-4.5-1.2h-6.1zm-50.9 3.32l-26.8 18.7c-2.73 1.8-3.53 5.4-1.73 8.1l10.7 16.1c1.1 1.6 2.9 2.6 4.9 2.6 1.1 0 2.2-.4 3.2-1 0-.1.1-.1.2-.2l7-5.9v62.8c0 1 1.1 2 2.5 2h31.9v-52.6h-31.9v-50.6z\'/%3E%3C/svg%3E',
+          // Design 8: Chevron Navy-White
+          '%3Csvg width=\'32\' height=\'32\' viewBox=\'0 0 127.24603 127.24603\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath fill=\'%23000066\' d=\'m32 109c-1.4 0-2.5-1.1-2.5-2.5v-62.6l-7 5.9c-.1.1-.2.1-.2.2-1 .6-2.1 1-3.2 1-2 0-3.8-1-4.9-2.6l-10.7-16.1c-1.8-2.7-1-6.3 1.7-8.1l29.7-20.7c.2-.1.4-.3.7-.3.1 0 2.8-.9 6.6-1h3.1c.7 0 1.4.3 1.8.8.5.5.7 1.2.6 1.9 0 .1 0 .3-.1.4.2 7.5 8.1 14.5 16.5 14.5s16.3-7 16.5-14.5c0-.1 0-.3-.1-.4-.1-.7.2-1.4.6-1.9s1.1-.8 1.8-.8h6.1c2.4 0 4.3 1.1 4.5 1.2.1 0 .1.1.2.1l28.7 20.7c2.6 1.7 3.4 5.4 1.6 8.1l-10.7 15.2c-1 1.6-2.9 2.6-4.9 2.6-1.2 0-2.3-.3-3.2-1-.1 0-.1-.1-0.2-.2l-6.4-5.3-.2 62.9c0 1.4-1.1 2.5-2.5 2.5h-63.9z\'/%3E%3Cpath fill=\'%233333ff\' d=\'m42.2 2.5c-3.8.1-6.5 1-6.6 1-.3 0-.5.2-.7.3l-2.9 2.01 0 46.7 -2.5 0 0 54.5 c 0 1 1.1 2 2.5 2 l 31.5 0 0 -88.9 c -8.2 -0.3 -15.7 -7.2 -15.9 -14.5 0.1 -0.1 0.1 -0.3 0.1 -0.4 0.1 -0.7 -0.1 -1.4 -0.6 -1.9 -0.4 -0.5 -1.1 -0.8 -1.8 -0.8 l -3.1 0 z m 53.7 2.89 0 104 c 1.4 0 2.5 -1 2.5 -2 l 0.2 -63.1 6.4 5.3 0 0.2 c 1 0.7 2 1 3 1 2 0 4 -1 5 -2.6 l 11 -15.2 c 2 -2.7 1 -6.4 -2 -8.1 L 95.9 5.79 Z\'/%3E%3C/svg%3E'
+        ];
+
+        let currentDesign = 0;
+        const favicon = document.getElementById('favicon-svg') || document.querySelector('link[rel="icon"]');
+
+        if (favicon && designs.length > 0) {
+          const updateFavicon = () => {
+            favicon.href = 'data:image/svg+xml,' + designs[currentDesign];
+            currentDesign = (currentDesign + 1) % designs.length;
+          };
+
+          // Update immediately
+          updateFavicon();
+
+          // Then update every 0.7 seconds
+          setInterval(updateFavicon, 700);
+        }
+      })();
+    </script>
+    <script>
+      window.FC_PROXY_IMAGE_URL = window.FC_PROXY_IMAGE_URL || '';
+      window.FC_PROXY_IMAGE_HOSTS = window.FC_PROXY_IMAGE_HOSTS || [];
+      function getImageProxyUrl(url) {
+        if (!url || !url.startsWith('http') || !window.FC_PROXY_IMAGE_URL) return url;
+        try {
+          var u = new URL(url);
+          var hosts = window.FC_PROXY_IMAGE_HOSTS || [];
+          if (hosts.length && hosts.indexOf(u.hostname.toLowerCase()) !== -1) {
+            return window.FC_PROXY_IMAGE_URL + '?url=' + encodeURIComponent(url);
+          }
+        } catch (e) {}
+        return url;
+      }
+    </script>
+    <meta name="theme-color" content="hsl(180, 85%, 40%)" />
     {% block css %}
       <!-- Latest compiled and minified Bootstrap CSS -->
       <link rel="stylesheet"
@@ -35,22 +86,30 @@
             integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer" />
-      <!-- Your stuff: Third-party CSS libraries go here -->
-      <!-- This file stores project-specific CSS -->
+      <!-- Select2 CSS base (cargado ANTES del tema) -->
+      <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+      <!-- Select2 Bootstrap 5 Theme  -->
+      <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+            rel="stylesheet" />
+      <!-- This file stores project-specific CSS-->
       {% compress css %}
         <link href="{% static 'css/project.css' %}" rel="stylesheet" />
       {% endcompress %}
-      <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css"
+      <link href="https://cdn.jsdelivr.net/npm/flag-icons@7.3.2/css/flag-icons.min.css" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
             rel="stylesheet" />
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
     {% endblock css %}
     <!-- Le javascript
     ================================================== -->
     {# Placed at the top of the document so pages load faster with defer #}
     {% block javascript %}
+      <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+              integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+              crossorigin="anonymous"></script>
       <!-- Bootstrap Bundle JS (includes Popper.js for dropdowns) -->
       <script defer
-              src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js"
-              integrity="sha512-i9cEfJFAUyjr/wgsFk9OG/4yD2gFtPugI0VzRuYdaXPwK+W8oYpNlpimXVNxPlX3gUlC6Uz9pfSjkdQ/3RjonTQ=="
+              src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
               crossorigin="anonymous"
               referrerpolicy="no-referrer"></script>
       <!-- Your stuff: Third-party javascript libraries go here -->
@@ -60,12 +119,15 @@
       {% endcompress %}
     {% endblock javascript %}
   </head>
-  <body class="{% block bodyclass %}{% endblock bodyclass %}">
+  <body class="fc-body fc-body-base {% block bodyclass %}{% endblock bodyclass %}">
     {% block body %}
-      <div class="mb-1">
-        <nav class="navbar navbar-expand-md navbar-light bg-light">
+      <header class="fc-header fc-header-base">
+        <nav class="navbar navbar-expand-md fc-navbar-base">
           <div class="container-fluid">
-            <button class="navbar-toggler navbar-toggler-right"
+            <a class="navbar-brand fc-navbar-brand" href="{% url 'home' %}">
+              <span class="fc-navbar-brand-gradient">Footy</span>Collect
+            </a>
+            <button class="navbar-toggler fc-navbar-toggler-base"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#navbarSupportedContent"
@@ -74,115 +136,130 @@
                     aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
-            <a class="navbar-brand" href="{% url 'home' %}">FootyCollect</a>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
               <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item active">
-                  <a class="nav-link" href="{% url 'home' %}">{% translate "Home" %} <span class="visually-hidden">(current)</span></a>
+                <li class="nav-item">
+                  <a class="nav-link fc-nav-link-base" href="{% url 'home' %}">{% translate "Home" %}</a>
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle"
+                    <a class="nav-link dropdown-toggle fc-nav-link-base"
                        href="#"
                        id="itemsDropdown"
                        role="button"
                        data-bs-toggle="dropdown"
                        aria-expanded="false">{% translate "Collection" %}</a>
-                    <ul class="dropdown-menu" aria-labelledby="itemsDropdown">
+                    <ul class="dropdown-menu fc-dropdown-menu-base" aria-labelledby="itemsDropdown">
                       <li>
-                        <h6 class="dropdown-header">{% translate "Add Items" %}</h6>
+                        <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Add Items" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item"
-                           href="{% url 'collection:jersey_create_automatic' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:jersey_create_automatic' %}">
                           <i class="bi bi-magic me-2"></i>{% translate "Add Jersey (Automatic)" %}
-                          <small class="text-muted d-block ms-4">{% translate "From kit database" %}</small>
+                          <small class="d-block ms-4 fc-dropdown-item-small">{% translate "From kit database" %}</small>
                         </a>
                       </li>
                       <li>
-                        <a class="dropdown-item"
-                           href="{% url 'collection:jersey_create_manual' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:jersey_create_manual' %}">
                           <i class="bi bi-pencil me-2"></i>{% translate "Add Jersey (Manual)" %}
-                          <small class="text-muted d-block ms-4">{% translate "Not in database" %}</small>
+                          <small class="d-block ms-4 fc-dropdown-item-small">{% translate "Not in database" %}</small>
                         </a>
                       </li>
                       <li>
-                        <span class="dropdown-item-text text-muted">
+                        <span class="dropdown-item-text fc-dropdown-item-text-base">
                           <i class="bi bi-plus-circle me-2"></i>{% translate "Add Other Item" %}
-                          <small class="d-block ms-4 text-muted">{% translate "Coming Soon" %}</small>
+                          <small class="d-block ms-4">{% translate "Coming Soon" %}</small>
                         </span>
                       </li>
                       <li>
-                        <hr class="dropdown-divider" />
+                        <hr class="dropdown-divider fc-dropdown-divider-base" />
                       </li>
                       <li>
-                        <h6 class="dropdown-header">{% translate "Browse" %}</h6>
+                        <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Browse" %}</h6>
                       </li>
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:item_list' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:item_list' %}">
                           <i class="bi bi-grid me-2"></i>{% translate "View My Collection" %}
                         </a>
                       </li>
                       <li>
-                        <a class="dropdown-item" href="{% url 'collection:jersey_select' %}">
+                        <a class="dropdown-item fc-dropdown-item-base" href="{% url 'collection:jersey_select' %}">
                           <i class="bi bi-search me-2"></i>{% translate "Browse Kit Database" %}
-                          <small class="text-muted d-block ms-4">{% translate "Search available kits" %}</small>
+                          <small class="d-block ms-4 fc-dropdown-item-small">{% translate "Search available kits" %}</small>
                         </a>
                       </li>
                     </ul>
                   </li>
+                  <li class="nav-item">
+                    <a class="nav-link fc-nav-link-base" href="{% url 'collection:feed' %}">{% translate "Discover Kits" %}</a>
+                  </li>
                 {% endif %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'about' %}">{% translate "About" %}</a>
+                  <a class="nav-link fc-nav-link-base" href="{% url 'about' %}">{% translate "About" %}</a>
                 </li>
               </ul>
-              <ul class="navbar-nav ms-auto">
+              <ul class="navbar-nav ms-auto d-flex align-items-center">
                 {% if request.user.is_authenticated %}
                   <li class="nav-item">
-                    <a class="nav-link"
-                       href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
+                    <a class="nav-link fc-nav-link-base" href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
                   </li>
                   <li class="nav-item">
-                    {# URL provided by django-allauth/account/urls.py #}
-                    <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
+                    <a class="nav-link fc-nav-link-base" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
                   </li>
                 {% else %}
                   {% if ACCOUNT_ALLOW_REGISTRATION %}
                     <li class="nav-item">
-                      {# URL provided by django-allauth/account/urls.py #}
-                      <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
+                      <c-button variant="ghost" size="sm" as_link href="{% url 'account_signup' %}" class="fc-button-margin-right">
+                      {% translate "Sign Up" %}
+                      </c-button>
                     </li>
                   {% endif %}
                   <li class="nav-item">
-                    {# URL provided by django-allauth/account/urls.py #}
-                    <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
+                    <c-button variant="default" size="sm" as_link href="{% url 'account_login' %}">
+                    {% translate "Sign In" %}
+                    </c-button>
                   </li>
                 {% endif %}
               </ul>
             </div>
           </div>
         </nav>
-      </div>
-      <div class="container">
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-              {{ message }}
-              <button type="button"
-                      class="btn-close"
-                      data-bs-dismiss="alert"
-                      aria-label="Close"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
-        {% block main %}
-          {% block content %}
-            <p>Use this document as a way to quick start any new project.</p>
-          {% endblock content %}
-        {% endblock main %}
-      </div>
+      </header>
+      <main class="fc-main fc-main-padding">
+        <div class="container">
+          {% if messages %}
+            {% for message in messages %}
+              {% if message.tags == 'error' or message.tags == 'danger' %}
+                <c-alert variant="destructive" title="{% translate 'Error' %}" dismissible>
+                {{ message }}
+                </c-alert>
+              {% elif message.tags == 'warning' %}
+                <c-alert variant="warning" title="{% translate 'Warning' %}" dismissible>
+                {{ message }}
+                </c-alert>
+              {% elif message.tags == 'success' %}
+                <c-alert variant="success" title="{% translate 'Success' %}" dismissible>
+                {{ message }}
+                </c-alert>
+              {% elif message.tags == 'info' %}
+                <c-alert variant="info" title="{% translate 'Info' %}" dismissible>
+                {{ message }}
+                </c-alert>
+              {% else %}
+                <c-alert variant="default" dismissible>
+                {{ message }}
+                </c-alert>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {% block main %}
+            {% block content %}
+              <p>Use this document as a way to quick start any new project.</p>
+            {% endblock content %}
+          {% endblock main %}
+        </div>
+      </main>
     {% endblock body %}
-    <!-- /container -->
     {% block modal %}
     {% endblock modal %}
     {% block inline_javascript %}
@@ -193,21 +270,34 @@
       window.addEventListener('DOMContentLoaded', () => {
         /* Run whatever you want */
       });
-    </script>
+</script>
       {% endcomment %}
     {% endblock inline_javascript %}
     {% block js %}
       {{ block.super }}
-      <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-              integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-              crossorigin="anonymous"></script>
+      <script>
+        // Auto-dismiss success alerts after 3 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+          const successAlerts = document.querySelectorAll('.fc-alert-success');
+          successAlerts.forEach(function(alert) {
+            setTimeout(function() {
+              // Add fade out animation
+              alert.style.transition = 'opacity 0.3s ease-out';
+              alert.style.opacity = '0';
+              // Remove after animation
+              setTimeout(function() {
+                alert.remove();
+              }, 300);
+            }, 3000);
+          });
+        });
+      </script>
       <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-      <!-- Dropzone CSS y JS oficiales -->
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
-            rel="stylesheet" />
+      <!-- Dropzone CSS and JS official -->
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" rel="stylesheet" />
       <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"
-              defer></script>
+      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+      <script src="https://unpkg.com/htmx.org@1.9.10"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
     {% endblock js %}
   </body>

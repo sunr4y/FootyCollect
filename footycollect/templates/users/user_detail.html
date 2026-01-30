@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
 {% load static %}
+{% load i18n %}
 
 {% block css %}
   {{ block.super }}
+  <link href="{% static 'css/collection.css' %}" rel="stylesheet" />
   <link href="{% static 'css/users.css' %}" rel="stylesheet" />
 {% endblock css %}
 {% block title %}
@@ -12,18 +14,16 @@
 {% block content %}
   <div class="container">
     <div class="row">
-      <div class="col-lg-8 mx-auto">
+      <div class="col-lg-12">
         <!-- Profile Header -->
-        <div class="card mb-4">
+        <div class="card mb-4 stats-card">
           <div class="card-body">
-            <div class="d-flex align-items-center">
-              {% if object.avatar %}
-                <img src="{{ object.get_avatar_url }}"
-                     alt="{{ object.username }}'s avatar"
-                     class="rounded-circle me-3 avatar-preview" />
+            <div class="d-flex align-items-center flex-wrap gap-3">
+              {% if object.avatar or object.avatar_avif %}
+                <img src="{{ object.get_avatar_url }}" alt="{{ object.username }}" class="rounded-circle me-3 avatar-preview" />
               {% endif %}
-              <div>
-                <h2 class="mb-1">{{ object.username }}</h2>
+              <div class="flex-grow-1">
+                <h1 class="h3 mb-1">{{ object.username }}</h1>
                 {% if object.name %}<p class="text-muted mb-0">{{ object.name }}</p>{% endif %}
                 {% if object.location %}
                   <p class="text-muted mb-0">
@@ -32,160 +32,93 @@
                 {% endif %}
               </div>
               {% if object == request.user %}
-                <div class="ms-auto">
-                  <a class="btn btn-primary" href="{% url 'users:update' %}">Edit Profile</a>
-                </div>
+                <a class="btn btn-primary fc-font-space-grotesk" href="{% url 'users:update' %}">{% trans "Edit Profile" %}</a>
               {% endif %}
             </div>
           </div>
         </div>
         {% if show_details %}
-          <!-- Bio Section -->
           {% if object.biography %}
-            <div class="card mb-4">
+            <div class="card mb-4 stats-card">
               <div class="card-body">
-                <h5 class="card-title">About</h5>
-                <p class="card-text">{{ object.biography }}</p>
+                <h5 class="card-title text-primary">{% trans "About" %}</h5>
+                <p class="card-text text-muted mb-0">{{ object.biography }}</p>
               </div>
             </div>
           {% endif %}
-          <!-- Favorite Teams -->
           {% if object.favourite_teams.exists %}
-            <div class="card mb-4">
+            <div class="card mb-4 stats-card">
               <div class="card-body">
-                <h5 class="card-title">Favorite Teams</h5>
+                <h5 class="card-title text-primary">{% trans "Favorite Teams" %}</h5>
                 <div class="d-flex flex-wrap gap-2">
                   {% for team in object.favourite_teams.all %}<span class="badge bg-primary">{{ team.name }}</span>{% endfor %}
                 </div>
               </div>
             </div>
           {% endif %}
-          <!-- Collection Stats -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <h5 class="card-title">Collection Stats</h5>
-              <div class="row text-center">
-                <div class="col">
-                  <h3>{{ total_items|default:0 }}</h3>
-                  <small class="text-muted">Items</small>
+          <!-- Collection Stats (same layout as item_list) -->
+          <div class="row mb-4 stats-row">
+            <div class="col-md-3">
+              <div class="card text-center stats-card">
+                <div class="card-body">
+                  <h5 class="card-title text-primary">{{ total_items|default:0 }}</h5>
+                  <p class="card-text text-muted mb-0">{% trans "Items" %}</p>
                 </div>
-                <div class="col">
-                  <h3>{{ total_teams|default:0 }}</h3>
-                  <small class="text-muted">Teams</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center stats-card">
+                <div class="card-body">
+                  <h5 class="card-title text-success">{{ total_teams|default:0 }}</h5>
+                  <p class="card-text text-muted mb-0">{% trans "Teams" %}</p>
                 </div>
-                <div class="col">
-                  <h3>{{ total_competitions|default:0 }}</h3>
-                  <small class="text-muted">Competitions</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center stats-card">
+                <div class="card-body">
+                  <h5 class="card-title text-success">{{ total_competitions|default:0 }}</h5>
+                  <p class="card-text text-muted mb-0">{% trans "Competitions" %}</p>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Recent Items -->
+          <!-- Recent Items (Cotton item_card, same grid as item_list) -->
           {% if recent_items %}
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title recent-items-title">Recent Items</h5>
-                <div class="row">
-                  {% for item in recent_items %}
-                    <div class="col-md-6 col-lg-4 mb-3">
-                      <div class="card h-100 item-card">
-                        <!-- Logo row above photo -->
-                        <div class="item-logos-above-photo">
-                          <div class="d-flex align-items-center w-100 position-relative">
-                            <div class="d-flex align-items-center justify-content-center brand-logo-container">
-                              {% if item.brand and item.brand.logo %}
-                                <img src="{{ item.brand.logo }}"
-                                     alt="{{ item.brand.name }}"
-                                     class="item-logo-small"
-                                     onerror="this.style.display='none'" />
-                              {% endif %}
-                            </div>
-                            <div>
-                              {% if item.club and item.club.logo %}
-                                <img src="{{ item.club.logo }}"
-                                     alt="{{ item.club.name }}"
-                                     class="item-club-shield"
-                                     onerror="this.style.display='none'" />
-                              {% endif %}
-                            </div>
-                            <div class="d-flex align-items-center justify-content-center flag-logo-container">
-                              {% if item.club and item.club.country %}
-                                <span class="fi fi-{{ item.club.country|lower }}"
-                                      title="{{ item.club.country }}"></span>
-                              {% endif %}
-                            </div>
-                          </div>
-                        </div>
-                        {% if item.photos.exists %}
-                          <img src="{{ item.photos.first.get_image_url }}"
-                               class="card-img-top item-photo"
-                               alt="{{ item.name }}" />
-                        {% else %}
-                          <div class="card-img-top item-photo d-flex align-items-center justify-content-center bg-light">
-                            <i class="bi bi-image text-muted item-placeholder-icon"></i>
-                          </div>
-                        {% endif %}
-                        <div class="card-body d-flex flex-column">
-                          <h6 class="card-title item-title">{{ item.name }}</h6>
-                          <div class="item-meta">
-                            {% if item.club %}
-                              <div class="d-flex align-items-center">
-                                {% if item.club.logo %}
-                                  <img src="{{ item.club.logo.url }}"
-                                       alt="{{ item.club.name }}"
-                                       class="club-logo"
-                                       onerror="this.style.display='none'" />
-                                {% else %}
-                                  <div class="club-logo d-flex align-items-center justify-content-center bg-light">
-                                    <i class="bi bi-shield text-muted club-icon-fallback"></i>
-                                  </div>
-                                {% endif %}
-                                <span class="item-details">{{ item.club.name }}</span>
-                              </div>
-                            {% endif %}
-                            {% if item.brand %}
-                              <div class="d-flex align-items-center">
-                                {% if item.brand.logo %}
-                                  <img src="{{ item.brand.logo.url }}"
-                                       alt="{{ item.brand.name }}"
-                                       class="brand-logo"
-                                       onerror="this.style.display='none'" />
-                                {% else %}
-                                  <div class="brand-logo d-flex align-items-center justify-content-center bg-light">
-                                    <i class="bi bi-tag text-muted brand-icon-fallback"></i>
-                                  </div>
-                                {% endif %}
-                                <span class="item-details">{{ item.brand.name }}</span>
-                              </div>
-                            {% endif %}
-                          </div>
-                          {% if item.season %}
-                            <p class="card-text item-details mb-2">
-                              <i class="bi bi-calendar"></i> {{ item.season.name }}
-                            </p>
-                          {% endif %}
-                          <div class="mt-auto">
-                            <a href="{% url 'collection:item_detail' item.pk %}"
-                               class="btn btn-sm btn-outline-primary w-100">View Details</a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  {% endfor %}
-                </div>
-              </div>
+            <div class="d-flex justify-content-between align-items-center fc-recent-items-header mb-4">
+              <h3 class="h5 mb-0">{% trans "Recent Items" %}</h3>
+              <a href="{% url 'users:user_items' username=object.username %}"
+                 class="btn btn-outline-primary btn-sm fc-btn-view-collection">
+                {% blocktrans count counter=total_items %}View full collection ({{ counter }} item){% plural %}View full collection ({{ counter }} items){% endblocktrans %}
+              </a>
+            </div>
+            <div class="row user-detail-items-row">
+              {% for item in recent_items %}
+                {% include "cotton/item_card.html" with item=item show_user=False show_edit=False show_delete=False quick_view_enabled=True %}
+              {% endfor %}
+            </div>
+          {% elif total_items %}
+            <div class="mb-3">
+              <a href="{% url 'users:user_items' username=object.username %}" class="btn btn-outline-primary fc-btn-view-collection">
+                {% blocktrans count counter=total_items %}View full collection ({{ counter }} item){% plural %}View full collection ({{ counter }} items){% endblocktrans %}
+              </a>
             </div>
           {% endif %}
         {% else %}
-          <div class="card">
+          <div class="card stats-card">
             <div class="card-body text-center py-5">
-              <i class="bi bi-lock h1 d-block mb-3"></i>
-              <h3>This profile is private</h3>
-              <p class="text-muted">Only {{ object.username }} can see their collection</p>
+              <i class="bi bi-lock h1 d-block mb-3 text-muted"></i>
+              <h3 class="h5">{% trans "This profile is private" %}</h3>
+              <p class="text-muted mb-0">
+                {% blocktrans with username=object.username %}Only {{ username }} can see their collection.{% endblocktrans %}
+              </p>
             </div>
           </div>
         {% endif %}
       </div>
     </div>
   </div>
+  {% if show_details and recent_items %}
+    {% include "cotton/quick_view_modal.html" %}
+  {% endif %}
 {% endblock content %}

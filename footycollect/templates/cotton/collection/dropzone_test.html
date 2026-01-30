@@ -10,8 +10,8 @@
         {% csrf_token %}
         <div class="dz-message text-center">
           <i class="bi bi-cloud-upload fs-1 text-primary"></i>
-          <h4 class="mt-3">Arrastra archivos aquí</h4>
-          <p class="text-muted">o haz clic para seleccionar</p>
+          <h4 class="mt-3">Drag files here</h4>
+          <p class="text-muted">or click to select</p>
         </div>
       </form>
     </div>
@@ -26,13 +26,13 @@
         acceptedFiles: 'image/*',
         addRemoveLinks: true,
         dictDefaultMessage: "",
-        dictRemoveFile: "Eliminar",
+        dictRemoveFile: "Remove",
         headers: {
           'X-CSRFToken': csrfToken
         },
         init: function() {
           this.on("success", function(file, response) {
-            // Configurar datos para eliminación
+            // Configure data for deletion
             file.previewElement.querySelector("[data-dz-name]").innerHTML = response.name;
             file._removeUrl = response.deleteUrl + '?fileName=' + encodeURIComponent(response.name);
           });
@@ -41,11 +41,11 @@
             alert("Error: " + (message.error || message));
           });
         },
-        // Configuración para eliminación
+        // Configuration for deletion
         removedfile: function(file) {
           const deleteUrl = file._removeUrl;
 
-          // Eliminar del backend
+          // Delete from the backend
           fetch(deleteUrl, {
               method: 'DELETE',
               headers: {
@@ -59,14 +59,14 @@
             .then(response => response.json())
             .then(data => {
               if (data.success) {
-                // Eliminar preview
+                // Delete preview
                 file.previewElement.remove();
               } else {
-                alert('Error eliminando archivo: ' + data.message);
+                alert('Error deleting file: ' + data.message);
               }
             })
             .catch(error => {
-              alert('Error de conexión: ' + error.message);
+              alert('Error connecting to the server: ' + error.message);
             });
         }
       });

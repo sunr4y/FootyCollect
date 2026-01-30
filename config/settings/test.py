@@ -2,6 +2,8 @@
 With these settings, tests run faster.
 """
 
+import logging
+
 from .base import *
 from .base import TEMPLATES, env
 
@@ -78,20 +80,29 @@ DATABASES = {
 # MEDIA
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
-MEDIA_URL = "http://media.testserver"
+MEDIA_URL = "http://media.testserver/"
 
 # Football Kit Archive API Settings for Testing
 # ------------------------------------------------------------------------------
-# Skip FKA API settings in test environment since they're not used in tests
-# and require external API access
 try:
     FKA_API_IP = env("FKA_API_IP")
     API_KEY = env("API_KEY")
 except (ValueError, TypeError, AttributeError) as e:
-    # If FKA API settings are not available, skip them for tests
-    import logging
-
     logging.getLogger(__name__).debug("FKA API settings not available for tests: %s", e)
+
+ALLOWED_EXTERNAL_IMAGE_HOSTS = [
+    "cdn.footballkitarchive.com",
+    "www.footballkitarchive.com",
+    "example.com",
+]
+
+# CELERY
+# ------------------------------------------------------------------------------
+# Execute tasks synchronously during tests (no Redis/Celery worker needed)
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_URL = "memory://"
+CELERY_RESULT_BACKEND = "cache+memory://"
 
 # Your stuff...
 # ------------------------------------------------------------------------------

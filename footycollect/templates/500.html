@@ -1,12 +1,27 @@
 {% extends "base.html" %}
 
+{% load i18n %}
+
 {% block title %}
-  Server Error
+  {% trans "Server Error" %} - FootyCollect
 {% endblock title %}
 {% block content %}
-  <h1>Ooops!!! 500</h1>
-  <h3>Looks like something went wrong!</h3>
-  <p>
-    We track these errors automatically, but if the problem persists feel free to contact us. In the meantime, try refreshing.
-  </p>
+  <div class="fc-container-error">
+    <div class="fc-card">
+      <div class="card-body text-center fc-card-body-error">
+        <div class="mb-4">
+          <i class="bi bi-exclamation-octagon fc-icon-large"></i>
+        </div>
+        <h1 class="mb-3 fc-title-medium">{% trans "Ooops!!! 500" %}</h1>
+        <h3 class="mb-4 fc-title-small">{% trans "Looks like something went wrong!" %}</h3>
+        <p class="mb-4 fc-text-muted">
+          {% trans "We track these errors automatically, but if the problem persists feel free to contact us. In the meantime, try refreshing." %}
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+          <a href="{% url 'home' %}" class="btn fc-btn-primary-large">{% trans "Go Home" %}</a>
+          <button onclick="location.reload()" class="btn fc-btn-outline-secondary">{% trans "Refresh Page" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock content %}

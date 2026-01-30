@@ -5,30 +5,86 @@ This module contains all views that handle photo operations including
 upload, download, deletion, and processing.
 """
 
-import json
 import logging
-import tempfile
-import uuid
-from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.files import File
 from django.db import Error as DBError
-from django.db.models import Max
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views import View
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from footycollect.collection.models import Photo
+from footycollect.collection.models import BaseItem, Photo
 from footycollect.collection.services import get_photo_service
 
+PROXY_IMAGE_MAX_SIZE = 10 * 1024 * 1024
+PROXY_REFERER = "https://www.footballkitarchive.com/"
+
 logger = logging.getLogger(__name__)
+
+
+def _is_allowed_proxy_host(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower()
+        allowed = getattr(
+            django_settings,
+            "ALLOWED_EXTERNAL_IMAGE_HOSTS",
+            ["cdn.footballkitarchive.com", "www.footballkitarchive.com"],
+        )
+        return hostname in [h.lower() for h in allowed]
+    except (ValueError, AttributeError):
+        return False
+
+
+def _validate_proxy_url(url: str | None) -> str | None:
+    """Validate proxy URL and return error message if invalid, None if valid."""
+    if not url:
+        return "Missing url parameter"
+    if not url.startswith(("http://", "https://")):
+        return "Invalid url"
+    if not _is_allowed_proxy_host(url):
+        return "URL host not allowed"
+    return None
+
+
+@login_required
+@require_GET
+def proxy_image(request):
+    """Proxy external image with Referer so hotlink protection allows the request."""
+    url = request.GET.get("url")
+    validation_error = _validate_proxy_url(url)
+    if validation_error:
+        return HttpResponseBadRequest(validation_error)
+    try:
+        resp = requests.get(
+            url,
+            timeout=15,
+            stream=True,
+            headers={"Referer": PROXY_REFERER},
+        )
+        resp.raise_for_status()
+        content_type = resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+        if not content_type.startswith("image/"):
+            return HttpResponseBadRequest("Not an image")
+        size = 0
+        chunks = []
+        for chunk in resp.iter_content(chunk_size=65536):
+            if chunk:
+                size += len(chunk)
+                if size > PROXY_IMAGE_MAX_SIZE:
+                    return HttpResponseBadRequest("Image too large")
+                chunks.append(chunk)
+        return HttpResponse(b"".join(chunks), content_type=content_type)
+    except requests.RequestException as e:
+        logger.warning("Proxy image failed for %s: %s", url[:80], e)
+        return HttpResponseBadRequest("Failed to fetch image")
 
 
 @login_required
@@ -90,6 +146,34 @@ def upload_photo(request):
 
 
 @login_required
+def check_photos_status(request, item_id):
+    """Check if photos for an item have AVIF versions processed."""
+    try:
+        from footycollect.collection.models import BaseItem
+
+        base_item = BaseItem.objects.get(pk=item_id, user=request.user)
+        photos = base_item.photos.all()
+
+        photos_status = [
+            {
+                "id": photo.id,
+                "has_avif": bool(photo.image_avif),
+                "image_url": photo.image.url if photo.image else None,
+                "avif_url": photo.image_avif.url if photo.image_avif else None,
+            }
+            for photo in photos
+        ]
+
+        all_processed = all(p["has_avif"] for p in photos_status)
+        return JsonResponse({"photos": photos_status, "all_processed": all_processed})
+    except BaseItem.DoesNotExist:
+        return JsonResponse({"error": _("Item not found")}, status=404)
+    except Exception as e:
+        logger.exception("Error checking photos status")
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required
 @require_POST
 def file_upload(request):
     """Handle file upload for testing purposes."""
@@ -100,6 +184,7 @@ def file_upload(request):
     return HttpResponse("")
 
 
+@login_required
 @require_http_methods(["POST", "DELETE"])
 def handle_dropzone_files(request):
     """Handles file upload and deletion for Dropzone."""
@@ -129,261 +214,90 @@ def handle_dropzone_files(request):
     return HttpResponseBadRequest(_("Method not allowed"))
 
 
-class PhotoProcessorMixin:
-    """Mixin that provides photo processing functionality with lazy loading."""
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the mixin with lazy loading."""
-        super().__init__(*args, **kwargs)
-        # Ensure the attribute exists
-        if not hasattr(self, "_photo_processor_initialized"):
-            self._photo_processor_initialized = False
-
-    def _ensure_photo_processor_initialized(self):
-        """Lazy initialization of photo processor components."""
-        if not hasattr(self, "_photo_processor_initialized"):
-            self._photo_processor_initialized = False
-
-        if not self._photo_processor_initialized:
-            # Only initialize when actually needed
-            self._photo_processor_initialized = True
-            logger.debug("PhotoProcessorMixin initialized for %s", self.__class__.__name__)
-
-    def _download_and_attach_image(self, instance, image_url):
-        """
-        Download an image from a URL and associate it with the instance.
-        Returns the created photo if successful, None otherwise.
-        """
-        # Only initialize when this method is actually called
-        self._ensure_photo_processor_initialized()
-
+class ItemProcessingStatusView(View):
+    def get(self, request, item_id):  # noqa: C901
         try:
-            # Ensure the URL is properly formatted
-            if not image_url.startswith("http"):
-                image_url = f"https://{image_url}"
+            base_item = BaseItem.objects.get(pk=item_id)
+            if base_item.user != request.user:
+                return JsonResponse({"error": "Permission denied"}, status=403)
 
-            logger.info("Downloading image from URL: %s", image_url)
+            photos = base_item.photos.all()
+            photos_with_image = [photo for photo in photos if photo.image]
 
-            # Get the name of the file from the URL
-            image_name = Path(urlparse(image_url).path).name
-            if not image_name:
-                image_name = f"external_image_{uuid.uuid4().hex[:8]}.jpg"
-
-            # Download the image
-            response = requests.get(image_url, stream=True, timeout=30)
-            response.raise_for_status()
-
-            # Create a temporary file
-            img_temp = tempfile.NamedTemporaryFile(delete=True)
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    img_temp.write(chunk)
-            img_temp.flush()
-
-            # Create the photo and associate it with the instance
-            photo = Photo(content_object=instance, user=instance.user)
-            photo.image.save(image_name, File(img_temp), save=False)
-
-            # Set the order
-            last_order = instance.photos.aggregate(Max("order"))["order__max"] or -1
-            photo.order = last_order + 1
-
-            # Save the photo
-            photo.save()
-
-            # Try to create AVIF version, but don't fail if not implemented
-            if hasattr(photo, "create_avif_version"):
+            def is_photo_processed(photo):
+                if not photo.image_avif:
+                    return False
                 try:
-                    photo.create_avif_version()
-                except (OSError, ValueError) as e:
-                    logger.warning(
-                        "Could not create AVIF version for image %s: %s",
-                        image_name,
-                        e,
-                    )
+                    name = getattr(photo.image_avif, "name", None)
+                    return bool(name and str(name).strip())
+                except (ValueError, AttributeError):
+                    return False
 
-        except Exception:
-            logger.exception("Error downloading image %s", image_url)
-            return None
+            photos_processing = [photo.id for photo in photos_with_image if not is_photo_processed(photo)]
 
-        return photo
-
-    def _process_photo_ids(self, photo_ids):
-        """
-        Process photo IDs uploaded through the dropzone.
-        Associates existing photos with the jersey.
-        photo_ids: String with JSON of photos or comma-separated IDs
-        """
-        try:
-            # Parse the photo_ids
-            parsed_data = self._parse_photo_ids(photo_ids)
-            if not parsed_data:
-                return
-
-            photo_id_list, external_images, order_map = parsed_data
-
-            logger.info("Processing photos with IDs: %s", photo_id_list)
-            if external_images:
-                logger.info("Processing external images: %s", external_images)
-
-            # Process external images first
-            self._process_external_images(external_images)
-
-            # Process existing photos
-            self._process_existing_photos(photo_id_list, order_map)
-
-            logger.info(
-                "Processed %d photo(s) (including %d external) for jersey %s",
-                len(photo_id_list),
-                len(external_images),
-                self.object.id,
+            all_processed = (
+                all(is_photo_processed(photo) for photo in photos_with_image) if photos_with_image else True
             )
-        except Exception:
-            logger.exception(
-                "Failed to process photo IDs for jersey %s",
-                self.object.id,
-            )
-            raise
 
-    def _parse_photo_ids(self, photo_ids):
-        """Parse photo_ids string and extract
-        photo IDs, external images, and order mapping."""
-        if isinstance(photo_ids, str):
-            if not photo_ids.strip():
-                logger.warning("Empty photo_ids string provided")
-                return None
+            base_item.refresh_from_db()
+            current_flag = base_item.is_processing_photos
 
-            # Try to parse as JSON first
-            try:
-                photo_data = json.loads(photo_ids)
-            except json.JSONDecodeError:
-                # If not JSON, assume it's a comma-separated list
-                photo_id_list = [pid.strip() for pid in photo_ids.split(",") if pid.strip()]
-                external_images = []
-                order_map = {}
+            if all_processed and current_flag:
+                from django.db import transaction
+
+                with transaction.atomic():
+                    base_item.is_processing_photos = False
+                    base_item.save(update_fields=["is_processing_photos"])
                 logger.info(
-                    "Parsed photo_ids as comma-separated list: %s",
-                    photo_id_list,
+                    "Item %s: all %d photos processed, flag updated from %s to False",
+                    item_id,
+                    len(photos_with_image),
+                    current_flag,
                 )
-                return photo_id_list, external_images, order_map
-
-            # Process JSON data
-            logger.info("Parsed photo_ids as JSON: %s", photo_data)
-
-            # Extract photo IDs and external images
-            photo_id_list = []
-            external_images = []
-            order_map = {}
-
-            for item in photo_data:
-                if isinstance(item, dict):
-                    if "id" in item:
-                        photo_id = str(item["id"])
-                        photo_id_list.append(photo_id)
-                        if "order" in item:
-                            order_map[photo_id] = item["order"]
-                    elif "url" in item:
-                        external_images.append(item)
-                else:
-                    photo_id_list.append(str(item))
-
-            return photo_id_list, external_images, order_map
-        logger.warning("Unexpected photo_ids type: %s", type(photo_ids))
-        return None
-
-    def _process_external_images(self, external_images):
-        """Process external images by downloading and attaching them."""
-        for img_data in external_images:
-            try:
-                # Download and attach the external image
-                photo = self._download_and_attach_image(
-                    self.object,
-                    img_data["url"],
+            elif all_processed:
+                logger.debug("Item %s: all photos processed but flag already False", item_id)
+            else:
+                logger.debug(
+                    "Item %s: %d/%d photos still processing (IDs: %s)",
+                    item_id,
+                    len(photos_processing),
+                    len(photos_with_image),
+                    photos_processing,
                 )
-                if photo:
-                    photo.order = img_data.get("order", 0)
-                    photo.save()
-                    logger.info(
-                        "External image downloaded and attached with ID: %s, order: %s",
-                        photo.id,
-                        photo.order,
-                    )
-            except Exception:
-                logger.exception(
-                    "Error downloading external image %s",
-                    img_data["url"],
-                )
-                messages.error(
-                    self.request,
-                    _("Error downloading image"),
-                )
+                from django.core.cache import cache
 
-    def _process_existing_photos(self, photo_id_list, order_map):
-        """Process existing photos by associating them with the jersey."""
-        # Get the photos from the database
-        photos = Photo.objects.filter(id__in=photo_id_list, user=self.request.user)
+                from footycollect.collection.tasks import process_photo_to_avif
 
-        # Associate photos with the jersey and set their order
-        for photo in photos:
-            # Associate the photo with the jersey
-            photo.content_type = ContentType.objects.get_for_model(self.object)
-            photo.object_id = self.object.id
+                for pid in photos_processing:
+                    cache_key = f"avif_queued_photo_{pid}"
+                    if not cache.get(cache_key):
+                        process_photo_to_avif.delay(pid)
+                        cache.set(cache_key, 1, timeout=120)
+                        logger.info("Re-queued AVIF processing for photo %s (item %s)", pid, item_id)
 
-            # Set the order
-            if str(photo.id) in order_map:
-                photo.order = order_map[str(photo.id)]
-
-            photo.save()
-            logger.info(
-                "Associated photo %s with jersey %s, order: %s",
-                photo.id,
-                self.object.id,
-                photo.order,
-            )
-
-    def _process_external_images_form(self, form):
-        """
-        Process external images provided by the API.
-        Downloads images and associates them with the jersey.
-        """
-        # Process the main image if it exists
-        main_img_url = form.cleaned_data.get("main_img_url")
-        if main_img_url:
-            try:
-                photo = self._download_and_attach_image(self.object, main_img_url)
-                if photo:
-                    # Set as main image
-                    photo.order = 0
-                    photo.save()
-                    logger.info("Main image saved with ID: %s", photo.id)
-                    messages.success(
-                        self.request,
-                        _("Main image downloaded and attached successfully"),
-                    )
-            except Exception:
-                logger.exception("Error downloading main image %s", main_img_url)
-                messages.error(
-                    self.request,
-                    _("Error downloading main image"),
-                )
-
-        # Process additional external images
-        external_urls = form.cleaned_data.get("external_image_urls", "")
-        if external_urls:
-            urls = external_urls.split(",")
-            # Start from 1 to keep 0 for main image
-            for i, url in enumerate(urls, start=1):
-                clean_url = url.strip()
-                if clean_url and clean_url != main_img_url:  # Avoid duplicates with main image
-                    try:
-                        photo = self._download_and_attach_image(self.object, clean_url)
-                        if photo:
-                            # Set order to maintain image order
-                            photo.order = i
-                            photo.save()
-                    except Exception:
-                        logger.exception("Error downloading image %s", clean_url)
-                        messages.error(
-                            self.request,
-                            _("Error downloading image"),
-                        )
+            payload = {
+                "is_processing": base_item.is_processing_photos and not all_processed,
+                "has_photos": photos.exists(),
+                "photo_count": photos.count(),
+                "photos_processing": photos_processing,
+                "all_processed": all_processed,
+            }
+            if request.GET.get("debug"):
+                payload["_debug"] = {
+                    "item_id": item_id,
+                    "is_processing_photos_flag": base_item.is_processing_photos,
+                    "photos_with_image_count": len(photos_with_image),
+                    "photos": [
+                        {
+                            "id": p.id,
+                            "has_image": bool(p.image),
+                            "has_avif": bool(p.image_avif),
+                            "avif_name": getattr(p.image_avif, "name", None) or None,
+                            "processed": is_photo_processed(p),
+                        }
+                        for p in photos_with_image
+                    ],
+                }
+            return JsonResponse(payload)
+        except BaseItem.DoesNotExist:
+            return JsonResponse({"error": "Item not found"}, status=404)

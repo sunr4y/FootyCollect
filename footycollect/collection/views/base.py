@@ -5,10 +5,13 @@ This module contains base classes and mixins that are shared across
 different view types in the collection app.
 """
 
+import json
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
@@ -124,6 +127,12 @@ class BaseItemUpdateView(
             .select_related("user", "club", "season", "brand", "main_color")
             .prefetch_related("competitions", "photos")
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["proxy_image_url"] = reverse("collection:proxy_image")
+        context["proxy_image_hosts"] = json.dumps(getattr(settings, "ALLOWED_EXTERNAL_IMAGE_HOSTS", []))
+        return context
 
 
 class BaseItemDeleteView(

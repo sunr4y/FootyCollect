@@ -43,3 +43,606 @@
   object-fit: contain;
   margin-right: 10px;
 }
+
+/* Component CSS Variables - Modern Dark Theme */
+:root {
+  --fc-background: hsl(220, 20%, 7%);
+  --fc-foreground: hsl(60, 9%, 94%);
+
+  --fc-card: hsl(220, 18%, 10%);
+  --fc-card-foreground: hsl(60, 9%, 94%);
+
+  --fc-primary: hsl(180, 85%, 40%);
+  --fc-primary-foreground: hsl(220, 20%, 7%);
+
+  --fc-secondary: hsl(220, 15%, 15%);
+  --fc-secondary-foreground: hsl(60, 9%, 94%);
+
+  --fc-muted: hsl(220, 15%, 18%);
+  --fc-muted-foreground: hsl(220, 10%, 55%);
+
+  --fc-accent: hsl(180, 85%, 40%);
+  --fc-accent-foreground: hsl(220, 20%, 7%);
+
+  --fc-destructive: hsl(0, 84%, 60%);
+  --fc-destructive-foreground: hsl(60, 9%, 94%);
+
+  --fc-border: hsl(220, 15%, 18%);
+  --fc-input: hsl(220, 15%, 18%);
+  --fc-ring: hsl(180, 85%, 40%);
+
+  --fc-radius: 0.75rem;
+
+  --fc-shadow-card: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+  --fc-shadow-glow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4);
+}
+
+/* Navbar Dark Theme Styles */
+.fc-header .navbar-nav .nav-link {
+  color: var(--fc-foreground) !important;
+  transition: color 0.2s ease;
+}
+
+.fc-header .navbar-nav .nav-link:hover {
+  color: var(--fc-primary) !important;
+}
+
+.fc-header .navbar-toggler {
+  border-color: var(--fc-border);
+  color: var(--fc-foreground);
+}
+
+.fc-header .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.85)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.fc-header .dropdown-menu {
+  background-color: var(--fc-card);
+  border: 1px solid var(--fc-border);
+  box-shadow: var(--fc-shadow-card);
+}
+
+.fc-header .dropdown-item {
+  color: var(--fc-foreground);
+  transition: background-color 0.2s ease;
+}
+
+.fc-header .dropdown-item:hover,
+.fc-header .dropdown-item:focus {
+  background-color: var(--fc-secondary);
+  color: var(--fc-foreground);
+}
+
+.fc-header .dropdown-header {
+  color: var(--fc-muted-foreground);
+}
+
+.fc-header .dropdown-divider {
+  border-color: var(--fc-border);
+}
+
+/* Body styles - NO height/overflow rules here, they're in base.html inline */
+.fc-body {
+  background-color: var(--fc-background);
+  color: var(--fc-foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+}
+
+.fc-body h1, .fc-body h2, .fc-body h3, .fc-body h4, .fc-body h5, .fc-body h6 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  color: var(--fc-foreground);
+}
+
+/* Override Bootstrap default styles for dark theme */
+.fc-body .text-muted {
+  color: var(--fc-muted-foreground) !important;
+}
+
+.fc-body .bg-light {
+  background-color: var(--fc-card) !important;
+}
+
+.fc-body .navbar-light {
+  background-color: transparent !important;
+}
+
+/* Common utility classes for templates */
+.fc-container-centered {
+  max-width: 896px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.fc-container-auth {
+  max-width: 448px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.fc-container-error {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.fc-card {
+  border: 1px solid var(--fc-border);
+  background-color: var(--fc-card);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.fc-card-header {
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--fc-border);
+  background-color: transparent;
+}
+
+.fc-card-header-small {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--fc-border);
+  background-color: transparent;
+}
+
+.fc-card-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--fc-border);
+  background-color: transparent;
+}
+
+.fc-card-body {
+  padding: 2rem;
+}
+
+.fc-card-body-small {
+  padding: 1.5rem;
+}
+
+.fc-card-body-small.fc-card-body-flex {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fc-card-body-error {
+  padding: 3rem 2rem;
+}
+
+.fc-title-large {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--fc-foreground);
+  margin-bottom: 2rem;
+}
+
+.fc-title-medium {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--fc-foreground);
+}
+
+.fc-title-small {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--fc-foreground);
+}
+
+.fc-subtitle {
+  color: var(--fc-muted-foreground);
+  font-size: 0.875rem;
+}
+
+.fc-text-muted {
+  color: var(--fc-muted-foreground);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.fc-text-small {
+  color: var(--fc-muted-foreground);
+  font-size: 0.875rem;
+}
+
+.fc-label {
+  color: var(--fc-muted-foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.fc-icon-large {
+  font-size: 4rem;
+  color: hsla(180, 85%, 40%, 1);
+}
+
+.fc-btn-primary {
+  background-color: hsla(180, 85%, 40%, 1);
+  border-color: hsla(180, 85%, 40%, 1);
+  color: white;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+}
+
+.fc-btn-primary:hover {
+  background-color: hsla(180, 85%, 35%, 1);
+  border-color: hsla(180, 85%, 35%, 1);
+  color: white;
+}
+
+.fc-btn-primary-large {
+  background-color: hsla(180, 85%, 40%, 1);
+  border-color: hsla(180, 85%, 40%, 1);
+  color: white;
+  padding: 0.625rem 1.5rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  text-decoration: none;
+}
+
+.fc-btn-primary-large:hover {
+  background-color: hsla(180, 85%, 35%, 1);
+  border-color: hsla(180, 85%, 35%, 1);
+  color: white;
+}
+
+.fc-btn-outline-secondary {
+  border-color: var(--fc-border);
+  color: var(--fc-foreground);
+  background-color: transparent;
+  padding: 0.625rem 1.5rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+}
+
+.fc-btn-outline-secondary:hover {
+  background-color: var(--fc-secondary);
+  border-color: var(--fc-border);
+  color: var(--fc-foreground);
+}
+
+.fc-btn-outline-primary {
+  border-color: var(--fc-border);
+  color: var(--fc-foreground);
+  background-color: transparent;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  width: 100%;
+}
+
+.fc-btn-outline-primary:hover {
+  background-color: var(--fc-secondary);
+  border-color: hsla(180, 85%, 40%, 1);
+  color: hsla(180, 85%, 40%, 1);
+}
+
+.fc-get-started-btn {
+  min-width: 11.5rem;
+  text-align: center;
+}
+
+.fc-link-primary {
+  color: hsla(180, 85%, 40%, 1);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.fc-link-primary:hover {
+  opacity: 0.8;
+}
+
+.fc-divider {
+  flex: 1;
+  height: 1px;
+  background-color: var(--fc-border);
+}
+
+.fc-divider-text {
+  color: var(--fc-muted-foreground);
+  font-size: 0.875rem;
+}
+
+.fc-section-divider {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-input-wrapper {
+  width: 100%;
+}
+
+.fc-error-text {
+  font-size: 0.875rem;
+  color: var(--fc-destructive);
+}
+
+.fc-main-padding {
+  padding: 2rem 0;
+}
+
+/* Form input styles */
+.fc-form-input {
+  background-color: var(--fc-secondary);
+  border: 1px solid var(--fc-border);
+  color: var(--fc-foreground);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.fc-form-input::placeholder {
+  color: var(--fc-muted-foreground);
+  opacity: 0.7;
+}
+
+.fc-form-input:focus {
+  background-color: var(--fc-secondary);
+  border-color: hsla(180, 85%, 40%, 1);
+  color: var(--fc-foreground);
+  box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.15);
+  outline: none;
+}
+
+.fc-form-input:hover {
+  border-color: hsla(180, 85%, 40%, 0.5);
+}
+
+.fc-form-input-with-icon {
+  margin-top: 0.25rem;
+  padding-right: 2.5rem;
+}
+
+.fc-checkbox-label {
+  color: var(--fc-foreground);
+  font-size: 0.875rem;
+}
+
+.fc-text-foreground {
+  color: var(--fc-foreground);
+}
+
+.fc-icon-teal {
+  color: hsla(180, 85%, 40%, 1);
+}
+
+.fc-form-actions {
+  border-top: 1px solid var(--fc-border);
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+}
+
+.fc-avatar-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: var(--fc-secondary);
+  border: 1px solid var(--fc-border);
+  border-radius: 0.5rem;
+}
+
+.fc-avatar-preview {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border: 2px solid var(--fc-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.fc-list-item-icon {
+  color: hsla(180, 85%, 40%, 1);
+}
+
+.fc-alert-box {
+  background-color: var(--fc-secondary);
+  border: 1px solid var(--fc-border);
+  border-radius: 0.5rem;
+  color: var(--fc-foreground);
+}
+
+.fc-btn-outline-primary {
+  border-color: hsla(180, 85%, 40%, 1);
+  color: hsla(180, 85%, 40%, 1);
+  background-color: transparent;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  text-decoration: none;
+}
+
+.fc-btn-outline-primary:hover {
+  background-color: hsla(180, 85%, 40%, 0.1);
+  border-color: hsla(180, 85%, 40%, 1);
+  color: hsla(180, 85%, 40%, 1);
+}
+
+.fc-font-space-grotesk {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.fc-photo-placeholder {
+  background-color: var(--fc-secondary);
+}
+
+.fc-photo-placeholder.fc-photo-placeholder-border {
+  border-color: var(--fc-border);
+}
+
+.fc-photo-placeholder-rounded {
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.fc-photo-placeholder-icon {
+  color: var(--fc-muted-foreground);
+}
+
+.fc-flex-wrap {
+  flex-wrap: wrap;
+}
+
+.fc-badge-condition {
+  border-color: hsla(180, 85%, 40%, 0.5);
+  color: var(--fc-primary);
+  background: hsla(180, 85%, 40%, 0.1);
+}
+
+.fc-card-body-flex {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fc-card-body-flex-small-gap {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fc-form-label-block {
+  color: var(--fc-muted-foreground);
+  font-size: 0.875rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.fc-btn-group {
+  border: 1px solid var(--fc-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.fc-btn-group-item {
+  border: none;
+  border-radius: 0;
+}
+
+.fc-card-body-small {
+  padding: 1.5rem;
+}
+
+.fc-d-none {
+  display: none;
+}
+
+.fc-d-flex {
+  display: flex;
+}
+
+.fc-d-none {
+  display: none;
+}
+
+.fc-d-inline-block {
+  display: inline-block;
+}
+
+.fc-btn-disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.fc-body-base {
+  background-color: var(--fc-background);
+  color: var(--fc-foreground);
+}
+
+.fc-header-base {
+  border-bottom: 1px solid var(--fc-border);
+  background-color: var(--fc-card);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.fc-navbar-base {
+  background-color: transparent;
+}
+
+.fc-navbar-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--fc-foreground);
+  text-decoration: none;
+  transition: text-shadow 0.2s ease;
+}
+
+a.navbar-brand.fc-navbar-brand:hover,
+a.navbar-brand.fc-navbar-brand:focus {
+  color: var(--fc-foreground) !important;
+  text-shadow: 0 0 8px var(--fc-primary), 0 0 16px rgba(34, 197, 94, 0.4);
+}
+
+.fc-navbar-brand-gradient {
+  background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: filter 0.2s ease;
+}
+
+.fc-navbar-brand:hover .fc-navbar-brand-gradient {
+  filter: drop-shadow(0 0 6px var(--fc-primary));
+}
+
+.fc-navbar-toggler-base {
+  border: 1px solid var(--fc-border);
+  color: var(--fc-foreground);
+}
+
+.fc-nav-link-base {
+  color: var(--fc-foreground);
+  transition: color 0.2s ease;
+}
+
+.fc-dropdown-menu-base {
+  background-color: var(--fc-card);
+  border: 1px solid var(--fc-border);
+}
+
+.fc-dropdown-header-base {
+  color: var(--fc-muted-foreground);
+}
+
+.fc-dropdown-item-base {
+  color: var(--fc-foreground);
+  transition: background-color 0.2s ease;
+}
+
+.fc-dropdown-item-text-base {
+  color: var(--fc-muted-foreground);
+}
+
+.fc-dropdown-divider-base {
+  border-color: var(--fc-border);
+}
+
+.fc-dropdown-item-small {
+  color: var(--fc-muted-foreground);
+}
+
+.fc-button-inline-flex {
+  display: inline-flex;
+  align-items: center;
+}
+
+.fc-button-margin-right {
+  margin-right: 0.5rem;
+}

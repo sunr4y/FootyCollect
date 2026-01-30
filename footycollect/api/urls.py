@@ -17,4 +17,5 @@ urlpatterns = [
     path("brands/search/", views.search_brands, name="search_brands"),
     path("competitions/search/", views.search_competitions, name="search_competitions"),
     path("seasons/search/", views.search_seasons, name="search_seasons"),
+    path("filters/options/", views.get_filter_options, name="filter_options"),
 ]

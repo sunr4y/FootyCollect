@@ -35,7 +35,6 @@ class TestPhotoService(TestCase):
 
         # Use mocks to avoid database constraints
         self.jersey = Mock()
-        self.jersey.id = 1
         self.jersey.pk = 1
         self.jersey._meta = Mock()
         self.jersey._meta.app_label = "collection"

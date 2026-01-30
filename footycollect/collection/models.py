@@ -1,6 +1,3 @@
-from contextlib import suppress
-from pathlib import Path
-
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -79,8 +76,33 @@ class Photo(models.Model):
         return f"Photo {self.order} of {self.content_object}"
 
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        is_new = self.pk is None
+
+        if not is_new:
+            try:
+                old_photo = Photo.objects.get(pk=self.pk)
+                old_image = old_photo.image
+            except Photo.DoesNotExist:
+                old_image = None
+        else:
+            old_image = None
+
         super().save(*args, **kwargs)
-        self.create_avif_version()
+
+        should_process = False
+        if update_fields:
+            if "image_avif" in update_fields:
+                should_process = False
+            elif "image" in update_fields:
+                should_process = True
+        elif is_new and self.image or old_image != self.image and self.image:
+            should_process = True
+
+        if should_process and not self.image_avif:
+            from .tasks import process_photo_to_avif
+
+            process_photo_to_avif.delay(self.pk)
 
     def create_avif_version(self):
         if not self.image_avif and self.image:
@@ -94,25 +116,41 @@ class Photo(models.Model):
                 super().save(update_fields=["image_avif"])
 
     def get_image_url(self):
-        return self.image_avif.url if self.image_avif else self.image.url
+        if self.image_avif:
+            # Check if the AVIF file actually exists
+            try:
+                if self.image_avif.storage.exists(self.image_avif.name):
+                    return self.image_avif.url
+            except (ValueError, AttributeError, NotImplementedError):
+                # If storage doesn't support exists() or field is empty, fall back to original
+                pass
+        return self.image.url if self.image else ""
 
     def delete(self, *args, **kwargs):
-        """Override delete to remove files from filesystem."""
-        # Store file paths before deletion
-        image_path = self.image.path if self.image else None
-        avif_path = self.image_avif.path if self.image_avif else None
+        """Override delete to remove files from storage."""
+        # Store file names before deletion
+        image_name = self.image.name if self.image else None
+        avif_name = self.image_avif.name if self.image_avif else None
+        image_storage = self.image.storage if self.image else None
+        avif_storage = self.image_avif.storage if self.image_avif else None
 
         # Call parent delete to remove from database
         super().delete(*args, **kwargs)
 
-        # Remove files from filesystem
-        if image_path and Path(image_path).exists():
-            with suppress(OSError):
-                Path(image_path).unlink()
+        # Remove files from storage
+        if image_name and image_storage:
+            try:
+                if image_storage.exists(image_name):
+                    image_storage.delete(image_name)
+            except (OSError, NotImplementedError):
+                pass
 
-        if avif_path and Path(avif_path).exists():
-            with suppress(OSError):
-                Path(avif_path).unlink()
+        if avif_name and avif_storage:
+            try:
+                if avif_storage.exists(avif_name):
+                    avif_storage.delete(avif_name)
+            except (OSError, NotImplementedError):
+                pass
 
 
 # Custom manager for BaseItem
@@ -245,6 +283,7 @@ class BaseItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_draft = models.BooleanField(default=True)
+    is_processing_photos = models.BooleanField(default=False, db_index=True)
     design = models.CharField(
         max_length=20,
         choices=DESIGN_CHOICES,
@@ -377,8 +416,93 @@ class Jersey(models.Model):
         # Ensure the base_item has the correct item_type
         if not self.base_item.item_type:
             self.base_item.item_type = "jersey"
-            self.base_item.save()
+        # Auto-generate name using builder
+        self.base_item.name = self.build_name()
+        self.base_item.save()
         super().save(*args, **kwargs)
+
+    def _build_base_name(self) -> str:
+        """Build the base name (club + type)."""
+        parts = []
+        if self.base_item.club:
+            parts.append(self.base_item.club.name)
+        if self.kit and self.kit.type:
+            parts.append(self.kit.type.name)
+        return " ".join(parts) if parts else ""
+
+    def _build_player_part(self) -> str:
+        """Build the player name/number part."""
+        if not (self.player_name or self.number):
+            return ""
+        if self.player_name and self.number:
+            return f"{self.player_name}#{self.number}"
+        if self.player_name:
+            return self.player_name
+        return f"#{self.number}"
+
+    def _build_version_part(self) -> str:
+        """Build the version part (Fan/Player Version)."""
+        from django.utils.translation import gettext_lazy as _
+
+        version = _("Fan Version") if self.is_fan_version else _("Player Version")
+        return f" - {version}"
+
+    def build_name(self) -> str:
+        """
+        Build the full name for the jersey following the pattern:
+
+        CLUB_NAME + TYPE_K + SEASON + "-" + SIZE +
+        ('-' + PLAYER_NAME#PLAYER_NUMBER if exists) +
+        FAN_VERSION/PLAYER_VERSION + LONG_SLEEVE (if is_short_sleeve=False) +
+        '-' + SIGNED (if is_signed=True)
+
+        Example: "Real Betis Home 2020-21 - XS - Joaquin#17 - Player Version - Signed"
+
+        This name is automatically saved to base_item.name when the jersey is saved.
+
+        Returns:
+            str: The constructed name for the jersey
+        """
+        from django.utils.translation import gettext_lazy as _
+
+        name = self._build_base_name()
+        if not name:
+            return self.base_item.name
+
+        if self.base_item.season:
+            name += f" {self.base_item.season.year}"
+
+        if self.size:
+            name += f" - {self.size.name}"
+
+        player_part = self._build_player_part()
+        if player_part:
+            name += f" - {player_part}"
+
+        name += self._build_version_part()
+
+        if not self.is_short_sleeve:
+            name += f" {_('Long Sleeve')}"
+
+        if self.is_signed:
+            name += f" - {_('Signed')}"
+
+        return name
+
+    def get_display_name_with_type(self) -> str:
+        """
+        Get display name for detail view: CLUB_NAME + TYPE_K only.
+        Used in detail view to show name + typek without size, season, version, etc.
+        The season is displayed separately below the title.
+        """
+        parts = []
+        if self.base_item.club:
+            parts.append(self.base_item.club.name)
+        if self.kit and self.kit.type:
+            parts.append(self.kit.type.name)
+        if not parts:
+            return self.base_item.name
+        return " ".join(parts)
 
 
 class Shorts(models.Model):
@@ -480,6 +604,9 @@ class Pants(models.Model):
 
     # Pants-specific fields
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name_plural = "Pants"
 
     def __str__(self):
         return f"Pants: {self.base_item}"

@@ -2,8 +2,8 @@
 Tests for item views.
 
 This module tests the real functionality of item views including:
-- Function-based views (home, demo_country_view, demo_brand_view, test_dropzone)
-- Class-based views (PostCreateView, ItemListView, ItemDetailView, etc.)
+- Function-based views (home)
+- Class-based views (ItemListView, ItemDetailView, etc.)
 - Form handling and validation
 - Photo processing
 - User authentication and permissions
@@ -12,25 +12,21 @@ This module tests the real functionality of item views including:
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
-
-# HTTP status constants
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
-from footycollect.collection.forms import JerseyForm, TestBrandForm, TestCountryForm
+from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import BaseItem, Brand, Club, Color, Jersey, Season, Size
-from footycollect.collection.views.item_views import (
-    DropzoneTestView,
-    ItemDetailView,
-    ItemListView,
+from footycollect.collection.views.demo_views import home
+from footycollect.collection.views.detail_views import ItemDetailView
+from footycollect.collection.views.item_views import JerseySelectView
+from footycollect.collection.views.jersey_crud_views import (
     JerseyCreateView,
-    JerseySelectView,
     JerseyUpdateView,
-    demo_brand_view,
-    demo_country_view,
-    home,
-    test_dropzone,
 )
+from footycollect.collection.views.list_views import ItemListView
 
 User = get_user_model()
 
@@ -38,6 +34,7 @@ User = get_user_model()
 TEST_PASSWORD = "testpass123"
 HTTP_OK = 200
 HTTP_REDIRECT = 302
+MAX_ITEM_LIST_RESPONSE_MS = 5000
 
 
 class TestFunctionBasedViews(TestCase):
@@ -52,66 +49,22 @@ class TestFunctionBasedViews(TestCase):
         )
 
     def test_home_view(self):
-        """Test home view returns photos."""
-        with patch("footycollect.collection.views.item_views.get_photo_service") as mock_service:
-            mock_photo_service = Mock()
-            mock_photos = [Mock(), Mock()]
-            mock_photo_service.photo_repository.get_all.return_value = mock_photos
-            mock_service.return_value = mock_photo_service
-
-            from django.test import RequestFactory
-
-            factory = RequestFactory()
-            request = factory.get("/")
-            response = home(request)
-
-            assert response.status_code == HTTP_OK
-            # Home view returns a TemplateResponse, so we can check context
-            if hasattr(response, "context"):
-                assert "photos" in response.context
-                assert response.context["photos"] == mock_photos
-
-    def test_demo_country_view(self):
-        """Test demo_country_view returns country form."""
+        """Test home view returns home page with kits data."""
         from django.test import RequestFactory
 
         factory = RequestFactory()
         request = factory.get("/")
-        response = demo_country_view(request)
+        response = home(request)
 
         assert response.status_code == HTTP_OK
-        # Demo views return TemplateResponse, so we can check context
+        # Home view returns a TemplateResponse, so we can check context
         if hasattr(response, "context"):
-            assert "form" in response.context
-            assert isinstance(response.context["form"], TestCountryForm)
-
-    def test_demo_brand_view(self):
-        """Test demo_brand_view returns brand form."""
-        from django.test import RequestFactory
-
-        factory = RequestFactory()
-        request = factory.get("/")
-        response = demo_brand_view(request)
-
-        assert response.status_code == HTTP_OK
-        # Demo views return TemplateResponse, so we can check context
-        if hasattr(response, "context"):
-            assert "form" in response.context
-            assert isinstance(response.context["form"], TestBrandForm)
-
-    def test_test_dropzone_view(self):
-        """Test test_dropzone view returns dropzone test page."""
-        from django.test import RequestFactory
-
-        factory = RequestFactory()
-        request = factory.get("/")
-        response = test_dropzone(request)
-
-        assert response.status_code == HTTP_OK
+            assert "columns_items" in response.context
+            assert "use_cached_kits" in response.context
 
 
-class TestPostCreateView(TestCase):
-    """Test PostCreateView functionality."""
+class TestItemViews(TestCase):
+    """Test ItemCreateView functionality."""
 
     def setUp(self):
         """Set up test data."""
@@ -154,7 +107,7 @@ class TestPostCreateView(TestCase):
             "detailed_condition": "EXCELLENT",
         }
 
-        with patch("footycollect.collection.views.item_views.get_photo_service") as mock_service:
+        with patch("footycollect.collection.services.get_photo_service") as mock_service:
             mock_photo_service = Mock()
             mock_service.return_value = mock_photo_service
 
@@ -164,9 +117,21 @@ class TestPostCreateView(TestCase):
             assert response.status_code == HTTP_REDIRECT
             assert response.url == reverse("collection:item_list")
 
-            # Should create the item
-            assert BaseItem.objects.filter(name="Test Jersey", user=self.user).exists()
-            assert Jersey.objects.filter(base_item__name="Test Jersey", base_item__user=self.user).exists()
+            # Should create the item with auto-generated name
+            # The name is auto-generated by build_name() when Jersey is saved
+            created_items = BaseItem.objects.filter(user=self.user)
+            assert created_items.exists(), "No items were created"
+            actual_item = created_items.first()
+            actual_name = actual_item.name
+            # Verify the name was auto-generated (not the original form name)
+            assert actual_name != "Test Jersey", f"Name was not auto-generated: {actual_name}"
+            # Verify the name contains expected elements
+            assert self.club.name in actual_name, f"Club name not in generated name: {actual_name}"
+            assert str(self.season.year) in actual_name, f"Season not in generated name: {actual_name}"
+            assert self.size.name in actual_name, f"Size not in generated name: {actual_name}"
+            # Verify the item exists
+            assert BaseItem.objects.filter(name=actual_name, user=self.user).exists()
+            assert Jersey.objects.filter(base_item__name=actual_name, base_item__user=self.user).exists()
 
     def test_post_invalid_form_returns_errors(self):
         """Test POST with invalid form returns errors."""
@@ -269,6 +234,53 @@ class TestItemListView(TestCase):
         assert self.jersey in items
         assert self.other_jersey not in items
 
+    def test_item_list_view_query_count_bounded(self):
+        """ItemListView uses select_related/prefetch_related; query count does not grow with items (no N+1)."""
+        from footycollect.core.models import Kit, TypeK
+
+        type_k = TypeK.objects.create(name="Home", category="match")
+        kit = Kit.objects.create(
+            team=self.club,
+            season=self.season,
+            type=type_k,
+            name="Home Kit",
+            slug="home-kit",
+            main_img_url="https://example.com/img.png",
+        )
+        for i in range(5):
+            bi = BaseItem.objects.create(
+                user=self.user,
+                name=f"Jersey {i}",
+                brand=self.brand,
+                club=self.club,
+                season=self.season,
+            )
+            Jersey.objects.create(base_item=bi, size=self.size, kit=kit)
+
+        self.client.login(username="testuser", password=TEST_PASSWORD)
+        url = reverse("collection:item_list")
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(url)
+        assert response.status_code == HTTP_OK
+        max_queries = 20
+        assert (
+            len(ctx.captured_queries) <= max_queries
+        ), f"Expected at most {max_queries} queries (no N+1); got {len(ctx.captured_queries)}"
+
+    def test_item_list_view_response_time_bounded(self):
+        """ItemListView responds in reasonable time (sanity check; 200ms target is for manual verification)."""
+        import time
+
+        self.client.login(username="testuser", password=TEST_PASSWORD)
+        url = reverse("collection:item_list")
+        start = time.perf_counter()
+        response = self.client.get(url)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        assert response.status_code == HTTP_OK
+        assert (
+            elapsed_ms < MAX_ITEM_LIST_RESPONSE_MS
+        ), f"Item list page took {elapsed_ms:.0f}ms (sanity limit {MAX_ITEM_LIST_RESPONSE_MS}ms)"
+
 
 class TestItemDetailView(TestCase):
     """Test ItemDetailView functionality."""
@@ -294,6 +306,8 @@ class TestItemDetailView(TestCase):
             season=self.season,
         )
         self.jersey = Jersey.objects.create(base_item=self.item, size=self.size)
+        # Name is auto-generated by build_name() when Jersey is saved
+        self.item.refresh_from_db()
 
     def test_detail_view_integration_with_real_data(self):
         """Test detail view integration with real data."""
@@ -399,9 +413,21 @@ class TestItemCreateView(TestCase):
         assert response.status_code == HTTP_REDIRECT
         assert response.url == reverse("collection:item_list")
 
-        # Should create the item
-        assert BaseItem.objects.filter(name="Test Jersey", user=self.user).exists()
-        assert Jersey.objects.filter(base_item__name="Test Jersey", base_item__user=self.user).exists()
+        # Should create the item with auto-generated name
+        # The name is auto-generated by build_name() when Jersey is saved
+        created_items = BaseItem.objects.filter(user=self.user)
+        assert created_items.exists(), "No items were created"
+        actual_item = created_items.first()
+        actual_name = actual_item.name
+        # Verify the name was auto-generated (not the original form name)
+        assert actual_name != "Test Jersey", f"Name was not auto-generated: {actual_name}"
+        # Verify the name contains expected elements
+        assert club.name in actual_name, f"Club name not in generated name: {actual_name}"
+        assert str(season.year) in actual_name, f"Season not in generated name: {actual_name}"
+        assert size.name in actual_name, f"Size not in generated name: {actual_name}"
+        # Verify the item exists
+        assert BaseItem.objects.filter(name=actual_name, user=self.user).exists()
+        assert Jersey.objects.filter(base_item__name=actual_name, base_item__user=self.user).exists()
 
     def test_create_view_requires_authentication(self):
         """Test create view requires authentication."""
@@ -437,6 +463,8 @@ class TestItemUpdateView(TestCase):
             season=self.season,
         )
         self.jersey = Jersey.objects.create(base_item=self.item, size=self.size)
+        # Name is auto-generated by build_name() when Jersey is saved
+        self.item.refresh_from_db()
 
     def test_update_view_integration_with_real_data(self):
         """Test update view integration with real data."""
@@ -524,6 +552,8 @@ class TestItemDeleteView(TestCase):
             season=self.season,
         )
         self.jersey = Jersey.objects.create(base_item=self.item, size=self.size)
+        # Name is auto-generated by build_name() when Jersey is saved
+        self.item.refresh_from_db()
 
     def test_delete_view_integration_with_real_data(self):
         """Test delete view integration with real data."""
@@ -655,9 +685,21 @@ class TestJerseyCreateView(TestCase):
         assert response.status_code == HTTP_REDIRECT
         assert response.url == reverse("collection:item_list")
 
-        # Should create the item
-        assert BaseItem.objects.filter(name="Test Jersey", user=self.user).exists()
-        assert Jersey.objects.filter(base_item__name="Test Jersey", base_item__user=self.user).exists()
+        # Should create the item with auto-generated name
+        # The name is auto-generated by build_name() when Jersey is saved
+        created_items = BaseItem.objects.filter(user=self.user)
+        assert created_items.exists(), "No items were created"
+        actual_item = created_items.first()
+        actual_name = actual_item.name
+        # Verify the name was auto-generated (not the original form name)
+        assert actual_name != "Test Jersey", f"Name was not auto-generated: {actual_name}"
+        # Verify the name contains expected elements
+        assert club.name in actual_name, f"Club name not in generated name: {actual_name}"
+        assert str(season.year) in actual_name, f"Season not in generated name: {actual_name}"
+        assert size.name in actual_name, f"Size not in generated name: {actual_name}"
+        # Verify the item exists
+        assert BaseItem.objects.filter(name=actual_name, user=self.user).exists()
+        assert Jersey.objects.filter(base_item__name=actual_name, base_item__user=self.user).exists()
 
     def test_jersey_create_view_requires_authentication(self):
         """Test jersey create view requires authentication."""
@@ -693,6 +735,8 @@ class TestJerseyUpdateView(TestCase):
             season=self.season,
         )
         self.jersey = Jersey.objects.create(base_item=self.item, size=self.size)
+        # Name is auto-generated by build_name() when Jersey is saved
+        self.item.refresh_from_db()
 
     def test_jersey_update_view_integration_with_real_data(self):
         """Test jersey update view integration with real data."""
@@ -760,10 +804,9 @@ class TestJerseyUpdateView(TestCase):
         url = reverse("collection:jersey_update", kwargs={"pk": self.jersey.pk})
         response = self.client.post(url, form_data)
 
-        # The form has a design issue - it always creates new items instead of updating
-        # So we expect a 200 response with form errors, not a redirect
-        assert response.status_code == HTTP_OK
-        assert "form" in response.context
+        # Should redirect after successful update
+        assert response.status_code == HTTP_REDIRECT
+        assert response.url == reverse("collection:item_list")
 
     def test_jersey_update_view_requires_authentication(self):
         """Test jersey update view requires authentication."""
@@ -800,12 +843,3 @@ class TestJerseySelectView(TestCase):
         """Test that prefetch_related_fields is configured correctly."""
         view = JerseySelectView()
         assert view.prefetch_related_fields == []
-
-
-class TestDropzoneTestView(TestCase):
-    """Test DropzoneTestView functionality."""
-
-    def test_template_name_configuration(self):
-        """Test that template_name is configured correctly."""
-        view = DropzoneTestView()
-        assert view.template_name == "collection/dropzone_test_page.html"

@@ -28,6 +28,8 @@ User = get_user_model()
 
 # Constants for test values
 EXPECTED_FILES_COUNT_2 = 2
+EXPECTED_COMPETITIONS_COUNT = 2
+EXPECTED_COLORS_COUNT = 2
 
 
 class JerseyFormTest(TestCase):
@@ -286,7 +288,7 @@ class TestBrandWidget(TestCase):
         widget = BrandWidget()
         attrs = widget.build_attrs({}, {})
         assert attrs["data-minimum-input-length"] == 0
-        assert attrs["data-placeholder"] == "Buscar marca..."
+        assert attrs["data-placeholder"] == "Search for brand..."
         # Check if class attribute exists before asserting
         if "class" in attrs:
             assert "form-control" in attrs["class"]
@@ -338,12 +340,24 @@ class TestJerseyFKAPIFormExtended(TestCase):
 
     def setUp(self):
         """Set up test data."""
+        from django.utils.text import slugify
+
+        from footycollect.core.models import Competition
+
         self.user = UserFactory()
         self.brand = Brand.objects.create(name="Nike")
         self.club = Club.objects.create(name="Real Madrid")
         self.season = Season.objects.create(year=2023)
         self.color = Color.objects.create(name="RED", hex_value="#FF0000")
         self.size = Size.objects.create(name="M", category="tops")
+        self.competition1, _ = Competition.objects.get_or_create(
+            name="Champions League",
+            defaults={"id_fka": 747, "slug": slugify("Champions League")},
+        )
+        self.competition2, _ = Competition.objects.get_or_create(
+            name="La Liga",
+            defaults={"id_fka": 755, "slug": slugify("La Liga")},
+        )
 
     def test_form_initialization(self):
         """Test form initialization."""
@@ -352,3 +366,90 @@ class TestJerseyFKAPIFormExtended(TestCase):
         assert "brand" in form.fields
         assert "club" in form.fields
         assert "season" in form.fields
+
+    def test_extract_many_to_many_data_with_multiple_competitions(self):
+        """Test _extract_many_to_many_data with multiple competitions."""
+        form = JerseyFKAPIForm()
+        form.cleaned_data = {
+            "competitions": f"{self.competition1.id},{self.competition2.id}",
+        }
+
+        result = form._extract_many_to_many_data()
+
+        assert "competitions" in result
+        assert len(result["competitions"]) == EXPECTED_COMPETITIONS_COUNT
+        assert self.competition1 in result["competitions"]
+        assert self.competition2 in result["competitions"]
+
+    def test_extract_many_to_many_data_with_single_competition(self):
+        """Test _extract_many_to_many_data with single competition."""
+        form = JerseyFKAPIForm()
+        form.cleaned_data = {
+            "competitions": str(self.competition1.id),
+        }
+
+        result = form._extract_many_to_many_data()
+
+        assert "competitions" in result
+        assert len(result["competitions"]) == 1
+        assert self.competition1 in result["competitions"]
+
+    def test_extract_many_to_many_data_with_empty_competitions(self):
+        """Test _extract_many_to_many_data with empty competitions."""
+        form = JerseyFKAPIForm()
+        form.cleaned_data = {
+            "competitions": "",
+        }
+
+        result = form._extract_many_to_many_data()
+
+        assert "competitions" in result
+        assert len(result["competitions"]) == 0
+
+    def test_extract_many_to_many_data_with_list_competitions(self):
+        """Test _extract_many_to_many_data with list format competitions."""
+        form = JerseyFKAPIForm()
+        form.cleaned_data = {
+            "competitions": [self.competition1.id, self.competition2.id],
+        }
+
+        result = form._extract_many_to_many_data()
+
+        assert "competitions" in result
+        assert len(result["competitions"]) == EXPECTED_COMPETITIONS_COUNT
+        assert self.competition1 in result["competitions"]
+        assert self.competition2 in result["competitions"]
+
+    def test_color_model_choice_field_with_color_name(self):
+        """Test ColorModelChoiceField accepts color names."""
+        from footycollect.collection.forms import ColorModelChoiceField
+
+        field = ColorModelChoiceField(queryset=Color.objects.all(), required=False)
+
+        # Test with color name string
+        color_obj = field.to_python("RED")
+        assert color_obj == self.color
+
+    def test_color_model_choice_field_with_color_id(self):
+        """Test ColorModelChoiceField accepts color IDs."""
+        from footycollect.collection.forms import ColorModelChoiceField
+
+        field = ColorModelChoiceField(queryset=Color.objects.all(), required=False)
+
+        # Test with color ID
+        color_obj = field.to_python(str(self.color.id))
+        assert color_obj == self.color
+
+    def test_color_model_multiple_choice_field_with_color_names(self):
+        """Test ColorModelMultipleChoiceField accepts color names."""
+        from footycollect.collection.forms import ColorModelMultipleChoiceField
+
+        blue_color = Color.objects.create(name="BLUE", hex_value="#0000FF")
+        field = ColorModelMultipleChoiceField(queryset=Color.objects.all(), required=False)
+
+        # Test with list of color names
+        color_objs = field.to_python(["RED", "BLUE"])
+        assert len(color_objs) == EXPECTED_COLORS_COUNT
+        # to_python returns strings for color names (not Color objects) for API flows
+        assert self.color.name in color_objs
+        assert blue_color.name in color_objs

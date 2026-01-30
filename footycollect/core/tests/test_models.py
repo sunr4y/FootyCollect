@@ -76,6 +76,42 @@ class TestTypeKModel:
         typek = TypeK.objects.create(name="Away")
         assert str(typek) == "Away"
 
+    @pytest.mark.parametrize(
+        ("category", "expected_name"),
+        [
+            ("match", "Game"),
+            ("prematch", "Pre-match"),
+            ("preseason", "Pre-season"),
+            ("training", "Training"),
+            ("travel", "Travel"),
+        ],
+    )
+    def test_typek_get_category_display_name(self, category, expected_name):
+        """Test TypeK get_category_display_name method."""
+        from footycollect.core.models import TypeK
+
+        typek = TypeK.objects.create(name="Test", category=category)
+        display_name = typek.get_category_display_name()
+        assert display_name == expected_name
+
+    def test_typek_get_category_display_name_unknown_category(self):
+        """Test TypeK get_category_display_name with unknown category."""
+        from footycollect.core.models import TypeK
+
+        typek = TypeK.objects.create(name="Test", category="unknown")
+        display_name = typek.get_category_display_name()
+        assert display_name == "unknown"
+
+    def test_typek_is_goalkeeper_field(self):
+        """Test TypeK is_goalkeeper field."""
+        from footycollect.core.models import TypeK
+
+        typek = TypeK.objects.create(name="GK Kit", is_goalkeeper=True)
+        assert typek.is_goalkeeper is True
+
+        typek_normal = TypeK.objects.create(name="Home", is_goalkeeper=False)
+        assert typek_normal.is_goalkeeper is False
+
 
 @pytest.mark.django_db
 class TestCompetitionModel:
@@ -303,6 +339,25 @@ class TestKitModel:
 
         generated_slug = kit.generate_slug()
         assert generated_slug == "granada-cf-2025-26-third"
+
+    def test_kit_generate_slug_lowercase_and_hyphens(self, club, season, typek, brand):
+        """Test kit generate_slug converts to lowercase and replaces spaces with hyphens."""
+        from footycollect.core.models import Kit
+
+        kit = Kit.objects.create(
+            name="Test Kit Name With Spaces",
+            slug="test-kit-name-with-spaces",
+            team=club,
+            season=season,
+            type=typek,
+            brand=brand,
+            main_img_url="https://example.com/test.jpg",
+        )
+
+        generated_slug = kit.generate_slug()
+        assert generated_slug == "test-kit-name-with-spaces"
+        assert generated_slug.islower()
+        assert " " not in generated_slug
 
     def test_kit_unique_slug(self, club, season, typek, brand):
         """Test kit slug uniqueness."""

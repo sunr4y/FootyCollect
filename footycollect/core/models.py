@@ -15,9 +15,44 @@ class Season(models.Model):
 
 class TypeK(models.Model):
     name = models.CharField(max_length=100)
+    category = models.CharField(
+        max_length=20,
+        choices=[
+            ("match", "Game"),
+            ("prematch", "Pre-match"),
+            ("preseason", "Pre-season"),
+            ("training", "Training"),
+            ("travel", "Travel"),
+        ],
+        default="match",
+        db_index=True,
+        help_text="Category for kit type classification. Note: 'jacket' items are handled as outerwear, not kits.",
+    )
+    is_goalkeeper = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="True if this is a goalkeeper kit (GK, Goalkeeper, Portero)",
+    )
+
+    class Meta:
+        ordering = ["category", "is_goalkeeper", "name"]
+        indexes = [
+            models.Index(fields=["category", "is_goalkeeper"]),
+        ]
 
     def __str__(self):
         return self.name
+
+    def get_category_display_name(self):
+        """Get user-friendly category name for frontend display."""
+        category_names = {
+            "match": "Game",
+            "prematch": "Pre-match",
+            "preseason": "Pre-season",
+            "training": "Training",
+            "travel": "Travel",
+        }
+        return category_names.get(self.category, self.category)
 
 
 class Competition(models.Model):
@@ -56,9 +91,19 @@ class Club(models.Model):
     )
     logo = models.URLField(blank=True)
     logo_dark = models.URLField(blank=True)
+    logo_file = models.ImageField(upload_to="logos/clubs/", blank=True, null=True)
+    logo_dark_file = models.ImageField(upload_to="logos/clubs/", blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def logo_display_url(self):
+        return self.logo_file.url if self.logo_file else (self.logo or "")
+
+    @property
+    def logo_dark_display_url(self):
+        return self.logo_dark_file.url if self.logo_dark_file else (self.logo_dark or "")
 
 
 class Brand(models.Model):
@@ -67,9 +112,19 @@ class Brand(models.Model):
     slug = models.SlugField(unique=True, max_length=150)
     logo = models.URLField(blank=True)
     logo_dark = models.URLField(blank=True)
+    logo_file = models.ImageField(upload_to="logos/brands/", blank=True, null=True)
+    logo_dark_file = models.ImageField(upload_to="logos/brands/", blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def logo_display_url(self):
+        return self.logo_file.url if self.logo_file else (self.logo or "")
+
+    @property
+    def logo_dark_display_url(self):
+        return self.logo_dark_file.url if self.logo_dark_file else (self.logo_dark or "")
 
 
 class Kit(models.Model):

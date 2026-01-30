@@ -2,18 +2,21 @@
 Extended tests for jersey views with real functionality testing.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from footycollect.collection.models import Brand, Club, Competition, Jersey, Season, Size
+from footycollect.collection.models import Brand, Competition, Jersey, Season, Size
 from footycollect.collection.views.jersey_views import JerseyFKAPICreateView
+from footycollect.core.models import Club
 
 User = get_user_model()
 
 # Constants for test values
 TEST_PASSWORD = "testpass123"
+EXPECTED_COMPETITIONS_COUNT = 2
+EXPECTED_DOWNLOAD_CALLS = 3  # main_img_url + 2 external_urls
 
 
 class TestJerseyFKAPICreateViewExtended(TestCase):
@@ -32,22 +35,18 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         self.competition = Competition.objects.create(name="La Liga")
         self.size = Size.objects.create(name="M", category="tops")
 
-    def test_dispatch_logs_post_requests(self):
-        """Test that dispatch method logs POST requests."""
+    def test_dispatch_delegates_to_super_for_post(self):
+        """Test that dispatch delegates to CreateView.dispatch for POST requests."""
         view = JerseyFKAPICreateView()
         request = Mock()
         request.method = "POST"
         request.user = self.user
 
-        with (
-            patch("footycollect.collection.views.jersey_views.logger") as mock_logger,
-            patch("footycollect.collection.views.jersey_views.CreateView.dispatch") as mock_super,
-        ):
+        with patch("footycollect.collection.views.jersey_views.CreateView.dispatch") as mock_super:
             mock_super.return_value = Mock()
 
             view.dispatch(request)
 
-            mock_logger.info.assert_called()
             mock_super.assert_called_once_with(request)
 
     def test_dispatch_does_not_log_get_requests(self):
@@ -68,8 +67,8 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             mock_logger.info.assert_not_called()
             mock_super.assert_called_once_with(request)
 
-    def test_post_logs_request_data(self):
-        """Test that POST method logs request data."""
+    def test_post_preprocesses_form_and_calls_form_valid(self):
+        """Test that POST preprocesses form data and calls form_valid when form is valid."""
         view = JerseyFKAPICreateView()
         request = Mock()
         request.POST = {"name": "Test Jersey"}
@@ -78,7 +77,6 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         request.META = {}
 
         with (
-            patch("footycollect.collection.views.jersey_views.logger") as mock_logger,
             patch.object(view, "get_form") as mock_get_form,
             patch.object(view, "_preprocess_form_data") as mock_preprocess,
             patch.object(view, "form_valid") as mock_form_valid,
@@ -90,7 +88,6 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             view.post(request)
 
-            mock_logger.info.assert_called()
             mock_preprocess.assert_called_once_with(mock_form)
             mock_form_valid.assert_called_once_with(mock_form)
 
@@ -99,6 +96,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view = JerseyFKAPICreateView()
         request = Mock()
         request.user = self.user
+        request.POST = Mock()
         view.request = request
 
         with patch("footycollect.collection.views.jersey_views.CreateView.get_form_kwargs") as mock_super:
@@ -106,13 +104,13 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             result = view.get_form_kwargs()
 
-            assert result["data"] == "test"
+            assert result["data"] == request.POST
             assert result["user"] == self.user
 
     def test_get_context_data_success(self):
         """Test get_context_data with successful service call."""
         with patch("footycollect.collection.views.jersey_views.get_collection_service") as mock_get_service:
-            mock_service = Mock()
+            mock_service = MagicMock()
             mock_get_service.return_value = mock_service
             mock_service.get_form_data.return_value = {
                 "colors": {"main_colors": [{"name": "Red", "hex": "#FF0000"}]},
@@ -122,6 +120,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             with patch.object(view, "get_form") as mock_get_form:
                 mock_form = Mock()
+                mock_form.data = {}
+                mock_form.initial = {}
+                mock_form.fields = {}
                 mock_get_form.return_value = mock_form
 
                 result = view.get_context_data()
@@ -139,6 +140,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             with patch.object(view, "get_form") as mock_get_form:
                 mock_form = Mock()
+                mock_form.data = {}
+                mock_form.initial = {}
+                mock_form.fields = {}
                 mock_get_form.return_value = mock_form
 
                 result = view.get_context_data()
@@ -157,14 +161,24 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
         mock_form = Mock()
         mock_form.is_valid.return_value = True
+        mock_form.cleaned_data = {}
+        mock_form.data = {}
+        mock_form.errors = {}
+        mock_form.fields = {}
 
         with (
+            patch.object(view, "_ensure_form_cleaned_data") as mock_ensure_cleaned,
             patch.object(view, "_process_new_entities") as mock_process_entities,
             patch.object(view, "_save_and_finalize") as mock_save,
+            patch.object(view, "_get_base_item_for_photos") as mock_get_base_item,
             patch.object(view, "_process_external_images") as mock_process_images,
             patch.object(view, "_process_photo_ids"),
             patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
+            patch("django.conf.settings") as mock_settings,
         ):
+            import tempfile
+
+            mock_settings.BASE_DIR = tempfile.gettempdir()
             mock_response = Mock()
             mock_save.return_value = mock_response
 
@@ -174,12 +188,19 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             view.object.refresh_from_db = Mock()
             view.object.base_item = Mock()
             view.object.base_item.id = 1
+            view.object.id = 1
+
+            mock_base_item = Mock()
+            mock_base_item.id = 1
+            mock_get_base_item.return_value = mock_base_item
 
             result = view.form_valid(mock_form)
 
+            mock_ensure_cleaned.assert_called_once_with(mock_form)
             mock_process_entities.assert_called_once_with(mock_form)
             mock_save.assert_called_once_with(mock_form)
-            mock_process_images.assert_called_once_with(mock_form, view.object.base_item)
+            mock_get_base_item.assert_called_once()
+            mock_process_images.assert_called_once_with(mock_form, mock_base_item)
             mock_messages.success.assert_called_once()
             assert result == mock_response
 
@@ -198,7 +219,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             patch.object(view, "form_invalid") as mock_form_invalid,
             patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
         ):
-            mock_process_entities.side_effect = Exception("Processing error")
+            # Use ValueError instead of generic Exception since form_valid
+            # now catches specific exceptions (ValueError, TypeError, etc.)
+            mock_process_entities.side_effect = ValueError("Processing error")
             mock_form_invalid.return_value = Mock()
 
             result = view.form_valid(mock_form)
@@ -249,7 +272,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         mock_form = Mock()
         mock_form.data = {"club_name": "Real Madrid", "club": ""}
 
-        with patch("footycollect.collection.views.jersey_views.Club.objects.get") as mock_get:
+        with patch("footycollect.core.models.Club.objects.get") as mock_get:
             mock_club = Mock()
             mock_club.id = 1
             mock_get.return_value = mock_club
@@ -267,7 +290,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         mock_form = Mock()
         mock_form.data = {"club_name": "New Club", "club": ""}
 
-        with patch("footycollect.collection.views.jersey_views.Club.objects.get") as mock_get:
+        with patch("footycollect.core.models.Club.objects.get") as mock_get:
             mock_get.side_effect = Club.DoesNotExist()
 
             with patch.object(view, "_create_club_from_api_data") as mock_create:
@@ -282,7 +305,11 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
     def test_fetch_kit_data_from_api_success(self):
         """Test _fetch_kit_data_from_api method with success."""
-        with patch("footycollect.collection.views.jersey_views.FKAPIClient") as mock_client_class:
+        with (
+            patch(
+                "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.FKAPIClient"
+            ) as mock_client_class,
+        ):
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.get_kit_details.return_value = {"kit": "data"}
@@ -297,9 +324,11 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
     def test_fetch_kit_data_from_api_error(self):
         """Test _fetch_kit_data_from_api method with error."""
         with (
-            patch("footycollect.collection.views.jersey_views.FKAPIClient") as mock_client_class,
-            patch("footycollect.collection.views.jersey_views.logger") as mock_logger,
-            patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
+            patch(
+                "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.FKAPIClient"
+            ) as mock_client_class,
+            patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger,
+            patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.messages") as mock_messages,
         ):
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -354,7 +383,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             "brand": {"logo": "https://example.com/logo.png"},
         }
 
-        with patch("footycollect.collection.views.jersey_views.logger") as mock_logger:
+        with patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger:
             view._extract_brand_logo(kit_data)
 
             assert hasattr(view, "fkapi_data")
@@ -372,7 +401,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             },
         }
 
-        with patch("footycollect.collection.views.jersey_views.logger") as mock_logger:
+        with patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger:
             view._extract_team_data(kit_data)
 
             assert hasattr(view, "fkapi_data")
@@ -391,7 +420,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             ],
         }
 
-        with patch("footycollect.collection.views.jersey_views.logger") as mock_logger:
+        with patch("footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.logger") as mock_logger:
             view._extract_competition_logos(kit_data)
 
             assert hasattr(view, "fkapi_data")
@@ -404,7 +433,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view = JerseyFKAPICreateView()
         mock_form = Mock()
 
-        with patch("footycollect.collection.views.jersey_views.Kit.objects.get") as mock_get:
+        with patch("footycollect.collection.models.Kit.objects.get") as mock_get:
             mock_kit = Mock()
             mock_get.return_value = mock_kit
 
@@ -434,6 +463,8 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             "main_img_url": "https://example.com/jersey.jpg",
         }
         mock_form.data = mock_form.cleaned_data.copy()
+        mock_form.errors = {}
+        mock_form.fields = {}
         mock_form.instance = Mock()
         mock_form.instance.name = "Real Madrid 2023-24 Home"
         mock_form.instance.user = self.user
@@ -442,30 +473,45 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
         # Mock the jersey creation
         mock_jersey = Mock()
-        mock_jersey.id = 1
         mock_jersey.pk = 1
         mock_jersey.is_draft = True
         mock_jersey.save = Mock()
 
         with (
+            patch.object(view, "_ensure_form_cleaned_data") as mock_ensure_cleaned,
             patch.object(view, "_process_new_entities") as mock_process_entities,
             patch.object(view, "_save_and_finalize") as mock_save,
+            patch.object(view, "_get_base_item_for_photos") as mock_get_base_item,
             patch.object(view, "_process_external_images") as mock_process_images,
             patch.object(view, "_process_photo_ids"),
             patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
+            patch("footycollect.collection.tasks.check_item_photo_processing"),
+            patch("django.conf.settings") as mock_settings,
         ):
+            import tempfile
+
+            mock_settings.BASE_DIR = tempfile.gettempdir()
             mock_save.return_value = Mock()
             view.object = mock_jersey
             view.object.refresh_from_db = Mock()
             view.object.base_item = Mock()
             view.object.base_item.id = 1
+            view.object.base_item.pk = 1
+            view.object.id = 1
+
+            mock_base_item = Mock()
+            mock_base_item.id = 1
+            mock_base_item.pk = 1
+            mock_get_base_item.return_value = mock_base_item
 
             result = view.form_valid(mock_form)
 
             # Verify the complete flow was executed
+            mock_ensure_cleaned.assert_called_once_with(mock_form)
             mock_process_entities.assert_called_once_with(mock_form)
             mock_save.assert_called_once_with(mock_form)
-            mock_process_images.assert_called_once_with(mock_form, view.object.base_item)
+            mock_get_base_item.assert_called_once()
+            mock_process_images.assert_called_once_with(mock_form, mock_base_item)
             mock_messages.success.assert_called_once()
             assert result == mock_save.return_value
 
@@ -572,7 +618,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view = JerseyFKAPICreateView()
 
         # Mock FKAPI client
-        with patch("footycollect.collection.views.jersey_views.FKAPIClient") as mock_client_class:
+        with patch(
+            "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.FKAPIClient"
+        ) as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.get_kit_details.return_value = {
@@ -598,7 +646,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
         # Mock collection service
         with patch("footycollect.collection.views.jersey_views.get_collection_service") as mock_get_service:
-            mock_service = Mock()
+            mock_service = MagicMock()
             mock_get_service.return_value = mock_service
             mock_service.get_form_data.return_value = {
                 "colors": {"main_colors": [{"name": "Red", "hex": "#FF0000"}]},
@@ -608,6 +656,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             # Test context data
             with patch.object(view, "get_form") as mock_get_form:
                 mock_form = Mock()
+                mock_form.data = {}
+                mock_form.initial = {}
+                mock_form.fields = {}
                 mock_get_form.return_value = mock_form
 
                 context = view.get_context_data()
@@ -659,7 +710,10 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view.request.POST = {"all_competitions": "La Liga, Champions League"}
 
         mock_form = Mock()
-        mock_form.cleaned_data = {"name": "Test Jersey"}
+        mock_form.cleaned_data = {"name": "Test Jersey", "main_color": None, "secondary_colors": []}
+        mock_form.data = Mock()
+        mock_form.data.get = Mock(return_value=None)
+        mock_form.data.getlist = Mock(return_value=[])
 
         # Mock the jersey object
         mock_jersey = Mock()
@@ -670,14 +724,16 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         with (
             patch("footycollect.collection.views.jersey_views.CreateView.form_valid") as mock_super,
             patch(
-                "footycollect.collection.views.jersey_views.Competition.objects.get_or_create",
+                "footycollect.collection.views.jersey.mixins.kit_data_processing_mixin.Competition.objects.get_or_create",
             ) as mock_get_or_create,
+            patch("footycollect.collection.models.Color.objects.get_or_create") as mock_color_get_or_create,
         ):
             mock_super.return_value = Mock()
             mock_get_or_create.side_effect = [
                 (Mock(name="La Liga"), True),
                 (Mock(name="Champions League"), True),
             ]
+            mock_color_get_or_create.return_value = (Mock(name="WHITE"), False)
 
             view.object = mock_jersey
             result = view._save_and_finalize(mock_form)
@@ -686,11 +742,87 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             assert mock_get_or_create.call_count == 2  # noqa: PLR2004
             assert result == mock_super.return_value
 
+    def test_post_processes_multiple_competitions_from_api(self):
+        """Test that post() method processes multiple competitions from FKAPI data."""
+        from django.http import QueryDict
+
+        from footycollect.core.models import Competition
+
+        view = JerseyFKAPICreateView()
+        request = Mock()
+        request.user = self.user
+        request.POST = QueryDict(mutable=True)
+        request.POST.update(
+            {
+                "kit_id": "12345",
+                "size": self.size.id,
+                "condition": 8,
+            },
+        )
+        request.FILES = {}
+        request.content_type = "application/x-www-form-urlencoded"
+        request.META = {}
+
+        # Mock FKAPI data with multiple competitions
+        kit_data = {
+            "id": 12345,
+            "name": "FC Barcelona 2007-08 Home",
+            "competition": [
+                {"id": 747, "name": "Champions League"},
+                {"id": 755, "name": "La Liga"},
+            ],
+            "team": {"country": "ES"},
+            "primary_color": {"name": "Red"},
+            "secondary_color": [{"name": "Blue"}],
+        }
+
+        # Create competitions in database (use get_or_create to avoid duplicates)
+        comp1, _ = Competition.objects.get_or_create(
+            name="Champions League",
+            defaults={"id_fka": 747, "slug": "champions-league-test"},
+        )
+        comp2, _ = Competition.objects.get_or_create(
+            name="La Liga",
+            defaults={"id_fka": 755, "slug": "la-liga-test"},
+        )
+
+        mock_form = Mock()
+        mock_form.is_valid.return_value = True
+        mock_form.cleaned_data = {
+            "name": "FC Barcelona 2007-08 Home",
+            "size": self.size.id,
+            "condition": 8,
+        }
+        mock_form.data = {}
+        mock_form.instance = Mock()
+        mock_form.fields = {}
+
+        with (
+            patch("footycollect.api.client.FKAPIClient") as mock_client_class,
+            patch.object(view, "get_form") as mock_get_form,
+            patch.object(view, "form_valid") as mock_form_valid,
+        ):
+            mock_client = Mock()
+            mock_client.get_kit_details.return_value = kit_data
+            mock_client_class.return_value = mock_client
+            mock_get_form.return_value = mock_form
+            mock_form_valid.return_value = Mock()
+
+            view.post(request)
+
+            # Verify competitions were added to POST data
+            assert "competitions" in request.POST
+            competitions_str = request.POST["competitions"]
+            competition_ids = [int(x) for x in competitions_str.split(",") if x.strip().isdigit()]
+            assert len(competition_ids) == EXPECTED_COMPETITIONS_COUNT
+            assert comp1.id in competition_ids
+            assert comp2.id in competition_ids
+
     def test_photo_processing_integration(self):
         """Test photo processing integration with real data."""
         view = JerseyFKAPICreateView()
         view.object = Mock()
-        view.object.id = 1
+        view.object.pk = 1
         view.object.base_item = Mock()
         view.object.base_item.id = 1
         view.request = Mock()
@@ -710,7 +842,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             mock_parse.assert_called_once_with(photo_ids)
             mock_external.assert_called_once_with([], view.object.base_item)
-            mock_associate.assert_called_once_with(["1", "2", "3"], {}, view.object.base_item)
+            mock_associate.assert_called_once_with(["1", "2", "3"], {}, view.object.base_item, start_order=0)
 
     def test_entity_creation_integration(self):
         """Test entity creation integration with real data."""
@@ -744,7 +876,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         """Test external image download integration."""
         view = JerseyFKAPICreateView()
         view.object = Mock()
-        view.object.id = 1
+        view.object.pk = 1
         view.request = Mock()  # Add missing request attribute
 
         mock_form = Mock()
@@ -753,22 +885,11 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             "external_image_urls": "https://example.com/back.jpg,https://example.com/side.jpg",
         }
 
-        with (
-            patch.object(view, "_download_and_attach_image") as mock_download,
-            patch("footycollect.collection.views.jersey_views.messages") as mock_messages,
-        ):
-            mock_photo = Mock()
-            mock_photo.id = 1
-            mock_photo.order = 0
-            mock_photo.save = Mock()
-            mock_download.return_value = mock_photo
-
+        with patch.object(view, "_download_and_attach_image") as mock_download:
             view._process_external_images(mock_form)
 
             # Verify main image processing - check that download was called
-            assert mock_download.called
-            mock_photo.save.assert_called()
-            mock_messages.success.assert_called()
+            assert mock_download.call_count == EXPECTED_DOWNLOAD_CALLS
 
     def test_kit_data_processing_integration(self):
         """Test kit data processing integration."""

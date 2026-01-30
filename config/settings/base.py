@@ -34,8 +34,7 @@ LANGUAGE_CODE = "en-us"
 # from django.utils.translation import gettext_lazy as _
 # LANGUAGES = [
 #     ('en', _('English')),
-#     ('fr-fr', _('French')),
-#     ('pt-br', _('Portuguese')),
+#     ('es', _('Spanish')),
 # ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
@@ -85,7 +84,7 @@ THIRD_PARTY_APPS = [
     "allauth.mfa",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    # "django_celery_beat",
+    "django_celery_beat",
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
@@ -94,6 +93,7 @@ THIRD_PARTY_APPS = [
     "taggit",
     "django_cotton",
     "formtools",
+    "csp",
 ]
 
 LOCAL_APPS = [
@@ -154,6 +154,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "config.middleware.SecurityHeadersMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -243,10 +244,67 @@ FIXTURE_DIRS = (str(APPS_DIR / "fixtures"),)
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-httponly
 SESSION_COOKIE_HTTPONLY = True
+# https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-samesite
+SESSION_COOKIE_SAMESITE = env.str("DJANGO_SESSION_COOKIE_SAMESITE", default="Lax")
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-httponly
 CSRF_COOKIE_HTTPONLY = True
+# https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-samesite
+CSRF_COOKIE_SAMESITE = env.str("DJANGO_CSRF_COOKIE_SAMESITE", default="Lax")
 # https://docs.djangoproject.com/en/dev/ref/settings/#x-frame-options
 X_FRAME_OPTIONS = "DENY"
+
+# Additional security headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+REFERRER_POLICY = env.str("DJANGO_REFERRER_POLICY", default="strict-origin-when-cross-origin")
+PERMISSIONS_POLICY = env.str(
+    "DJANGO_PERMISSIONS_POLICY",
+    default="geolocation=(), microphone=(), camera=(), payment=()",
+)
+
+
+# Content-Security-Policy (django-csp 4.0). Set DJANGO_CSP_ENABLED=True to enable.
+# Use comma-separated values in env vars; CSP keywords must be quoted (e.g. 'self').
+def _csp_sources(name: str, default: str) -> list:
+    raw = env.str(name, default=default)
+    return [s.strip() for s in raw.split(",") if s.strip()]
+
+
+if env.bool("DJANGO_CSP_ENABLED", default=False):
+    CONTENT_SECURITY_POLICY = {
+        "DIRECTIVES": {
+            "default-src": _csp_sources(
+                "DJANGO_CSP_DEFAULT_SRC",
+                "'self'",
+            ),
+            "script-src": _csp_sources(
+                "DJANGO_CSP_SCRIPT_SRC",
+                "'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
+            ),
+            "style-src": _csp_sources(
+                "DJANGO_CSP_STYLE_SRC",
+                "'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            ),
+            "font-src": _csp_sources(
+                "DJANGO_CSP_FONT_SRC",
+                "'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+            ),
+            "img-src": _csp_sources(
+                "DJANGO_CSP_IMG_SRC",
+                "'self' data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com https://www.footballkitarchive.com",
+            ),
+            "connect-src": _csp_sources(
+                "DJANGO_CSP_CONNECT_SRC",
+                "'self'",
+            ),
+            "frame-ancestors": _csp_sources(
+                "DJANGO_CSP_FRAME_ANCESTORS",
+                "'self'",
+            ),
+            "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
+        },
+    }
+    MIDDLEWARE.insert(1, "csp.middleware.CSPMiddleware")
 
 # EMAIL
 # ------------------------------------------------------------------------------
@@ -318,7 +376,7 @@ LOGGING = {
             "formatter": "verbose",
         },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {"level": "DEBUG", "handlers": ["console"]},
     "loggers": {
         "django.db.backends": {
             "level": "ERROR",
@@ -332,52 +390,56 @@ LOGGING = {
             "handlers": ["console"],
             "propagate": False,
         },
+        "django.request": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection.views": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection.forms": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "footycollect.collection.services": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
+        },
     },
 }
 
-# Celery
-# ------------------------------------------------------------------------------
-# if USE_TZ:
-#     # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-timezone
-#     CELERY_TIMEZONE = TIME_ZONE
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-broker_url
-# CELERY_BROKER_URL = env("CELERY_BROKER_URL")
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-result_backend
-# CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#result-extended
-# CELERY_RESULT_EXTENDED = True
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#result-backend-always-retry
-# # https://github.com/celery/celery/pull/6122
-# CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#result-backend-max-retries
-# CELERY_RESULT_BACKEND_MAX_RETRIES = 10
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-accept_content
-# CELERY_ACCEPT_CONTENT = ["json"]
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-task_serializer
-# CELERY_TASK_SERIALIZER = "json"
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-result_serializer
-# CELERY_RESULT_SERIALIZER = "json"
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#task-time-limit
-# # TODO: set to whatever value is adequate in your circumstances
-# CELERY_TASK_TIME_LIMIT = 5 * 60
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#task-soft-time-limit
-# # TODO: set to whatever value is adequate in your circumstances
-# CELERY_TASK_SOFT_TIME_LIMIT = 60
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#beat-scheduler
-# CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
-# CELERY_WORKER_SEND_TASK_EVENTS = True
-# # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event
-# CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_TIMEZONE = TIME_ZONE if USE_TZ else None
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default="memory://"))
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_RESULT_EXTENDED = True
+CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
+CELERY_RESULT_BACKEND_MAX_RETRIES = 10
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TASK_TIME_LIMIT = 5 * 60
+CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_SEND_SENT_EVENT = True
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_AUTHENTICATION_METHOD = "username"
-# https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {"username"}
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_REQUIRED = True
 # Account lockout after failed login attempts
 # New format: ACCOUNT_RATE_LIMITS replaces deprecated ACCOUNT_LOGIN_ATTEMPTS_LIMIT/TIMEOUT
 # Format: "attempts/period" where period can be 's' (seconds), 'm' (minutes), 'h' (hours)
@@ -426,9 +488,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "100/hour",
-        "anon": "20/hour",
+        "user": env.str("DJANGO_DRF_USER_THROTTLE_RATE", default="100/hour"),
+        "anon": env.str("DJANGO_DRF_ANON_THROTTLE_RATE", default="20/hour"),
     },
+    "EXCEPTION_HANDLER": "config.exceptions.drf_exception_handler",
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
@@ -484,6 +547,16 @@ SPECTACULAR_SETTINGS = {
 # Football Kit Archive API Settings
 FKA_API_IP = env("FKA_API_IP")
 API_KEY = env("API_KEY")
+
+# Rotating Proxy Settings (for image downloads)
+ROTATING_PROXY_URL = env("ROTATING_PROXY_URL", default="")
+ROTATING_PROXY_USERNAME = env("ROTATING_PROXY_USERNAME", default="")
+ROTATING_PROXY_PASSWORD = env("ROTATING_PROXY_PASSWORD", default="")
+
+ALLOWED_EXTERNAL_IMAGE_HOSTS = env.list(
+    "DJANGO_ALLOWED_EXTERNAL_IMAGE_HOSTS",
+    default=["cdn.footballkitarchive.com", "www.footballkitarchive.com"],
+)
 
 # Testing flag for conditional URL loading
 TESTING = False

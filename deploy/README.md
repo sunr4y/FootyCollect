@@ -8,9 +8,32 @@ This directory contains configuration files and scripts for deploying FootyColle
 - `gunicorn.service` - Systemd service file for Gunicorn
 - `deploy.sh` - Automated deployment script
 - `setup.sh` - Initial server setup script
-- `env.example` - Environment variables template
+- `env.example` - Environment variables template (production / full reference)
 
-## Quick Start
+## Environment templates (why two?)
+
+- **`deploy/env.example`** – Full production template: single reference with all variables (Django, DB, Redis, SendGrid, Sentry, S3/R2, FKAPI, etc.). Use on bare metal (copy to `.env` on the server) or as reference to fill `.envs/.production/.django` and `.envs/.production/.postgres` for Docker production.
+- **`.envs/.local/.django.example`** – Local development only. Copy to `.envs/.local/.django`. Read by `config/settings/base.py` and used by `docker-compose.local.yml` and local env (postgres in `.envs/.local/.postgres`). Mostly local overrides (USE_DOCKER, REDIS_URL with `redis:6379`, STORAGE_BACKEND=local, Flower, FKAPI). For the full variable list, see `deploy/env.example`.
+
+## Deployment with Docker (production)
+
+Build and run the full stack (Django, Postgres, Redis, Traefik, Celery) with Docker Compose. Build context must be the **repository root**.
+
+```bash
+# From repository root
+docker compose -f docker-compose.production.yml build
+
+# Env files required: .envs/.production/.django and .envs/.production/.postgres
+# Copy deploy/env.example and adjust; split vars into those two files as needed.
+
+docker compose -f docker-compose.production.yml up -d
+```
+
+- **Images:** `compose/production/django/Dockerfile` (multi-stage), Postgres, Nginx, Traefik, AWS CLI for backups.
+- **Entrypoint:** Waits for Postgres, then runs the given command (`/start` runs collectstatic + Gunicorn).
+- **Static/media in production:** S3/R2 via `config.settings.production`; collectstatic runs at container start and uploads to object storage.
+
+## Quick Start (bare metal)
 
 ### 1. Initial Server Setup
 
@@ -298,6 +321,47 @@ sudo nginx -t
 # Verify Nginx can access static files
 sudo ls -la /var/www/footycollect/staticfiles/
 ```
+
+## Static and media files (S3 / CDN)
+
+When using production settings with S3 (or Cloudflare R2), static and media files are served from object storage and optionally a CDN.
+
+### Verification
+
+Before or after deployment, verify static files configuration and that `collectstatic` would run correctly:
+
+```bash
+source venv/bin/activate
+
+# Check STORAGES config and run collectstatic in dry-run (no upload)
+python manage.py verify_staticfiles
+
+# Only check config, skip dry-run
+python manage.py verify_staticfiles --skip-dry-run
+```
+
+### Collecting static files to S3
+
+With production settings (`config.settings.production`), `collectstatic` uploads to the configured bucket. [Collectfasta](https://github.com/jasongi/collectfasta) is used to speed up uploads by only transferring changed files.
+
+```bash
+# Collect static files to S3 (or R2)
+python manage.py collectstatic --noinput
+
+# Optional: clear existing files in the static/ prefix before uploading
+python manage.py collectstatic --noinput --clear
+```
+
+Required environment variables for S3:
+
+- **AWS S3**: `DJANGO_AWS_ACCESS_KEY_ID`, `DJANGO_AWS_SECRET_ACCESS_KEY`, `DJANGO_AWS_STORAGE_BUCKET_NAME`, and optionally `DJANGO_AWS_S3_REGION_NAME`, `DJANGO_AWS_S3_CUSTOM_DOMAIN`
+- **Cloudflare R2**: `STORAGE_BACKEND=r2`, `CLOUDFLARE_ACCESS_KEY_ID`, `CLOUDFLARE_SECRET_ACCESS_KEY`, `CLOUDFLARE_BUCKET_NAME`, `CLOUDFLARE_R2_ENDPOINT_URL`, and optionally `CLOUDFLARE_R2_CUSTOM_DOMAIN`
+
+### File permissions and CDN
+
+- Static files use `public-read` ACL so they are accessible via the bucket URL or custom domain (CDN).
+- Media files (user uploads) use the default bucket ACL; ensure the bucket policy or CDN allows access if they are served publicly.
+- `STATIC_URL` and `MEDIA_URL` are set from the configured custom domain or bucket endpoint in `config/settings/production.py`.
 
 ## Support
 

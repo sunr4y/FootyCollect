@@ -39,9 +39,12 @@ django_settings_module = "config.settings.test"
 blank_line_after_tag = "load,extends"
 close_void_tags = true
 format_css = true
-format_js = true
+# NOTE: format_js disabled because it breaks Django template tags inside JavaScript
+# e.g., {{ name }} gets reformatted to { { name } } which is invalid
+format_js = false
 # TODO: remove T002 when fixed https://github.com/djlint/djLint/issues/687
-ignore = "H006,H030,H031,T002"
+# H021: Inline styles are necessary for Bootstrap Icons sizing (no utility classes available)
+ignore = "H006,H021,H030,H031,T002"
 include = "H017,H035"
 indent = 2
 max_line_length = 119
@@ -128,6 +131,8 @@ ignore = [
           # of types for comparison.
           # Deactivated because it can make the code slow:
           # https://github.com/astral-sh/ruff/issues/7871
+  "COM812", # Trailing comma missing - conflicts with ruff formatter
+  "ISC001", # Implicit string concatenation - conflicts with ruff formatter
 ]
 # The fixes in extend-unsafe-fixes will require
 # provide the `--unsafe-fixes` flag when fixing.
@@ -151,3 +156,27 @@ ignore-names = ["_meta"]
 "config/settings/local.py" = ["S104"]
 # Ignore PD011 in test_services files
 "**/tests/test_services.py" = ["PD011"]
+# Ignore PT009 (unittest-style assertions) in E2E test files
+# Ignore style issues that are acceptable in complex E2E tests
+"footycollect/collection/tests/test_e2e_selenium.py" = [
+    "PT009",
+    "FBT003",
+    "N812",
+    "BLE001",
+    "PLR0915",
+]
+"footycollect/collection/tests/test_e2e_item_creation.py" = [
+    "PT009",
+    "FBT003",
+]
+# Ignore complexity warnings in management commands (acceptable for CLI tools)
+"footycollect/collection/management/commands/*.py" = [
+    "C901",
+    "PLR0912",
+    "PLR0913",
+]
+# Ignore complexity warnings in checks (acceptable for validation logic)
+"config/checks.py" = [
+    "C901",
+    "PLR0912",
+]

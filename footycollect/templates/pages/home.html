@@ -1,66 +1,842 @@
 {% extends "base.html" %}
 
-{% load i18n %}
+{% load i18n static %}
 
+{% block css %}
+  {{ block.super }}
+  <style>
+    html,
+    body {
+      overflow: hidden;
+    }
+
+    .card {
+      border-radius: 1rem;
+      border: 1px solid var(--fc-border);
+      background: var(--fc-card);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      border-color: hsla(180, 85%, 40%, 0.5);
+      box-shadow: 0 4px 20px -10px hsla(180, 85%, 40%, 0.3);
+    }
+
+    .item-card {
+      border-radius: 1rem;
+      overflow: visible;
+    }
+
+    .item-logos-above-photo {
+      background-color: var(--fc-card) !important;
+      border-bottom: 1px solid var(--fc-border) !important;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      overflow: visible;
+      position: relative;
+      z-index: 1;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 0.5rem;
+    }
+
+    .item-logo-small {
+      width: 48px;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    }
+
+    .item-logo-small.has-logo-dark {
+      filter: none;
+    }
+
+    .item-club-shield {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      position: relative;
+      z-index: 10;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+    }
+
+    .brand-logo-container,
+    .flag-logo-container {
+      flex: 1;
+    }
+
+    .fi {
+      font-size: 24px;
+      line-height: 1;
+      border-radius: 2px;
+    }
+
+    .item-photo {
+      position: relative;
+    }
+
+    .item-photo::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 1;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+    }
+
+    .card-img-top {
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+    }
+
+    .home-card-item .card-img-top {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .card-body {
+      border-bottom-left-radius: 1rem;
+      border-bottom-right-radius: 1rem;
+    }
+
+    .home-card-item .card-body {
+      padding: 0.5rem !important;
+      min-height: auto !important;
+      height: auto !important;
+      flex: 0 0 auto !important;
+    }
+
+    .home-card-item .card-body.d-flex.flex-column {
+      display: flex !important;
+      flex-direction: column !important;
+      flex-shrink: 1 !important;
+    }
+
+    .home-card-item .card-body>div {
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .item-title {
+      margin-bottom: 0.25rem !important;
+      font-size: 0.875rem;
+      line-height: 1.2;
+    }
+
+    .home-card-item .item-meta {
+      gap: 0.125rem;
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .item-meta .d-flex {
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .item-details {
+      font-size: 0.75rem;
+      line-height: 1.2;
+      margin-bottom: 0;
+    }
+
+    .home-card-item .text-end.ms-3 {
+      margin-left: 0.5rem !important;
+    }
+
+    .home-card-item .text-end .item-details {
+      margin-bottom: 0.125rem !important;
+    }
+
+    .home-card-item .text-end small {
+      font-size: 0.7rem;
+      line-height: 1.2;
+    }
+
+    .home-card-item .card-body .d-flex.justify-content-between {
+      margin-bottom: 0 !important;
+    }
+
+    .home-card-item .mb-1 {
+      margin-bottom: 0.125rem !important;
+    }
+
+    .card {
+      overflow: visible;
+    }
+
+    .card-title {
+      color: var(--fc-foreground);
+    }
+
+    .card-text {
+      color: var(--fc-muted-foreground);
+    }
+
+    .item-title {
+      color: var(--fc-foreground);
+    }
+
+    .item-details {
+      color: var(--fc-muted-foreground);
+      font-size: 0.875rem;
+    }
+
+    .home-hero {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1.5rem;
+      padding-top: calc(63px + 12vh);
+      /* Account for navbar */
+      width: 100vw;
+      max-width: 100vw !important;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      margin-top: -63px;
+      /* Pull up behind navbar */
+      left: 0;
+      right: 0;
+      box-sizing: border-box;
+    }
+
+    .container .home-hero {
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      padding-left: calc(50vw - 50%);
+      padding-right: calc(50vw - 50%);
+    }
+
+    .home-background-cards {
+      position: absolute;
+      top: 0;
+      left: -150px;
+      right: -150px;
+      bottom: 0;
+      width: calc(100% + 300px);
+      height: 100%;
+      display: flex;
+      gap: 1rem;
+      padding: 0 2rem;
+      opacity: 0.3;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .home-card-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-width: 240px;
+      max-width: 280px;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      perspective: 1000px;
+    }
+
+    /* Tablet: show 4 columns, overflow like desktop */
+    @media (max-width: 1024px) {
+      .home-card-column:nth-child(n+5) {
+        display: none;
+      }
+
+      .home-background-cards {
+        left: -100px;
+        right: -100px;
+        width: calc(100% + 200px);
+      }
+    }
+
+    /* Mobile: show 3 columns, overflow like desktop */
+    @media (max-width: 768px) {
+      .home-card-column {
+        min-width: 180px;
+        max-width: 220px;
+      }
+
+      .home-card-column:nth-child(n+4) {
+        display: none;
+      }
+
+      .home-background-cards {
+        left: -80px;
+        right: -80px;
+        width: calc(100% + 160px);
+        gap: 0.75rem;
+      }
+
+      .home-card-item .item-logos-above-photo {
+        height: 50px;
+        padding: 0.5rem 0.25rem;
+      }
+
+      .home-card-item .item-logo-small {
+        width: 36px;
+      }
+
+      .home-card-item .item-club-shield {
+        width: 55px;
+        height: 55px;
+      }
+
+      .home-card-item .fi {
+        font-size: 18px;
+      }
+
+      .home-card-item .card-body {
+        padding: 0.375rem !important;
+      }
+
+      .home-card-item .item-title {
+        font-size: 0.75rem;
+        line-height: 1.2;
+      }
+
+      .home-card-item .item-details {
+        font-size: 0.65rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .home-card-column {
+        min-width: 160px;
+        max-width: 200px;
+      }
+
+      .home-background-cards {
+        left: -60px;
+        right: -60px;
+        width: calc(100% + 120px);
+        gap: 0.5rem;
+      }
+
+      .home-card-item .item-logos-above-photo {
+        height: 45px;
+      }
+
+      .home-card-item .item-logo-small {
+        width: 32px;
+      }
+
+      .home-card-item .item-club-shield {
+        width: 50px;
+        height: 50px;
+      }
+
+      .home-card-item .fi {
+        font-size: 16px;
+      }
+
+      .home-card-item .card-body {
+        display: none !important;
+      }
+    }
+
+    .home-content {
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
+    .home-card-item {
+      flex-shrink: 0;
+      height: auto !important;
+      max-height: none !important;
+    }
+
+    .home-card-item.h-100 {
+      height: auto !important;
+    }
+
+    .home-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .home-subtitle {
+      color: hsla(180, 85%, 40%, 1);
+      font-weight: 500;
+      margin-bottom: 1rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    .home-title {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--fc-foreground);
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .home-title-gradient {
+      display: block;
+      background: linear-gradient(135deg, hsla(180, 85%, 40%, 1), hsla(180, 85%, 50%, 1));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    }
+
+    .home-description {
+      font-size: 1rem;
+      color: var(--fc-muted-foreground);
+      margin-bottom: 1.5rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.5;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    .home-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .home-buttons .btn {
+      padding: 0.5rem 1.5rem !important;
+      font-size: 0.875rem !important;
+      min-width: auto !important;
+      max-width: 180px;
+      text-align: center;
+    }
+
+    .home-buttons .fc-btn-outline-primary {
+      border-width: 1px;
+      padding: 0.5rem 1.5rem !important;
+    }
+
+    @media (min-width: 768px) {
+      .home-title {
+        font-size: 4rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .home-title {
+        font-size: 4.5rem;
+      }
+    }
+
+    /* Loading skeleton for images */
+    .home-card-item .item-photo {
+      background: linear-gradient(90deg, var(--fc-muted) 25%, var(--fc-border) 50%, var(--fc-muted) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .home-card-item .item-photo.loaded {
+      animation: none;
+      background: none;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    /* Full page loading overlay */
+    .home-loader {
+      position: fixed;
+      inset: 0;
+      background: var(--fc-background);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .home-loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .home-loader-spinner {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--fc-border);
+      border-top-color: hsla(180, 85%, 40%, 1);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .home-loader-text {
+      margin-top: 1.5rem;
+      color: var(--fc-muted-foreground);
+      font-size: 0.875rem;
+      letter-spacing: 0.05em;
+    }
+
+    .home-loader-progress {
+      margin-top: 1rem;
+      width: 200px;
+      height: 4px;
+      background: var(--fc-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .home-loader-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, hsla(180, 85%, 40%, 1), hsla(180, 85%, 50%, 1));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Cached kit minimal card styles */
+    .home-card-item.cached-kit .card-body {
+      padding: 0.5rem !important;
+    }
+
+    .home-card-item.cached-kit .item-title {
+      font-size: 0.8rem;
+      line-height: 1.3;
+      margin-bottom: 0.25rem !important;
+    }
+
+    .home-card-item.cached-kit .item-meta {
+      gap: 0;
+    }
+
+    .home-card-item.cached-kit .item-details {
+      font-size: 0.7rem;
+    }
+  </style>
+{% endblock css %}
 {% block content %}
-  <div class="container py-5">
-    <div class="row">
-      <div class="col-md-8">
-        <h1>{% trans "Welcome to FootyCollect" %}</h1>
-        <p class="lead">{% trans "Manage your football memorabilia collection with ease." %}</p>
-        {% if request.user.is_authenticated %}
-          <div class="mt-4">
-            <h2>{% trans "Quick Actions" %}</h2>
-            <div class="row mt-3">
-              <div class="col-md-6 mb-3">
-                <div class="card h-100">
-                  <div class="card-body">
-                    <h5 class="card-title">{% trans "Add New Item" %}</h5>
-                    <p class="card-text">{% trans "Add a new item to your collection." %}</p>
-                    <a href="{% url 'collection:item_create' %}" class="btn btn-primary">{% trans "Add Item" %}</a>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <div class="card h-100">
-                  <div class="card-body">
-                    <h5 class="card-title">{% trans "Add Jersey from Database" %}</h5>
-                    <p class="card-text">{% trans "Search and add jerseys from our extensive kit database." %}</p>
-                    <a href="{% url 'collection:jersey_add_automatic' %}"
-                       class="btn btn-success">{% trans "Add Jersey" %}</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {% else %}
-          <div class="mt-4">
-            <p>{% trans "Please sign in to manage your collection." %}</p>
-            <a href="{% url 'account_login' %}" class="btn btn-primary">{% trans "Sign In" %}</a>
-            {% if ACCOUNT_ALLOW_REGISTRATION %}
-              <a href="{% url 'account_signup' %}"
-                 class="btn btn-outline-primary ms-2">{% trans "Sign Up" %}</a>
-            {% endif %}
-          </div>
-        {% endif %}
-      </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title mb-0">{% trans "About FootyCollect" %}</h5>
-          </div>
-          <div class="card-body">
-            <p>{% trans "FootyCollect helps you organize and showcase your football memorabilia collection." %}</p>
-            <p>{% trans "Features include:" %}</p>
-            <ul>
-              <li>{% trans "Track jerseys, balls, boots, and more" %}</li>
-              <li>{% trans "Upload photos of your items" %}</li>
-              <li>{% trans "Search our kit database" %}</li>
-              <li>{% trans "Organize by teams, competitions, and seasons" %}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+  <!-- Loading overlay -->
+  <div class="home-loader" id="homeLoader">
+    <div class="home-loader-spinner"></div>
+    <p class="home-loader-text">Loading jerseys...</p>
+    <div class="home-loader-progress">
+      <div class="home-loader-progress-bar" id="loaderProgress"></div>
     </div>
   </div>
+  <div class="home-hero">
+    <!-- Center content - Load first for faster rendering -->
+    <div class="home-content">
+      <p class="home-subtitle">The Ultimate Jersey Collection</p>
+      <h1 class="home-title">
+        Your Football
+        <span class="home-title-gradient">Memorabilia</span>
+        Collection
+      </h1>
+      <p class="home-description">
+        Catalog, organize, and showcase your prized football jerseys.
+        From vintage classics to modern masterpieces.
+      </p>
+      <div class="home-buttons">
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'collection:item_list' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
+          <a href="{% url 'collection:feed' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
+        {% else %}
+          <a href="{% url 'account_signup' %}" class="btn fc-btn-primary">{% trans "Start Your Collection" %}</a>
+          <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary">{% trans "Explore Gallery" %}</a>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Animated background cards -->
+    <div class="home-background-cards">
+      {% if columns_items %}
+        {% for column_items in columns_items %}
+          <div class="home-card-column {% if forloop.counter|divisibleby:2 %}reverse{% endif %}" data-column="{{ forloop.counter0 }}">
+            {% for item in column_items %}
+              <div class="home-card-item card item-card">
+                {% if use_cached_kits %}
+                  {# Card for cached API kits #}
+                  <div class="item-logos-above-photo">
+                    <div class="d-flex align-items-center w-100 position-relative">
+                      <div class="d-flex align-items-center justify-content-center brand-logo-container">
+                        {% if item.brand_logo_dark %}
+                          <img src="{{ item.brand_logo_dark }}"
+                               alt="{{ item.brand_name }}"
+                               class="item-logo-small has-logo-dark"
+                               loading="lazy"
+                               onerror="this.onerror=null; this.src='{{ item.brand_logo|default:'' }}'; this.classList.remove('has-logo-dark');" />
+                        {% elif item.brand_logo %}
+                          <img src="{{ item.brand_logo }}"
+                               alt="{{ item.brand_name }}"
+                               class="item-logo-small"
+                               loading="lazy"
+                               onerror="this.style.display='none'" />
+                        {% endif %}
+                      </div>
+                      <div>
+                        {% if item.team_logo %}
+                          <img src="{{ item.team_logo }}"
+                               alt="{{ item.team_name }}"
+                               class="item-club-shield"
+                               loading="lazy"
+                               onerror="this.style.display='none'" />
+                        {% endif %}
+                      </div>
+                      <div class="d-flex align-items-center justify-content-center flag-logo-container">
+                        {% if item.team_country %}
+                          <span class="fi fi-{{ item.team_country|lower }}" title="{{ item.team_country }}"></span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  {% if item.image_url %}
+                    <img src="{{ item.image_url }}"
+                         class="card-img-top item-photo"
+                         alt="{{ item.name }}"
+                         loading="lazy"
+                         onload="this.classList.add('loaded')"
+                         onerror="this.onerror=null; this.src='{{ item.original_image_url }}'; this.classList.add('loaded')" />
+                  {% elif item.original_image_url %}
+                    <img src="{{ item.original_image_url }}"
+                         class="card-img-top item-photo"
+                         alt="{{ item.name }}"
+                         loading="lazy"
+                         onload="this.classList.add('loaded')" />
+                  {% else %}
+                    <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
+                      <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
+                    </div>
+                  {% endif %}
+                  <div class="card-body d-flex flex-column">
+                    <div class="flex-grow-1">
+                      <h6 class="card-title item-title mb-1">{{ item.name }}</h6>
+                      <div class="item-meta">
+                        {% if item.team_name %}
+                          <div class="d-flex align-items-center">
+                            <span class="item-details">{{ item.team_name }}</span>
+                          </div>
+                        {% endif %}
+                        {% if item.season_year %}
+                          <div class="d-flex align-items-center">
+                            <span class="item-details">{{ item.season_year }}</span>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% else %}
+                  {# Full card for database items - legacy support #}
+                  <div class="item-logos-above-photo">
+                    <div class="d-flex align-items-center w-100 position-relative">
+                      <div class="d-flex align-items-center justify-content-center brand-logo-container">
+                        {% if item.base_item.brand %}
+                          {% if item.base_item.brand.logo_dark and item.base_item.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                            <img src="{{ item.base_item.brand.logo_dark }}"
+                                 alt="{{ item.base_item.brand.name }}"
+                                 class="item-logo-small has-logo-dark"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='{{ item.base_item.brand.logo|default:'' }}'; this.classList.remove('has-logo-dark');" />
+                          {% elif item.base_item.brand.logo and item.base_item.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                            <img src="{{ item.base_item.brand.logo }}"
+                                 alt="{{ item.base_item.brand.name }}"
+                                 class="item-logo-small"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'" />
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                      <div>
+                        {% if item.base_item.club and item.base_item.club.logo %}
+                          <img src="{{ item.base_item.club.logo }}"
+                               alt="{{ item.base_item.club.name }}"
+                               class="item-club-shield"
+                               loading="lazy"
+                               onerror="this.style.display='none'" />
+                        {% endif %}
+                      </div>
+                      <div class="d-flex align-items-center justify-content-center flag-logo-container">
+                        {% if item.base_item.club and item.base_item.club.country %}
+                          <span class="fi fi-{{ item.base_item.club.country|lower }}" title="{{ item.base_item.club.country }}"></span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  {% if item.base_item.photos.exists %}
+                    <img src="{{ item.base_item.photos.first.get_image_url }}"
+                         class="card-img-top item-photo"
+                         alt="{{ item.base_item.name }}"
+                         loading="lazy" />
+                  {% else %}
+                    <div class="card-img-top item-photo d-flex align-items-center justify-content-center fc-photo-placeholder">
+                      <i class="bi bi-image item-placeholder-icon fc-photo-placeholder-icon"></i>
+                    </div>
+                  {% endif %}
+                  <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="flex-grow-1">
+                        <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+                        {% if item.jersey.kit and item.jersey.kit.type %}
+                          <div class="mb-2">
+                            {% if item.jersey.kit.type.category != "match" %}
+                              <span class="badge bg-primary me-1">{{ item.jersey.kit.type.get_category_display_name }}</span>
+                            {% endif %}
+                            {% if item.jersey.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
+                            <span class="badge bg-secondary">{{ item.jersey.kit.type.name }}</span>
+                          </div>
+                        {% endif %}
+                        <div class="item-meta">
+                          {% if item.base_item.club %}
+                            <div class="d-flex align-items-center">
+                              <span class="item-details">{{ item.base_item.club.name }}</span>
+                            </div>
+                          {% endif %}
+                          {% if item.base_item.brand %}
+                            <div class="d-flex align-items-center">
+                              <span class="item-details">{{ item.base_item.brand.name }}</span>
+                            </div>
+                          {% endif %}
+                          {% if item.base_item.season %}
+                            <div class="d-flex align-items-center">
+                              <i class="bi bi-calendar me-1"></i>
+                              <span class="item-details">{{ item.base_item.season.year }}</span>
+                            </div>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="text-end ms-3">
+                        {% if item.jersey.size %}
+                          <div class="item-details mb-1">
+                            <small>{{ item.jersey.size.name }}</small>
+                          </div>
+                        {% endif %}
+                        {% if item.jersey.player_name %}
+                          <div class="item-details mb-1">
+                            <small>{{ item.jersey.player_name }}</small>
+                          </div>
+                        {% endif %}
+                        {% if item.jersey.number %}
+                          <div class="item-details mb-1">
+                            <small>#{{ item.jersey.number }}</small>
+                          </div>
+                        {% endif %}
+                        {% if item.jersey.is_short_sleeve is not None %}
+                          <div class="item-details">
+                            <small>
+                              {% if item.jersey.is_short_sleeve %}
+                                {% trans "Short Sleeve" %}
+                              {% else %}
+                                {% trans "Long Sleeve" %}
+                              {% endif %}
+                            </small>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  <script>
+    // Loading progress tracker
+    (function() {
+      const loader = document.getElementById('homeLoader');
+      const progressBar = document.getElementById('loaderProgress');
+      const images = document.querySelectorAll('.home-card-item img');
+      const totalImages = images.length;
+      let loadedImages = 0;
+
+      if (totalImages === 0) {
+        loader.classList.add('hidden');
+        return;
+      }
+
+      function updateProgress() {
+        loadedImages++;
+        const percent = Math.round((loadedImages / totalImages) * 100);
+        progressBar.style.width = percent + '%';
+      }
+
+      function checkAndHide() {
+        if (loadedImages >= totalImages * 0.7) {
+          loader.classList.add('hidden');
+        }
+      }
+
+      images.forEach(img => {
+        if (img.complete) {
+          updateProgress();
+        } else {
+          img.addEventListener('load', updateProgress);
+          img.addEventListener('error', updateProgress);
+        }
+      });
+
+      // Show loader for minimum time, then hide when ready
+      setTimeout(checkAndHide, 1000);
+
+      // Fallback: hide loader after 5 seconds max
+      setTimeout(() => loader.classList.add('hidden'), 5000);
+    })();
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const columns = document.querySelectorAll('.home-card-column');
+
+      columns.forEach((column, index) => {
+        const items = column.querySelectorAll('.home-card-item');
+        if (items.length === 0) return;
+
+        const totalItems = items.length;
+        const oneThirdCount = Math.floor(totalItems / 3);
+
+        let oneThirdHeight = 0;
+        const gap = 16;
+
+        for (let i = 0; i < oneThirdCount; i++) {
+          oneThirdHeight += items[i].offsetHeight + gap;
+        }
+
+        // Create CSS animation dynamically with exact pixel values
+        const direction = index % 2 === 0 ? 'up' : 'down';
+        const duration = 45 + (index * 3); // Slightly different speeds for variety
+
+        const keyframes = direction === 'up' ?
+          `@keyframes scroll${index} { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(0, -${oneThirdHeight}px, 0); } }` :
+          `@keyframes scroll${index} { 0% { transform: translate3d(0, -${oneThirdHeight}px, 0); } 100% { transform: translate3d(0, 0, 0); } }`;
+
+        const style = document.createElement('style');
+        style.textContent = keyframes;
+        document.head.appendChild(style);
+
+        column.style.animation = `scroll${index} ${duration}s linear infinite`;
+      });
+    });
+  </script>
 {% endblock content %}

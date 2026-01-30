@@ -1,3 +1,15 @@
+.git
+.envs
+venv
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+htmlcov
+.coverage
+*.egg-info
+.eggs
+media
 .editorconfig
 .gitattributes
 .github
@@ -7,6 +19,4 @@
 .pre-commit-config.yaml
 .readthedocs.yml
 .travis.yml
-venv
-.git
-.envs/
+docs/_build

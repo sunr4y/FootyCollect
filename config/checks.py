@@ -194,10 +194,81 @@ def check_redis_connectivity(app_configs, **kwargs):
     return errors + warnings
 
 
+def _check_r2_credentials(errors, warnings):
+    """Check Cloudflare R2 credentials."""
+    required_vars = {
+        "CLOUDFLARE_ACCESS_KEY_ID": "Required for R2 access",
+        "CLOUDFLARE_SECRET_ACCESS_KEY": "Required for R2 access",
+        "CLOUDFLARE_BUCKET_NAME": "Required for R2 bucket name",
+    }
+
+    for var_name, description in required_vars.items():
+        if not os.environ.get(var_name):
+            errors.append(
+                Error(
+                    f"Required Cloudflare R2 environment variable {var_name} is not set",
+                    hint=f"{description}. Set {var_name} environment variable when using R2 storage.",
+                    id=f"production.E{len(errors) + 20:03d}",
+                ),
+            )
+
+    optional_vars = {
+        "CLOUDFLARE_R2_ENDPOINT_URL": "Recommended for R2 endpoint specification",
+        "CLOUDFLARE_R2_REGION": "Recommended for R2 region specification",
+    }
+
+    for var_name, description in optional_vars.items():
+        if not os.environ.get(var_name):
+            warnings.append(
+                Warning(
+                    f"Cloudflare R2 environment variable {var_name} is not set",
+                    hint=f"{description}. Consider setting {var_name}.",
+                    id=f"production.W{len(warnings) + 20:03d}",
+                ),
+            )
+
+    return errors, warnings
+
+
+def _check_aws_credentials(errors, warnings):
+    """Check AWS S3 credentials."""
+    required_vars = {
+        "DJANGO_AWS_ACCESS_KEY_ID": "Required for S3 access",
+        "DJANGO_AWS_SECRET_ACCESS_KEY": "Required for S3 access",
+        "DJANGO_AWS_STORAGE_BUCKET_NAME": "Required for S3 bucket name",
+    }
+
+    for var_name, description in required_vars.items():
+        if not os.environ.get(var_name):
+            errors.append(
+                Error(
+                    f"Required AWS environment variable {var_name} is not set",
+                    hint=f"{description}. Set {var_name} environment variable when using S3 storage.",
+                    id=f"production.E{len(errors) + 20:03d}",
+                ),
+            )
+
+    optional_vars = {
+        "DJANGO_AWS_S3_REGION_NAME": "Recommended for S3 region specification",
+    }
+
+    for var_name, description in optional_vars.items():
+        if not os.environ.get(var_name):
+            warnings.append(
+                Warning(
+                    f"AWS environment variable {var_name} is not set",
+                    hint=f"{description}. Consider setting {var_name}.",
+                    id=f"production.W{len(warnings) + 20:03d}",
+                ),
+            )
+
+    return errors, warnings
+
+
 @register(deploy=True)
 def check_aws_s3_credentials(app_configs, **kwargs):
     """
-    Check that AWS S3 credentials are set if using S3 storage.
+    Check that storage credentials are set if using S3-compatible storage (AWS S3 or Cloudflare R2).
 
     Only runs if S3 storage is configured in STORAGES setting.
     """
@@ -216,35 +287,12 @@ def check_aws_s3_credentials(app_configs, **kwargs):
     if not using_s3:
         return []
 
-    required_aws_vars = {
-        "DJANGO_AWS_ACCESS_KEY_ID": "Required for S3 access",
-        "DJANGO_AWS_SECRET_ACCESS_KEY": "Required for S3 access",
-        "DJANGO_AWS_STORAGE_BUCKET_NAME": "Required for S3 bucket name",
-    }
+    storage_backend = os.environ.get("STORAGE_BACKEND", "aws")
 
-    for var_name, description in required_aws_vars.items():
-        if not os.environ.get(var_name):
-            errors.append(
-                Error(
-                    f"Required AWS environment variable {var_name} is not set",
-                    hint=f"{description}. Set {var_name} environment variable when using S3 storage.",
-                    id=f"production.E{len(errors) + 20:03d}",
-                ),
-            )
-
-    optional_aws_vars = {
-        "DJANGO_AWS_S3_REGION_NAME": "Recommended for S3 region specification",
-    }
-
-    for var_name, description in optional_aws_vars.items():
-        if not os.environ.get(var_name):
-            warnings.append(
-                Warning(
-                    f"AWS environment variable {var_name} is not set",
-                    hint=f"{description}. Consider setting {var_name}.",
-                    id=f"production.W{len(warnings) + 20:03d}",
-                ),
-            )
+    if storage_backend == "r2":
+        errors, warnings = _check_r2_credentials(errors, warnings)
+    else:
+        errors, warnings = _check_aws_credentials(errors, warnings)
 
     return errors + warnings
 

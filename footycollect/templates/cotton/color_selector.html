@@ -1,247 +1,278 @@
 {% load list_filters %}
 
-<!-- DEBUG INFO -->
-<!-- name: {{ name }} -->
-<!-- data_multiple: {{ data_multiple }} -->
-<!-- data_selected: {{ data_selected }} -->
-<!-- color_choices: {{ color_choices }} -->
-<!-- Cotton color selector component -->
-<c-vars color_choices />
+<c-vars color_choices data_selected data_multiple name label hide_label />
 {% with color_choices_parsed=color_choices|parse_json %}
-  <div class="mb-3">
-    <label for="id_{{ name }}" class="form-label">{{ label }}</label>
+  <div class="mb-3 color-selector-wrapper"
+       id="color-selector-{{ name }}"
+       data-selector-name="{{ name }}"
+       data-selector-multiple="{{ data_multiple|default:'false' }}">
+    {% if not hide_label %}<label for="id_{{ name }}" class="form-label">{{ label }}</label>{% endif %}
     {% if data_multiple == "true" %}
       <select id="id_{{ name }}"
               name="{{ name }}"
               multiple
-              class="form-control d-none">
+              class="form-control d-none"
+              data-initial-selected="{{ data_selected|default:'' }}">
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
             <option value="{{ color.value }}"
-                    {% if data_selected and data_selected != True and data_selected != False and color.value|contains:data_selected %}selected{% endif %}>
+                    {% if data_selected and color.value|stringformat:'s' in data_selected|stringformat:'s' %}selected{% endif %}>
               {{ color.label }}
             </option>
           {% endfor %}
         {% endif %}
       </select>
     {% else %}
-      <select id="id_{{ name }}" name="{{ name }}" class="form-control d-none">
+      <select id="id_{{ name }}" name="{{ name }}" class="form-control d-none" data-initial-selected="{{ data_selected|default:'' }}">
         <option value="">Select color</option>
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
             <option value="{{ color.value }}"
-                    {% if data_selected and color.value == data_selected %}selected{% endif %}>
+                    {% if data_selected and color.value|stringformat:'s' == data_selected|stringformat:'s' %}selected{% endif %}>
               {{ color.label }}
             </option>
           {% endfor %}
         {% endif %}
       </select>
     {% endif %}
-    <div class="color-selector-container">
-      {% if color_choices and color_choices != True and color_choices != False %}
-        {% for color in color_choices %}
-          {% with color_name=color.label|upper %}
-            {% comment %} Determine if this color is selected - handle both multiple and single selection {% endcomment %}
-            {% if data_multiple == 'true' %}
-              {% comment %} Multiple selection: check if data_selected is iterable and contains this color {% endcomment %}
-              {% if data_selected and data_selected != True and data_selected != False %}
-                {% comment %} data_selected is iterable, check if color is in it {% endcomment %}
-                <div class="color-option{% if color.value|contains:data_selected %} selected{% endif %}"
-                     data-value="{{ color.value }}"
-                     title="{{ color.label }}"
-                     style="background-color: {{ color.hex_value }};
-                            {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 1px solid #ddd;{% endif %}"
-                     onclick="toggleColorSelection('{{ name }}', '{{ color.value }}', {{ data_multiple|default:'false' }})">
-                </div>
-              {% else %}
-                {% comment %} data_selected is a boolean or empty, treat as not selected {% endcomment %}
-                <div class="color-option"
-                     data-value="{{ color.value }}"
-                     title="{{ color.label }}"
-                     style="background-color: {{ color.hex_value }};
-                            {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 1px solid #ddd;{% endif %}"
-                     onclick="toggleColorSelection('{{ name }}', '{{ color.value }}', {{ data_multiple|default:'false' }})">
-                </div>
-              {% endif %}
-            {% else %}
-              {% comment %} Single selection: compare directly but skip if data_selected is boolean {% endcomment %}
-              {% if data_selected and data_selected != True and data_selected != False and color.value|stringformat:'s' == data_selected|stringformat:'s' %}
-                <div class="color-option selected"
-                     data-value="{{ color.value }}"
-                     title="{{ color.label }}"
-                     style="background-color: {{ color.hex_value }};
-                            {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 1px solid #ddd;{% endif %}"
-                     onclick="toggleColorSelection('{{ name }}', '{{ color.value }}', {{ data_multiple|default:'false' }})">
-                </div>
-              {% else %}
-                <div class="color-option"
-                     data-value="{{ color.value }}"
-                     title="{{ color.label }}"
-                     style="background-color: {{ color.hex_value }};
-                            {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 1px solid #ddd;{% endif %}"
-                     onclick="toggleColorSelection('{{ name }}', '{{ color.value }}', {{ data_multiple|default:'false' }})">
-                </div>
-              {% endif %}
-            {% endif %}
-          {% endwith %}
-        {% endfor %}
-      {% endif %}
+    <div class="color-selector-box">
+      <div class="color-selector-container">
+        {% if color_choices_parsed %}
+          {% for color in color_choices_parsed %}
+            {% with color_name=color.label|upper %}
+              <div class="color-option"
+                   data-value="{{ color.value }}"
+                   data-label="{{ color.label }}"
+                   title="{{ color.label }}"
+                   role="button"
+                   tabindex="0"
+                   aria-label="Select {{ color.label }}"
+                   style="background-color: {{ color.hex_value }};
+                          {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 3px solid rgba(0, 0, 0, 0.3);{% endif %}"
+                   onclick="handleColorSelection(event, '{{ name }}')"
+                   onkeypress="handleColorSelectionKeypress(event, '{{ name }}')"></div>
+            {% endwith %}
+          {% endfor %}
+        {% endif %}
+      </div>
     </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initialize color selectors when page loads
-        console.log('Color selector initialized for:', '{{ name }}');
-        initializeColorSelectors();
-      });
-
-      function initializeColorSelectors() {
-        const select = document.getElementById('id_{{ name }}');
-        if (select) {
-          console.log('Processing select:', select.id);
-          console.log('Current value:', select.value);
-          console.log('Selected options:', Array.from(select.selectedOptions).map(opt => opt.value));
-
-          if (select.multiple) {
-            const selectedValues = Array.from(select.selectedOptions).map(opt => opt.value);
-            console.log('Selected values:', selectedValues);
-
-            selectedValues.forEach(value => {
-              const option = select.closest('.mb-3').querySelector(`.color-option[data-value="${value}"]`);
-              if (option) {
-                option.classList.add('selected');
-                console.log('Added selected class to:', value);
-              } else {
-                console.log('Option not found for value:', value);
-              }
-            });
-          } else if (select.value) {
-            console.log('Single select value:', select.value);
-            const option = select.closest('.mb-3').querySelector(`.color-option[data-value="${select.value}"]`);
-            if (option) {
-              option.classList.add('selected');
-              console.log('Added selected class to single value:', select.value);
-            } else {
-              console.log('Option not found for single value:', select.value);
-            }
-          }
-        } else {
-          console.log('Select element not found for id_{{ name }}');
-        }
-      }
-
-      function toggleColorSelection(fieldName, value, isMultiple) {
-        const select = document.getElementById('id_' + fieldName);
-        const container = select.closest('.mb-3');
-        const clickedOptionVisual = container.querySelector(`.color-option[data-value="${value}"]`);
-
-        if (isMultiple) {
-          const selectOptions = select.options;
-          let alreadySelected = false;
-          let selectedCount = 0;
-
-          // Find the corresponding option in the hidden select and count selected
-          for (let i = 0; i < selectOptions.length; i++) {
-            if (selectOptions[i].selected) {
-              selectedCount++;
-              if (selectOptions[i].value == value) {
-                alreadySelected = true;
-              }
-            }
-          }
-
-          // Find the option to toggle
-          let targetOption = null;
-          for (let i = 0; i < selectOptions.length; i++) {
-            if (selectOptions[i].value == value) {
-              targetOption = selectOptions[i];
-              break;
-            }
-          }
-
-          if (targetOption) {
-            if (alreadySelected) {
-              // Deselect if already selected
-              targetOption.selected = false;
-              if (clickedOptionVisual) clickedOptionVisual.classList.remove('selected');
-            } else if (selectedCount < 3) {
-              // Select if not selected and count < 3
-              targetOption.selected = true;
-              if (clickedOptionVisual) clickedOptionVisual.classList.add('selected');
-            } else {
-              // Optional: Provide feedback if max selection is reached
-              console.log("Maximum 3 colors allowed.");
-              return; // Prevent selection
-            }
-          }
-
-        } else { // Single selection
-          // Update the hidden select value
-          select.value = value;
-
-          // Update visual state for all options
-          const allOptionsVisual = container.querySelectorAll('.color-option');
-          allOptionsVisual.forEach(option => {
-            // Force conversion to string for comparison
-            option.classList.toggle('selected', String(option.dataset.value) == String(value));
-          });
-        }
-
-        // Trigger change event for potential listeners (like HTMX)
-        select.dispatchEvent(new Event('change', {
-          bubbles: true
-        }));
-      }
-    </script>
-    <style>
-      .color-selector-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 8px;
-      }
-
-      .color-option {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: all 0.2s;
-        position: relative;
-        border: 1px solid #e0e0e0;
-      }
-
-      .color-option:hover {
-        transform: scale(1.1);
-        border-color: #bdbdbd;
-      }
-
-      .color-option.selected {
-        border: 2px solid #0d6efd;
-        /* Use theme color for selection */
-        box-shadow: 0 0 6px rgba(13, 110, 253, 0.5);
-        /* Subtle glow */
-      }
-
-      .color-option.selected::after {
-        content: '✓';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: #fff;
-        text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
-        /* Ensure visibility */
-        font-size: 16px;
-        font-weight: bold;
-      }
-
-      /* Adjust checkmark color for light backgrounds */
-      .color-option[style*="#FFFFFF"].selected::after,
-      .color-option[style*="#FFFF00"].selected::after,
-      .color-option[style*="#F5F5F5"].selected::after {
-        color: #000;
-        text-shadow: none;
-      }
-    </style>
+    <input type="hidden" id="hidden_{{ name }}" class="color-hidden-input" value="{{ data_selected|default:'' }}" />
   </div>
+  {# fmt: off #}
+  <script>
+    // prettier-ignore
+    window.colorSelectors = window.colorSelectors || {};
+
+    function initializeColorSelector_{{ name }}() {
+      const container = document.getElementById('color-selector-{{ name }}');
+      const selectElement = document.getElementById('id_{{ name }}');
+      const hiddenInput = document.getElementById('hidden_{{ name }}');
+
+      if (!selectElement || !container) {
+        console.warn('Color selector elements not found: {{ name }}');
+        return;
+      }
+
+      window.colorSelectors['{{ name }}'] = {
+        select: selectElement,
+        container: container,
+        hidden: hiddenInput,
+        isMultiple: {{ data_multiple|default:'false'|lower }} === true,
+      };
+
+      const initialSelected = '{{ data_selected|default:"" }}';
+      if (initialSelected) {
+        const isMultiple = {{ data_multiple|default:'false'|lower }} === true;
+        if (isMultiple) {
+          const values = initialSelected.split(',').filter(v => v.trim());
+          values.forEach(value => {
+            const option = selectElement.querySelector(`option[value="${value.trim()}"]`);
+            if (option) {
+              option.selected = true;
+            }
+          });
+        } else {
+          selectElement.value = initialSelected.trim();
+        }
+      }
+
+      syncColorSelectionVisuals_{{ name }}();
+
+      selectElement.addEventListener('change', () => {
+        syncColorSelectionVisuals_{{ name }}();
+      });
+    }
+
+    function syncColorSelectionVisuals_{{ name }}() {
+      const instance = window.colorSelectors['{{ name }}'];
+      if (!instance) return;
+
+      const selectElement = instance.select;
+      const container = instance.container;
+      const colorOptions = container.querySelectorAll('.color-option');
+
+      if (instance.isMultiple) {
+        const selectedValues = Array.from(selectElement.selectedOptions).map(opt => opt.value);
+
+        colorOptions.forEach(option => {
+          const value = option.dataset.value;
+          if (selectedValues.includes(value)) {
+            option.classList.add('selected');
+          } else {
+            option.classList.remove('selected');
+          }
+        });
+
+        instance.hidden.value = selectedValues.join(',');
+      } else {
+        const selectedValue = selectElement.value;
+
+        colorOptions.forEach(option => {
+          if (String(option.dataset.value) === String(selectedValue)) {
+            option.classList.add('selected');
+          } else {
+            option.classList.remove('selected');
+          }
+        });
+
+        instance.hidden.value = selectedValue;
+      }
+    }
+
+    function handleColorSelection(event, fieldName) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const clickedElement = event.currentTarget;
+      const value = clickedElement.dataset.value;
+      const instance = window.colorSelectors[fieldName];
+
+      if (!instance) return;
+
+      const selectElement = instance.select;
+
+      if (instance.isMultiple) {
+        const option = selectElement.querySelector(`option[value="${value}"]`);
+        if (option) {
+          option.selected = !option.selected;
+        }
+      } else {
+        selectElement.value = value;
+      }
+
+      selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function handleColorSelectionKeypress(event, fieldName) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleColorSelection(event, fieldName);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeColorSelector_{{ name }});
+    } else {
+      initializeColorSelector_{{ name }}();
+    }
+  </script>
+  {# fmt: on #}
+  <style>
+    .color-selector-wrapper {
+      margin-bottom: 1rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .color-selector-box {
+      border: 1px solid var(--fc-border);
+      border-radius: 0.5rem;
+      background-color: var(--fc-secondary);
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .filter-sidebar .color-selector-box {
+      /* Asegura que nada se salga visualmente del recuadro */
+      overflow: hidden;
+    }
+
+    .color-selector-container {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 6px;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .filter-sidebar .color-selector-container {
+      /* 5 color columns, no overflow */
+      grid-template-columns: repeat(5, auto);
+      justify-content: flex-start;
+      gap: 4px;
+    }
+
+    @media (max-width: 992px) {
+      .color-selector-container {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+
+    @media (max-width: 576px) {
+      .color-selector-container {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .color-option {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      max-width: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      border: 2px solid rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .filter-sidebar .color-option {
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      max-width: 22px;
+    }
+
+    .color-option:hover {
+      transform: scale(1.1);
+      border-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .color-option.selected {
+      border: 3px solid rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.6),
+        0 0 40px hsla(180, 85%, 40%, 0.4);
+      animation: breathe-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes breathe-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.6),
+          0 0 40px hsla(180, 85%, 40%, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 30px hsla(180, 85%, 40%, 0.8),
+          0 0 60px hsla(180, 85%, 40%, 0.6);
+      }
+    }
+  </style>
 {% endwith %}

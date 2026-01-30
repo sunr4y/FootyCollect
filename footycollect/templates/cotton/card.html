@@ -1,0 +1,78 @@
+<c-vars shadow="md" />
+<div class="fc-card fc-card-shadow-{{ shadow }}" {{ attrs }}>
+  {% if header %}<div class="fc-card__header">{{ header }}</div>{% endif %}
+  {% if image %}<div class="fc-card__image">{{ image }}</div>{% endif %}
+  <div class="fc-card__body">
+    {% if title %}<h3 class="fc-card__title">{{ title }}</h3>{% endif %}
+    {% if description %}<p class="fc-card__description">{{ description }}</p>{% endif %}
+    {{ slot }}
+  </div>
+  {% if footer %}<div class="fc-card__footer">{{ footer }}</div>{% endif %}
+</div>
+<style>
+  .fc-card {
+    background-color: var(--fc-card);
+    color: var(--fc-card-foreground);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .fc-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .fc-card-shadow-sm {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .fc-card-shadow-md {
+    box-shadow: var(--fc-shadow-card);
+  }
+
+  .fc-card-shadow-lg {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), var(--fc-shadow-glow);
+  }
+
+  .fc-card__header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--fc-border);
+    font-weight: 600;
+  }
+
+  .fc-card__image {
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .fc-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .fc-card__body {
+    padding: 1.5rem;
+  }
+
+  .fc-card__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--fc-foreground);
+  }
+
+  .fc-card__description {
+    font-size: 0.875rem;
+    color: var(--fc-muted-foreground);
+    margin-bottom: 1rem;
+  }
+
+  .fc-card__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--fc-border);
+    background-color: var(--fc-secondary);
+  }
+</style>

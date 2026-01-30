@@ -12,15 +12,21 @@ from django.urls import reverse
 from footycollect.api.views import (
     get_club_kits,
     get_club_seasons,
+    get_filter_options,
     get_kit_details,
+    search_brands,
     search_clubs,
+    search_competitions,
     search_kits,
+    search_seasons,
 )
 
 # HTTP status codes
 HTTP_OK = 200
+HTTP_BAD_REQUEST = 400
 HTTP_INTERNAL_SERVER_ERROR = 500
 HTTP_SERVICE_UNAVAILABLE = 503
+HTTP_TOO_MANY_REQUESTS = 429
 
 # Test data constants
 EXPECTED_RESULTS_COUNT = 2
@@ -100,6 +106,37 @@ class TestAPIViews:
             data = json.loads(response.content)
             assert "results" in data
             assert data["results"] == []
+
+    def test_search_clubs_rate_limited_returns_429(self):
+        """Test that rate-limited search_clubs returns 429 and rate limit headers."""
+        request = self.factory.get(
+            "/api/clubs/search/?keyword=hammarby",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = search_clubs(request)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
+        assert response["X-RateLimit-Limit"] == "100/h"
+        assert response["X-RateLimit-Remaining"] == "0"
+        assert response["Retry-After"] == "3600"
+
+    def test_search_kits_rate_limited_returns_429(self):
+        """Test that rate-limited search_kits returns 429."""
+        request = self.factory.get(
+            "/api/kits/search/?keyword=hammarby",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = search_kits(request)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
 
     def test_get_kit_details_success(self):
         """Test successful kit details retrieval."""
@@ -315,6 +352,194 @@ class TestAPIViews:
             data = json.loads(response.content)
             assert "results" in data
             assert data["results"] == []
+
+    def test_search_brands_success(self):
+        """Test successful brand search."""
+        with patch("footycollect.api.views.FKAPIClient") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            mock_client.search_brands.return_value = [
+                {"id": 1, "name": "Nike"},
+                {"id": 2, "name": "Adidas"},
+            ]
+
+            request = self.factory.get("/api/brands/search/?keyword=nik")
+            response = search_brands(request)
+
+            assert response.status_code == HTTP_OK
+            data = json.loads(response.content)
+            assert "results" in data
+            assert len(data["results"]) == EXPECTED_RESULTS_COUNT
+            assert data["results"][0]["name"] == "Nike"
+
+    def test_search_brands_short_query_returns_empty(self):
+        """Test brand search with too short query returns empty results."""
+        request = self.factory.get("/api/brands/search/?keyword=n")
+        response = search_brands(request)
+
+        assert response.status_code == HTTP_OK
+        data = json.loads(response.content)
+        assert data["results"] == []
+
+    def test_search_competitions_success(self):
+        """Test successful competitions search."""
+        with patch("footycollect.api.views.FKAPIClient") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            mock_client.search_competitions.return_value = [
+                {"id": 1, "name": "La Liga"},
+                {"id": 2, "name": "Premier League"},
+            ]
+
+            request = self.factory.get("/api/competitions/search/?keyword=la")
+            response = search_competitions(request)
+
+            assert response.status_code == HTTP_OK
+            data = json.loads(response.content)
+            assert "results" in data
+            assert len(data["results"]) == EXPECTED_RESULTS_COUNT
+
+    def test_search_competitions_short_query_returns_empty(self):
+        """Test competitions search with too short query returns empty results."""
+        request = self.factory.get("/api/competitions/search/?keyword=l")
+        response = search_competitions(request)
+
+        assert response.status_code == HTTP_OK
+        data = json.loads(response.content)
+        assert data["results"] == []
+
+    def test_search_seasons_success(self):
+        """Test successful seasons search."""
+        with patch("footycollect.api.views.FKAPIClient") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            # search_kits returns kits with season info
+            mock_client.search_kits.return_value = [
+                {"season": {"year": "2023-24", "id": 1}},
+                {"season": {"year": "2022-23", "id": 2}},
+            ]
+            # search_clubs returns clubs; we'll keep club seasons empty for simplicity
+            mock_client.search_clubs.return_value = []
+
+            request = self.factory.get("/api/seasons/search/?keyword=2023")
+            response = search_seasons(request)
+
+            assert response.status_code == HTTP_OK
+            data = json.loads(response.content)
+            assert "results" in data
+            # Should get two distinct seasons
+            assert len(data["results"]) == EXPECTED_RESULTS_COUNT
+
+    def test_search_seasons_short_query_returns_empty(self):
+        """Test seasons search with too short query returns empty results."""
+        request = self.factory.get("/api/seasons/search/?keyword=2")
+        response = search_seasons(request)
+
+        assert response.status_code == HTTP_OK
+        data = json.loads(response.content)
+        assert data["results"] == []
+
+    def test_get_filter_options_missing_filter_type_returns_400(self):
+        """Test get_filter_options returns 400 when filter_type is missing."""
+        request = self.factory.get("/api/filter-options/")
+        response = get_filter_options(request)
+
+        assert response.status_code == HTTP_BAD_REQUEST
+        data = json.loads(response.content)
+        assert "error" in data
+
+    def test_get_filter_options_unknown_filter_type_returns_400(self):
+        """Test get_filter_options returns 400 for unknown filter_type."""
+        request = self.factory.get("/api/filter-options/?filter_type=unknown")
+        response = get_filter_options(request)
+
+        assert response.status_code == HTTP_BAD_REQUEST
+        data = json.loads(response.content)
+        assert "Unknown filter_type" in data["error"]
+
+    def test_search_brands_rate_limited_returns_429(self):
+        """Test that rate-limited search_brands returns 429."""
+        request = self.factory.get(
+            "/api/brands/search/?keyword=nike",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = search_brands(request)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
+
+    def test_search_competitions_rate_limited_returns_429(self):
+        """Test that rate-limited search_competitions returns 429."""
+        request = self.factory.get(
+            "/api/competitions/search/?keyword=la",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = search_competitions(request)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
+
+    def test_search_seasons_rate_limited_returns_429(self):
+        """Test that rate-limited search_seasons returns 429."""
+        request = self.factory.get(
+            "/api/seasons/search/?keyword=2023",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = search_seasons(request)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
+
+    def test_get_club_seasons_rate_limited_returns_429(self):
+        """Test that rate-limited get_club_seasons returns 429."""
+        request = self.factory.get(
+            "/api/clubs/893/seasons/",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = get_club_seasons(request, club_id=893)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
+
+    def test_get_club_kits_rate_limited_returns_429(self):
+        """Test that rate-limited get_club_kits returns 429."""
+        request = self.factory.get(
+            "/api/clubs/893/seasons/691/kits/",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = get_club_kits(request, club_id=893, season_id=691)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
+
+    def test_get_kit_details_rate_limited_returns_429(self):
+        """Test that rate-limited get_kit_details returns 429."""
+        request = self.factory.get(
+            "/api/kit/171008/",
+            HTTP_ACCEPT="application/json",
+        )
+        request.limited = True
+
+        response = get_kit_details(request, kit_id=171008)
+
+        assert response.status_code == HTTP_TOO_MANY_REQUESTS
+        data = json.loads(response.content)
+        assert data["error"] == "Rate limit exceeded"
 
 
 @pytest.mark.django_db

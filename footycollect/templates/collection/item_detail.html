@@ -1,252 +1,1215 @@
 {% extends "base.html" %}
 
-{% load i18n %}
+{% load i18n static cotton cache %}
 
-{% block extra_css %}
+{% block css %}
+  {{ block.super }}
   <style>
-    #itemPhotos {
-      min-height: 400px;
-      position: relative;
-    }
-
-    #itemPhotos .carousel-inner {
-      min-height: 400px;
-      position: relative;
+    .fc-jersey-detail {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem 1.5rem !important;
+      min-height: auto;
       overflow: visible;
     }
 
-    #itemPhotos .carousel-item {
-      min-height: 400px;
+    .fc-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--fc-muted-foreground);
+      margin-bottom: 2rem;
+    }
+
+    .fc-breadcrumb a {
+      color: var(--fc-muted-foreground);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .fc-breadcrumb a:hover {
+      color: var(--fc-foreground);
+    }
+
+    .fc-breadcrumb span {
+      color: var(--fc-muted-foreground);
+    }
+
+    .fc-image-gallery {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .fc-main-image {
+      position: relative;
+      aspect-ratio: 4/5;
+      border-radius: 1rem;
+      overflow: hidden;
+      background: transparent;
+      box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px -10px hsla(180, 85%, 40%, 0.3);
+      transition: transform 0.7s ease;
+      padding: 0;
+      margin: 0;
+    }
+
+    #mainImage {
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    #mainImageSrc {
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+      background: transparent !important;
+    }
+
+    #mainImage * {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .fc-main-image:hover {
+      transform: scale(1.02);
+    }
+
+    .fc-main-image img,
+    #mainImageSrc {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      display: block !important;
+      transition: transform 0.7s ease;
+      margin: 0 !important;
+      padding: 0 !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
+    #mainImage {
+      position: relative !important;
+    }
+
+    .fc-main-image:hover img {
+      transform: scale(1.05);
+    }
+
+    .fc-main-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--fc-background) 0%, transparent 50%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .fc-main-image:hover::after {
+      opacity: 0.6;
+    }
+
+    .fc-thumbnails {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .fc-thumbnail {
+      width: 80px !important;
+      height: 80px !important;
+      min-width: 80px !important;
+      min-height: 80px !important;
+      max-width: 80px !important;
+      max-height: 80px !important;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      border: 2px solid var(--fc-border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--fc-card);
+      opacity: 0.7;
+      position: relative;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .fc-thumbnail:hover {
+      border-color: var(--fc-muted-foreground);
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .fc-thumbnail.active {
+      border-color: var(--fc-primary) !important;
+      box-shadow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4) !important;
+      opacity: 1 !important;
+      transform: scale(1.05);
+    }
+
+    .fc-thumbnail img,
+    .thumbnail-img,
+    .fc-thumbnail img.thumbnail-img,
+    .fc-thumbnail button img,
+    button.fc-thumbnail img {
+      width: 80px !important;
+      height: 80px !important;
+      min-width: 80px !important;
+      min-height: 80px !important;
+      max-width: 80px !important;
+      max-height: 80px !important;
+      object-fit: contain !important;
+      object-position: center !important;
+      display: block !important;
+      flex-shrink: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box;
+    }
+
+    .fc-thumbnail button {
+      width: 80px !important;
+      height: 80px !important;
+      padding: 0 !important;
+      margin: 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      visibility: visible !important;
-      opacity: 1 !important;
+      border: none !important;
+      background: none !important;
+      cursor: pointer;
+      overflow: hidden !important;
     }
 
-    #itemPhotos .carousel-item.active {
-      display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-
-    #itemPhotos .carousel-item:not(.active) {
-      display: none !important;
-    }
-
-    #itemPhotos img {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      height: auto !important;
-      max-height: 600px !important;
+    button.fc-thumbnail img {
       object-fit: contain !important;
-      margin: 0 auto !important;
+      width: 80px !important;
+      height: 80px !important;
+      max-width: 80px !important;
+      max-height: 80px !important;
+      min-width: 80px !important;
+      min-height: 80px !important;
+    }
+
+    .fc-details-section {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .fc-header-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .fc-title-season-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      line-height: 1.2;
+    }
+
+    .fc-title-season-group .fc-title {
+      margin-bottom: 0;
+    }
+
+    .fc-title-season-group p.fc-title {
+      color: hsl(180, 70%, 50%);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    .fc-badges {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .fc-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--fc-foreground);
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .fc-title-gradient {
+      display: block;
+      background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .fc-subtitle {
+      font-size: 1.125rem;
+      color: var(--fc-muted-foreground);
+    }
+
+    .fc-team-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: var(--fc-radius);
+      background: linear-gradient(145deg, hsl(220, 18%, 12%) 0%, hsl(220, 18%, 8%) 100%);
+      border: 1px solid var(--fc-border);
+      transition: all 0.3s ease;
+    }
+
+    .fc-team-card:hover {
+      border-color: hsla(180, 85%, 40%, 0.3) !important;
+      box-shadow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4) !important;
+    }
+
+    .fc-team-card:hover .fc-font-semibold {
+      background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+
+    .fc-team-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      background: hsla(180, 85%, 40%, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fc-primary);
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .fc-team-info p {
+      margin: 0;
+      font-weight: 600;
+      color: var(--fc-foreground);
+    }
+
+    .fc-team-info small {
+      color: var(--fc-muted-foreground);
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .fc-separator {
+      height: 1px;
+      width: 100%;
+      background: var(--fc-border);
+      opacity: 0.5;
+    }
+
+    .fc-details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .fc-detail-card {
+      padding: 1rem;
+      border-radius: var(--fc-radius);
+      border: 1px solid var(--fc-border);
+      background: hsla(220, 15%, 15%, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .fc-detail-card:hover {
+      border-color: hsla(180, 85%, 40%, 0.3) !important;
+      background: linear-gradient(145deg, hsl(220, 18%, 12%) 0%, hsl(220, 18%, 8%) 100%) !important;
+      box-shadow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4) !important;
+    }
+
+    .fc-detail-card:hover .fc-detail-value {
+      background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+
+    .fc-detail-card.highlight {
+      background: linear-gradient(145deg, hsl(220, 18%, 12%) 0%, hsl(220, 18%, 8%) 100%);
+      border-color: hsla(180, 85%, 40%, 0.3);
+      box-shadow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4);
+    }
+
+    .fc-detail-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--fc-muted-foreground);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .fc-detail-label i {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .fc-detail-value {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--fc-foreground);
+      margin: 0;
+    }
+
+    .fc-detail-value.highlight {
+      background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .fc-detail-value img {
+      width: 20px;
+      height: 20px;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+      object-fit: contain;
+    }
+
+    .fc-metadata {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--fc-muted-foreground);
+      flex-wrap: wrap;
+    }
+
+    .fc-metadata-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .fc-metadata-item i {
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+
+    .fc-metadata-item span:last-child {
+      color: var(--fc-foreground);
+      font-weight: 500;
+    }
+
+    .fc-condition-note {
+      padding: 1rem;
+      border-radius: var(--fc-radius);
+      background: hsla(180, 85%, 40%, 0.05);
+      border: 1px solid hsla(180, 85%, 40%, 0.2);
+    }
+
+    .fc-condition-note p {
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--fc-muted-foreground);
+    }
+
+    .fc-condition-note strong {
+      color: var(--fc-primary);
+      font-weight: 500;
+    }
+
+    .fc-additional-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .fc-main-grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 2rem !important;
+    }
+
+    @media (min-width: 1024px) {
+      .fc-main-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 4rem !important;
+      }
+    }
+
+    @keyframes signedGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 30px -5px hsla(180, 85%, 40%, 0.5), inset 0 0 20px -10px hsla(180, 85%, 40%, 0.3);
+        border-color: hsla(180, 85%, 40%, 0.6);
+      }
+
+      50% {
+        box-shadow: 0 0 50px -5px hsla(180, 85%, 40%, 0.8), inset 0 0 30px -10px hsla(180, 85%, 40%, 0.5);
+        border-color: hsla(180, 85%, 40%, 0.9);
+      }
+    }
+
+    @keyframes signedBreathe {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 0.9;
+      }
+    }
+
+    .fc-signed-card {
+      animation: signedGlow 3s ease-in-out infinite;
+    }
+
+    .fc-signed-icon {
+      animation: signedBreathe 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 8px hsla(180, 85%, 40%, 0.8));
+    }
+
+    .fc-season-card:hover {
+      border-color: hsla(180, 85%, 40%, 0.3) !important;
+      background: linear-gradient(145deg, hsl(220, 18%, 12%) 0%, hsl(220, 18%, 8%) 100%) !important;
+      box-shadow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4) !important;
+    }
+
+    .fc-season-card:hover .fc-season-value {
+      background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+
+    .fc-flex-center {
+      display: flex;
+      align-items: center;
+    }
+
+    .fc-flex-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .fc-gap-1 {
+      gap: 0.5rem;
+    }
+
+    .fc-gap-2 {
+      gap: 0.75rem;
+    }
+
+    .fc-gap-3 {
+      gap: 1rem;
+    }
+
+    .fc-gap-4 {
+      gap: 1.5rem;
+    }
+
+    .fc-text-sm {
+      font-size: 0.875rem;
+    }
+
+    .fc-text-muted {
+      color: var(--fc-muted-foreground);
+    }
+
+    .fc-text-foreground {
+      color: var(--fc-foreground);
+    }
+
+    .fc-text-primary {
+      color: var(--fc-primary);
+    }
+
+    .fc-font-semibold {
+      font-weight: 600;
+    }
+
+    .fc-m-0 {
+      margin: 0;
+    }
+
+    .fc-mb-1 {
+      margin-bottom: 0.5rem;
+    }
+
+    .fc-mb-2 {
+      margin-bottom: 2rem;
+    }
+
+    .fc-icon-sm {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .fc-icon-xs {
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+
+    .fc-icon-lg {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .fc-icon-xl {
+      font-size: 1.5rem;
+    }
+
+    .fc-icon-2xl {
+      font-size: 1.5rem;
+    }
+
+    .fc-uppercase {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .fc-link {
+      color: var(--fc-muted-foreground);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .fc-link:hover {
+      color: var(--fc-foreground);
+    }
+
+    .fc-main-image-wrapper {
+      position: relative;
+      aspect-ratio: 4/5;
+      border-radius: 1rem;
+      overflow: hidden;
+      background: transparent;
+      box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px -10px hsla(180, 85%, 40%, 0.3);
+      padding: 0;
+      margin: 0;
+    }
+
+    .fc-main-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      margin: 0;
+      padding: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: transform 0.7s ease;
+    }
+
+    .fc-main-image-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--fc-background) 0%, transparent 50%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .fc-main-image-wrapper:hover .fc-main-image-overlay {
+      opacity: 0.6;
+    }
+
+    .fc-processing-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .fc-processing-badge .spinner-border-sm {
+      width: 1rem;
+      height: 1rem;
+      border-width: 0.15em;
+    }
+
+    .fc-thumbnails-container {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .fc-club-logo {
+      width: 4rem;
+      height: 4rem;
+      object-fit: contain;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .fc-brand-logo {
+      width: 4rem;
+      height: 4rem;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .fc-competition-logo {
+      width: 20px;
+      height: 20px;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+      object-fit: contain;
+    }
+
+    .fc-club-brand-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .fc-separator {
+      height: 1px;
+      width: 100%;
+      background: var(--fc-border);
+      opacity: 0.5;
+    }
+
+    .fc-signed-card {
+      padding: 1rem;
+      border-radius: var(--fc-radius);
+      border: 2px solid hsla(180, 85%, 40%, 0.6);
+      background: linear-gradient(145deg, hsla(180, 85%, 40%, 0.15) 0%, hsla(180, 85%, 40%, 0.05) 100%);
+      box-shadow: 0 0 30px -5px hsla(180, 85%, 40%, 0.5), inset 0 0 20px -10px hsla(180, 85%, 40%, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .fc-signed-card:hover {
+      border-color: hsla(180, 85%, 40%, 0.3) !important;
+      box-shadow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4) !important;
+    }
+
+    .fc-signed-icon {
+      font-size: 1.5rem;
+      color: var(--fc-primary);
+    }
+
+    .fc-signed-text {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--fc-primary);
+      margin: 0;
+    }
+
+    .fc-description-card {
+      padding: 1rem;
+      border-radius: var(--fc-radius);
+      background: hsla(180, 85%, 40%, 0.05);
+      border: 1px solid hsla(180, 85%, 40%, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .fc-description-card:hover {
+      border-color: hsla(180, 85%, 40%, 0.3) !important;
+      background: linear-gradient(145deg, hsl(220, 18%, 12%) 0%, hsl(220, 18%, 8%) 100%) !important;
+      box-shadow: 0 0 40px -10px hsla(180, 85%, 40%, 0.4) !important;
+    }
+
+    .fc-description-card:hover .fc-description-label {
+      background: linear-gradient(135deg, var(--fc-primary) 0%, hsl(180, 70%, 30%) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+
+    .fc-description-text {
+      font-size: 0.875rem;
+      color: var(--fc-muted-foreground);
+      margin: 0;
+    }
+
+    .fc-description-label {
+      color: var(--fc-primary);
+      font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+      .fc-jersey-detail {
+        padding: 1.5rem 1rem;
+      }
+
+      .fc-title {
+        font-size: 2rem;
+      }
+
+      .fc-details-grid,
+      .fc-additional-details,
+      .grid.grid-cols-2,
+      div[style*="grid-template-columns: repeat(2, 1fr)"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      .fc-metadata {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
     }
   </style>
-{% endblock extra_css %}
+{% endblock css %}
 {% block content %}
-  <div class="container py-4">
-    <div class="card">
-      <div class="card-body">
-        <h2 class="card-title">{{ object }}</h2>
-        <!-- Item details -->
-        <div class="row mt-4">
-          <div class="col-md-6">
-            <!-- Photos -->
-            {% if photos|length > 0 or object.photos.exists %}
-              <div id="itemPhotos" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                  {% if photos|length > 0 %}
-                    {% for photo in photos %}
-                      <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        {% if photo.image_avif %}
-                          <img src="{{ photo.image.url }}"
-                               data-avif="{{ photo.image_avif.url }}"
-                               class="d-block w-100"
-                               alt=""
-                               onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
-                        {% else %}
-                          <img src="{{ photo.image.url }}" class="d-block w-100" alt="" />
-                        {% endif %}
-                      </div>
-                    {% endfor %}
-                  {% else %}
-                    {% for photo in object.photos.all %}
-                      <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        {% if photo.image_avif %}
-                          <img src="{{ photo.image.url }}"
-                               data-avif="{{ photo.image_avif.url }}"
-                               class="d-block w-100"
-                               alt=""
-                               onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
-                        {% else %}
-                          <img src="{{ photo.image.url }}" class="d-block w-100" alt="" />
-                        {% endif %}
-                      </div>
-                    {% endfor %}
+  <div class="fc-jersey-detail">
+    <div class="fc-breadcrumb fc-mb-2">
+      <a href="{% url 'collection:item_list' %}" class="fc-link">{% trans "Collection" %}</a>
+      <span>/</span>
+      {% if object.club %}
+        <span class="fc-text-muted">{{ object.club.name }}</span>
+      {% else %}
+        <span class="fc-text-muted">{{ object.name }}</span>
+      {% endif %}
+      {% if object.season %}
+        <span>/</span>
+        <span class="fc-text-foreground">{{ object.season }}</span>
+      {% endif %}
+    </div>
+    <div class="fc-main-grid" data-responsive-grid>
+      <div class="fc-flex-col fc-gap-3">
+        {% if photos|length > 0 or object.photos.exists %}
+          {% if photos|length > 0 %}
+            {% with photos|first as first_photo %}
+              <div class="fc-main-image-wrapper" id="mainImage">
+                {% if first_photo.image_avif.name %}
+                  <img src="{{ first_photo.image.url }}"
+                       data-avif="{{ first_photo.image_avif.url }}"
+                       alt="{{ object.name }}"
+                       id="mainImageSrc"
+                       onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
+                {% else %}
+                  <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
+                {% endif %}
+                <div class="fc-main-image-overlay"></div>
+                {% if object.is_processing_photos %}
+                  <div id="processingBadge" class="fc-processing-badge">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    {% trans "Processing photos..." %}
+                  </div>
+                {% endif %}
+              </div>
+            {% endwith %}
+            {% if photos|length > 1 %}
+              <div class="fc-thumbnails-container">
+                {% for photo in photos %}
+                  <button type="button"
+                          onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
+                          class="fc-thumbnail {% if forloop.first %}active{% endif %}"
+                          data-image-url="{{ photo.image.url }}"
+                          data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
+                    {% if photo.image_avif.name %}
+                      <img src="{{ photo.image_avif.url }}"
+                           alt="Thumbnail {{ forloop.counter }}"
+                           class="thumbnail-img"
+                           onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
+                    {% else %}
+                      <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
+                    {% endif %}
+                  </button>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% else %}
+            {% with object.photos.all|first as first_photo %}
+              <div class="fc-main-image-wrapper" id="mainImage">
+                {% if first_photo.image_avif.name %}
+                  <img src="{{ first_photo.image.url }}"
+                       data-avif="{{ first_photo.image_avif.url }}"
+                       alt="{{ object.name }}"
+                       id="mainImageSrc"
+                       onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
+                {% else %}
+                  <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
+                {% endif %}
+                <div class="fc-main-image-overlay"></div>
+                {% if object.is_processing_photos %}
+                  <div id="processingBadge" class="fc-processing-badge">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    {% trans "Processing photos..." %}
+                  </div>
+                {% endif %}
+              </div>
+            {% endwith %}
+            {% if object.photos.count > 1 %}
+              <div class="fc-thumbnails-container">
+                {% for photo in object.photos.all %}
+                  <button type="button"
+                          onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
+                          class="fc-thumbnail {% if forloop.first %}active{% endif %}"
+                          data-image-url="{{ photo.image.url }}"
+                          data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
+                    {% if photo.image_avif.name %}
+                      <img src="{{ photo.image_avif.url }}"
+                           alt="Thumbnail {{ forloop.counter }}"
+                           class="thumbnail-img"
+                           onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
+                    {% else %}
+                      <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
+                    {% endif %}
+                  </button>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </div>
+      <div class="fc-flex-col fc-gap-4">
+        <div class="fc-flex-col fc-gap-3">
+          <div class="fc-flex-center fc-gap-2 fc-flex-wrap">
+            {% if object.get_condition_display %}
+              <c-badge variant="outline" class="fc-badge-condition">{{ object.get_condition_display }}</c-badge>
+            {% endif %}
+            {% if object.main_color and object.get_main_color_display %}
+              <c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>
+            {% endif %}
+            {% if object.jersey.kit and object.jersey.kit.type %}
+              {% if object.jersey.kit.type.category != "match" and object.jersey.kit.type.get_category_display_name %}
+                <c-badge variant="filled" class="bg-primary">{{ object.jersey.kit.type.get_category_display_name }}</c-badge>
+              {% endif %}
+              {% if object.jersey.kit.type.is_goalkeeper %}
+                <c-badge variant="filled" class="bg-warning text-dark">GK</c-badge>
+              {% endif %}
+              {% if object.jersey.kit.type.name %}<c-badge variant="outline">{{ object.jersey.kit.type.name }}</c-badge>{% endif %}
+            {% endif %}
+          </div>
+          <div class="fc-title-season-group">
+            <h1 class="fc-title">
+              {% if object.item_type == 'jersey' and object.jersey %}
+                {{ object.jersey.get_display_name_with_type }}
+              {% elif object.club %}
+                {{ object.club.name }}
+              {% else %}
+                {{ object.name }}
+              {% endif %}
+            </h1>
+            {% if object.season %}<p class="fc-title">{{ object.season.year }}</p>{% endif %}
+          </div>
+          {% if object.user %}
+            <div class="fc-flex-center fc-gap-1 fc-text-sm fc-text-muted">
+              <i class="bi bi-person-circle fc-icon-sm"></i>
+              <a href="{% url 'users:detail' object.user.username %}" class="fc-link">{{ object.user.username }}</a>
+            </div>
+          {% endif %}
+        </div>
+        {% if object.club or object.brand %}
+          <div class="fc-club-brand-grid">
+            {% if object.club %}
+              <div class="fc-team-card">
+                {% if object.club.logo_display_url and object.club.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                  <img src="{{ object.club.logo_display_url }}"
+                       alt="{{ object.club.name }}"
+                       class="fc-club-logo"
+                       onerror="this.classList.add('fc-d-none');" />
+                {% endif %}
+                <div>
+                  <p class="fc-font-semibold fc-text-foreground fc-m-0">{{ object.club.name }}</p>
+                  {% if object.club.country %}
+                    <p class="fc-text-sm fc-text-muted fc-flex-center fc-gap-1 fc-m-0">
+                      <span class="fi fi-{{ object.club.country.code|lower }}"></span>
+                      {{ object.club.country.name }}
+                    </p>
                   {% endif %}
                 </div>
-                {% if photos|length > 1 or object.photos.count > 1 %}
-                  <button class="carousel-control-prev"
-                          type="button"
-                          data-bs-target="#itemPhotos"
-                          data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                  </button>
-                  <button class="carousel-control-next"
-                          type="button"
-                          data-bs-target="#itemPhotos"
-                          data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                  </button>
-                {% endif %}
+              </div>
+            {% endif %}
+            {% if object.brand %}
+              <div class="fc-detail-card">
+                <div class="fc-detail-label">
+                  <i class="bi bi-tag fc-icon-sm"></i>
+                  <span class="fc-uppercase">{% trans "Brand" %}</span>
+                </div>
+                <div class="fc-flex-center fc-gap-2">
+                  {% if object.brand.logo_dark_display_url and object.brand.logo_dark_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                    <img src="{{ object.brand.logo_dark_display_url }}"
+                         alt="{{ object.brand.name }}"
+                         class="fc-brand-logo"
+                         onerror="this.onerror=null; this.src='{{ object.brand.logo_display_url|default:'' }}';" />
+                  {% elif object.brand.logo_display_url and object.brand.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                    <img src="{{ object.brand.logo_display_url }}" alt="{{ object.brand.name }}" class="fc-brand-logo" />
+                  {% endif %}
+                  <p class="fc-detail-value">{{ object.brand.name }}</p>
+                </div>
               </div>
             {% endif %}
           </div>
-          <div class="col-md-6">
-            <!-- Item information -->
-            <dl class="row">
-              <!-- Base Item fields -->
-              <dt class="col-sm-4">{% trans "Name" %}</dt>
-              <dd class="col-sm-8">
-                {{ object.name }}
-              </dd>
-              <dt class="col-sm-4">{% trans "Brand" %}</dt>
-              <dd class="col-sm-8">
-                {% if object.brand.logo and object.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                  <img src="{{ object.brand.logo }}"
-                       alt="{{ object.brand.name }}"
-                       class="img-fluid me-2"
-                       width="20"
-                       height="20" />
+        {% endif %}
+        <div class="fc-separator"></div>
+        <div class="fc-details-grid">
+          {% if object.get_condition_display %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-check-circle fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Condition" %}</span>
+              </div>
+              <p class="fc-detail-value">{{ object.get_condition_display }}</p>
+            </div>
+          {% endif %}
+          {% if object.jersey.size %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-rulers fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Size" %}</span>
+              </div>
+              <p class="fc-detail-value">{{ object.jersey.size.name }}</p>
+            </div>
+          {% endif %}
+          {% if object.season %}
+            <div class="fc-detail-card fc-season-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-calendar fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Season" %}</span>
+              </div>
+              <p class="fc-detail-value fc-season-value">{{ object.season }}</p>
+            </div>
+          {% endif %}
+          {% if object.jersey.player_name %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-person fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Player Name" %}</span>
+              </div>
+              <p class="fc-detail-value">{{ object.jersey.player_name }}</p>
+            </div>
+          {% endif %}
+          {% if object.jersey.number %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-123 fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Number" %}</span>
+              </div>
+              <p class="fc-detail-value">{{ object.jersey.number }}</p>
+            </div>
+          {% endif %}
+          {% if object.design %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-shield fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Design" %}</span>
+              </div>
+              <p class="fc-detail-value">{{ object.get_design_display }}</p>
+            </div>
+          {% endif %}
+          {% if object.competitions.exists %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-trophy fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Competition" %}</span>
+              </div>
+              <p class="fc-detail-value">
+                {% for competition in object.competitions.all %}
+                  {% if competition.logo and competition.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                    <img src="{{ competition.logo }}" alt="{{ competition.name }}" class="fc-competition-logo" />
+                  {% endif %}
+                  {{ competition.name }}
+                  {% if not forloop.last %},{% endif %}
+                {% endfor %}
+              </p>
+            </div>
+          {% endif %}
+          {% if object.jersey and object.jersey.is_short_sleeve is not None %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-tshirt fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Sleeve" %}</span>
+              </div>
+              <p class="fc-detail-value">
+                {% if object.jersey.is_short_sleeve %}
+                  {% trans "Short Sleeve" %}
+                {% else %}
+                  {% trans "Long Sleeve" %}
                 {% endif %}
-                {{ object.brand.name }}
-              </dd>
-              <dt class="col-sm-4">{% trans "Condition" %}</dt>
-              <dd class="col-sm-8">
-                {{ object.get_condition_display }}
-              </dd>
-              <dt class="col-sm-4">{% trans "Added on" %}</dt>
-              <dd class="col-sm-8">
-                {{ object.created_at|date:"d M Y" }}
-              </dd>
-              <dt class="col-sm-4">{% trans "Last updated" %}</dt>
-              <dd class="col-sm-8">
-                {{ object.updated_at|date:"d M Y" }}
-              </dd>
-              <!-- Jersey specific fields -->
-              {% if object.club %}
-                <dt class="col-sm-4">{% trans "Team" %}</dt>
-                <dd class="col-sm-8">
-                  {% if object.club.logo and object.club.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ object.club.logo }}"
-                         alt="{{ object.club.name }}"
-                         class="img-fluid me-2"
-                         width="20"
-                         height="20" />
-                  {% endif %}
-                  {{ object.club.name }}
-                  {% if object.club.country %}
-                    <br />
-                    <small class="text-muted">
-                      <span class="fi fi-{{ object.club.country.code|lower }}"></span>
-                      {{ object.club.country.name }}
-                    </small>
-                  {% endif %}
-                </dd>
-              {% endif %}
-              {% if object.country %}
-                <dt class="col-sm-4">{% trans "Country" %}</dt>
-                <dd class="col-sm-8">
-                  <span class="fi fi-{{ object.country.code|lower }}"></span>
-                  {{ object.country.name }}
-                </dd>
-              {% endif %}
-              {% if object.season %}
-                <dt class="col-sm-4">{% trans "Season" %}</dt>
-                <dd class="col-sm-8">
-                  {{ object.season }}
-                </dd>
-              {% endif %}
-              {% if object.size %}
-                <dt class="col-sm-4">{% trans "Size" %}</dt>
-                <dd class="col-sm-8">
-                  {{ object.size }}
-                </dd>
-              {% endif %}
-              {% if object.main_color %}
-                <dt class="col-sm-4">{% trans "Main Color" %}</dt>
-                <dd class="col-sm-8">
-                  {{ object.get_main_color_display }}
-                </dd>
-              {% endif %}
-              {% if object.design %}
-                <dt class="col-sm-4">{% trans "Design" %}</dt>
-                <dd class="col-sm-8">
-                  {{ object.get_design_display }}
-                </dd>
-              {% endif %}
-              {% if object.competitions.exists %}
-                <dt class="col-sm-4">{% trans "Competitions" %}</dt>
-                <dd class="col-sm-8">
-                  {% for competition in object.competitions.all %}
-                    {% if competition.logo and competition.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                      <img src="{{ competition.logo }}"
-                           alt="{{ competition.name }}"
-                           class="img-fluid me-2"
-                           width="20"
-                           height="20" />
-                    {% endif %}
-                    {{ competition.name }}
-                    {% if not forloop.last %},{% endif %}
-                  {% endfor %}
-                </dd>
-              {% endif %}
-              {% if object.player_name %}
-                <dt class="col-sm-4">{% trans "Player Name" %}</dt>
-                <dd class="col-sm-8">
-                  {{ object.player_name }}
-                </dd>
-              {% endif %}
-              {% if object.number %}
-                <dt class="col-sm-4">{% trans "Number" %}</dt>
-                <dd class="col-sm-8">
-                  {{ object.number }}
-                </dd>
-              {% endif %}
-              {% if object.match_worn %}
-                <dt class="col-sm-4">{% trans "Match Worn" %}</dt>
-                <dd class="col-sm-8">
-                  {% if object.match_worn %}
-                    Yes
-                  {% else %}
-                    No
-                  {% endif %}
-                </dd>
-              {% endif %}
-              {% if object.signed %}
-                <dt class="col-sm-4">{% trans "Signed" %}</dt>
-                <dd class="col-sm-8">
-                  {% if object.signed %}
-                    Yes
-                  {% else %}
-                    No
-                  {% endif %}
-                </dd>
-              {% endif %}
-            </dl>
-            {% if object.description %}
-              <h5>{% trans "Description" %}</h5>
-              <p>{{ object.description }}</p>
-            {% endif %}
+              </p>
+            </div>
+          {% endif %}
+          {% if object.main_color %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-palette fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Main Color" %}</span>
+              </div>
+              <p class="fc-detail-value">{{ object.main_color.name }}</p>
+            </div>
+          {% endif %}
+          {% if object.secondary_colors.exists %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-palette-fill fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Secondary Colors" %}</span>
+              </div>
+              <p class="fc-detail-value">
+                {% for color in object.secondary_colors.all %}
+                  {{ color.name }}
+                  {% if not forloop.last %},{% endif %}
+                {% endfor %}
+              </p>
+            </div>
+          {% endif %}
+          {% if object.country %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-globe fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Country" %}</span>
+              </div>
+              <p class="fc-detail-value">
+                <span class="fi fi-{{ object.country.code|lower }}"></span>
+                {{ object.country.name }}
+              </p>
+            </div>
+          {% endif %}
+          {% if object.jersey.is_signed %}
+            <div class="fc-signed-card">
+              <div class="fc-flex-center fc-gap-1">
+                <i class="bi bi-check-circle-fill fc-signed-icon"></i>
+                <p class="fc-signed-text">{% trans "Signed" %}</p>
+              </div>
+            </div>
+          {% endif %}
+          {% if object.match_worn %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-star fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "Match Worn" %}</span>
+              </div>
+              <p class="fc-detail-value">
+                {% if object.match_worn %}
+                  {% trans "Yes" %}
+                {% else %}
+                  {% trans "No" %}
+                {% endif %}
+              </p>
+            </div>
+          {% endif %}
+        </div>
+        <div class="fc-separator"></div>
+        <div class="fc-metadata">
+          <div class="fc-metadata-item">
+            <i class="bi bi-clock fc-icon-xs"></i>
+            <span>{% trans "Added" %}:</span>
+            <span class="fc-text-foreground fc-font-semibold">{{ object.created_at|date:"d M Y" }}</span>
+          </div>
+          <div class="fc-metadata-item">
+            <i class="bi bi-sparkles fc-icon-xs"></i>
+            <span>{% trans "Updated" %}:</span>
+            <span class="fc-text-foreground fc-font-semibold">{{ object.updated_at|date:"d M Y" }}</span>
           </div>
         </div>
+        {% if object.description %}
+          <div class="fc-description-card">
+            <p class="fc-description-text">
+              <span class="fc-description-label">{% trans "Description" %}:</span> {{ object.description }}
+            </p>
+          </div>
+        {% endif %}
       </div>
     </div>
   </div>
+  <script>
+    function changeImage(imageUrl, avifUrl, thumbnail) {
+      const mainImage = document.getElementById('mainImageSrc');
+      if (!mainImage || !imageUrl) return;
+
+      if (avifUrl && avifUrl.trim() !== '') {
+        mainImage.src = imageUrl;
+        mainImage.setAttribute('data-avif', avifUrl);
+      } else {
+        mainImage.src = imageUrl;
+        if (mainImage.hasAttribute('data-avif')) {
+          mainImage.removeAttribute('data-avif');
+        }
+      }
+
+      mainImage.style.transition = 'opacity 0.2s ease';
+      mainImage.style.opacity = '0.7';
+      setTimeout(() => {
+        mainImage.style.opacity = '1';
+      }, 100);
+
+      document.querySelectorAll('.fc-thumbnail').forEach(thumb => {
+        thumb.classList.remove('active');
+      });
+
+      if (thumbnail) {
+        thumbnail.classList.add('active');
+      }
+    }
+
+    function showProcessingBadge() {
+      const badge = document.getElementById('processingBadge');
+      if (badge) {
+        badge.style.display = 'flex';
+      }
+    }
+
+    function hideProcessingBadge() {
+      const badge = document.getElementById('processingBadge');
+      if (badge) {
+        badge.style.display = 'none';
+      }
+    }
+
+    function reloadPhotos() {
+      window.location.reload();
+    }
+
+    function checkPhotoProcessing(itemId, useDebug) {
+      var url = '/collection/items/' + itemId + '/processing-status/';
+      if (useDebug) { url += '?debug=1'; }
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error) {
+            hideProcessingBadge();
+            return;
+          }
+          if (data.all_processed) {
+            hideProcessingBadge();
+            if (data.has_photos) {
+              setTimeout(reloadPhotos, 500);
+            }
+          } else if (data.is_processing) {
+            showProcessingBadge();
+            setTimeout(function() { checkPhotoProcessing(itemId, useDebug); }, 2000);
+          } else {
+            hideProcessingBadge();
+          }
+        })
+        .catch(function() {
+          setTimeout(function() { checkPhotoProcessing(itemId, useDebug); }, 5000);
+        });
+    }
+
+    {% if object.is_processing_photos %}
+      checkPhotoProcessing({{ object.pk }}, true);
+    {% else %}
+      const badge = document.getElementById('processingBadge');
+      if (badge) {
+        badge.style.display = 'none';
+      }
+    {% endif %}
+  </script>
 {% endblock content %}
