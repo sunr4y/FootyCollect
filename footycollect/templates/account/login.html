@@ -122,20 +122,46 @@
       border-color: hsla(180, 85%, 40%, 0.5) !important;
     }
 
-    /* Checkbox styling */
-    .fc-card-body .form-check-input {
+    .fc-card-body .form-check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 1.5rem;
+    }
+
+    .fc-card-body .form-check-input,
+    .fc-card-body .form-check input[type="checkbox"] {
+      width: 1.125rem;
+      height: 1.125rem;
+      margin: 0;
+      flex-shrink: 0;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
       background-color: var(--fc-secondary) !important;
       border: 1px solid var(--fc-border) !important;
+      border-radius: 0.35rem;
+      transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
     }
 
-    .fc-card-body .form-check-input:checked {
+    .fc-card-body .form-check-input:checked,
+    .fc-card-body .form-check input[type="checkbox"]:checked {
       background-color: hsla(180, 85%, 40%, 1) !important;
       border-color: hsla(180, 85%, 40%, 1) !important;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e") !important;
     }
 
-    .fc-card-body .form-check-input:focus {
+    .fc-card-body .form-check-input:focus,
+    .fc-card-body .form-check input[type="checkbox"]:focus {
       border-color: hsla(180, 85%, 40%, 1) !important;
-      box-shadow: 0 0 0 0.2rem hsla(180, 85%, 40%, 0.25) !important;
+      box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.2) !important;
+      outline: none !important;
+    }
+
+    .fc-card-body .form-check-label {
+      cursor: pointer;
+      color: var(--fc-foreground);
+      font-size: 0.875rem;
     }
 
     /* Google One Tap styling */

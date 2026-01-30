@@ -113,9 +113,21 @@
     border-radius: 2px;
 }
 
-/* Recent Items title spacing */
+/* Recent Items header: extra margin below the row */
+.fc-recent-items-header {
+    margin-bottom: 3rem !important;
+}
+
 .recent-items-title {
-    margin-bottom: 1.5rem !important; /* More space below the title */
+    margin-bottom: 1.5rem !important;
+}
+
+.fc-btn-view-collection {
+    box-shadow: 0 0 14px hsla(180, 85%, 40%, 0.45);
+}
+
+.fc-btn-view-collection:hover {
+    box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.6);
 }
 
 /* Logo container styles to avoid inline styles */

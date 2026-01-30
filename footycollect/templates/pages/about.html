@@ -97,16 +97,16 @@
             <h5 class="card-title mb-0 fc-title-small">{% translate "Get Started" %}</h5>
           </div>
           <div class="fc-card-body-small fc-text-foreground">
-            <p class="mb-3 text-center fc-text-foreground">{% translate "Ready to start managing your collection?" %}</p>
-            <div class="d-flex gap-3 align-items-center justify-content-center">
+            <p class="mb-4 text-center fc-text-foreground">{% translate "Ready to start managing your collection?" %}</p>
+            <div class="d-flex flex-nowrap gap-3 align-items-center justify-content-center py-2">
               {% if not user.is_authenticated %}
-                <a href="{% url 'account_signup' %}" class="btn fc-btn-primary">{% translate "Sign Up" %}</a>
-                <span class="fc-text-small">or</span>
-                <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary">{% translate "Sign In" %}</a>
+                <a href="{% url 'account_signup' %}" class="btn fc-btn-primary fc-get-started-btn">{% translate "Sign Up" %}</a>
+                <span class="fc-text-small fc-text-muted d-flex align-items-center">or</span>
+                <a href="{% url 'account_login' %}" class="btn fc-btn-outline-primary fc-get-started-btn">{% translate "Sign In" %}</a>
               {% else %}
-                <a href="{% url 'collection:item_list' %}" class="btn fc-btn-primary">{% translate "View My Collection" %}</a>
-                <span class="fc-text-small">or</span>
-                <a href="{% url 'collection:jersey_add_automatic' %}" class="btn fc-btn-outline-primary">{% translate "Add Your First Item" %}</a>
+                <a href="{% url 'collection:item_list' %}" class="btn fc-btn-primary fc-get-started-btn">{% translate "View My Collection" %}</a>
+                <span class="fc-text-small fc-text-muted d-flex align-items-center">or</span>
+                <a href="{% url 'collection:jersey_add_automatic' %}" class="btn fc-btn-outline-primary fc-get-started-btn">{% translate "Add Your First Item" %}</a>
               {% endif %}
             </div>
           </div>

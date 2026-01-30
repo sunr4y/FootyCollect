@@ -204,9 +204,7 @@
                     <a class="nav-link fc-nav-link-base" href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
                   </li>
                   <li class="nav-item">
-                    <c-button variant="ghost" size="sm" as_link href="{% url 'account_logout' %}" class="fc-button-inline-flex">
-                    {% translate "Sign Out" %}
-                    </c-button>
+                    <a class="nav-link fc-nav-link-base" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
                   </li>
                 {% else %}
                   {% if ACCOUNT_ALLOW_REGISTRATION %}

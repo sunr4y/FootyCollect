@@ -71,63 +71,44 @@
           </a>
         </div>
       {% endif %}
-      <div class="d-flex justify-content-between align-items-start mb-2">
-        <div class="flex-grow-1">
-          <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+      <div class="item-card-content-block">
+        <h6 class="card-title item-title mb-1">{{ item.base_item.name }}</h6>
+        <div class="item-card-meta-row d-flex flex-wrap align-items-center gap-2 mb-2">
           {% if item.kit and item.kit.type %}
-            <div class="mb-2">
-              {% if item.kit.type.category != "match" %}
-                <span class="badge bg-primary me-1">{{ item.kit.type.get_category_display_name }}</span>
-              {% endif %}
-              {% if item.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark me-1">GK</span>{% endif %}
-              <span class="badge bg-secondary">{{ item.kit.type.name }}</span>
-            </div>
+            {% if item.kit.type.category != "match" %}
+              <span class="badge bg-primary">{{ item.kit.type.get_category_display_name }}</span>
+            {% endif %}
+            {% if item.kit.type.is_goalkeeper %}<span class="badge bg-warning text-dark">GK</span>{% endif %}
+            <span class="badge bg-secondary">{{ item.kit.type.name }}</span>
           {% endif %}
-          <div class="item-meta">
-            {% if item.base_item.club %}
-              <div class="d-flex align-items-center">
-                <span class="item-details">{{ item.base_item.club.name }}</span>
-              </div>
-            {% endif %}
-            {% if item.base_item.brand %}
-              <div class="d-flex align-items-center">
-                <span class="item-details">{{ item.base_item.brand.name }}</span>
-              </div>
-            {% endif %}
-            {% if item.base_item.season %}
-              <div class="d-flex align-items-center">
-                <i class="bi bi-calendar me-1"></i>
-                <span class="item-details">{{ item.base_item.season.year }}</span>
-              </div>
-            {% endif %}
-          </div>
+          {% if item.size %}<span class="item-details small">{{ item.size.name }}</span>{% endif %}
+          {% if item.is_short_sleeve is not None %}
+            <span class="item-details small">
+              {% if item.is_short_sleeve %}
+                {% trans "Short Sleeve" %}
+              {% else %}
+                {% trans "Long Sleeve" %}
+              {% endif %}
+            </span>
+          {% endif %}
         </div>
-        <div class="text-end ms-3">
-          {% if item.size %}
-            <div class="item-details mb-1">
-              <small>{{ item.size.name }}</small>
-            </div>
+        <div class="item-meta small text-muted">
+          {% if item.base_item.club %}<span class="item-details">{{ item.base_item.club.name }}</span>{% endif %}
+          {% if item.base_item.brand %}
+            {% if item.base_item.club %}<span class="item-meta-sep"></span>{% endif %}
+            <span class="item-details">{{ item.base_item.brand.name }}</span>
+          {% endif %}
+          {% if item.base_item.season %}
+            {% if item.base_item.club or item.base_item.brand %}<span class="item-meta-sep"></span>{% endif %}
+            <span class="item-details"><i class="bi bi-calendar me-1"></i>{{ item.base_item.season.year }}</span>
           {% endif %}
           {% if item.player_name %}
-            <div class="item-details mb-1">
-              <small>{{ item.player_name }}</small>
-            </div>
+            <span class="item-meta-sep"></span>
+            <span class="item-details">{{ item.player_name }}</span>
           {% endif %}
           {% if item.number %}
-            <div class="item-details mb-1">
-              <small>#{{ item.number }}</small>
-            </div>
-          {% endif %}
-          {% if item.is_short_sleeve is not None %}
-            <div class="item-details">
-              <small>
-                {% if item.is_short_sleeve %}
-                  {% trans "Short Sleeve" %}
-                {% else %}
-                  {% trans "Long Sleeve" %}
-                {% endif %}
-              </small>
-            </div>
+            <span class="item-meta-sep"></span>
+            <span class="item-details">#{{ item.number }}</span>
           {% endif %}
         </div>
       </div>
@@ -216,6 +197,15 @@
     z-index: 10;
     filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
     margin-top: -15px;
+  }
+
+  .item-card-content-block {
+    min-width: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .item-card-meta-row {
+    line-height: 1.4;
   }
 
   .item-photo-container {

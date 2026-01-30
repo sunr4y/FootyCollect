@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  {% trans "Sign Up" %} - FootyCollect
+{% endblock title %}
+{% block content %}
+  <div class="fc-container-auth">
+    <div class="fc-card">
+      <div class="fc-card-header">
+        <h2 class="text-center mb-0 fc-title-medium">{% trans "Sign Up" %}</h2>
+        <p class="text-center mt-2 mb-0 fc-subtitle">{% trans "Create your FootyCollect account" %}</p>
+      </div>
+      <div class="fc-card-body">
+        <form method="post" action="{% url 'account_signup' %}" class="mb-4">
+          {% csrf_token %}
+          {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+          {% endif %}
+          {% for field in form.visible_fields %}
+            <div class="mb-4">
+              <label for="{{ field.id_for_label }}" class="fc-label">
+                {{ field.label }}
+                {% if field.field.required %}*{% endif %}
+              </label>
+              <div class="fc-input-wrapper">{{ field }}</div>
+              {% if field.errors %}<div class="fc-error-text mt-2">{{ field.errors }}</div>{% endif %}
+              {% if field.help_text %}<p class="fc-text-small fc-text-muted mt-1 mb-0">{{ field.help_text }}</p>{% endif %}
+            </div>
+          {% endfor %}
+          <div class="d-grid mb-4">
+            <button type="submit" class="btn fc-btn-primary">{% trans "Sign Up" %}</button>
+          </div>
+        </form>
+        <div class="d-flex align-items-center mb-4">
+          <div class="fc-divider"></div>
+          <span class="mx-3 fc-divider-text">{% trans "or" %}</span>
+          <div class="fc-divider"></div>
+        </div>
+        <div class="text-center mb-4">
+          <a href="{% url 'google_login' %}"
+             class="btn fc-btn-outline-primary d-inline-flex align-items-center justify-content-center gap-2">
+            <i class="fab fa-google"></i>
+            <span>{% trans "Continue with Google" %}</span>
+          </a>
+        </div>
+        <div class="text-center fc-section-divider">
+          <span class="fc-text-small">{% trans "Already have an account?" %}</span>
+          <a href="{% url 'account_login' %}" class="fc-link-primary text-decoration-none ms-1 fw-500">{% trans "Sign in" %}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .fc-card-body .form-control,
+    .fc-card-body input[type="text"],
+    .fc-card-body input[type="email"],
+    .fc-card-body input[type="password"] {
+      background-color: var(--fc-secondary) !important;
+      border: 1px solid var(--fc-border) !important;
+      color: var(--fc-foreground) !important;
+      padding: 0.75rem 1rem !important;
+      border-radius: 0.5rem !important;
+      font-size: 0.875rem !important;
+      transition: all 0.2s ease !important;
+      width: 100% !important;
+      display: block !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
+      line-height: 1.5 !important;
+    }
+
+    .fc-card-body .form-control::placeholder,
+    .fc-card-body input[type="text"]::placeholder,
+    .fc-card-body input[type="email"]::placeholder,
+    .fc-card-body input[type="password"]::placeholder {
+      color: var(--fc-muted-foreground) !important;
+      opacity: 0.7 !important;
+    }
+
+    .fc-card-body .form-control:focus,
+    .fc-card-body input[type="text"]:focus,
+    .fc-card-body input[type="email"]:focus,
+    .fc-card-body input[type="password"]:focus {
+      background-color: var(--fc-secondary) !important;
+      border-color: hsla(180, 85%, 40%, 1) !important;
+      color: var(--fc-foreground) !important;
+      box-shadow: 0 0 0 3px hsla(180, 85%, 40%, 0.15) !important;
+      outline: none !important;
+    }
+
+    .fc-card-body .form-control:hover,
+    .fc-card-body input[type="text"]:hover,
+    .fc-card-body input[type="email"]:hover,
+    .fc-card-body input[type="password"]:hover {
+      border-color: hsla(180, 85%, 40%, 0.5) !important;
+    }
+  </style>
+{% endblock content %}

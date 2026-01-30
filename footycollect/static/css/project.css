@@ -322,6 +322,11 @@
   color: hsla(180, 85%, 40%, 1);
 }
 
+.fc-get-started-btn {
+  min-width: 11.5rem;
+  text-align: center;
+}
+
 .fc-link-primary {
   color: hsla(180, 85%, 40%, 1);
   font-size: 0.875rem;
@@ -576,6 +581,13 @@
   font-size: 1.5rem;
   color: var(--fc-foreground);
   text-decoration: none;
+  transition: text-shadow 0.2s ease;
+}
+
+a.navbar-brand.fc-navbar-brand:hover,
+a.navbar-brand.fc-navbar-brand:focus {
+  color: var(--fc-foreground) !important;
+  text-shadow: 0 0 8px var(--fc-primary), 0 0 16px rgba(34, 197, 94, 0.4);
 }
 
 .fc-navbar-brand-gradient {
@@ -583,6 +595,11 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  transition: filter 0.2s ease;
+}
+
+.fc-navbar-brand:hover .fc-navbar-brand-gradient {
+  filter: drop-shadow(0 0 6px var(--fc-primary));
 }
 
 .fc-navbar-toggler-base {

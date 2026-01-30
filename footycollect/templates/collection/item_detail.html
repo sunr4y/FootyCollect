@@ -658,27 +658,16 @@
     }
 
     .fc-club-logo {
-      width: 3rem;
-      height: 3rem;
+      width: 4rem;
+      height: 4rem;
       object-fit: contain;
       display: block;
       flex-shrink: 0;
     }
 
-    .fc-club-logo-fallback {
-      display: flex;
-      width: 3rem;
-      height: 3rem;
-      align-items: center;
-      justify-content: center;
-      color: var(--fc-primary);
-      font-size: 1.5rem;
-      flex-shrink: 0;
-    }
-
     .fc-brand-logo {
-      width: 48px;
-      height: 48px;
+      width: 4rem;
+      height: 4rem;
       object-fit: contain;
       flex-shrink: 0;
     }
@@ -895,15 +884,17 @@
             {% if object.get_condition_display %}
               <c-badge variant="outline" class="fc-badge-condition">{{ object.get_condition_display }}</c-badge>
             {% endif %}
-            {% if object.main_color %}<c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>{% endif %}
+            {% if object.main_color and object.get_main_color_display %}
+              <c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>
+            {% endif %}
             {% if object.jersey.kit and object.jersey.kit.type %}
-              {% if object.jersey.kit.type.category != "match" %}
+              {% if object.jersey.kit.type.category != "match" and object.jersey.kit.type.get_category_display_name %}
                 <c-badge variant="filled" class="bg-primary">{{ object.jersey.kit.type.get_category_display_name }}</c-badge>
               {% endif %}
               {% if object.jersey.kit.type.is_goalkeeper %}
                 <c-badge variant="filled" class="bg-warning text-dark">GK</c-badge>
               {% endif %}
-              <c-badge variant="outline">{{ object.jersey.kit.type.name }}</c-badge>
+              {% if object.jersey.kit.type.name %}<c-badge variant="outline">{{ object.jersey.kit.type.name }}</c-badge>{% endif %}
             {% endif %}
           </div>
           <div class="fc-title-season-group">
@@ -933,10 +924,7 @@
                   <img src="{{ object.club.logo_display_url }}"
                        alt="{{ object.club.name }}"
                        class="fc-club-logo"
-                       onerror="this.classList.add('fc-d-none'); this.nextElementSibling.classList.add('fc-d-flex');" />
-                  <i class="bi bi-shield-fill fc-club-logo-fallback fc-d-none"></i>
-                {% else %}
-                  <i class="bi bi-shield-fill fc-club-logo-fallback"></i>
+                       onerror="this.classList.add('fc-d-none');" />
                 {% endif %}
                 <div>
                   <p class="fc-font-semibold fc-text-foreground fc-m-0">{{ object.club.name }}</p>
