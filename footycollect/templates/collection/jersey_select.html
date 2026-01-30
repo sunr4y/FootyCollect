@@ -291,7 +291,7 @@
           // Ensure selectedKit is properly initialized
           this.selectedKit = null;
 
-          // Inicializar el formulario
+          // Initialize the form
           this.$watch('kitSearch', (value) => {
             if (value.length < 3) {
               this.kitResults = [];
@@ -328,7 +328,6 @@
             .then(data => {
               // Only update the results if this is the most recent search
               if (searchTimestamp === this.lastSearchTimestamp) {
-
                 // Check if we have any results
                 let resultsArray = [];
 
@@ -342,13 +341,6 @@
                 } else if (typeof data === 'object') {
                   // If the API returns an object with no results property
                   resultsArray = [data];
-                }
-
-                // Log a sample kit if available
-                if (resultsArray.length > 0) {
-                  const sampleKit = resultsArray[0];
-                  if (sampleKit.team_logo) {
-                  }
                 }
 
                 // Process the results to ensure we have the correct image URLs
@@ -367,7 +359,6 @@
                 });
 
                 this.kitResults = processedResults;
-              } else {
               }
               this.isSearching = false;
             })
@@ -404,7 +395,6 @@
                 return response.json();
               })
               .then(data => {
-
                 // Check if the response is valid
                 if (!data || typeof data !== 'object') {
                   console.error('Invalid kit details response:', data);
@@ -420,10 +410,6 @@
                   data.id = kit.id;
                 }
 
-                // Check the image URLs in the kit details
-                if (data.team && data.team.logo) {
-                }
-
                 // Process the kit details to ensure we have the correct image URLs
                 if (data.main_img_url) {
                   data.main_img_url = ensureFullUrl(data.main_img_url);
@@ -436,10 +422,8 @@
 
                 this.selectedKit = data;
 
-                // Verify that selectedKit was properly set
                 if (!this.selectedKit) {
                   console.error('Failed to set selectedKit');
-                } else {
                 }
 
                 this.isLoadingFromApi = false;

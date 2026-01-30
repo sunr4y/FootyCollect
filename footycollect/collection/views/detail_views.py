@@ -1,10 +1,6 @@
-import logging
-
 from footycollect.collection.services import get_photo_service
 
 from .base import BaseItemDetailView
-
-logger = logging.getLogger(__name__)
 
 
 class ItemQuickViewView(BaseItemDetailView):
@@ -168,13 +164,6 @@ class ItemDetailView(BaseItemDetailView):
 
         context["object"] = base_item
         context["item"] = base_item
-
-        logger.info(
-            "ItemDetailView: base_item ID=%s, photos count=%d, photos_list=%s",
-            base_item.id,
-            len(photos_list),
-            [p.id for p in photos_list],
-        )
 
         related_items = self._get_related_items()
         context["related_items"] = related_items

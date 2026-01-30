@@ -2,14 +2,9 @@
 
 // Force initialize Bootstrap dropdowns
 document.addEventListener('DOMContentLoaded', function() {
-
-    // Get all dropdown toggles
     const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
 
-    // Initialize each dropdown manually
-    dropdownToggles.forEach(function(toggle, index) {
-
-        // Add click event listener
+    dropdownToggles.forEach(function(toggle) {
         toggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();

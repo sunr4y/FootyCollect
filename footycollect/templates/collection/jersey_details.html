@@ -573,7 +573,6 @@
         }
 
         var selectionHtml;
-        // Check if text already contains flag HTML
         if (typeof country.text === 'string' && country.text.includes('<i class="fi')) {
           selectionHtml = country.text;
         } else {
@@ -595,45 +594,9 @@
         return $(country.text);
       }
 
-      // Log kit data for debugging
-          %
-          if kit_data %
-        }
-        JSON.parse('{{ kit_data|escapejs|default:"null" }}') {
-          %
-          else %
-        }
-        null {
-          %
-          endif %
-        });
-          %
-          if kit_id %
-        }
-        "{{ kit_id }}" {
-          %
-          else %
-        }
-        null {
-          %
-          endif %
-        });
-          %
-          if main_img_url %
-        }
-        "{{ main_img_url }}" {
-          %
-          else %
-        }
-        null {
-          %
-          endif %
-        });
-
       // Ensure the form is properly initialized
       const jerseyForm = document.getElementById('jersey-form');
-      if (jerseyForm) {
-      } else {
+      if (!jerseyForm) {
         console.error("Jersey form not found!");
       }
 

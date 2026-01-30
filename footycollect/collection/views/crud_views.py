@@ -74,9 +74,6 @@ class ItemUpdateView(BaseItemUpdateView):
         self._update_existing_photos(keep_ids, order_map)
         self._remove_deleted_photos(keep_ids)
 
-        if external_images:
-            logger.info("Ignoring external images on edit (not implemented): %s", external_images)
-
         return response
 
     def _parse_photo_ids(self, photo_ids):
@@ -219,7 +216,6 @@ class ItemUpdateView(BaseItemUpdateView):
             initial_data = {k: v for k, v in initial_data.items() if v}
 
             context["autocomplete_initial_data"] = json.dumps(initial_data)
-            logger.info("Autocomplete initial data for ItemUpdateView: %s", context["autocomplete_initial_data"])
         except (AttributeError, ValueError, TypeError, KeyError) as e:
             logger.warning("Error building autocomplete initial data for ItemUpdateView: %s", e)
             context["autocomplete_initial_data"] = "{}"

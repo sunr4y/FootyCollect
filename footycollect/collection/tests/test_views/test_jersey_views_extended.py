@@ -35,22 +35,18 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         self.competition = Competition.objects.create(name="La Liga")
         self.size = Size.objects.create(name="M", category="tops")
 
-    def test_dispatch_logs_post_requests(self):
-        """Test that dispatch method logs POST requests."""
+    def test_dispatch_delegates_to_super_for_post(self):
+        """Test that dispatch delegates to CreateView.dispatch for POST requests."""
         view = JerseyFKAPICreateView()
         request = Mock()
         request.method = "POST"
         request.user = self.user
 
-        with (
-            patch("footycollect.collection.views.jersey_views.logger") as mock_logger,
-            patch("footycollect.collection.views.jersey_views.CreateView.dispatch") as mock_super,
-        ):
+        with patch("footycollect.collection.views.jersey_views.CreateView.dispatch") as mock_super:
             mock_super.return_value = Mock()
 
             view.dispatch(request)
 
-            mock_logger.info.assert_called()
             mock_super.assert_called_once_with(request)
 
     def test_dispatch_does_not_log_get_requests(self):
@@ -71,8 +67,8 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             mock_logger.info.assert_not_called()
             mock_super.assert_called_once_with(request)
 
-    def test_post_logs_request_data(self):
-        """Test that POST method logs request data."""
+    def test_post_preprocesses_form_and_calls_form_valid(self):
+        """Test that POST preprocesses form data and calls form_valid when form is valid."""
         view = JerseyFKAPICreateView()
         request = Mock()
         request.POST = {"name": "Test Jersey"}
@@ -81,7 +77,6 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         request.META = {}
 
         with (
-            patch("footycollect.collection.views.jersey_views.logger") as mock_logger,
             patch.object(view, "get_form") as mock_get_form,
             patch.object(view, "_preprocess_form_data") as mock_preprocess,
             patch.object(view, "form_valid") as mock_form_valid,
@@ -93,7 +88,6 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
             view.post(request)
 
-            mock_logger.info.assert_called()
             mock_preprocess.assert_called_once_with(mock_form)
             mock_form_valid.assert_called_once_with(mock_form)
 
