@@ -568,19 +568,14 @@
       });
 
       function formatCountrySelection(country) {
-        console.log("Formatting selection:", country); // Log for debugging
         if (!country.id) {
-          console.log("Selection is placeholder or empty");
           return country.text;
         }
 
         var selectionHtml;
-        // Check if text already contains flag HTML
         if (typeof country.text === 'string' && country.text.includes('<i class="fi')) {
-          console.log("Selection text already contains HTML flag");
           selectionHtml = country.text;
         } else {
-          console.log("Selection text needs flag HTML. ID:", country.id, "Text:", country.text);
           // If it does not have HTML (likely initial selection), build it
           var countryCode = country.id.toLowerCase();
           // Use country.text if available, otherwise fallback to ID
@@ -599,49 +594,9 @@
         return $(country.text);
       }
 
-      // Log kit data for debugging
-      console.log("Kit data:", {
-          %
-          if kit_data %
-        }
-        JSON.parse('{{ kit_data|escapejs|default:"null" }}') {
-          %
-          else %
-        }
-        null {
-          %
-          endif %
-        });
-      console.log("Kit ID:", {
-          %
-          if kit_id %
-        }
-        "{{ kit_id }}" {
-          %
-          else %
-        }
-        null {
-          %
-          endif %
-        });
-      console.log("Main image URL:", {
-          %
-          if main_img_url %
-        }
-        "{{ main_img_url }}" {
-          %
-          else %
-        }
-        null {
-          %
-          endif %
-        });
-
       // Ensure the form is properly initialized
       const jerseyForm = document.getElementById('jersey-form');
-      if (jerseyForm) {
-        console.log("Jersey form found and initialized");
-      } else {
+      if (!jerseyForm) {
         console.error("Jersey form not found!");
       }
 
@@ -655,7 +610,6 @@
         // Find the photo manager component
         const photoManager = document.querySelector('.photo-manager');
         if (photoManager && photoManager.__x) {
-          console.log("Photo manager found, adding main image");
 
           // Create a temporary image to check if the URL is valid
           const img = new Image();
@@ -668,7 +622,6 @@
               order: 0,
               uploading: false
             });
-            console.log("Main image added to photo manager");
           };
           img.onerror = function() {
             console.error("Failed to load main image from URL: {{ main_img_url }}");

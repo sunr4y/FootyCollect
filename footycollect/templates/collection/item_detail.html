@@ -1194,10 +1194,7 @@
       fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          console.log('Processing status:', data);
-          if (data._debug) { console.log('Debug (kit/base_item/photos):', data._debug); }
           if (data.error) {
-            console.warn('Processing status error:', data.error);
             hideProcessingBadge();
             return;
           }
@@ -1213,8 +1210,7 @@
             hideProcessingBadge();
           }
         })
-        .catch(function(err) {
-          console.error('Error checking photo processing:', err);
+        .catch(function() {
           setTimeout(function() { checkPhotoProcessing(itemId, useDebug); }, 5000);
         });
     }

@@ -648,14 +648,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Wait a moment for Alpine.js to initialize the components
       setTimeout(function() {
-        console.log('Checking the state of the photo_manager...');
         const photoManager = document.querySelector('.photo-manager');
-
-        if (photoManager) {
-          console.log('Componente photo_manager encontrado');
-        } else {
-          console.log('Component photo_manager not found');
-        }
       }, 1000);
     });
 
@@ -670,13 +663,10 @@
           return;
         }
 
-        console.log('Adding default image to photos:', mainImgUrl);
-
         // Verify if the image has already been added
         const existingImages = document.querySelectorAll('.default-image-preview img');
         for (let i = 0; i < existingImages.length; i++) {
           if (existingImages[i].src === mainImgUrl) {
-            console.log('The image has already been added');
             alert('{% trans "This image has already been added." %}');
             return;
           }
@@ -684,8 +674,6 @@
 
         // Method 3: Create a visual element without interfering with the component
         try {
-          console.log('Creating a visual element for the default image');
-
           // Create a hidden field to store the image URL
           const form = document.getElementById('jersey-form');
           let hiddenInput = form.querySelector('input[name="external_image_urls"]');
@@ -759,7 +747,6 @@
           // Show a success message
           alert('{% trans "Default image added successfully! It will be processed when you submit the form." %}');
 
-          console.log('Image added successfully');
           return;
         } catch (error) {
           console.error('Error creating the visual element:', error);
@@ -768,7 +755,7 @@
         // If we get here, none of the methods have worked
         alert('{% trans "Could not add the default image. Please try adding it manually." %}');
       } catch (error) {
-        console.error('Error en addDefaultImageToPhotos:', error);
+        console.error('Error in addDefaultImageToPhotos:', error);
         alert('{% trans "Error adding default image. Please try again or add it manually." %}');
       }
     }
@@ -776,8 +763,6 @@
     // Global function to update Cotton components
     function updateCottonComponent(fieldName, value) {
       try {
-        console.log(`🚀 updateCottonComponent called for ${fieldName} with:`, value);
-        console.log(`🚀 updateCottonComponent - fieldName type: ${typeof fieldName}, value: ${fieldName}`);
         const select = document.getElementById(`id_${fieldName}`);
         if (!select) {
           console.warn(`Select for field ${fieldName} not found`);
@@ -813,8 +798,6 @@
           });
           select.dispatchEvent(event);
 
-          console.log(`Cotton component ${fieldName} (array) updated with value:`, value);
-
           // Update the visual component of Cotton for arrays too
           updateCottonVisual(fieldName, value);
         } else {
@@ -840,10 +823,6 @@
           });
           select.dispatchEvent(event);
 
-          console.log(`Cotton component ${fieldName} updated with value:`, value);
-
-          // Update the visual component of Cotton
-          console.log(`🎯 Calling updateCottonVisual for ${fieldName} with value:`, value);
           updateCottonVisual(fieldName, value);
         }
       } catch (error) {
@@ -854,166 +833,93 @@
     // Global function to update the visual display of Cotton components
     function updateCottonVisual(fieldName, value) {
       try {
-        console.log(`🎨 updateCottonVisual called for ${fieldName} with value:`, value);
-        console.log(`🎨 updateCottonVisual - fieldName type: ${typeof fieldName}, value: ${fieldName}`);
-        // Find the container of the Cotton component
         const cottonContainer = document.getElementById(`div_id_${fieldName}`);
-        console.log(`🔍 Looking for container div_id_${fieldName}:`, cottonContainer);
         if (!cottonContainer) {
-          console.log(`❌ No container found for ${fieldName}`);
           return;
         }
 
-        // Find the Cotton component inside the container
-        // Cotton processes the components, so we look for the rendered elements
         const cottonComponent = cottonContainer.querySelector(`.color-selector-container, .design-selector-container`);
-        console.log(`🔍 Looking for Cotton component in container:`, cottonComponent);
         if (!cottonComponent) {
-          console.log(`❌ No Cotton component found in container for ${fieldName}`);
           return;
         }
 
         // Update the data-selected attribute
         cottonComponent.setAttribute('data-selected', Array.isArray(value) ? value.join(',') : value);
 
-        // For colors, trigger the color selector functions
-        console.log(`🔍 Checking fieldName for color processing: ${fieldName}`);
         if (fieldName === 'main_color' || fieldName === 'secondary_colors') {
-          console.log(`🎨 COLOR SELECTION: Processing ${fieldName} with value:`, value);
-          console.log(`🎨 COLOR SELECTION: fieldName check - main_color: ${fieldName === 'main_color'}, secondary_colors: ${fieldName === 'secondary_colors'}`);
-          // Wait a bit for the component to be ready
           setTimeout(() => {
-            console.log(`🔍 Looking for color selector in container:`, cottonContainer);
-
-            // Find the color selector component (rendered by Cotton)
             const colorSelector = cottonContainer.querySelector('.color-selector-container');
-            console.log(`Color selector found:`, colorSelector);
 
             if (colorSelector) {
-              // Find the color circles (rendered by Cotton)
               const colorCircles = colorSelector.querySelectorAll('.color-option');
-              console.log(`Found ${colorCircles.length} color circles for ${fieldName}`);
-
-              // Debug: log all available color values
-              const availableColors = Array.from(colorCircles).map(circle => circle.getAttribute('data-value'));
-              console.log(`Available colors:`, availableColors);
 
               if (fieldName === 'main_color' && !Array.isArray(value)) {
-                // Single color selection
-                console.log(`Looking for main color: ${value}`);
-                colorCircles.forEach((circle, index) => {
+                colorCircles.forEach((circle) => {
                   const circleValue = circle.getAttribute('data-value');
-                  console.log(`Circle ${index}: ${circleValue} (looking for: ${value})`);
                   if (circleValue.toUpperCase() === value.toUpperCase()) {
-                    console.log(`✅ MATCH! Selecting color circle for ${value}`);
-                    // Remove selected from all circles first
                     colorCircles.forEach(c => c.classList.remove('selected'));
-                    // Add selected to this circle
                     circle.classList.add('selected');
-                    // Update the hidden field
                     const hiddenField = document.getElementById('id_main_color');
                     if (hiddenField) {
                       hiddenField.value = value;
-                      console.log(`Updated hidden field id_main_color to: ${value}`);
-
-                      // Also update the select options
                       const selectOptions = hiddenField.options;
                       for (let i = 0; i < selectOptions.length; i++) {
                         selectOptions[i].selected = (selectOptions[i].value === value);
                       }
-                      console.log(`Updated select options for main_color`);
                     }
                   }
                 });
               } else if (fieldName === 'secondary_colors' && Array.isArray(value)) {
-                // Multiple color selection
-                console.log(`Looking for secondary colors:`, value);
                 value.forEach(val => {
                   colorCircles.forEach(circle => {
                     const circleValue = circle.getAttribute('data-value');
                     if (circleValue.toUpperCase() === val.toUpperCase()) {
-                      console.log(`✅ MATCH! Selecting secondary color circle for ${val}`);
                       circle.classList.add('selected');
-                      // Update the hidden field (for secondary colors, we need to handle multiple values)
                       const hiddenField = document.getElementById('id_secondary_colors');
                       if (hiddenField) {
-                        // Get current values and add this one
                         const currentValues = hiddenField.value ? hiddenField.value.split(',') : [];
                         if (!currentValues.includes(val)) {
                           currentValues.push(val);
                           hiddenField.value = currentValues.join(',');
-                          console.log(`Updated hidden field id_secondary_colors to: ${hiddenField.value}`);
-
-                          // Also update the select options
                           const selectOptions = hiddenField.options;
                           for (let i = 0; i < selectOptions.length; i++) {
                             selectOptions[i].selected = currentValues.includes(selectOptions[i].value);
                           }
-                          console.log(`Updated select options for secondary_colors`);
                         }
                       }
                     }
                   });
                 });
               }
-            } else {
-              console.log(`❌ No color selector found in container`);
             }
           }, 500);
         }
 
-        // For designs, trigger the design selector functions
         if (fieldName === 'design') {
-          console.log(`🎨 DESIGN SELECTION: Processing ${fieldName} with value:`, value);
-          // Wait a bit for the component to be ready
           setTimeout(() => {
-            console.log(`🔍 Looking for design selector in container:`, cottonContainer);
-
-            // Find the design selector component (rendered by Cotton)
             const designSelector = cottonContainer.querySelector('.design-selector-container');
-            console.log(`Design selector found:`, designSelector);
 
             if (designSelector) {
-              // Find the design options (rendered by Cotton)
               const designOptions = designSelector.querySelectorAll('.design-option');
-              console.log(`Found ${designOptions.length} design options for ${fieldName}`);
 
-              // Debug: log all available design values
-              const availableDesigns = Array.from(designOptions).map(option => option.getAttribute('data-value'));
-              console.log(`Available designs:`, availableDesigns);
-
-              console.log(`Looking for design: ${value}`);
-              designOptions.forEach((option, index) => {
+              designOptions.forEach((option) => {
                 const optionValue = option.getAttribute('data-value');
-                console.log(`Design option ${index}: ${optionValue} (looking for: ${value})`);
                 if (optionValue === value) {
-                  console.log(`✅ MATCH! Selecting design option for ${value}`);
-                  // Remove selected from all options first
                   designOptions.forEach(o => o.classList.remove('selected'));
-                  // Add selected to this option
                   option.classList.add('selected');
-                  // Update the hidden field
                   const hiddenField = document.getElementById('id_design');
                   if (hiddenField) {
                     hiddenField.value = value;
-                    console.log(`Updated hidden field id_design to: ${value}`);
-
-                    // Also update the select options
                     const selectOptions = hiddenField.options;
                     for (let i = 0; i < selectOptions.length; i++) {
                       selectOptions[i].selected = (selectOptions[i].value === value);
                     }
-                    console.log(`Updated select options for design`);
                   }
                 }
               });
-            } else {
-              console.log(`❌ No design selector found in container`);
             }
           }, 500);
         }
-
-        console.log(`Cotton visualization for ${fieldName} updated with:`, value);
       } catch (error) {
         console.error(`Error updating Cotton visualization for ${fieldName}:`, error);
       }
@@ -1179,7 +1085,6 @@
 
         // Load all countries by default
         loadAllCountries() {
-          console.log('Loading all countries by default...');
           const countrySelect = $('#id_country_code');
           if (!countrySelect.length) {
             // If select element doesn't exist yet, wait and try again
@@ -1234,7 +1139,6 @@
               // Clear any default selection
               countrySelect.val(null).trigger('change');
 
-              console.log('All countries loaded with proper rendering:', data.results.length);
             })
             .catch(error => {
               console.error('Error loading countries:', error);
@@ -1250,11 +1154,9 @@
 
           this.isSearching = true;
           const url = `/fkapi/kits/search/?keyword=${encodeURIComponent(this.kitSearch)}`;
-          console.log('Searching kits with URL:', url);
 
           fetch(url)
             .then(response => {
-              console.log('Kit search response status:', response.status);
               if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
               }
@@ -1263,7 +1165,6 @@
             .then(data => {
               // Only update the results if this is the most recent search
               if (searchTimestamp === this.lastSearchTimestamp) {
-                console.log('Kit search results:', data);
 
                 // Handle different API response formats
                 let resultsArray = [];
@@ -1281,7 +1182,6 @@
 
                 this.kitResults = resultsArray;
               } else {
-                console.log('Ignoring outdated search results');
               }
               this.isSearching = false;
             })
@@ -1339,18 +1239,15 @@
 
             // Get full kit details
             const url = `/fkapi/kit/${kit.id}/`;
-            console.log('Getting kit details with URL:', url);
 
             fetch(url)
               .then(response => {
-                console.log('Kit details response status:', response.status);
                 if (!response.ok) {
                   throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
               })
               .then(data => {
-                console.log('Kit details:', data);
 
                 // Save the kit ID first
                 const kitIdField = document.getElementById('id_kit_id');
@@ -1387,19 +1284,6 @@
 
         populateFormFromKit(kitData) {
           this.kitData = kitData;
-          console.log('Populating form with data:', kitData);
-          console.log('🎯 populateFormFromKit - main_color:', kitData?.primary_color);
-          console.log('🎯 populateFormFromKit - secondary_colors:', kitData?.secondary_colors);
-          console.log('🎯 populateFormFromKit - Starting color processing...');
-
-          // Log competition data
-          if (kitData.competition) {
-            console.log('Competition data from API:', {
-              raw: kitData.competition,
-              type: typeof kitData.competition,
-              isArray: Array.isArray(kitData.competition)
-            });
-          }
 
           // Lock all fields that will be populated
           const fieldsToLock = ['brand', 'club', 'season', 'competition', 'kit_type'];
@@ -1455,7 +1339,6 @@
             // Save additional information if available
             if (typeof brandObj === 'object' && brandObj.id) {
               // We could save the API ID for future reference
-              console.log(`Brand ID from API: ${brandObj.id}`);
             }
           }
 
@@ -1481,7 +1364,6 @@
             // Save additional information if available
             if (typeof clubObj === 'object' && clubObj.id) {
               // We could save the API ID for future reference
-              console.log(`Club ID from API: ${clubObj.id}`);
             }
           }
 
@@ -1509,27 +1391,23 @@
             // Save additional information if available
             if (typeof seasonObj === 'object' && seasonObj.id) {
               // We could save the API ID for future reference
-              console.log(`Season ID from API: ${seasonObj.id}`);
             }
           }
 
           if (kitData.competition) {
             // DEBUG: Log competition processing
-            console.log('Processing competition data:', kitData.competition);
 
             // Handle the new format of competition (can be an array or an object)
             let competitionValue = '';
             let allCompetitions = [];
 
             if (Array.isArray(kitData.competition) && kitData.competition.length > 0) {
-              console.log('Competition is an array with length:', kitData.competition.length);
               // If it's an array, use the first competition as the main one
               const competitionObj = kitData.competition[0];
               competitionValue = typeof competitionObj === 'object' ? competitionObj.name : competitionObj;
 
               // Save all competitions
               allCompetitions = kitData.competition.map(c => typeof c === 'object' ? c.name : c);
-              console.log('Mapped competition names:', allCompetitions);
 
               // Hide the competition selector and show the competitions as text
               const competitionDiv = document.getElementById('div_id_competitions');
@@ -1573,36 +1451,25 @@
                 competitionDiv.appendChild(allCompetitionsField);
               }
             } else if (typeof kitData.competition === 'object') {
-              console.log('Competition is a single object:', kitData.competition);
               competitionValue = kitData.competition.name;
               allCompetitions = [competitionValue];
             } else {
-              console.log('Competition is a primitive value:', kitData.competition);
               competitionValue = kitData.competition;
               allCompetitions = [competitionValue];
             }
-
-            // DEBUG: Log final competition values
-            console.log('Final competition values:', {
-              main: competitionValue,
-              all: allCompetitions
-            });
 
             // Save the competition name in the hidden input competition_name
             const competitionNameField = document.getElementById('id_competition_name');
             if (competitionNameField) {
               competitionNameField.value = competitionValue;
-              console.log('Set competition_name field to:', competitionValue);
             }
 
             // Try to find the competition in the existing options
             const found = this.setSelectValueByText('id_competition', competitionValue);
-            console.log('Competition found in select options:', found);
 
             // If the competition is not found, show the value in the field
             if (!found) {
               this.displayFieldValue('competition', competitionValue);
-              console.log('Displayed competition value:', competitionValue);
             }
 
             // Show all competitions if there are more than one
@@ -1613,18 +1480,11 @@
                 allCompetitionsDisplay.className = 'text-muted small mt-1';
                 allCompetitionsDisplay.textContent = `All competitions: ${allCompetitions.join(', ')}`;
                 competitionDisplay.appendChild(allCompetitionsDisplay);
-                console.log('Added all competitions display');
               }
             }
           }
 
           // Colors
-          console.log('Debugging color data:', {
-            primary_color: kitData.primary_color,
-            main_color: kitData.main_color,
-            secondary_color: kitData.secondary_color
-          });
-
           if (kitData.primary_color || kitData.main_color) {
             // Handle both formats
             const color = kitData.primary_color || kitData.main_color;
@@ -1659,22 +1519,18 @@
             };
 
             // Normalize the color value
-            console.log('Original color value:', colorValue);
             colorValue = colorMapping[colorValue.toLowerCase()] || colorValue.toUpperCase();
-            console.log('Mapped color value:', colorValue);
 
             // Update the value in the Cotton component
             updateCottonComponent('main_color', colorValue);
 
             // For colors, we don't create new ones since they are predefined values
             if (!this.setSelectValue('id_main_color', colorValue)) {
-              console.log(`Main color "${colorValue}" not found in available options. Using default value.`);
             }
           }
 
           // Secondary colors
           const secondaryColors = kitData.secondary_color || kitData.secondary_colors;
-          console.log('Debugging secondary colors:', secondaryColors);
 
           // Only process if secondaryColors exists and is not an empty array
           if (secondaryColors && !(Array.isArray(secondaryColors) && secondaryColors.length === 0)) {
@@ -1737,12 +1593,10 @@
             }
           } else if (Array.isArray(secondaryColors) && secondaryColors.length === 0) {
             // Explicitly handle empty array - clear secondary colors
-            console.log('Secondary colors is empty array, clearing selection');
             updateCottonComponent('secondary_colors', []);
           }
 
           // Design
-          console.log('Debugging design data:', kitData.design);
 
           if (kitData.design) {
             let designValue = typeof kitData.design === 'object' ? kitData.design.name : kitData.design;
@@ -1778,14 +1632,12 @@
             // Normalize the design value
             designValue = designMapping[designValue.toLowerCase()] || designValue.toUpperCase();
 
-            console.log('Processing design:', designValue);
 
             // Update the value in the Cotton component
             updateCottonComponent('design', designValue);
 
             // For designs, we don't create new ones since they are predefined values
             if (!this.setSelectValue('id_design', designValue)) {
-              console.log(`Design "${designValue}" not found in available options. Using default value.`);
             }
           }
 
@@ -1796,7 +1648,6 @@
 
             // If kit type not found, create it dynamically
             if (!found) {
-              console.log(`The kit type "${typeValue}" not found. Creating option dynamically...`);
               this.createKitTypeOption(typeValue);
             }
 
@@ -1810,7 +1661,6 @@
           }
 
           if (kitData.team && kitData.team.country) {
-            console.log('Setting country code to:', kitData.team.country);
 
             // Update the select2 dropdown with proper country data
             const countrySelect = $('#id_country_code');
@@ -1862,7 +1712,6 @@
 
                   // Select the country from the API
                   countrySelect.val(kitData.team.country).trigger('change');
-                  console.log('All countries loaded and selected with proper rendering:', kitData.team.country);
                 })
                 .catch(error => {
                   console.error('Error fetching countries:', error);
@@ -1875,7 +1724,6 @@
           // Save the main image if it exists
           if (kitData.main_img_url) {
             // Here you could save the image URL to display it or process it later
-            console.log('Imagen principal del kit:', kitData.main_img_url);
             // Set the value in the hidden input of the form
             const imgUrlField = document.getElementById('id_main_img_url');
             if (imgUrlField) {
@@ -1905,7 +1753,6 @@
             option.value = typeValue;
             option.textContent = typeValue;
             selectElement.appendChild(option);
-            console.log(`Kit type option "${typeValue}" created successfully`);
           }
         },
 
@@ -1925,7 +1772,6 @@
                 if (parentDiv) {
                   // Set the value directly on the input
                   inputField.value = value;
-                  console.log(`Field ${fieldName} updated directly with value: ${value}`);
                   return;
                 }
               }
@@ -2139,7 +1985,6 @@
             select.dispatchEvent(event);
 
             // Show a confirmation message
-            console.log(`Field ${entityType}_name set with value: ${text}`);
 
             return true;
           } catch (error) {
@@ -2152,7 +1997,6 @@
         displayMainImage(imageUrl) {
           if (!imageUrl) return;
 
-          console.log('Mostrando imagen principal:', imageUrl);
 
           try {
             // Remove previous previews
@@ -2335,7 +2179,7 @@
             let found = false;
 
             if (!select.options || select.options.length === 0) {
-              console.warn('El elemento select no tiene opciones');
+              console.warn('The select element has no options');
               return false;
             }
 
@@ -2396,11 +2240,9 @@
 
           this.isSearchingClub = true;
           const url = `/fkapi/clubs/search/?keyword=${encodeURIComponent(this.clubSearch)}`;
-          console.log('Searching clubs with URL:', url);
 
           fetch(url)
             .then(response => {
-              console.log('Club search response status:', response.status);
               if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
               }
@@ -2409,14 +2251,12 @@
             .then(data => {
               // Only update the results if this is the most recent search
               if (searchTimestamp === this.lastClubSearchTimestamp) {
-                console.log('Club search results:', data);
 
                 // Ensure the logos are displayed correctly
                 if (data.results && Array.isArray(data.results)) {
                   data.results.forEach(club => {
                     // Verify if the club has a logo
                     if (!club.logo) {
-                      console.log('Club without logo:', club.name);
                     }
                     // Ensure logo_url is available
                     if (club.logo && !club.logo_url) {
@@ -2427,7 +2267,6 @@
 
                 this.clubResults = data.results || [];
               } else {
-                console.log('Ignoring outdated search results');
               }
               this.isSearchingClub = false;
             })
@@ -2446,22 +2285,18 @@
 
           // Save the logo URL to display in the form
           if (club.logo) {
-            console.log('Selected club logo URL:', club.logo);
             // Ensure the club has the logo_url property
             this.selectedClub.logo_url = club.logo;
           }
 
           // Get club seasons
           const url = `/api/clubs/${club.id}/seasons/`;
-          console.log('Getting club seasons with URL:', url);
 
           fetch(url)
             .then(response => {
-              console.log('Club seasons response status:', response.status);
               return response.json();
             })
             .then(data => {
-              console.log('Club seasons:', data);
               this.seasons = data.results || [];
             })
             .catch(error => {
@@ -2480,18 +2315,15 @@
 
           // Optionally, load kits from this season
           const url = `/api/clubs/${this.selectedClub.id}/seasons/${this.selectedSeasonId}/kits/`;
-          console.log('Getting kits for season with URL:', url);
 
           fetch(url)
             .then(response => {
-              console.log('Season kits response status:', response.status);
               if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
               }
               return response.json();
             })
             .then(data => {
-              console.log('Kits for this season:', data.results);
             })
             .catch(error => {
               console.error('Error getting kits for season:', error);
@@ -2699,7 +2531,6 @@
         subtree: true,
       });
 
-      console.log('✅ Select2 dark theme initialized');
     });
   </script>
 {% endblock inline_javascript %}
@@ -3027,14 +2858,12 @@
       const form = document.getElementById('jersey-form');
       const formData = new FormData(form);
 
-      console.log('Verifying form data:');
 
       // Check critical fields
       const criticalFields = ['brand', 'club', 'season', 'competition', 'brand_name', 'club_name', 'season_name', 'competition_name'];
 
       criticalFields.forEach(field => {
         const value = formData.get(field);
-        console.log(`${field}: ${value || 'Not defined'}`);
       });
 
       // Check if we have enough information for each entity
@@ -3043,17 +2872,12 @@
       const hasValidSeason = formData.get('season') || formData.get('season_name');
       const hasValidCompetition = formData.get('competition') || formData.get('competition_name');
 
-      console.log('Entity validation:');
-      console.log(`Brand: ${hasValidBrand ? 'OK' : 'Missing information'}`);
-      console.log(`Club: ${hasValidClub ? 'OK' : 'Missing information'}`);
-      console.log(`Season: ${hasValidSeason ? 'OK' : 'Missing information'}`);
-      console.log(`Competition: ${hasValidCompetition ? 'OK' : 'Missing information'}`);
 
       // Show a message to the user
       if (hasValidBrand && hasValidClub && hasValidSeason && hasValidCompetition) {
         alert('Form data appears correct. You can proceed to create the jersey.');
       } else {
-        alert('Important data is missing from the form. Please check the information in the console.');
+        alert('Important data is missing from the form. Please review and complete all required fields.');
       }
     }
 

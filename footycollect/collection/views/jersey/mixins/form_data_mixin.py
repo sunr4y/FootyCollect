@@ -32,12 +32,10 @@ class FormDataMixin:
             try:
                 color_obj = Color.objects.get(name__iexact=main_color_value.strip())
                 form.fields["main_color"].initial = color_obj.id
-                logger.debug("Converted main_color name '%s' to ID %s", main_color_value, color_obj.id)
             except Color.DoesNotExist:
                 logger.warning("Main color '%s' not found in database", main_color_value)
         else:
             form.fields["main_color"].initial = main_color_value
-            logger.debug("Set main_color initial to ID: %s", main_color_value)
 
     def _set_secondary_colors_initial(self, form):
         """Convert secondary_colors names to IDs for template."""
@@ -59,7 +57,6 @@ class FormDataMixin:
                 try:
                     color_obj = Color.objects.get(name__iexact=color_val.strip())
                     color_ids.append(color_obj.id)
-                    logger.debug("Converted secondary_color name '%s' to ID %s", color_val, color_obj.id)
                 except Color.DoesNotExist:
                     logger.warning("Secondary color '%s' not found in database", color_val)
             else:
@@ -67,7 +64,6 @@ class FormDataMixin:
 
         if color_ids:
             form.fields["secondary_colors"].initial = color_ids
-            logger.debug("Set secondary_colors initial to: %s", color_ids)
 
     def _ensure_country_code_in_cleaned_data(self, form):
         """Ensure country_code is in cleaned_data."""
@@ -76,11 +72,9 @@ class FormDataMixin:
             if form.data.get("country_code"):
                 country_code = form.data.get("country_code")
                 form.cleaned_data["country_code"] = country_code
-                logger.info("Set country_code in cleaned_data from form.data: %s", country_code)
             elif hasattr(self, "fkapi_data") and "team_country" in self.fkapi_data:
                 country_code = self.fkapi_data["team_country"]
                 form.cleaned_data["country_code"] = country_code
-                logger.info("Set country_code in cleaned_data from fkapi_data: %s", country_code)
 
     def _ensure_main_color_in_cleaned_data(self, form):
         """Ensure main_color is in cleaned_data."""

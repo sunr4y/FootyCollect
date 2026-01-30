@@ -78,7 +78,6 @@
           maxSize: 15 * 1024 * 1024, // 15MB
 
           init() {
-            console.log('PhotoManager initialized with', this.photos.length, 'photos');
           },
 
           showNotification(message, type = 'danger') {
@@ -177,7 +176,6 @@
             // Check if the image already exists
             const exists = this.photos.some(photo => photo.url === imageUrl);
             if (exists) {
-              console.log('Image already exists in the photo manager');
               return;
             }
 
@@ -190,8 +188,6 @@
               uploading: false,
               external: true
             });
-
-            console.log('External image added to photo manager');
           },
 
           async processFiles(files) {

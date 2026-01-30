@@ -56,31 +56,14 @@ class FKAPIDataMixin:
                         "slug": slugify(comp_name),
                     },
                 )
-                logger.debug(
-                    "Created/found competition: %s (ID: %s, id_fka: %s)",
-                    competition.name,
-                    competition.id,
-                    competition.id_fka,
-                )
             elif comp_id_fka and not competition.id_fka:
                 competition.id_fka = comp_id_fka
                 competition.save(update_fields=["id_fka"])
 
             competition_ids.append(str(competition.id))
-            logger.debug(
-                "Added competition to list: %s (ID: %s, id_fka: %s)",
-                competition.name,
-                competition.id,
-                comp_id_fka,
-            )
 
         if competition_ids:
             request.POST["competitions"] = ",".join(competition_ids)
-            logger.info(
-                "Set competitions from API: %s (count: %s)",
-                request.POST["competitions"],
-                len(competition_ids),
-            )
         else:
             logger.warning("No competition IDs collected from API data: %s", competitions)
 
@@ -106,7 +89,6 @@ class FKAPIDataMixin:
 
         if main_color:
             request.POST["main_color"] = main_color
-            logger.debug("Set main_color from API: %s", main_color)
 
     def _merge_secondary_colors(self, kit_data, request):
         """Set secondary colors from API if not already in POST."""
@@ -122,7 +104,6 @@ class FKAPIDataMixin:
 
         if secondary_colors:
             request.POST.setlist("secondary_colors", secondary_colors)
-            logger.debug("Set secondary_colors from API: %s", secondary_colors)
 
     def _extract_secondary_colors(self, kit_data):
         """Extract secondary colors from kit_data (new or old format)."""
@@ -148,7 +129,6 @@ class FKAPIDataMixin:
         country = team.get("country", "")
         if country:
             request.POST["country_code"] = country
-            logger.debug("Set country_code from API: %s", country)
 
     def _merge_competitions(self, kit_data, request):
         """Set competitions from API if not already in POST."""
@@ -176,7 +156,6 @@ class FKAPIDataMixin:
             kit_data = client.get_kit_details(kit_id_int) if kit_id_int else None
 
             if kit_data:
-                logger.debug("Fetched kit data for kit_id %s", kit_id)
                 self._merge_fkapi_data_to_post(kit_data, request)
 
         except (ValueError, TypeError, KeyError, AttributeError):
