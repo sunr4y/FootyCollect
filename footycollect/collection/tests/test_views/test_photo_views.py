@@ -369,7 +369,7 @@ class TestPhotoViews(TestCase):
         assert view._photo_processor_initialized is True
 
     def test_photo_processor_mixin_integration_with_error_handling(self):
-        """Test PhotoProcessorMixin integration with comprehensive error handling."""
+        """Test PhotoProcessorMixin enqueues download task and handles errors."""
         from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
 
         class TestView(PhotoProcessorMixin):
@@ -377,40 +377,49 @@ class TestPhotoViews(TestCase):
 
         view = TestView()
 
-        with patch("footycollect.collection.tasks.requests.get") as mock_get:
-            mock_get.side_effect = Exception("Connection error")
+        with (
+            patch("footycollect.collection.views.photo_processor_mixin.transaction.on_commit") as mock_on_commit,
+            patch(
+                "footycollect.collection.views.photo_processor_mixin.download_external_image_and_attach"
+            ) as mock_task,
+        ):
+            view._download_and_attach_image(self.jersey, "https://example.com/image.jpg")
+            mock_on_commit.assert_called_once()
+            callback = mock_on_commit.call_args[0][0]
+            callback()
+            mock_task.delay.assert_called_once_with(
+                self.jersey._meta.app_label,
+                self.jersey._meta.model_name,
+                self.jersey.pk,
+                "https://example.com/image.jpg",
+                None,
+            )
 
-            result = view._download_and_attach_image(self.jersey, "https://example.com/image.jpg")
+        with (
+            patch("footycollect.collection.views.photo_processor_mixin.transaction.on_commit") as mock_on_commit,
+            patch(
+                "footycollect.collection.views.photo_processor_mixin.download_external_image_and_attach"
+            ) as mock_task,
+        ):
+            view._download_and_attach_image(self.jersey, "https://example.com/other.jpg", order=2)
+            mock_on_commit.assert_called_once()
+            callback = mock_on_commit.call_args[0][0]
+            callback()
+            mock_task.delay.assert_called_once_with(
+                self.jersey._meta.app_label,
+                self.jersey._meta.model_name,
+                self.jersey.pk,
+                "https://example.com/other.jpg",
+                2,
+            )
+
+        with (
+            patch(
+                "footycollect.collection.views.photo_processor_mixin.transaction.on_commit",
+                side_effect=Exception("DB error"),
+            ),
+            patch("footycollect.collection.views.photo_processor_mixin.logger") as mock_logger,
+        ):
+            result = view._download_and_attach_image(self.jersey, "https://example.com/bad.jpg")
             assert result is None
-
-            mock_get.assert_called_once_with("https://example.com/image.jpg", stream=True, timeout=30)
-
-        # Test with HTTP error - should handle gracefully
-        with patch("requests.get") as mock_get:
-            mock_response = Mock()
-            mock_response.raise_for_status.side_effect = Exception("HTTP 404")
-            mock_get.return_value = mock_response
-
-            result = view._download_and_attach_image(self.jersey, "https://example.com/notfound.jpg")
-            assert result is None
-
-            # Verify that the method was called with the correct parameters
-            mock_get.assert_called_once_with("https://example.com/notfound.jpg", stream=True, timeout=30)
-            mock_response.raise_for_status.assert_called_once()
-
-        # Test with successful download - should return photo object
-        with patch("requests.get") as mock_get:
-            mock_response = Mock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.content = b"fake image content"
-            mock_get.return_value = mock_response
-
-            # Test that the method can be called without errors
-            result = view._download_and_attach_image(self.jersey, "https://example.com/valid.jpg")
-
-            # Verify the flow was executed correctly
-            mock_get.assert_called_once_with("https://example.com/valid.jpg", stream=True, timeout=30)
-            mock_response.raise_for_status.assert_called_once()
-
-            # The method should handle the successful case (even if it returns None due to missing implementation)
-            assert result is None or result is not None
+            mock_logger.exception.assert_called_once()

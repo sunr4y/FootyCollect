@@ -17,6 +17,7 @@ from .views import (
     file_upload,
     handle_dropzone_files,
     home,
+    proxy_image,
     reorder_photos,
     upload_photo,
 )
@@ -49,4 +50,5 @@ urlpatterns = [
     path("upload/", file_upload, name="file_upload"),
     path("upload/photo/", upload_photo, name="upload_photo"),
     path("dropzone/files/", handle_dropzone_files, name="handle_dropzone_files"),
+    path("proxy-image/", proxy_image, name="proxy_image"),
 ]

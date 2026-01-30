@@ -28,7 +28,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         request: HttpRequest,
         user: User,
         form: typing.Any,
-        *,  # Forzar kwargs para el argumento booleano
+        *,  # Force kwargs for boolean argument
         commit: bool = True,
     ) -> User:
         user = super().save_user(request, user, form, commit=False)

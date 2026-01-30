@@ -246,7 +246,7 @@ def get_filter_options(request):
             .order_by("-item_count", "name")[:50]
         )
         results = [
-            {"id": brand.id, "name": brand.name, "logo": brand.logo or "", "count": brand.item_count}
+            {"id": brand.id, "name": brand.name, "logo": brand.logo_display_url or "", "count": brand.item_count}
             for brand in brands
         ]
     elif filter_type == "club":
@@ -260,7 +260,7 @@ def get_filter_options(request):
             {
                 "id": club.id,
                 "name": club.name,
-                "logo": club.logo or "",
+                "logo": club.logo_display_url or "",
                 "country": str(club.country) if club.country else None,
                 "count": club.item_count,
             }

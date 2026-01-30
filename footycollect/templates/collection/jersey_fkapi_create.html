@@ -639,9 +639,22 @@
       };
     }
 
-    // Handle image loading errors
     function handleImageError(img) {
       img.outerHTML = '<div class="placeholder-img"><i class="bi bi-image"></i></div>';
+    }
+
+    window.FC_PROXY_IMAGE_URL = "{{ proxy_image_url|default:''|escapejs }}";
+    window.FC_PROXY_IMAGE_HOSTS = {{ proxy_image_hosts|default:'[]'|safe }};
+    function getImageProxyUrl(url) {
+      if (!url || !url.startsWith('http') || !window.FC_PROXY_IMAGE_URL) return url;
+      try {
+        const u = new URL(url);
+        const hosts = window.FC_PROXY_IMAGE_HOSTS || [];
+        if (hosts.length && hosts.includes(u.hostname.toLowerCase())) {
+          return window.FC_PROXY_IMAGE_URL + '?url=' + encodeURIComponent(url);
+        }
+      } catch (e) {}
+      return url;
     }
 
     // Verify the state of the photo_manager when the page is loaded
@@ -703,13 +716,13 @@
           title.className = 'mb-2';
           title.textContent = '{% trans "Default Image (will be processed on submission)" %}';
 
-          // Create the image
           const img = document.createElement('img');
-          img.src = mainImgUrl;
+          img.src = typeof getImageProxyUrl !== 'undefined' ? getImageProxyUrl(mainImgUrl) : mainImgUrl;
           img.alt = 'Default image';
           img.style.maxWidth = '100%';
           img.style.maxHeight = '200px';
           img.style.objectFit = 'contain';
+          img.onerror = function() { handleImageError(this); };
 
           // Create the button to remove the image
           const removeBtn = document.createElement('button');
@@ -1999,26 +2012,29 @@
 
 
           try {
-            // Remove previous previews
             const existingPreviews = document.querySelectorAll('.api-image-preview');
             existingPreviews.forEach(preview => preview.remove());
 
-            // Create an element to show the image
             const imagePreview = document.createElement('div');
             imagePreview.className = 'card mb-3 api-image-preview';
             imagePreview.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
             imagePreview.style.border = '1px solid var(--fc-border)';
             imagePreview.style.backgroundColor = 'var(--fc-card)';
             imagePreview.style.borderRadius = '0.5rem';
+            const srcUrl = typeof getImageProxyUrl !== 'undefined' ? getImageProxyUrl(imageUrl) : imageUrl;
             imagePreview.innerHTML = `
             <div class="card-header" style="background-color: hsla(180, 85%, 40%, 1); color: white; border-bottom: 1px solid var(--fc-border);">
               <h5 class="card-title mb-0">Kit Image</h5>
             </div>
             <div class="card-body text-center" style="background-color: var(--fc-card); padding: 1.5rem;">
-              <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.5rem;" class="mb-2" />
+              <img src="${srcUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.5rem;" class="mb-2 api-kit-preview-img" />
               <p class="mb-0 small" style="color: var(--fc-muted-foreground);">This image will be automatically downloaded once the jersey is created</p>
             </div>
           `;
+            const kitImg = imagePreview.querySelector('.api-kit-preview-img');
+            if (kitImg) {
+              kitImg.onerror = function() { handleImageError(this); };
+            }
 
             // Find the jersey details card
             let jerseyDetailsCard = null;
@@ -2068,15 +2084,20 @@
                 imagePreview.style.border = '1px solid var(--fc-border)';
                 imagePreview.style.backgroundColor = 'var(--fc-card)';
                 imagePreview.style.borderRadius = '0.5rem';
+                const srcUrlFallback = typeof getImageProxyUrl !== 'undefined' ? getImageProxyUrl(imageUrl) : imageUrl;
                 imagePreview.innerHTML = `
                 <div class="card-header" style="background-color: hsla(180, 85%, 40%, 1); color: white; border-bottom: 1px solid var(--fc-border);">
                   <h5 class="card-title mb-0">Kit Image</h5>
                 </div>
                 <div class="card-body text-center" style="background-color: var(--fc-card); padding: 1.5rem;">
-                  <img src="${imageUrl}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.5rem;" class="mb-2" />
+                  <img src="${srcUrlFallback}" alt="Kit Image" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.5rem;" class="mb-2 api-kit-preview-img" />
                   <p class="mb-0 small" style="color: var(--fc-muted-foreground);">This image will be automatically downloaded once the jersey is created</p>
                 </div>
               `;
+                const kitImgFallback = imagePreview.querySelector('.api-kit-preview-img');
+                if (kitImgFallback) {
+                  kitImgFallback.onerror = function() { handleImageError(this); };
+                }
                 form.insertBefore(imagePreview, form.firstChild);
               }
             } catch (innerError) {
@@ -2575,7 +2596,11 @@
                 <div class="kit-search-item" @click="selectKit(kit)">
                   <div class="kit-search-item-img-container">
                     <template x-if="kit.main_img_url">
-                      <img :src="kit.main_img_url" :alt="kit.name" @error="handleImageError($el)" loading="lazy" class="kit-search-img" />
+                      <img :src="getImageProxyUrl(kit.main_img_url)"
+                           :alt="kit.name"
+                           @error="handleImageError($el)"
+                           loading="lazy"
+                           class="kit-search-img" />
                     </template>
                     <template x-if="!kit.main_img_url">
                       <div class="placeholder-img">
@@ -2639,7 +2664,7 @@
             <label for="id_season_select" class="form-label">{% trans "Select Season" %}</label>
             <div class="d-flex align-items-center mb-2" x-show="selectedClub">
               <template x-if="selectedClub && selectedClub.logo_url">
-                <img :src="selectedClub.logo_url" :alt="selectedClub.name" class="selected-club-logo" />
+                <img :src="getImageProxyUrl(selectedClub.logo_url)" :alt="selectedClub.name" class="selected-club-logo" />
               </template>
               <span class="fw-bold" x-text="selectedClub ? selectedClub.name : ''"></span>
             </div>

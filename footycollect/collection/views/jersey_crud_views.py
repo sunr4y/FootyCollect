@@ -4,11 +4,13 @@ Jersey-specific CRUD views.
 Contains JerseyCreateView and JerseyUpdateView.
 """
 
+import json
 import logging
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
 from footycollect.collection.forms import JerseyForm
@@ -53,8 +55,6 @@ class JerseyCreateView(BaseItemCreateView):
         )
 
         try:
-            import json
-
             collection_service = get_collection_service()
             form_data = collection_service.get_form_data()
             context["color_choices"] = json.dumps(form_data["colors"]["main_colors"])
@@ -66,6 +66,8 @@ class JerseyCreateView(BaseItemCreateView):
             context["color_choices"] = "[]"
             context["design_choices"] = "[]"
 
+        context["proxy_image_url"] = reverse("collection:proxy_image")
+        context["proxy_image_hosts"] = json.dumps(getattr(settings, "ALLOWED_EXTERNAL_IMAGE_HOSTS", []))
         return context
 
     def form_valid(self, form):
@@ -77,6 +79,15 @@ class JerseyCreateView(BaseItemCreateView):
                 self.object = base_item
 
                 self._process_post_creation()
+
+                try:
+                    from footycollect.collection.services.logo_download import (
+                        ensure_item_entity_logos_downloaded,
+                    )
+
+                    ensure_item_entity_logos_downloaded(base_item)
+                except Exception:
+                    logger.exception("Error downloading club/brand logos for item")
 
                 messages.success(self.request, _("Jersey created successfully!"))
 

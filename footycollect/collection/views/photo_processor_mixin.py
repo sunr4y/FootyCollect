@@ -9,6 +9,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from footycollect.collection.models import Photo
@@ -42,20 +43,26 @@ class PhotoProcessorMixin:
         """
         Queue a background task to download and attach an external image.
 
-        The actual IO work is delegated to a Celery task.
+        The task is enqueued after the current transaction commits so the worker
+        sees the instance in the database (avoids BaseItem.DoesNotExist).
         """
         self._ensure_photo_processor_initialized()
 
         try:
             app_label = instance._meta.app_label
             model_name = instance._meta.model_name
-            download_external_image_and_attach.delay(
-                app_label,
-                model_name,
-                instance.pk,
-                image_url,
-                order,
-            )
+            object_id = instance.pk
+
+            def enqueue():
+                download_external_image_and_attach.delay(
+                    app_label,
+                    model_name,
+                    object_id,
+                    image_url,
+                    order,
+                )
+
+            transaction.on_commit(enqueue)
         except Exception:
             logger.exception("Error queuing download task for image %s", image_url)
 

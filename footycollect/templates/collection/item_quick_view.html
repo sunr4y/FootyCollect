@@ -4,20 +4,26 @@
 <div class="quick-view-logos-data" style="display: none !important;" data-logos="true">
   {% if item.brand %}
     <div class="brand-logo-container">
-      {% if item.brand.logo_dark and item.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-        <img src="{{ item.brand.logo_dark }}"
+      {% if item.brand.logo_dark_display_url and item.brand.logo_dark_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+        <img src="{{ item.brand.logo_dark_display_url }}"
              alt="{{ item.brand.name }}"
              class="quick-view-logo"
-             onerror="this.onerror=null; this.src='{{ item.brand.logo|default:'' }}';" />
-      {% elif item.brand.logo and item.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-        <img src="{{ item.brand.logo }}" alt="{{ item.brand.name }}" class="quick-view-logo" onerror="this.style.display='none'" />
+             onerror="this.onerror=null; this.src='{{ item.brand.logo_display_url|default:'' }}';" />
+      {% elif item.brand.logo_display_url and item.brand.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+        <img src="{{ item.brand.logo_display_url }}"
+             alt="{{ item.brand.name }}"
+             class="quick-view-logo"
+             onerror="this.style.display='none'" />
       {% endif %}
     </div>
   {% endif %}
   {% if item.club %}
     <div class="club-shield-container">
-      {% if item.club.logo %}
-        <img src="{{ item.club.logo }}" alt="{{ item.club.name }}" class="quick-view-shield" onerror="this.style.display='none'" />
+      {% if item.club.logo_display_url %}
+        <img src="{{ item.club.logo_display_url }}"
+             alt="{{ item.club.name }}"
+             class="quick-view-shield"
+             onerror="this.style.display='none'" />
       {% endif %}
     </div>
     {% if item.club.country %}

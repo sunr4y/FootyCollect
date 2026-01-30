@@ -11,7 +11,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from config import checks  # noqa: F401
 
 from .base import *
-from .base import DATABASES, INSTALLED_APPS, SPECTACULAR_SETTINGS, env
+from .base import DATABASES, INSTALLED_APPS, MIDDLEWARE, SPECTACULAR_SETTINGS, _csp_sources, env
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -110,32 +110,34 @@ else:
     error_msg = f"Invalid STORAGE_BACKEND: {STORAGE_BACKEND}. Must be 'aws' or 'r2'"
     raise ValueError(error_msg)
 
-if env.bool("DJANGO_CSP_ENABLED", default=True):
-    from config.settings.base import _csp_sources
-
-    storage_origin = f"https://{storage_domain}"
-    img_src_default = "'self' data: blob: https://www.gravatar.com " + storage_origin
-    CONTENT_SECURITY_POLICY = {
-        "DIRECTIVES": {
-            "default-src": _csp_sources("DJANGO_CSP_DEFAULT_SRC", "'self'"),
-            "script-src": _csp_sources(
-                "DJANGO_CSP_SCRIPT_SRC",
-                "'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
-            ),
-            "style-src": _csp_sources(
-                "DJANGO_CSP_STYLE_SRC",
-                "'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-            ),
-            "font-src": _csp_sources(
-                "DJANGO_CSP_FONT_SRC",
-                "'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
-            ),
-            "img-src": _csp_sources("DJANGO_CSP_IMG_SRC", img_src_default),
-            "connect-src": _csp_sources("DJANGO_CSP_CONNECT_SRC", "'self'"),
-            "frame-ancestors": _csp_sources("DJANGO_CSP_FRAME_ANCESTORS", "'self'"),
-            "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
-        },
-    }
+storage_origin = f"https://{storage_domain}"
+img_src_default = (
+    "'self' data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com "
+    "https://www.footballkitarchive.com " + storage_origin
+)
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": _csp_sources("DJANGO_CSP_DEFAULT_SRC", "'self'"),
+        "script-src": _csp_sources(
+            "DJANGO_CSP_SCRIPT_SRC",
+            "'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
+        ),
+        "style-src": _csp_sources(
+            "DJANGO_CSP_STYLE_SRC",
+            "'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+        ),
+        "font-src": _csp_sources(
+            "DJANGO_CSP_FONT_SRC",
+            "'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+        ),
+        "img-src": _csp_sources("DJANGO_CSP_IMG_SRC", img_src_default),
+        "connect-src": _csp_sources("DJANGO_CSP_CONNECT_SRC", "'self'"),
+        "frame-ancestors": _csp_sources("DJANGO_CSP_FRAME_ANCESTORS", "'self'"),
+        "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
+    },
+}
+if "csp.middleware.CSPMiddleware" not in MIDDLEWARE:
+    MIDDLEWARE.insert(1, "csp.middleware.CSPMiddleware")
 
 # STATIC & MEDIA
 # ------------------------

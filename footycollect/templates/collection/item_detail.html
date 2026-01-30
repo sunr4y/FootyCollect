@@ -929,8 +929,8 @@
           <div class="fc-club-brand-grid">
             {% if object.club %}
               <div class="fc-team-card">
-                {% if object.club.logo and object.club.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                  <img src="{{ object.club.logo }}"
+                {% if object.club.logo_display_url and object.club.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                  <img src="{{ object.club.logo_display_url }}"
                        alt="{{ object.club.name }}"
                        class="fc-club-logo"
                        onerror="this.classList.add('fc-d-none'); this.nextElementSibling.classList.add('fc-d-flex');" />
@@ -956,13 +956,13 @@
                   <span class="fc-uppercase">{% trans "Brand" %}</span>
                 </div>
                 <div class="fc-flex-center fc-gap-2">
-                  {% if object.brand.logo_dark and object.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ object.brand.logo_dark }}"
+                  {% if object.brand.logo_dark_display_url and object.brand.logo_dark_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                    <img src="{{ object.brand.logo_dark_display_url }}"
                          alt="{{ object.brand.name }}"
                          class="fc-brand-logo"
-                         onerror="this.onerror=null; this.src='{{ object.brand.logo|default:'' }}';" />
-                  {% elif object.brand.logo and object.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                    <img src="{{ object.brand.logo }}" alt="{{ object.brand.name }}" class="fc-brand-logo" />
+                         onerror="this.onerror=null; this.src='{{ object.brand.logo_display_url|default:'' }}';" />
+                  {% elif object.brand.logo_display_url and object.brand.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+                    <img src="{{ object.brand.logo_display_url }}" alt="{{ object.brand.name }}" class="fc-brand-logo" />
                   {% endif %}
                   <p class="fc-detail-value">{{ object.brand.name }}</p>
                 </div>

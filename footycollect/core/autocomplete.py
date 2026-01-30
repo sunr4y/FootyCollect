@@ -81,13 +81,14 @@ class BrandAutocomplete(autocomplete.Select2QuerySetView):
 
     def get_result_label(self, item):
         """Return HTML with logo and name."""
+        logo_url = getattr(item, "logo_display_url", None) or getattr(item, "logo", "")
         logo_html = ""
-        if item.logo:
+        if logo_url:
             logo_html = format_html(
                 '<img src="{}" alt="{}" '
                 'style="width: 20px; height: 20px; margin-right: 8px; '
                 'object-fit: contain; vertical-align: middle;" />',
-                escape(item.logo),
+                escape(logo_url),
                 escape(item.name),
             )
         return format_html(
@@ -227,13 +228,14 @@ class ClubAutocomplete(autocomplete.Select2QuerySetView):
 
     def get_result_label(self, item):
         """Return HTML with logo and name."""
+        logo_url = getattr(item, "logo_display_url", None) or getattr(item, "logo", "")
         logo_html = ""
-        if item.logo:
+        if logo_url:
             logo_html = format_html(
                 '<img src="{}" alt="{}" '
                 'style="width: 20px; height: 20px; margin-right: 8px; '
                 'object-fit: contain; vertical-align: middle;" />',
-                escape(item.logo),
+                escape(logo_url),
                 escape(item.name),
             )
         return format_html(

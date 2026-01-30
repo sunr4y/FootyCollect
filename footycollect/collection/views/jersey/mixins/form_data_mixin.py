@@ -210,20 +210,16 @@ class FormDataMixin:
 
         from footycollect.core.models import Brand
 
-        try:
-            brand = Brand.objects.get(name=form.data["brand_name"])
-            form.data["brand"] = brand.id
-        except Brand.DoesNotExist:
-            slug = form.data["brand_name"].lower().replace(" ", "-")
-            try:
-                brand = Brand.objects.get(slug=slug)
-                form.data["brand"] = brand.id
-            except Brand.DoesNotExist:
-                brand = Brand.objects.create(
-                    name=form.data["brand_name"],
-                    slug=slug,
-                )
-                form.data["brand"] = brand.id
+        slug = form.data["brand_name"].lower().replace(" ", "-")
+        brand = Brand.objects.filter(slug=slug).first()
+        if not brand:
+            brand = Brand.objects.filter(name__iexact=form.data["brand_name"]).first()
+        if not brand:
+            brand = Brand.objects.create(
+                name=form.data["brand_name"],
+                slug=slug,
+            )
+        form.data["brand"] = brand.id
 
     def _fill_season_field(self, form):
         """Fill season field from API data."""

@@ -107,6 +107,10 @@
   </style>
 {% endblock css %}
 {% block content %}
+  <script>
+    window.FC_PROXY_IMAGE_URL = "{{ proxy_image_url|default:''|escapejs }}";
+    window.FC_PROXY_IMAGE_HOSTS = {{ proxy_image_hosts|default:'[]'|safe }};
+  </script>
   {{ form.media }}
   <div class="fc-container-centered">
     <h2 class="mb-4 fc-title-large">

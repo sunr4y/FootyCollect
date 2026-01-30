@@ -6,7 +6,10 @@ upload, download, deletion, and processing.
 """
 
 import logging
+from urllib.parse import urlparse
 
+import requests
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -15,12 +18,73 @@ from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from footycollect.collection.models import BaseItem, Photo
 from footycollect.collection.services import get_photo_service
 
+PROXY_IMAGE_MAX_SIZE = 10 * 1024 * 1024
+PROXY_REFERER = "https://www.footballkitarchive.com/"
+
 logger = logging.getLogger(__name__)
+
+
+def _is_allowed_proxy_host(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower()
+        allowed = getattr(
+            django_settings,
+            "ALLOWED_EXTERNAL_IMAGE_HOSTS",
+            ["cdn.footballkitarchive.com", "www.footballkitarchive.com"],
+        )
+        return hostname in [h.lower() for h in allowed]
+    except (ValueError, AttributeError):
+        return False
+
+
+def _validate_proxy_url(url: str | None) -> str | None:
+    """Validate proxy URL and return error message if invalid, None if valid."""
+    if not url:
+        return "Missing url parameter"
+    if not url.startswith(("http://", "https://")):
+        return "Invalid url"
+    if not _is_allowed_proxy_host(url):
+        return "URL host not allowed"
+    return None
+
+
+@login_required
+@require_GET
+def proxy_image(request):
+    """Proxy external image with Referer so hotlink protection allows the request."""
+    url = request.GET.get("url")
+    validation_error = _validate_proxy_url(url)
+    if validation_error:
+        return HttpResponseBadRequest(validation_error)
+    try:
+        resp = requests.get(
+            url,
+            timeout=15,
+            stream=True,
+            headers={"Referer": PROXY_REFERER},
+        )
+        resp.raise_for_status()
+        content_type = resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+        if not content_type.startswith("image/"):
+            return HttpResponseBadRequest("Not an image")
+        size = 0
+        chunks = []
+        for chunk in resp.iter_content(chunk_size=65536):
+            if chunk:
+                size += len(chunk)
+                if size > PROXY_IMAGE_MAX_SIZE:
+                    return HttpResponseBadRequest("Image too large")
+                chunks.append(chunk)
+        return HttpResponse(b"".join(chunks), content_type=content_type)
+    except requests.RequestException as e:
+        logger.warning("Proxy image failed for %s: %s", url[:80], e)
+        return HttpResponseBadRequest("Failed to fetch image")
 
 
 @login_required

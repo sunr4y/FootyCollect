@@ -143,7 +143,7 @@ class FeedView(ListView):
                     autocomplete_initial_data["club"] = {
                         "id": club.id,
                         "name": club.name,
-                        "logo": club.logo or "",
+                        "logo": club.logo_display_url or "",
                     }
             except (ValueError, TypeError):
                 pass
@@ -156,7 +156,7 @@ class FeedView(ListView):
                     autocomplete_initial_data["brand"] = {
                         "id": brand.id,
                         "name": brand.name,
-                        "logo": brand.logo or "",
+                        "logo": brand.logo_display_url or "",
                     }
             except (ValueError, TypeError):
                 pass

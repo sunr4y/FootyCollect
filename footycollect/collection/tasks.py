@@ -25,6 +25,20 @@ from .models import BaseItem, Photo
 
 logger = logging.getLogger(__name__)
 
+REFERER_IMAGE = "https://www.footballkitarchive.com/"
+
+
+def _get_rotating_proxy_config():
+    proxy_url = getattr(settings, "ROTATING_PROXY_URL", "")
+    if not proxy_url:
+        return None
+    username = getattr(settings, "ROTATING_PROXY_USERNAME", "")
+    password = getattr(settings, "ROTATING_PROXY_PASSWORD", "")
+    if username and password:
+        parsed = urlparse(proxy_url)
+        proxy_url = f"{parsed.scheme}://{username}:{password}@{parsed.netloc}"
+    return {"http": proxy_url, "https": proxy_url}
+
 
 def _is_allowed_image_url(url: str) -> bool:
     try:
@@ -92,45 +106,92 @@ def cleanup_old_incomplete_photos():
         return "Old incomplete photos cleanup completed"
 
 
+def _validate_and_prepare_image_url(image_url: str, object_id) -> str:
+    """Validate and normalize the image URL."""
+    if not image_url.startswith("http"):
+        image_url = f"https://{image_url}"
+
+    if not _is_allowed_image_url(image_url):
+        logger.warning("Blocked download from untrusted host: %s", image_url)
+        msg = "URL from untrusted source: " + str(image_url)
+        raise ValueError(msg)
+
+    logger.info(
+        "[download_external_image_and_attach] item_id=%s Downloading image from URL: %s",
+        object_id,
+        image_url,
+    )
+    return image_url
+
+
+def _download_image_to_temp(image_url: str, object_id):
+    """Download image from URL to a temporary file."""
+    kwargs: dict = {
+        "stream": True,
+        "headers": {"Referer": REFERER_IMAGE},
+    }
+    proxies = _get_rotating_proxy_config()
+    if proxies:
+        kwargs["proxies"] = proxies
+        logger.info("[download_external_image_and_attach] item_id=%s Using rotating proxy", object_id)
+    else:
+        logger.info(
+            "[download_external_image_and_attach] item_id=%s No proxy (ROTATING_PROXY_URL not set)",
+            object_id,
+        )
+
+    response = requests.get(image_url, timeout=30, **kwargs)
+    status = getattr(response, "status_code", None)
+    logger.info("[download_external_image_and_attach] item_id=%s Response status=%s", object_id, status)
+    try:
+        response.raise_for_status()
+    except requests.HTTPError:
+        logger.warning(
+            "Image download failed for item %s: %s (status %s)",
+            object_id,
+            image_url,
+            status,
+        )
+        raise
+
+    img_temp = tempfile.NamedTemporaryFile(delete=True)
+    for chunk in response.iter_content(chunk_size=1024):
+        if chunk:
+            img_temp.write(chunk)
+    img_temp.flush()
+    return img_temp
+
+
+def _create_and_save_photo(instance, image_name: str, img_temp, order):
+    """Create a Photo object and save it with the downloaded image."""
+    photo = Photo(content_object=instance, user=instance.user)
+    photo.image.save(image_name, File(img_temp), save=False)
+
+    if order is not None:
+        photo.order = order
+    else:
+        last_order = instance.photos.aggregate(Max("order"))["order__max"] or -1
+        photo.order = last_order + 1
+
+    photo.save()
+    return photo
+
+
 @shared_task
 def download_external_image_and_attach(app_label, model_name, object_id, image_url, order=0):
     try:
-        if not image_url.startswith("http"):
-            image_url = f"https://{image_url}"
-
-        if not _is_allowed_image_url(image_url):
-            logger.warning("Blocked download from untrusted host: %s", image_url)
-            msg = "URL from untrusted source: " + str(image_url)
-            raise ValueError(msg)  # noqa: TRY301
-
-        logger.info("Downloading image from URL: %s", image_url)
+        image_url = _validate_and_prepare_image_url(image_url, object_id)
 
         image_name = Path(urlparse(image_url).path).name
         if not image_name:
             image_name = f"external_image_{uuid.uuid4().hex[:8]}.jpg"
 
-        response = requests.get(image_url, stream=True, timeout=30)
-        response.raise_for_status()
-
-        img_temp = tempfile.NamedTemporaryFile(delete=True)
-        for chunk in response.iter_content(chunk_size=1024):
-            if chunk:
-                img_temp.write(chunk)
-        img_temp.flush()
+        img_temp = _download_image_to_temp(image_url, object_id)
 
         model = ContentType.objects.get_by_natural_key(app_label, model_name).model_class()
         instance = model.objects.get(pk=object_id)
 
-        photo = Photo(content_object=instance, user=instance.user)
-        photo.image.save(image_name, File(img_temp), save=False)
-
-        if order is not None:
-            photo.order = order
-        else:
-            last_order = instance.photos.aggregate(Max("order"))["order__max"] or -1
-            photo.order = last_order + 1
-
-        photo.save()
+        photo = _create_and_save_photo(instance, image_name, img_temp, order)
         logger.info("Photo %s downloaded and attached to item %s", photo.id, object_id)
 
         check_item_photo_processing.apply_async(
@@ -138,7 +199,11 @@ def download_external_image_and_attach(app_label, model_name, object_id, image_u
             countdown=3,
         )
     except (ValueError, requests.RequestException, OSError):
-        logger.exception("Error downloading image %s", image_url)
+        logger.exception(
+            "[download_external_image_and_attach] item_id=%s FAILED url=%s",
+            object_id,
+            image_url,
+        )
         check_item_photo_processing.delay(object_id)
         raise
     else:
