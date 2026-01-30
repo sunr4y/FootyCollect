@@ -19,6 +19,7 @@ from django.utils.text import slugify
 
 from footycollect.api.client import FKAPIClient
 from footycollect.collection.models import BaseItem, Color, Jersey, Photo, Size
+from footycollect.collection.services.logo_download import ensure_item_entity_logos_downloaded
 from footycollect.core.models import Brand, Club, Competition, Kit, Season, TypeK
 
 User = get_user_model()
@@ -225,11 +226,6 @@ class Command(BaseCommand):
                         self.stdout.write(f"Page {page} returned no data, stopping pagination")
                         break
 
-                    if page == 1 and user_info is None:
-                        data = page_response.get("data", {})
-                        user_info = data.get("user")
-                        break
-
                     data = page_response.get("data", {})
                     if page == 1:
                         user_info = data.get("user") or page_response.get("user")
@@ -252,8 +248,8 @@ class Command(BaseCommand):
                     page += 1
 
             if not all_entries:
-                msg = "No entries found in collection"
-                self._raise_scraping_error(msg)
+                self.stdout.write(self.style.WARNING("No entries found in collection (empty or unavailable)."))
+                return {"entries": []}, user_info
             return {"entries": all_entries}, user_info  # noqa: TRY300
         except Exception:
             import traceback
@@ -457,6 +453,13 @@ class Command(BaseCommand):
                 return False
 
             self._create_photos(images_to_use, base_item, user, dry_run=dry_run)
+
+            if not dry_run:
+                try:
+                    ensure_item_entity_logos_downloaded(base_item)
+                except Exception:
+                    logger.exception("Error downloading club/brand logos for item %s", base_item.pk)
+                    self.stdout.write(self.style.WARNING("  Warning: Could not download logos for club/brand"))
 
             if dry_run:
                 transaction.set_rollback(True)
