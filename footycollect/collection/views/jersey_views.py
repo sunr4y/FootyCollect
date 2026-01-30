@@ -8,9 +8,10 @@ file, including FKAPI integration and detailed jersey processing.
 import json
 import logging
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView
 
@@ -121,8 +122,9 @@ class JerseyFKAPICreateView(
             self._set_main_color_initial(form)
             self._set_secondary_colors_initial(form)
 
-        # Add options for Cotton components using services
         self._add_color_and_design_choices(context)
+        context["proxy_image_url"] = reverse("collection:proxy_image")
+        context["proxy_image_hosts"] = json.dumps(getattr(settings, "ALLOWED_EXTERNAL_IMAGE_HOSTS", []))
         return context
 
     def _add_color_and_design_choices(self, context):
@@ -182,10 +184,17 @@ class JerseyFKAPICreateView(
                 urls = [u.strip() for u in external_urls.split(",") if u.strip() and u.strip() != main_img_url]
                 external_count += len(urls)
 
-            # Process external images first
             self._process_external_images(form, base_item)
 
-            # Process uploaded photos through the dropzone (local photos start after externals)
+            try:
+                from footycollect.collection.services.logo_download import (
+                    ensure_item_entity_logos_downloaded,
+                )
+
+                ensure_item_entity_logos_downloaded(base_item)
+            except Exception:
+                logger.exception("Error downloading club/brand logos for item")
+
             photo_ids = self.request.POST.get("photo_ids", "")
             if photo_ids:
                 self._process_photo_ids(photo_ids, base_item, start_order=external_count)

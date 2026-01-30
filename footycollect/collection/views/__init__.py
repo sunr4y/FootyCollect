@@ -18,6 +18,7 @@ from .photo_views import (
     ItemProcessingStatusView,
     file_upload,
     handle_dropzone_files,
+    proxy_image,
     reorder_photos,
     upload_photo,
 )
@@ -42,6 +43,7 @@ __all__ = [
     "upload_photo",
     "file_upload",
     "handle_dropzone_files",
+    "proxy_image",
     "PhotoProcessorMixin",
     # Demo views
     "home",

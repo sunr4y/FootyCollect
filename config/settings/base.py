@@ -154,7 +154,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "csp.middleware.CSPMiddleware",
     "config.middleware.SecurityHeadersMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -292,7 +291,7 @@ if env.bool("DJANGO_CSP_ENABLED", default=False):
             ),
             "img-src": _csp_sources(
                 "DJANGO_CSP_IMG_SRC",
-                "'self' data: blob: https://www.gravatar.com",
+                "'self' data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com https://www.footballkitarchive.com",
             ),
             "connect-src": _csp_sources(
                 "DJANGO_CSP_CONNECT_SRC",
@@ -305,6 +304,7 @@ if env.bool("DJANGO_CSP_ENABLED", default=False):
             "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
         },
     }
+    MIDDLEWARE.insert(1, "csp.middleware.CSPMiddleware")
 
 # EMAIL
 # ------------------------------------------------------------------------------

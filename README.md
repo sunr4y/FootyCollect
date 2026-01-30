@@ -203,6 +203,12 @@ Start Celery beat (periodic tasks):
 celery -A config.celery_app beat
 ```
 
+Set default periodic task frequencies (orphaned-photos cleanup, etc.):
+```bash
+python manage.py setup_beat_schedule
+```
+Adjust intervals later in Django Admin: **django_celery_beat** → **Periodic tasks**.
+
 ## API Documentation
 
 Interactive API documentation is available at:

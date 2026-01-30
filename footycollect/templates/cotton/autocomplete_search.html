@@ -18,7 +18,10 @@
       <div class="mb-2">
         <template x-for="item in selectedItems" :key="item.id">
           <div class="d-flex align-items-center border rounded p-2 mb-1 autocomplete-selected-item">
-            <img x-show="item.logo_dark || item.logo" :src="item.logo_dark || item.logo" :alt="item.name" class="me-2 autocomplete-logo" />
+            <img x-show="item.logo_dark || item.logo"
+                 :src="getImageProxyUrl(item.logo_dark || item.logo)"
+                 :alt="item.name"
+                 class="me-2 autocomplete-logo" />
             <span x-text="item.name" class="flex-grow-1 autocomplete-item-name"></span>
             <button type="button"
                     @click="removeItem(item.id)"
@@ -34,7 +37,7 @@
     <div x-show="!isMultiple && selectedItem" x-cloak>
       <div class="d-flex align-items-center border rounded p-2 mb-2 autocomplete-selected-item autocomplete-selected-item-single">
         <img x-show="selectedItem && (selectedItem.logo_dark || selectedItem.logo)"
-             :src="selectedItem ? (selectedItem.logo_dark || selectedItem.logo) : ''"
+             :src="selectedItem ? getImageProxyUrl(selectedItem.logo_dark || selectedItem.logo) : ''"
              :alt="selectedItem ? selectedItem.name : ''"
              class="me-2 autocomplete-logo" />
         <span x-text="selectedItem ? selectedItem.name : ''" class="flex-grow-1 autocomplete-item-name"></span>
@@ -74,7 +77,10 @@
                  @mouseenter="$el.classList.add('autocomplete-result-item-hover')"
                  @mouseleave="$el.classList.remove('autocomplete-result-item-hover')">
               <div class="d-flex align-items-center">
-                <img x-show="item.logo_dark || item.logo" :src="item.logo_dark || item.logo" :alt="item.name" class="me-2 autocomplete-logo" />
+                <img x-show="item.logo_dark || item.logo"
+                     :src="getImageProxyUrl(item.logo_dark || item.logo)"
+                     :alt="item.name"
+                     class="me-2 autocomplete-logo" />
                 <span x-text="item.name" class="autocomplete-item-name"></span>
                 <template x-if="!isMultiple && selectedItem && selectedItem.id === item.id">
                   <i class="bi bi-check-circle-fill ms-2 autocomplete-check-icon"></i>

@@ -63,6 +63,21 @@
         }
       })();
     </script>
+    <script>
+      window.FC_PROXY_IMAGE_URL = window.FC_PROXY_IMAGE_URL || '';
+      window.FC_PROXY_IMAGE_HOSTS = window.FC_PROXY_IMAGE_HOSTS || [];
+      function getImageProxyUrl(url) {
+        if (!url || !url.startsWith('http') || !window.FC_PROXY_IMAGE_URL) return url;
+        try {
+          var u = new URL(url);
+          var hosts = window.FC_PROXY_IMAGE_HOSTS || [];
+          if (hosts.length && hosts.indexOf(u.hostname.toLowerCase()) !== -1) {
+            return window.FC_PROXY_IMAGE_URL + '?url=' + encodeURIComponent(url);
+          }
+        } catch (e) {}
+        return url;
+      }
+    </script>
     <meta name="theme-color" content="hsl(180, 85%, 40%)" />
     {% block css %}
       <!-- Latest compiled and minified Bootstrap CSS -->

@@ -91,9 +91,19 @@ class Club(models.Model):
     )
     logo = models.URLField(blank=True)
     logo_dark = models.URLField(blank=True)
+    logo_file = models.ImageField(upload_to="logos/clubs/", blank=True, null=True)
+    logo_dark_file = models.ImageField(upload_to="logos/clubs/", blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def logo_display_url(self):
+        return self.logo_file.url if self.logo_file else (self.logo or "")
+
+    @property
+    def logo_dark_display_url(self):
+        return self.logo_dark_file.url if self.logo_dark_file else (self.logo_dark or "")
 
 
 class Brand(models.Model):
@@ -102,9 +112,19 @@ class Brand(models.Model):
     slug = models.SlugField(unique=True, max_length=150)
     logo = models.URLField(blank=True)
     logo_dark = models.URLField(blank=True)
+    logo_file = models.ImageField(upload_to="logos/brands/", blank=True, null=True)
+    logo_dark_file = models.ImageField(upload_to="logos/brands/", blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def logo_display_url(self):
+        return self.logo_file.url if self.logo_file else (self.logo or "")
+
+    @property
+    def logo_dark_display_url(self):
+        return self.logo_dark_file.url if self.logo_dark_file else (self.logo_dark or "")
 
 
 class Kit(models.Model):

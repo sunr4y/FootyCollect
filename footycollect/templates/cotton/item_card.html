@@ -13,13 +13,13 @@
       <div class="d-flex align-items-center w-100 position-relative">
         <div class="d-flex align-items-center justify-content-center brand-logo-container">
           {% if item.base_item.brand %}
-            {% if item.base_item.brand.logo_dark and item.base_item.brand.logo_dark != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-              <img src="{{ item.base_item.brand.logo_dark }}"
+            {% if item.base_item.brand.logo_dark_display_url and item.base_item.brand.logo_dark_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+              <img src="{{ item.base_item.brand.logo_dark_display_url }}"
                    alt="{{ item.base_item.brand.name }}"
                    class="item-logo-small has-logo-dark"
-                   onerror="this.onerror=null; this.src='{{ item.base_item.brand.logo|default:'' }}'; this.classList.remove('has-logo-dark');" />
-            {% elif item.base_item.brand.logo and item.base_item.brand.logo != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-              <img src="{{ item.base_item.brand.logo }}"
+                   onerror="this.onerror=null; this.src='{{ item.base_item.brand.logo_display_url|default:'' }}'; this.classList.remove('has-logo-dark');" />
+            {% elif item.base_item.brand.logo_display_url and item.base_item.brand.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
+              <img src="{{ item.base_item.brand.logo_display_url }}"
                    alt="{{ item.base_item.brand.name }}"
                    class="item-logo-small"
                    onerror="this.style.display='none'" />
@@ -27,8 +27,8 @@
           {% endif %}
         </div>
         <div>
-          {% if item.base_item.club and item.base_item.club.logo %}
-            <img src="{{ item.base_item.club.logo }}"
+          {% if item.base_item.club and item.base_item.club.logo_display_url %}
+            <img src="{{ item.base_item.club.logo_display_url }}"
                  alt="{{ item.base_item.club.name }}"
                  class="item-club-shield"
                  onerror="this.style.display='none'" />
