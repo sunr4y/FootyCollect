@@ -181,7 +181,7 @@ def check_redis_connectivity(app_configs, **kwargs):
                 id="production.W011",
             ),
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         errors.append(
             Error(
                 "Redis connection failed",
