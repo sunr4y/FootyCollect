@@ -16,7 +16,7 @@ from footycollect.collection.models import Jersey
 class FeedFilterService:
     """Service for filtering and sorting the global kits feed."""
 
-    def apply_filters(  # noqa: C901, PLR0912, PLR0915
+    def apply_filters(  # noqa: C901, PLR0915
         self, queryset: QuerySet[Jersey], filters_dict: dict[str, Any]
     ) -> QuerySet[Jersey]:
         """
@@ -82,6 +82,9 @@ class FeedFilterService:
             category = filters_dict["category"]
             if category and str(category).strip():
                 queryset = queryset.filter(kit__type__category=category)
+
+        if filters_dict.get("has_nameset"):
+            queryset = queryset.filter(has_nameset=True)
 
         if "main_color" in filters_dict:
             main_color_value = filters_dict["main_color"]
@@ -198,6 +201,10 @@ class FeedFilterService:
         category = request.GET.get("category")
         if category and category.strip():
             filters["category"] = category
+
+        has_nameset = request.GET.get("has_nameset")
+        if has_nameset and str(has_nameset).lower() in ("1", "true", "on", "yes"):
+            filters["has_nameset"] = True
 
         main_color = request.GET.get("main_color")
         if main_color and main_color.strip():

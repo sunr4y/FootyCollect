@@ -91,9 +91,14 @@ class JerseyCreateView(BaseItemCreateView):
 
                 messages.success(self.request, _("Jersey created successfully!"))
 
+                import time
+
                 from django.http import HttpResponseRedirect
 
-                return HttpResponseRedirect(self.get_success_url())
+                url = str(self.get_success_url())
+                sep = "&" if "?" in url else "?"
+                url = f"{url}{sep}_={int(time.time() * 1000)}"
+                return HttpResponseRedirect(url)
 
         except (ValueError, TypeError, AttributeError):
             logger.exception("Error creating jersey")
@@ -157,6 +162,7 @@ class JerseyUpdateView(BaseItemUpdateView):
     form_class = JerseyForm
     template_name = "collection/item_form.html"
     success_url = reverse_lazy("collection:item_list")
+    success_message = _("Jersey updated successfully!")
 
     def get_context_data(self, **kwargs):
         """Add context data for jersey editing."""
@@ -169,10 +175,7 @@ class JerseyUpdateView(BaseItemUpdateView):
         """Handle form validation for jersey updates."""
         try:
             with transaction.atomic():
-                response = super().form_valid(form)
-                messages.success(self.request, _("Jersey updated successfully!"))
-                return response
-
+                return super().form_valid(form)
         except (ValueError, TypeError, AttributeError):
             logger.exception("Error updating jersey")
             messages.error(self.request, _("Error updating jersey. Please try again."))

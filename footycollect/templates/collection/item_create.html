@@ -59,11 +59,6 @@
   {{ form.media }}
   <div class="container py-4">
     <h1>{% trans "Add New Item" %}</h1>
-    {% if messages %}
-      <div class="messages">
-        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
-      </div>
-    {% endif %}
     <form method="post" enctype="multipart/form-data" id="item-form">
       {% csrf_token %}
       <!-- Item Details -->

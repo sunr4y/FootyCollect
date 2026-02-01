@@ -8,8 +8,12 @@ import json
 import logging
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 
 from footycollect.collection.cache_utils import invalidate_item_list_cache_for_user
 from footycollect.collection.forms import JerseyForm
@@ -69,7 +73,7 @@ class ItemUpdateView(BaseItemUpdateView):
         if parsed is None:
             return response
 
-        keep_ids, order_map, external_images = self._extract_photo_data(parsed)
+        keep_ids, order_map, _ = self._extract_photo_data(parsed)
 
         self._update_existing_photos(keep_ids, order_map)
         self._remove_deleted_photos(keep_ids)
@@ -317,6 +321,8 @@ class ItemDeleteView(BaseItemDeleteView):
             return f"{base_url}?page={page}"
         return base_url
 
+    success_message = _("Item and associated photos deleted successfully.")
+
     def delete(self, request, *args, **kwargs):
         """Override delete to handle photo cleanup."""
         item = self.get_object()
@@ -325,15 +331,44 @@ class ItemDeleteView(BaseItemDeleteView):
         for photo in photos:
             photo.delete()
 
-        messages.success(request, "Item and associated photos deleted successfully.")
-
         invalidate_item_list_cache_for_user(request.user.pk)
 
         return super().delete(request, *args, **kwargs)
+
+
+@login_required
+@require_POST
+def mass_delete_items(request):
+    """Delete multiple items by ID. User can only delete own items unless staff."""
+    ids = request.POST.getlist("ids")
+    if not ids:
+        messages.warning(request, _("No items selected."))
+        return redirect("collection:item_list")
+    try:
+        ids = [int(x) for x in ids if str(x).isdigit()]
+    except (ValueError, TypeError):
+        messages.error(request, _("Invalid selection."))
+        return redirect("collection:item_list")
+    qs = BaseItem.objects.filter(pk__in=ids)
+    if not request.user.is_staff:
+        qs = qs.filter(user=request.user)
+    ids_ok = list(qs.values_list("pk", flat=True))
+    if ids_ok:
+        content_type = ContentType.objects.get_for_model(BaseItem)
+        Photo.objects.filter(content_type=content_type, object_id__in=ids_ok).delete()
+    count = len(ids_ok)
+    qs.delete()
+    if count:
+        messages.success(request, _("%(count)s item(s) deleted.") % {"count": count})
+    invalidate_item_list_cache_for_user(request.user.pk)
+    if request.POST.get("next") == "feed":
+        return redirect("collection:feed")
+    return redirect("collection:item_list")
 
 
 __all__ = [
     "ItemCreateView",
     "ItemDeleteView",
     "ItemUpdateView",
+    "mass_delete_items",
 ]

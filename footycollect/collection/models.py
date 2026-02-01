@@ -96,7 +96,7 @@ class Photo(models.Model):
                 should_process = False
             elif "image" in update_fields:
                 should_process = True
-        elif is_new and self.image or old_image != self.image and self.image:
+        elif (is_new and self.image) or (old_image != self.image and self.image):
             should_process = True
 
         if should_process and not self.image_avif:

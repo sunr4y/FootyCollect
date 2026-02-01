@@ -130,6 +130,11 @@ class FeedView(ListView):
             except (ValueError, TypeError):
                 pass
 
+        if filters.get("has_nameset"):
+            from django.utils.translation import gettext as _
+
+            filter_display_names["has_nameset"] = _("Has nameset")
+
         context["filter_display_names"] = filter_display_names
 
         import json

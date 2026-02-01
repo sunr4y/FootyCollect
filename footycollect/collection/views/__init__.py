@@ -5,7 +5,7 @@ This package contains all the views for the collection app, organized by functio
 """
 
 # Import all views explicitly to avoid import issues
-from .crud_views import ItemCreateView, ItemDeleteView, ItemUpdateView
+from .crud_views import ItemCreateView, ItemDeleteView, ItemUpdateView, mass_delete_items
 from .demo_views import home
 from .detail_views import ItemDetailView, ItemQuickViewView
 from .feed_views import FeedView
@@ -20,31 +20,30 @@ from .photo_views import (
     handle_dropzone_files,
     proxy_image,
     reorder_photos,
+    rotate_photos_admin,
     upload_photo,
 )
 
 __all__ = [
-    # Feed views
     "FeedView",
-    # Item views
-    "ItemListView",
-    "ItemDetailView",
-    "ItemQuickViewView",
     "ItemCreateView",
-    "ItemUpdateView",
     "ItemDeleteView",
-    "JerseyCreateView",
-    "JerseyUpdateView",
-    "JerseySelectView",
-    "JerseyFKAPICreateView",
-    # Photo views
+    "ItemDetailView",
+    "ItemListView",
     "ItemProcessingStatusView",
-    "reorder_photos",
-    "upload_photo",
+    "ItemQuickViewView",
+    "ItemUpdateView",
+    "JerseyCreateView",
+    "JerseyFKAPICreateView",
+    "JerseySelectView",
+    "JerseyUpdateView",
+    "PhotoProcessorMixin",
     "file_upload",
     "handle_dropzone_files",
-    "PhotoProcessorMixin",
-    "proxy_image",
-    # Demo views
     "home",
+    "mass_delete_items",
+    "proxy_image",
+    "reorder_photos",
+    "rotate_photos_admin",
+    "upload_photo",
 ]

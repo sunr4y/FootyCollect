@@ -295,7 +295,7 @@ class Command(BaseCommand):
             user.save()
             avatar_status = "downloaded" if avatar_url and not user.avatar else "unchanged"
             self.stdout.write(
-                f"Updated user {user.username} " f"(name: {user_name or 'unchanged'}, avatar: {avatar_status})"
+                f"Updated user {user.username} (name: {user_name or 'unchanged'}, avatar: {avatar_status})"
             )
 
     def _create_new_user(self, username: str, user_name: str | None, avatar_url: str | None, *, dry_run: bool) -> User:
@@ -678,8 +678,18 @@ class Command(BaseCommand):
 
         return kit
 
+    SIZE_NAME_NORMALIZE = {
+        "2XL": "XXL",
+        "3XL": "XXXL",
+        "4XL": "XXXXL",
+    }
+
+    def _normalize_size_name(self, size_str: str) -> str:
+        s = (size_str or "").strip().upper()
+        return self.SIZE_NAME_NORMALIZE.get(s, s)
+
     def _get_or_create_size(self, size_str: str | None, *, dry_run: bool) -> Size | None:
-        """Get or create Size. If no size provided, use random size from pool."""
+        """Get or create Size. If no size provided, use random from pool. Normalizes 2XL->XXL, etc."""
         if not size_str:
             sizes = list(Size.objects.all())
             if sizes:
@@ -691,12 +701,13 @@ class Command(BaseCommand):
                 return random_size
             return None
 
+        normalized_name = self._normalize_size_name(size_str)
         size, created = Size.objects.get_or_create(
-            name=size_str.upper(),
+            name=normalized_name,
             defaults={"category": "tops"},
         )
         if created and not dry_run:
-            logger.info("Created size: %s", size_str)
+            logger.info("Created size: %s", normalized_name)
         return size
 
     def _create_base_item(

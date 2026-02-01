@@ -1,7 +1,6 @@
 """
 Tests for FormService.
 """
-# ruff: noqa: SLF001
 
 from unittest.mock import patch
 

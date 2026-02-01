@@ -510,16 +510,6 @@
 {% block content %}
   <div class="container mt-4">
     <h1>{% trans "Select Jersey" %}</h1>
-    {% if messages %}
-      <div class="messages mt-3">
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
     <div class="container py-4" x-data="jerseySelect" x-init="init()">
       <h1>{% trans "Add Jersey from Database" %}</h1>
       <div class="alert alert-info">

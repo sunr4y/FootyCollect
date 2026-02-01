@@ -24,6 +24,42 @@ from footycollect.collection.models import BaseItem, Photo
 from footycollect.collection.services import get_photo_service
 
 PROXY_IMAGE_MAX_SIZE = 10 * 1024 * 1024
+
+
+def check_user_upload_limit(user, new_file_size):
+    """
+    Check if user has exceeded their upload limit.
+    Returns (allowed, error_message).
+    """
+    limit_mb = getattr(django_settings, "DEMO_UPLOAD_LIMIT_MB", 0)
+    if not limit_mb:
+        return True, None
+
+    # Calculate current usage from Photo file sizes
+    # We'll estimate from actual files since file_size field might not exist
+    current_usage = 0
+    for photo in Photo.objects.filter(user=user):
+        try:
+            if photo.image:
+                current_usage += photo.image.size
+            if photo.image_avif:
+                current_usage += photo.image_avif.size
+        except (ValueError, FileNotFoundError, OSError):
+            pass
+
+    limit_bytes = limit_mb * 1024 * 1024
+    available = limit_bytes - current_usage
+
+    if new_file_size > available:
+        used_mb = current_usage / (1024 * 1024)
+        return False, _(
+            "Upload limit exceeded. You have used {used:.1f} MB of {limit} MB. "
+            "Please delete some photos to free up space."
+        ).format(used=used_mb, limit=limit_mb)
+
+    return True, None
+
+
 PROXY_REFERER = "https://www.footballkitarchive.com/"
 
 logger = logging.getLogger(__name__)
@@ -87,6 +123,32 @@ def proxy_image(request):
         return HttpResponseBadRequest("Failed to fetch image")
 
 
+def _user_can_rotate_photos(user):
+    return getattr(user, "is_staff", False)
+
+
+@login_required
+@require_POST
+def rotate_photos_admin(request, item_pk):
+    """Staff-only: rotate photos so the last becomes first (order 0)."""
+    if not _user_can_rotate_photos(request.user):
+        return JsonResponse({"status": "error", "message": "Forbidden"}, status=403)
+    try:
+        base_item = BaseItem.objects.get(pk=item_pk)
+        photos = list(base_item.photos.order_by("order"))
+        if len(photos) < 2:
+            return JsonResponse({"status": "success"})
+        photo_orders = [(photos[-1].id, 0)] + [(p.id, i + 1) for i, p in enumerate(photos[:-1])]
+        photo_service = get_photo_service()
+        photo_service.reorder_photos(base_item, photo_orders)
+        return JsonResponse({"status": "success"})
+    except BaseItem.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Item not found"}, status=404)
+    except Exception as e:
+        logger.exception("Error rotating photos for item %s", item_pk)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
 @login_required
 @require_POST
 def reorder_photos(request, item_id):
@@ -119,6 +181,11 @@ def upload_photo(request):
         file = request.FILES.get("photo")
         if not file:
             return JsonResponse({"error": _("No file received")}, status=400)
+
+        # Check upload limit (demo mode)
+        allowed, error_msg = check_user_upload_limit(request.user, file.size)
+        if not allowed:
+            return JsonResponse({"error": error_msg}, status=403)
 
         # Use service to create photo
         photo = photo_service.create_photo_with_validation(
@@ -180,6 +247,12 @@ def file_upload(request):
     my_file = request.FILES.get("file")
     if not my_file:
         return JsonResponse({"error": _("No file provided")}, status=400)
+
+    # Check upload limit (demo mode)
+    allowed, error_msg = check_user_upload_limit(request.user, my_file.size)
+    if not allowed:
+        return JsonResponse({"error": error_msg}, status=403)
+
     Photo.objects.create(image=my_file, user=request.user)
     return HttpResponse("")
 

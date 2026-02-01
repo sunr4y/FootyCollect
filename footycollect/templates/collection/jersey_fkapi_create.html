@@ -419,14 +419,14 @@
       position: absolute;
       z-index: 1000;
       width: 100%;
-      max-height: 300px;
+      max-height: 320px;
       overflow-y: auto;
+      overflow-x: hidden;
       background: var(--fc-card, #141820) !important;
       border: 1px solid var(--fc-border, #242c36) !important;
       border-radius: 0.5rem;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
       color: var(--fc-foreground, #f0f0e8) !important;
-      overflow: hidden;
     }
 
     /* Custom scrollbar for search results - Dark Theme */
@@ -2558,11 +2558,6 @@
 {% block content %}
   <div x-data="jerseyForm" x-init="init()" class="fc-container-centered">
     <h2 class="mb-4 fc-title-large">{% trans "Add Jersey from Database" %}</h2>
-    {% if messages %}
-      <div class="messages">
-        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
-      </div>
-    {% endif %}
     <form method="post" enctype="multipart/form-data" id="jersey-form">
       {% csrf_token %}
       <div class="fc-card mb-4">

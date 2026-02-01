@@ -391,7 +391,7 @@ class TestPhotoService(TestCase):
             mock_get_all.return_value = mock_queryset
             mock_queryset.filter.return_value = mock_queryset
             mock_queryset.annotate.return_value = mock_queryset
-            mock_queryset.values.return_value = mock_queryset  # noqa: PD011
+            mock_queryset.values.return_value = mock_queryset
             mock_queryset.values_list.return_value = [("2024-01", 3), ("2024-02", 2)]
 
             result = self.service._get_photos_by_month(self.user)

@@ -1,7 +1,6 @@
 """
 Tests for ColorService.
 """
-# ruff: noqa: SLF001
 
 from unittest.mock import Mock, patch
 

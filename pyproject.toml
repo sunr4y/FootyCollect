@@ -59,11 +59,14 @@ indent_size = 2
 [tool.ruff]
 target-version = "py312"
 line-length = 119
+# Config is resolved from project root when running: ruff check . (or ruff check path/to/project)
 # Exclude a variety of commonly ignored directories.
 extend-exclude = [
     "*/migrations/*.py",
     "staticfiles/*",
     "*/templates/*",
+    "venv",
+    ".venv",
 ]
 
 [tool.ruff.lint]
@@ -127,17 +130,11 @@ ignore = [
   "S101", # Use of assert detected https://docs.astral.sh/ruff/rules/assert/
   "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
   "SIM102", # sometimes it's better to nest
-  "UP038", # Checks for uses of isinstance/issubclass that take a tuple
-          # of types for comparison.
-          # Deactivated because it can make the code slow:
-          # https://github.com/astral-sh/ruff/issues/7871
   "COM812", # Trailing comma missing - conflicts with ruff formatter
   "ISC001", # Implicit string concatenation - conflicts with ruff formatter
-]
-# The fixes in extend-unsafe-fixes will require
-# provide the `--unsafe-fixes` flag when fixing.
-extend-unsafe-fixes = [
-    "UP038",
+  "PLC0415", # Import outside top-level - common in Django (lazy/circular imports)
+  "PGH004", # Use specific rule codes in noqa - many files use blanket noqa
+  "UP038", # isinstance(x, (A, B)) -> A|B; can make code slow, rule removed in newer ruff
 ]
 
 [tool.ruff.lint.isort]
@@ -156,6 +153,8 @@ ignore-names = ["_meta"]
 "config/settings/local.py" = ["S104"]
 # Ignore PD011 in test_services files
 "**/tests/test_services.py" = ["PD011"]
+"footycollect/collection/tests/test_item_service.py" = ["PD011"]
+"footycollect/collection/tests/test_photo_service.py" = ["PD011"]
 # Ignore PT009 (unittest-style assertions) in E2E test files
 # Ignore style issues that are acceptable in complex E2E tests
 "footycollect/collection/tests/test_e2e_selenium.py" = [
@@ -177,6 +176,45 @@ ignore-names = ["_meta"]
 ]
 # Ignore complexity warnings in checks (acceptable for validation logic)
 "config/checks.py" = [
+    "A004",
+    "BLE001",
     "C901",
     "PLR0912",
 ]
+"config/tests/test_checks.py" = ["A004"]
+"config/middleware.py" = [
+    "BLE001",
+    "FBT003",
+    "PLR2004",
+    "S110",
+    "S324",
+]
+"config/settings/base.py" = ["PTH110", "PTH120", "PLW2901"]
+"deploy/patch-csp-server.py" = ["EXE001", "PTH123", "T201"]
+"deploy/patch-storage-domain-server.py" = ["EXE001", "PTH123", "T201"]
+"footycollect/collection/management/commands/backup_db.py" = [
+    "B904",
+    "EM101",
+    "EM102",
+    "S603",
+    "TRY003",
+]
+"footycollect/collection/management/commands/restore_db.py" = [
+    "BLE001",
+    "B904",
+    "EM101",
+    "EM102",
+    "PTH110",
+    "PTH123",
+    "S603",
+    "S608",
+    "TRY003",
+]
+"footycollect/collection/management/commands/cleanup_orphans.py" = ["PLR0915", "PLR2004"]
+"footycollect/collection/management/commands/create_demo_user.py" = ["BLE001"]
+"footycollect/collection/services/feed_service.py" = ["PLR0912"]
+"footycollect/collection/services/service_registry.py" = ["PYI034"]
+"footycollect/collection/tasks.py" = ["SIM115"]
+"footycollect/collection/tests/test_views/test_jersey_views.py" = ["BLE001"]
+"footycollect/collection/views/admin_actions.py" = ["PLR2004"]
+"footycollect/collection/views/photo_views.py" = ["PLR2004"]

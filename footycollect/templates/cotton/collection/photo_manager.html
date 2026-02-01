@@ -11,11 +11,11 @@
      :class="{'dragover': isDragging}">
   <!-- Upload Area -->
   <div class="upload-area">
-    <input type="file" multiple @change="addFiles($event)" accept="image/jpeg,image/png,image/webp,image/gif" class="file-input" />
+    <input type="file" multiple @change="addFiles($event)" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" class="file-input" />
     <div class="upload-message">
       <i class="bi bi-cloud-upload fs-1 fc-upload-icon"></i>
       <p class="fc-upload-text">{% trans "Drag files here or click to select" %}</p>
-      <small class="fc-upload-hint">{% trans "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF" %}</small>
+      <small class="fc-upload-hint">{% trans "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF, AVIF" %}</small>
     </div>
   </div>
   <!-- Photo Grid -->
@@ -74,7 +74,7 @@
           photos: Array.isArray(initialPhotos) ? initialPhotos : [],
           isDragging: false,
           draggedIndex: null,
-          acceptedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          acceptedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'],
           maxSize: 15 * 1024 * 1024, // 15MB
 
           init() {
