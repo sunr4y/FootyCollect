@@ -207,12 +207,19 @@ class FeedFilterService:
             filters["has_nameset"] = True
 
         main_color = request.GET.get("main_color")
-        if main_color and main_color.strip():
-            filters["main_color"] = main_color.strip()
+        if main_color and str(main_color).strip():
+            main_color = str(main_color).strip()
+            if "," in main_color:
+                main_color = main_color.split(",")[0].strip()
+            filters["main_color"] = main_color
 
-        secondary_color = request.GET.get("secondary_color")
-        if secondary_color and secondary_color.strip():
-            filters["secondary_color"] = secondary_color.strip()
+        secondary_color_list = request.GET.getlist("secondary_color")
+        if not secondary_color_list:
+            secondary_color_str = request.GET.get("secondary_color")
+            if secondary_color_str and secondary_color_str.strip():
+                secondary_color_list = [v.strip() for v in secondary_color_str.split(",") if v and v.strip()]
+        if secondary_color_list:
+            filters["secondary_color"] = ",".join(secondary_color_list)
 
         q = request.GET.get("q")
         if q and q.strip():

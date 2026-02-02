@@ -329,7 +329,10 @@ class TestItemService(TestCase):
     def test_get_items_by_brand(self):
         """Test getting items by brand."""
         mock_items = Mock()
-        mock_items.values.return_value.annotate.return_value.values_list.return_value = [("Nike", 3), ("Adidas", 2)]
+        mock_items.values.return_value.annotate.return_value.values_list.return_value = [
+            ("Nike", 3),
+            ("Adidas", 2),
+        ]
 
         result = self.service._get_items_by_brand(mock_items)
 

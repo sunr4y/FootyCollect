@@ -123,32 +123,6 @@ def proxy_image(request):
         return HttpResponseBadRequest("Failed to fetch image")
 
 
-def _user_can_rotate_photos(user):
-    return getattr(user, "is_staff", False)
-
-
-@login_required
-@require_POST
-def rotate_photos_admin(request, item_pk):
-    """Staff-only: rotate photos so the last becomes first (order 0)."""
-    if not _user_can_rotate_photos(request.user):
-        return JsonResponse({"status": "error", "message": "Forbidden"}, status=403)
-    try:
-        base_item = BaseItem.objects.get(pk=item_pk)
-        photos = list(base_item.photos.order_by("order"))
-        if len(photos) < 2:
-            return JsonResponse({"status": "success"})
-        photo_orders = [(photos[-1].id, 0)] + [(p.id, i + 1) for i, p in enumerate(photos[:-1])]
-        photo_service = get_photo_service()
-        photo_service.reorder_photos(base_item, photo_orders)
-        return JsonResponse({"status": "success"})
-    except BaseItem.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Item not found"}, status=404)
-    except Exception as e:
-        logger.exception("Error rotating photos for item %s", item_pk)
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
 @login_required
 @require_POST
 def reorder_photos(request, item_id):

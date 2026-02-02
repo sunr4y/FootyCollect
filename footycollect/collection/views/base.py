@@ -122,15 +122,12 @@ class BaseItemUpdateView(
     success_url = reverse_lazy("collection:item_list")
 
     def get_queryset(self):
-        """Get user's items with optimizations; staff can edit any item."""
-        qs = (
-            BaseItem.objects.all()
+        """Get user's items with optimizations."""
+        return (
+            BaseItem.objects.filter(user=self.request.user)
             .select_related("user", "club", "season", "brand", "main_color")
             .prefetch_related("competitions", "photos")
         )
-        if not self.request.user.is_staff:
-            qs = qs.filter(user=self.request.user)
-        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -152,12 +149,9 @@ class BaseItemDeleteView(
     success_message = _("Item deleted successfully.")
 
     def get_queryset(self):
-        """Get user's items with optimizations; staff can delete any item."""
-        qs = (
-            BaseItem.objects.all()
+        """Get user's items with optimizations."""
+        return (
+            BaseItem.objects.filter(user=self.request.user)
             .select_related("user", "club", "season", "brand", "main_color")
             .prefetch_related("competitions", "photos")
         )
-        if not self.request.user.is_staff:
-            qs = qs.filter(user=self.request.user)
-        return qs

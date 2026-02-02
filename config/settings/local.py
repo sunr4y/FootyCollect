@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from .base import *
 from .base import INSTALLED_APPS, LOGGING, MIDDLEWARE, env
 

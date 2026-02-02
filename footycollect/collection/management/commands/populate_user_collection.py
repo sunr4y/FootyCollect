@@ -70,7 +70,7 @@ class Command(BaseCommand):
             help="Path to JSON file with collection data (for testing)",
         )
 
-    def handle(self, *args, **options):  # noqa: PLR0915
+    def handle(self, *args, **options):
         userid = options.get("userid")
         target_username = options.get("target_username")
         wait_timeout = options["wait_timeout"]
@@ -142,7 +142,7 @@ class Command(BaseCommand):
             self.style.SUCCESS(f"\nCompleted: {created_count} created, {skipped_count} skipped, {error_count} errors")
         )
 
-    def _fetch_user_collection(  # noqa: PLR0915
+    def _fetch_user_collection(
         self,
         userid: int,
         wait_timeout: int,
