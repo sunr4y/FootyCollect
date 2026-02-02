@@ -1,6 +1,5 @@
 from django.utils.translation import gettext as _
 
-
 COLOR_NAME_TO_MSGID = {
     "WHITE": "White",
     "RED": "Red",
