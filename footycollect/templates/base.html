@@ -199,6 +199,22 @@
                 </li>
               </ul>
               <ul class="navbar-nav ms-auto d-flex align-items-center">
+                <li class="nav-item">
+                  <form action="{% url 'set_language' %}" method="post" class="d-flex align-items-center" id="language-form">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.get_full_path }}" />
+                    <select name="language"
+                            class="form-select form-select-sm fc-lang-select"
+                            aria-label="{% translate 'Language' %}"
+                            onchange="this.form.submit()">
+                      {% get_current_language as CURRENT_LANG %}
+                      {% get_available_languages as LANG_LIST %}
+                      {% for lang_code, lang_name in LANG_LIST %}
+                        <option value="{{ lang_code }}" {% if lang_code == CURRENT_LANG %}selected{% endif %}>{{ lang_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item">
                     <a class="nav-link fc-nav-link-base" href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>

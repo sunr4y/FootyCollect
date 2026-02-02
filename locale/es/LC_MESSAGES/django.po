@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FootyCollect\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-27 17:20+0100\n"
+"POT-Creation-Date: 2026-02-02 15:25+0100\n"
 "PO-Revision-Date: 2026-02-01 12:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Spanish\n"
@@ -16,573 +16,587 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
 "1 : 2;\n"
-#: .\footycollect\collection\forms.py:135
-msgid "Select design"
-msgstr "Selecciona el diseño"
 
-#: .\footycollect\collection\forms.py:168
-msgid "Search for competitions..."
-msgstr "Busca competiciones..."
+#: config/settings/base.py:37
+msgid "English"
+msgstr ""
 
-#: .\footycollect\collection\forms.py:245
-#: .\footycollect\collection\models.py:178
-msgid "Jersey"
-msgstr "Camiseta"
+#: config/settings/base.py:38
+msgid "Spanish"
+msgstr ""
 
-#: .\footycollect\collection\forms.py:246
-#: .\footycollect\collection\models.py:179
-msgid "Shorts"
-msgstr "Pantalones cortos"
-
-#: .\footycollect\collection\forms.py:247
-#: .\footycollect\collection\models.py:180
-msgid "Outerwear"
-msgstr "Abrigo / Chaqueta"
-
-#: .\footycollect\collection\forms.py:248
-#: .\footycollect\collection\models.py:181
-msgid "Tracksuit"
-msgstr "Chándal"
-
-#: .\footycollect\collection\forms.py:249
-#: .\footycollect\collection\models.py:182
-msgid "Pants"
-msgstr "Pantalones largos"
-
-#: .\footycollect\collection\forms.py:250
-msgid "Other Item"
-msgstr "Otros artículos"
-
-#: .\footycollect\collection\forms.py:255
-msgid "What type of item do you want to add?"
-msgstr "¿Qué tipo de artículo quieres añadir?"
-
-#: .\footycollect\collection\forms.py:257
-msgid "Select the type of item you want to add to your collection"
-msgstr "Selecciona el tipo de artículo que quieres añadir a tu colección"
-
-#: .\footycollect\collection\forms.py:330
-#: .\footycollect\templates\collection\item_detail.html:954
-#: .\footycollect\templates\collection\item_quick_view.html:74
-msgid "Size"
-msgstr "Talla"
-
-#: .\footycollect\collection\forms.py:406
-#: .\footycollect\templates\collection\feed.html:381
-#: .\footycollect\templates\collection\feed.html:493
-#: .\footycollect\templates\collection\feed.html:531
-#: .\footycollect\templates\collection\item_detail.html:1054
-#: .\footycollect\templates\collection\jersey_details.html:454
-msgid "Country"
-msgstr "País"
-
-#: .\footycollect\collection\forms.py:412
-#: .\footycollect\templates\collection\jersey_details.html:560
-msgid "Select a country..."
-msgstr "Selecciona un país"
-
-#: .\footycollect\collection\forms.py:426
-#: .\footycollect\collection\models.py:421
-#: .\footycollect\templates\collection\item_form.html:225
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2927
-msgid "Fan Version"
-msgstr "Versión fan"
-
-#: .\footycollect\collection\forms.py:449
-#: .\footycollect\templates\collection\item_detail.html:1020
-#: .\footycollect\templates\collection\item_form.html:238
-#: .\footycollect\templates\collection\item_list.html:384
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2940
-#: .\footycollect\templates\pages\home.html:749
-msgid "Short Sleeve"
-msgstr "Manga corta"
-
-#: .\footycollect\collection\forms.py:540
-msgid "Please select a brand or provide a brand name."
-msgstr "Selecciona una marca o indica un nombre de marca."
-
-#: .\footycollect\collection\forms.py:579
-msgid "Brand could not be resolved. Please try again."
-msgstr "No se pudo encontrar la marca. Inténtalo de nuevo."
-
-#: .\footycollect\collection\forms.py:617
-msgid "Club could not be resolved. Please try again."
-msgstr "No se pudo encontrar el equipo. Inténtalo de nuevo."
-
-#: .\footycollect\collection\forms.py:673
-msgid "Season could not be resolved. Please try again."
-msgstr "No se pudo resolver la temporada. Inténtalo de nuevo."
-
-#: .\footycollect\collection\forms.py:951
-msgid "Search Kit"
-msgstr "Buscar kit"
-
-#: .\footycollect\collection\forms.py:955
-msgid "Start typing to search for kits..."
-msgstr "Escribe para buscar kits..."
-
-#: .\footycollect\collection\forms.py:974
-msgid "Search Club"
-msgstr "Buscar equipo"
-
-#: .\footycollect\collection\forms.py:978
-msgid "Or search for a club..."
-msgstr "O busca un equipo..."
-
-#: .\footycollect\collection\forms.py:1375
+#: footycollect/collection/forms.py:37
 msgid "Upload Photos"
 msgstr "Subir fotos"
 
-#: .\footycollect\collection\forms.py:1385
+#: footycollect/collection/forms.py:47
 msgid "You can upload up to 20 photos. First photo will be the main one."
 msgstr "Puedes subir hasta 20 fotos. La primera será la principal."
 
-#: .\footycollect\collection\forms.py:1397
+#: footycollect/collection/forms.py:59
 #, python-format
 msgid "You can't upload more than %d photos."
 msgstr "No puedes subir más de %d fotos."
 
-#: .\footycollect\collection\models.py:24
+#: footycollect/collection/forms_base.py:21
+msgid "Select design"
+msgstr "Selecciona el diseño"
+
+#: footycollect/collection/forms_base.py:54
+msgid "Search for competitions..."
+msgstr "Busca competiciones..."
+
+#: footycollect/collection/forms_base.py:121
+#: footycollect/collection/models.py:203
+msgid "Jersey"
+msgstr "Camiseta"
+
+#: footycollect/collection/forms_base.py:122
+#: footycollect/collection/models.py:204
+msgid "Shorts"
+msgstr "Pantalones cortos"
+
+#: footycollect/collection/forms_base.py:123
+#: footycollect/collection/models.py:205
+msgid "Outerwear"
+msgstr "Abrigo / Chaqueta"
+
+#: footycollect/collection/forms_base.py:124
+#: footycollect/collection/models.py:206
+msgid "Tracksuit"
+msgstr "Chándal"
+
+#: footycollect/collection/forms_base.py:125
+#: footycollect/collection/models.py:207
+msgid "Pants"
+msgstr "Pantalones largos"
+
+#: footycollect/collection/forms_base.py:126
+msgid "Other Item"
+msgstr "Otros artículos"
+
+#: footycollect/collection/forms_base.py:131
+msgid "What type of item do you want to add?"
+msgstr "¿Qué tipo de artículo quieres añadir?"
+
+#: footycollect/collection/forms_base.py:133
+msgid "Select the type of item you want to add to your collection"
+msgstr "Selecciona el tipo de artículo que quieres añadir a tu colección"
+
+#: footycollect/collection/forms_jersey_base.py:79
+#: footycollect/templates/collection/item_detail.html:1106
+#: footycollect/templates/collection/item_quick_view.html:76
+msgid "Size"
+msgstr "Talla"
+
+#: footycollect/collection/forms_jersey_base.py:155
+#: footycollect/templates/collection/feed.html:49
+#: footycollect/templates/collection/feed.html:192
+#: footycollect/templates/collection/feed.html:312
+#: footycollect/templates/collection/item_detail.html:1205
+#: footycollect/templates/collection/jersey_details.html:449
+msgid "Country"
+msgstr "País"
+
+#: footycollect/collection/forms_jersey_base.py:161
+#: footycollect/templates/collection/jersey_details.html:555
+msgid "Select a country..."
+msgstr "Selecciona un país"
+
+#: footycollect/collection/forms_jersey_base.py:173
+#: footycollect/collection/models.py:447
+#: footycollect/templates/collection/item_form.html:224
+#: footycollect/templates/collection/jersey_fkapi_create.html:2778
+msgid "Fan Version"
+msgstr "Versión fan"
+
+#: footycollect/collection/forms_jersey_base.py:196
+#: footycollect/templates/collection/item_detail.html:1172
+#: footycollect/templates/collection/item_form.html:237
+#: footycollect/templates/collection/jersey_fkapi_create.html:2791
+#: footycollect/templates/cotton/item_card.html:88
+#: footycollect/templates/pages/home.html:748
+msgid "Short Sleeve"
+msgstr "Manga corta"
+
+#: footycollect/collection/forms_jersey_base.py:275
+msgid "Please select a brand or provide a brand name."
+msgstr "Selecciona una marca o indica un nombre de marca."
+
+#: footycollect/collection/forms_jersey_base.py:314
+msgid "Brand could not be resolved. Please try again."
+msgstr "No se pudo encontrar la marca. Inténtalo de nuevo."
+
+#: footycollect/collection/forms_jersey_base.py:352
+msgid "Club could not be resolved. Please try again."
+msgstr "No se pudo encontrar el equipo. Inténtalo de nuevo."
+
+#: footycollect/collection/forms_jersey_base.py:405
+msgid "Season could not be resolved. Please try again."
+msgstr "No se pudo resolver la temporada. Inténtalo de nuevo."
+
+#: footycollect/collection/forms_jersey_fkapi.py:16
+msgid "Search Kit"
+msgstr "Buscar kit"
+
+#: footycollect/collection/forms_jersey_fkapi.py:20
+msgid "Start typing to search for kits..."
+msgstr "Escribe para buscar kits..."
+
+#: footycollect/collection/forms_jersey_fkapi.py:39
+msgid "Search Club"
+msgstr "Buscar equipo"
+
+#: footycollect/collection/forms_jersey_fkapi.py:43
+msgid "Or search for a club..."
+msgstr "O busca un equipo..."
+
+#: footycollect/collection/models.py:24
 msgid "Hexadecimal color value (e.g., #RRGGBB)."
 msgstr "Valor de color hexadecimal (ej., #RRGGBB)."
 
-#: .\footycollect\collection\models.py:157
+#: footycollect/collection/models.py:182
 msgid "White"
 msgstr "Blanco"
 
-#: .\footycollect\collection\models.py:158
+#: footycollect/collection/models.py:183
 msgid "Red"
 msgstr "Rojo"
 
-#: .\footycollect\collection\models.py:159
+#: footycollect/collection/models.py:184
 msgid "Blue"
 msgstr "Azul"
 
-#: .\footycollect\collection\models.py:160
+#: footycollect/collection/models.py:185
 msgid "Black"
 msgstr "Negro"
 
-#: .\footycollect\collection\models.py:161
+#: footycollect/collection/models.py:186
 msgid "Yellow"
 msgstr "Amarillo"
 
-#: .\footycollect\collection\models.py:162
+#: footycollect/collection/models.py:187
 msgid "Green"
 msgstr "Verde"
 
-#: .\footycollect\collection\models.py:163
+#: footycollect/collection/models.py:188
 msgid "Sky blue"
 msgstr "Azul Cielo"
 
-#: .\footycollect\collection\models.py:164
+#: footycollect/collection/models.py:189
 msgid "Navy"
 msgstr "Azul Marino"
 
-#: .\footycollect\collection\models.py:165
+#: footycollect/collection/models.py:190
 msgid "Orange"
 msgstr "Naranja"
 
-#: .\footycollect\collection\models.py:166
+#: footycollect/collection/models.py:191
 msgid "Gray"
 msgstr "Gris"
 
-#: .\footycollect\collection\models.py:167
+#: footycollect/collection/models.py:192
 msgid "Claret"
 msgstr "Granate"
 
-#: .\footycollect\collection\models.py:168
+#: footycollect/collection/models.py:193
 msgid "Purple"
 msgstr "Morado"
 
-#: .\footycollect\collection\models.py:169
+#: footycollect/collection/models.py:194
 msgid "Pink"
 msgstr "Rosa"
 
-#: .\footycollect\collection\models.py:170
+#: footycollect/collection/models.py:195
 msgid "Brown"
 msgstr "Marrón"
 
-#: .\footycollect\collection\models.py:171
+#: footycollect/collection/models.py:196
 msgid "Gold"
 msgstr "Dorado"
 
-#: .\footycollect\collection\models.py:172
+#: footycollect/collection/models.py:197
 msgid "Silver"
 msgstr "Plateado"
 
-#: .\footycollect\collection\models.py:173
+#: footycollect/collection/models.py:198
 msgid "Off-white"
 msgstr "Crema"
 
-#: .\footycollect\collection\models.py:183
+#: footycollect/collection/models.py:208
 msgid "Other"
 msgstr "Otro"
 
-#: .\footycollect\collection\models.py:186
+#: footycollect/collection/models.py:211
 msgid "Brand New With Tags"
 msgstr "Nuevo con etiquetas"
 
-#: .\footycollect\collection\models.py:187
+#: footycollect/collection/models.py:212
 msgid "Brand New Without Tags"
 msgstr "Nuevo sin etiquetas"
 
-#: .\footycollect\collection\models.py:188
+#: footycollect/collection/models.py:213
 msgid "Excellent"
 msgstr "Excelente"
 
-#: .\footycollect\collection\models.py:189
+#: footycollect/collection/models.py:214
 msgid "Very Good"
 msgstr "Muy bueno"
 
-#: .\footycollect\collection\models.py:190
+#: footycollect/collection/models.py:215
 msgid "Good"
 msgstr "Bueno"
 
-#: .\footycollect\collection\models.py:191
+#: footycollect/collection/models.py:216
 msgid "Fair"
 msgstr "Aceptable"
 
-#: .\footycollect\collection\models.py:192
+#: footycollect/collection/models.py:217
 msgid "Poor"
 msgstr "Deficiente"
 
-#: .\footycollect\collection\models.py:195
+#: footycollect/collection/models.py:220
 msgid "Plain"
 msgstr "Liso"
 
-#: .\footycollect\collection\models.py:196
+#: footycollect/collection/models.py:221
 msgid "Stripes"
 msgstr "Rayas verticales"
 
-#: .\footycollect\collection\models.py:197
+#: footycollect/collection/models.py:222
 msgid "Graphic"
 msgstr "Gráfico"
 
-#: .\footycollect\collection\models.py:198
+#: footycollect/collection/models.py:223
 msgid "Chest band"
 msgstr "Franja en el pecho"
 
-#: .\footycollect\collection\models.py:199
+#: footycollect/collection/models.py:224
 msgid "Contrasting sleeves"
 msgstr "Mangas contrastadas"
 
-#: .\footycollect\collection\models.py:200
+#: footycollect/collection/models.py:225
 msgid "Pinstripes"
 msgstr "Rayas finas"
 
-#: .\footycollect\collection\models.py:201
+#: footycollect/collection/models.py:226
 msgid "Hoops"
 msgstr "Rayas horizontales"
 
-#: .\footycollect\collection\models.py:202
+#: footycollect/collection/models.py:227
 msgid "Single stripe"
 msgstr "Franja única"
 
-#: .\footycollect\collection\models.py:203
+#: footycollect/collection/models.py:228
 msgid "Half-and-half"
 msgstr "Mitad y mitad"
 
-#: .\footycollect\collection\models.py:204
+#: footycollect/collection/models.py:229
 msgid "Sash"
 msgstr "Banda diagonal"
 
-#: .\footycollect\collection\models.py:205
+#: footycollect/collection/models.py:230
 msgid "Chevron"
 msgstr "Chevrón"
 
-#: .\footycollect\collection\models.py:206
+#: footycollect/collection/models.py:231
 msgid "Checkers"
 msgstr "Ajedrezado"
 
-#: .\footycollect\collection\models.py:207
+#: footycollect/collection/models.py:232
 msgid "Gradient"
 msgstr "Degradado"
 
-#: .\footycollect\collection\models.py:208
+#: footycollect/collection/models.py:233
 msgid "Diagonal"
 msgstr "Diagonal"
 
-#: .\footycollect\collection\models.py:209
+#: footycollect/collection/models.py:234
 msgid "Cross"
 msgstr "Cruz"
 
-#: .\footycollect\collection\models.py:210
+#: footycollect/collection/models.py:235
 msgid "Quarters"
 msgstr "Arlequinado"
 
-#: .\footycollect\collection\models.py:217
+#: footycollect/collection/models.py:242
 msgid "Type of item"
 msgstr "Tipo de artículo"
 
-#: .\footycollect\collection\models.py:221
+#: footycollect/collection/models.py:246
 msgid "Name or title of the item"
 msgstr "Nombre o título del artículo"
 
-#: .\footycollect\collection\models.py:421
-#: .\footycollect\templates\collection\item_form.html:229
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2931
+#: footycollect/collection/models.py:447
+#: footycollect/templates/collection/item_form.html:228
+#: footycollect/templates/collection/jersey_fkapi_create.html:2782
 msgid "Player Version"
 msgstr "Versión jugador"
 
-#: .\footycollect\collection\models.py:459
-#: .\footycollect\templates\collection\item_detail.html:1022
-#: .\footycollect\templates\collection\item_form.html:242
-#: .\footycollect\templates\collection\item_list.html:386
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2944
-#: .\footycollect\templates\pages\home.html:751
-msgid "Long Sleeve"
-msgstr "Manga larga"
-
-#: .\footycollect\collection\models.py:462
-#: .\footycollect\templates\collection\item_detail.html:1066
-msgid "Signed"
-msgstr "Firmada"
-
-#: .\footycollect\collection\views\base.py:31
+#: footycollect/collection/views/base.py:33
 msgid "Operation completed successfully."
 msgstr "Operación completada correctamente."
 
-#: .\footycollect\collection\views\base.py:150
+#: footycollect/collection/views/base.py:149
 msgid "Item deleted successfully."
 msgstr "Artículo eliminado correctamente."
 
-#: .\footycollect\collection\views\item_views.py:158
-msgid "Item created successfully"
-msgstr "Artículo creado correctamente"
+#: footycollect/collection/views/crud_views.py:320
+msgid "Item and associated photos deleted successfully."
+msgstr "Artículo y fotos asociadas eliminados correctamente."
 
-#: .\footycollect\collection\views\item_views.py:232
+#: footycollect/collection/views/detail_views.py:59
+#: footycollect/collection/views/detail_views.py:141
+#, python-format
+msgid "No %(verbose_name)s found matching the query"
+msgstr "No se encontró ningún %(verbose_name)s que coincida con la búsqueda"
+
+#: footycollect/collection/views/feed_views.py:143
+#: footycollect/templates/collection/feed.html:142
+#: footycollect/templates/collection/feed.html:278
+#: footycollect/templates/collection/feed.html:368
+msgid "Has nameset"
+msgstr "Tiene nombre y número"
+
+#: footycollect/collection/views/item_views.py:30
 msgid ""
 "Browse available kit templates in our database. A 'kit' is the design/"
 "template (e.g., 'FC Barcelona 2020-21 Home Kit'). After selecting a kit, "
 "you'll add details about your specific physical item (size, condition, "
 "player name, photos, etc.). Multiple users can own the same kit but with "
 "different customizations!"
-msgstr "Explora las plantillas de kits disponibles en nuestra base de datos. Un "
+msgstr ""
+"Explora las plantillas de kits disponibles en nuestra base de datos. Un "
 "'kit' es el diseño/plantilla (ej., 'FC Barcelona 2020-21 Camiseta Local'). "
 "Tras elegir un kit, añadirás los detalles de tu artículo físico (talla, "
 "estado, nombre del jugador, fotos, etc.). Varios usuarios pueden tener el "
 "mismo kit con personalizaciones distintas."
 
-#: .\footycollect\collection\views\item_views.py:347
-#: .\footycollect\collection\views\item_views.py:426
-#, python-format
-msgid "No %(verbose_name)s found matching the query"
-msgstr "No se encontró ningún %(verbose_name)s que coincida con la búsqueda"
+#: footycollect/collection/views/jersey/mixins/entity_processing_mixin.py:43
+msgid "Error processing brand information"
+msgstr "Error al procesar la información de la marca"
 
-#: .\footycollect\collection\views\item_views.py:871
-msgid "Item and associated photos deleted successfully."
-msgstr "Artículo y fotos asociadas eliminados correctamente."
+#: footycollect/collection/views/jersey/mixins/entity_processing_mixin.py:125
+msgid "Error processing club information"
+msgstr "Error al procesar la información del club"
 
-#: .\footycollect\collection\views\item_views.py:889
+#: footycollect/collection/views/jersey/mixins/entity_processing_mixin.py:243
+msgid "Error processing competition information"
+msgstr "Error al procesar la información de la competición"
+
+#: footycollect/collection/views/jersey/mixins/kit_data_processing_mixin.py:55
+msgid ""
+"External kit data temporarily unavailable. Jersey will be created with basic "
+"information."
+msgstr ""
+"Datos externos del kit no disponibles temporalmente. La camiseta se creará "
+"con información básica."
+
+#: footycollect/collection/views/jersey/mixins/photo_processing_mixin.py:68
+#: footycollect/collection/views/photo_processor_mixin.py:214
+msgid "Error downloading main image"
+msgstr "Error al descargar la imagen principal"
+
+#: footycollect/collection/views/jersey/mixins/photo_processing_mixin.py:83
+#: footycollect/collection/views/jersey/mixins/photo_processing_mixin.py:184
+#: footycollect/collection/views/photo_processor_mixin.py:152
+#: footycollect/collection/views/photo_processor_mixin.py:232
+msgid "Error downloading image"
+msgstr "Error al descargar la imagen"
+
+#: footycollect/collection/views/jersey_crud_views.py:39
 msgid ""
 "Use this form to add a jersey that is not in our kit database. Search for "
 "clubs, seasons, and competitions. If they don't exist, you can create them. "
 "This is perfect for fantasy clubs, custom jerseys, or rare items not in the "
 "database."
-msgstr "Usa este formulario para añadir una camiseta que no esté en nuestra base "
-"de kits. Busca equipos, temporadas y competiciones. Si no existen, puedes "
+msgstr ""
+"Usa este formulario para añadir una camiseta que no esté en nuestra base de "
+"kits. Busca equipos, temporadas y competiciones. Si no existen, puedes "
 "crearlos. Ideal para equipos de fantasía, camisetas personalizadas o piezas "
 "raras que no estén en la base de datos."
 
-#: .\footycollect\collection\views\item_views.py:895
-#: .\footycollect\templates\collection\feed.html:397
-#: .\footycollect\templates\collection\feed.html:501
-#: .\footycollect\templates\collection\feed.html:543
-#: .\footycollect\templates\collection\item_detail.html:922
-#: .\footycollect\templates\collection\item_quick_view.html:68
-#: .\footycollect\templates\collection\jersey_details.html:385
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2833
-#: .\footycollect\templates\collection\jersey_select.html:686
+#: footycollect/collection/views/jersey_crud_views.py:44
+#: footycollect/templates/collection/feed.html:67
+#: footycollect/templates/collection/feed.html:208
+#: footycollect/templates/collection/feed.html:328
+#: footycollect/templates/collection/item_detail.html:1074
+#: footycollect/templates/collection/item_quick_view.html:66
+#: footycollect/templates/collection/jersey_details.html:380
+#: footycollect/templates/collection/jersey_fkapi_create.html:2684
+#: footycollect/templates/collection/jersey_select.html:642
 msgid "Brand"
 msgstr "Marca"
 
-#: .\footycollect\collection\views\item_views.py:896
-#: .\footycollect\templates\collection\feed.html:391
-#: .\footycollect\templates\collection\feed.html:497
-#: .\footycollect\templates\collection\feed.html:537
-#: .\footycollect\templates\collection\item_quick_view.html:65
-#: .\footycollect\templates\collection\jersey_details.html:390
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2845
+#: footycollect/collection/views/jersey_crud_views.py:45
+#: footycollect/templates/collection/feed.html:58
+#: footycollect/templates/collection/feed.html:200
+#: footycollect/templates/collection/feed.html:320
+#: footycollect/templates/collection/item_quick_view.html:61
+#: footycollect/templates/collection/jersey_details.html:385
+#: footycollect/templates/collection/jersey_fkapi_create.html:2696
 msgid "Club"
 msgstr "Equipo"
 
-#: .\footycollect\collection\views\item_views.py:897
-#: .\footycollect\templates\collection\feed.html:403
-#: .\footycollect\templates\collection\feed.html:505
-#: .\footycollect\templates\collection\feed.html:557
-#: .\footycollect\templates\collection\item_detail.html:963
-#: .\footycollect\templates\collection\item_quick_view.html:71
-#: .\footycollect\templates\collection\jersey_details.html:395
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2849
+#: footycollect/collection/views/jersey_crud_views.py:46
+#: footycollect/templates/collection/feed.html:76
+#: footycollect/templates/collection/feed.html:216
+#: footycollect/templates/collection/feed.html:344
+#: footycollect/templates/collection/item_detail.html:1115
+#: footycollect/templates/collection/item_quick_view.html:71
+#: footycollect/templates/collection/jersey_details.html:390
+#: footycollect/templates/collection/jersey_fkapi_create.html:2700
 msgid "Season"
 msgstr "Temporada"
 
-#: .\footycollect\collection\views\item_views.py:898
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2837
-#: .\footycollect\templates\collection\jersey_select.html:670
+#: footycollect/collection/views/jersey_crud_views.py:47
+#: footycollect/templates/collection/jersey_fkapi_create.html:2688
+#: footycollect/templates/collection/jersey_select.html:626
+#: footycollect/templates/users/user_detail.html:81
 msgid "Competitions"
 msgstr "Competiciones"
 
-#: .\footycollect\collection\views\item_views.py:900
+#: footycollect/collection/views/jersey_crud_views.py:49
 msgid ""
 "Search for a brand from the external database. If not found, you can create "
 "it manually."
-msgstr "Busca una marca en la base de datos externa. Si no aparece, puedes crearla "
+msgstr ""
+"Busca una marca en la base de datos externa. Si no aparece, puedes crearla "
 "manualmente."
 
-#: .\footycollect\collection\views\item_views.py:902
+#: footycollect/collection/views/jersey_crud_views.py:51
 msgid "Search for a club. If not found, you can create it manually."
 msgstr "Busca un equipo. Si no aparece, puedes crearlo manualmente."
 
-#: .\footycollect\collection\views\item_views.py:903
+#: footycollect/collection/views/jersey_crud_views.py:52
 msgid ""
 "Search for a season (e.g., 2020-21). If not found, you can create it "
 "manually."
-msgstr "Busca una temporada (por ejemplo, 2020-21). Si no aparece, puedes crearla manualmente."
+msgstr ""
+"Busca una temporada (por ejemplo, 2020-21). Si no aparece, puedes crearla "
+"manualmente."
 
-#: .\footycollect\collection\views\item_views.py:905
+#: footycollect/collection/views/jersey_crud_views.py:54
 msgid ""
 "Search for competitions from the external database. If not found, you can "
 "create them manually."
-msgstr "Busca competiciones en la base de datos externa. Si no aparecen, puedes "
+msgstr ""
+"Busca competiciones en la base de datos externa. Si no aparecen, puedes "
 "crearlas manualmente."
 
-#: .\footycollect\collection\views\item_views.py:945
+#: footycollect/collection/views/jersey_crud_views.py:92
 msgid "Jersey created successfully!"
 msgstr "¡Camiseta creada correctamente!"
 
-#: .\footycollect\collection\views\item_views.py:956
+#: footycollect/collection/views/jersey_crud_views.py:107
 msgid "Error creating jersey."
 msgstr "Error al crear la camiseta."
 
-#: .\footycollect\collection\views\item_views.py:1027
+#: footycollect/collection/views/jersey_crud_views.py:165
 msgid "Jersey updated successfully!"
 msgstr "¡Camiseta actualizada correctamente!"
 
-#: .\footycollect\collection\views\item_views.py:1032
+#: footycollect/collection/views/jersey_crud_views.py:181
 msgid "Error updating jersey. Please try again."
 msgstr "Error al actualizar la camiseta. Inténtalo de nuevo."
 
-#: .\footycollect\collection\views\jersey_views.py:593
+#: footycollect/collection/views/jersey_views.py:216
 msgid "Jersey added to your collection successfully!"
 msgstr "¡La camiseta fue añadida a tu colección correctamente!"
 
-#: .\footycollect\collection\views\jersey_views.py:598
+#: footycollect/collection/views/jersey_views.py:221
 #, python-format
 msgid "Error creating jersey: %s"
 msgstr "Error creando la camiseta: %s"
 
-#: .\footycollect\collection\views\jersey_views.py:832
-msgid ""
-"External kit data temporarily unavailable. Jersey will be created with basic "
-"information."
-msgstr "Datos externos de kit no disponibles temporalmente. La camiseta se creará con información básica."
-"Los datos externos del kit no están disponibles temporalmente. La camiseta se creará con información básica."
-
-#: .\footycollect\collection\views\jersey_views.py:1393
-msgid "Error processing brand information"
-msgstr "Error al procesar la información de la marca"
-
-#: .\footycollect\collection\views\jersey_views.py:1483
-msgid "Error processing club information"
-msgstr "Error al procesar la información del club"
-
-#: .\footycollect\collection\views\jersey_views.py:1611
-msgid "Error processing competition information"
-msgstr "Error al procesar la información de la competición"
-
-#: .\footycollect\collection\views\jersey_views.py:1673
-#: .\footycollect\collection\views\photo_views.py:361
+#: footycollect/collection/views/photo_processor_mixin.py:210
 msgid "Main image downloaded and attached successfully"
 msgstr "La imagen principal se ha descargado y adjuntado correctamente"
 
-#: .\footycollect\collection\views\jersey_views.py:1679
-#: .\footycollect\collection\views\photo_views.py:367
-msgid "Error downloading main image"
-msgstr "Error al descargar la imagen principal"
+#: footycollect/collection/views/photo_views.py:56
+#, python-brace-format
+msgid ""
+"Upload limit exceeded. You have used {used:.1f} MB of {limit} MB. Please "
+"delete some photos to free up space."
+msgstr ""
+"Límite de subida superado. Has usado {used:.1f} MB de {limit} MB. Elimina "
+"algunas fotos para liberar espacio."
 
-#: .\footycollect\collection\views\jersey_views.py:1700
-#: .\footycollect\collection\views\jersey_views.py:1799
-#: .\footycollect\collection\views\photo_views.py:318
-#: .\footycollect\collection\views\photo_views.py:388
-msgid "Error downloading image"
-msgstr "Error al descargar la imagen"
-
-#: .\footycollect\collection\views\photo_views.py:65
+#: footycollect/collection/views/photo_views.py:157
 msgid "No file received"
 msgstr "No se recibió ningún archivo"
 
-#: .\footycollect\collection\views\photo_views.py:84
-#, python-brace-format
+#: footycollect/collection/views/photo_views.py:181
 msgid "Error: {}"
 msgstr "Error: {}"
 
-#: .\footycollect\collection\views\photo_views.py:88
-#: .\footycollect\collection\views\photo_views.py:89
+#: footycollect/collection/views/photo_views.py:185
+#: footycollect/collection/views/photo_views.py:186
 msgid "System error"
 msgstr "Error del sistema"
 
-#: .\footycollect\collection\views\photo_views.py:98
-#: .\footycollect\collection\views\photo_views.py:110
+#: footycollect/collection/views/photo_views.py:211
+msgid "Item not found"
+msgstr "Artículo no encontrado"
+
+#: footycollect/collection/views/photo_views.py:223
+#: footycollect/collection/views/photo_views.py:242
 msgid "No file provided"
 msgstr "No se ha proporcionado ningún archivo"
 
-#: .\footycollect\collection\views\photo_views.py:126
-#, python-brace-format
+#: footycollect/collection/views/photo_views.py:258
 msgid "File {} deleted"
 msgstr "Archivo {} eliminado"
 
-#: .\footycollect\collection\views\photo_views.py:129
+#: footycollect/collection/views/photo_views.py:261
 msgid "Method not allowed"
 msgstr "Método no permitido"
 
-#: .\footycollect\templates\403.html:6 .\footycollect\templates\403.html:15
-#: .\footycollect\templates\403_csrf.html:6
-#: .\footycollect\templates\403_csrf.html:15
+#: footycollect/templates/403.html:6 footycollect/templates/403.html:15
+#: footycollect/templates/403_csrf.html:6
+#: footycollect/templates/403_csrf.html:15
 msgid "Forbidden (403)"
 msgstr "Prohibido (403)"
 
-#: .\footycollect\templates\403.html:20
+#: footycollect/templates/403.html:20
 msgid "You're not allowed to access this page."
 msgstr "No tienes permiso para acceder a esta página."
 
-#: .\footycollect\templates\403.html:24
-#: .\footycollect\templates\403_csrf.html:24
-#: .\footycollect\templates\404.html:24 .\footycollect\templates\500.html:21
+#: footycollect/templates/403.html:24 footycollect/templates/403_csrf.html:24
+#: footycollect/templates/404.html:24 footycollect/templates/500.html:21
 msgid "Go Home"
 msgstr "Ir al inicio"
 
-#: .\footycollect\templates\403.html:25
-#: .\footycollect\templates\403_csrf.html:25
-#: .\footycollect\templates\404.html:25
+#: footycollect/templates/403.html:25 footycollect/templates/403_csrf.html:25
+#: footycollect/templates/404.html:25
 msgid "Go Back"
 msgstr "Volver"
 
-#: .\footycollect\templates\403_csrf.html:20
+#: footycollect/templates/403_csrf.html:20
 msgid "CSRF verification failed. Please try again."
 msgstr "La verificación CSRF ha fallado. Inténtalo de nuevo."
 
-#: .\footycollect\templates\404.html:6 .\footycollect\templates\404.html:15
+#: footycollect/templates/404.html:6 footycollect/templates/404.html:15
 msgid "Page not found"
 msgstr "Página no encontrada"
 
-#: .\footycollect\templates\404.html:20
+#: footycollect/templates/404.html:20
 msgid "This is not the page you were looking for."
 msgstr "Esta no es la página que buscabas."
 
-#: .\footycollect\templates\500.html:6
+#: footycollect/templates/500.html:6
 msgid "Server Error"
 msgstr "Error del servidor"
 
-#: .\footycollect\templates\500.html:15
+#: footycollect/templates/500.html:15
 msgid "Ooops!!! 500"
 msgstr "¡¡¡Ooops!!! Error 500"
 
-#: .\footycollect\templates\500.html:16
+#: footycollect/templates/500.html:16
 msgid "Looks like something went wrong!"
 msgstr "¡Parece que algo ha ido mal!"
 
-#: .\footycollect\templates\500.html:18
+#: footycollect/templates/500.html:18
 msgid ""
 "We track these errors automatically, but if the problem persists feel free "
 "to contact us. In the meantime, try refreshing."
@@ -590,583 +604,693 @@ msgstr ""
 "Registramos estos errores automáticamente, pero si el problema persiste no "
 "dudes en contactarnos. Mientras tanto, prueba a actualizar la página."
 
-#: .\footycollect\templates\500.html:22
+#: footycollect/templates/500.html:22
 msgid "Refresh Page"
 msgstr "Actualizar página"
 
-#: .\footycollect\templates\account\login.html:7
-#: .\footycollect\templates\account\login.html:17
-#: .\footycollect\templates\account\login.html:49
-#: .\footycollect\templates\allauth\layouts\entrance.html:13
-#: .\footycollect\templates\base.html:200
-#: .\footycollect\templates\pages\about.html:105
+#: footycollect/templates/account/login.html:7
+#: footycollect/templates/account/login.html:17
+#: footycollect/templates/account/login.html:49
+#: footycollect/templates/allauth/layouts/entrance.html:13
+#: footycollect/templates/base.html:232
+#: footycollect/templates/pages/about.html:108
 msgid "Sign In"
 msgstr "Iniciar sesión"
 
-#: .\footycollect\templates\account\login.html:18
+#: footycollect/templates/account/login.html:18
 msgid "Welcome back to FootyCollect"
 msgstr "Bienvenido a FootyCollect"
 
-#: .\footycollect\templates\account\login.html:31
+#: footycollect/templates/account/login.html:31
 msgid "Username or Email"
 msgstr "Usuario o correo electrónico"
 
-#: .\footycollect\templates\account\login.html:36
+#: footycollect/templates/account/login.html:36
 msgid "Password"
 msgstr "Contraseña"
 
-#: .\footycollect\templates\account\login.html:44
+#: footycollect/templates/account/login.html:44
 msgid "Remember me"
 msgstr "Recordarme"
 
-#: .\footycollect\templates\account\login.html:55
+#: footycollect/templates/account/login.html:55
+#: footycollect/templates/account/signup.html:38
 msgid "or"
 msgstr "o"
 
-#: .\footycollect\templates\account\login.html:63
+#: footycollect/templates/account/login.html:63
+#: footycollect/templates/account/signup.html:45
 msgid "Continue with Google"
 msgstr "Continuar con Google"
 
-#: .\footycollect\templates\account\login.html:69
+#: footycollect/templates/account/login.html:69
 msgid "Forgot password?"
 msgstr "¿Olvidaste la contraseña?"
 
-#: .\footycollect\templates\account\login.html:72
+#: footycollect/templates/account/login.html:72
 msgid "Don't have an account?"
 msgstr "¿No tienes cuenta?"
 
-#: .\footycollect\templates\account\login.html:73
+#: footycollect/templates/account/login.html:73
 msgid "Sign up"
 msgstr "Registrarse"
 
-#: .\footycollect\templates\account\logout.html:7
-#: .\footycollect\templates\account\logout.html:13
-#: .\footycollect\templates\account\logout.html:23
-#: .\footycollect\templates\base.html:187
+#: footycollect/templates/account/logout.html:7
+#: footycollect/templates/account/logout.html:13
+#: footycollect/templates/account/logout.html:23
+#: footycollect/templates/base.html:220
 msgid "Sign Out"
 msgstr "Cerrar sesión"
 
-#: .\footycollect\templates\account\logout.html:14
+#: footycollect/templates/account/logout.html:14
 msgid "Are you sure you want to sign out?"
 msgstr "¿Estás seguro de que quieres cerrar sesión?"
 
-#: .\footycollect\templates\account\logout.html:24
-#: .\footycollect\templates\collection\item_confirm_delete.html:18
-#: .\footycollect\templates\collection\item_form.html:301
-#: .\footycollect\templates\collection\item_form.html:360
-#: .\footycollect\templates\collection\item_list.html:577
-#: .\footycollect\templates\users\user_form.html:133
+#: footycollect/templates/account/logout.html:24
+#: footycollect/templates/collection/feed.html:445
+#: footycollect/templates/collection/item_confirm_delete.html:18
+#: footycollect/templates/collection/item_form.html:300
+#: footycollect/templates/collection/item_form.html:359
+#: footycollect/templates/collection/item_list.html:174
+#: footycollect/templates/users/user_form.html:133
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: .\footycollect\templates\base.html:124
-msgid "Home"
-msgstr "Inicio"
-
-#: .\footycollect\templates\base.html:133
-#: .\footycollect\templates\collection\item_detail.html:770
-msgid "Collection"
-msgstr "Colección"
-
-#: .\footycollect\templates\base.html:136
-msgid "Add Items"
-msgstr "Añadir artículos"
-
-#: .\footycollect\templates\base.html:140
-msgid "Add Jersey (Automatic)"
-msgstr "Añadir camiseta (automático)"
-
-#: .\footycollect\templates\base.html:141
-msgid "From kit database"
-msgstr "Desde la base de datos de kits"
-
-#: .\footycollect\templates\base.html:146
-#: .\footycollect\templates\collection\item_form.html:116
-msgid "Add Jersey (Manual)"
-msgstr "Añadir camiseta (manual)"
-
-#: .\footycollect\templates\base.html:147
-msgid "Not in database"
-msgstr "No está en la base de datos"
-
-#: .\footycollect\templates\base.html:152
-msgid "Add Other Item"
-msgstr "Añadir otro artículo"
-
-#: .\footycollect\templates\base.html:153
-msgid "Coming Soon"
-msgstr "Próximamente"
-
-#: .\footycollect\templates\base.html:160
-msgid "Browse"
-msgstr "Explorar"
-
-#: .\footycollect\templates\base.html:164
-#: .\footycollect\templates\pages\about.html:107
-msgid "View My Collection"
-msgstr "Ver mi colección"
-
-#: .\footycollect\templates\base.html:169
-msgid "Browse Kit Database"
-msgstr "Explorar base de datos de kits"
-
-#: .\footycollect\templates\base.html:170
-msgid "Search available kits"
-msgstr "Buscar kits disponibles"
-
-#: .\footycollect\templates\base.html:177
-msgid "About"
-msgstr "Sobre"
-
-#: .\footycollect\templates\base.html:183
-msgid "My Profile"
-msgstr "Mi perfil"
-
-#: .\footycollect\templates\base.html:194
-#: .\footycollect\templates\pages\about.html:103
+#: footycollect/templates/account/signup.html:6
+#: footycollect/templates/account/signup.html:12
+#: footycollect/templates/account/signup.html:33
+#: footycollect/templates/base.html:226
+#: footycollect/templates/pages/about.html:104
 msgid "Sign Up"
 msgstr "Registrarse"
 
-#: .\footycollect\templates\base.html:214
-msgid "Error"
-msgstr "Error"
+#: footycollect/templates/account/signup.html:13
+#, fuzzy
+#| msgid "Organize Your Collection"
+msgid "Create your FootyCollect account"
+msgstr "Organiza tu colección"
 
-#: .\footycollect\templates\base.html:218
-msgid "Warning"
-msgstr "Atención"
+#: footycollect/templates/account/signup.html:49
+#, fuzzy
+#| msgid "Don't have an account?"
+msgid "Already have an account?"
+msgstr "¿No tienes cuenta?"
 
-#: .\footycollect\templates\base.html:222
-msgid "Success"
-msgstr "Éxito"
+#: footycollect/templates/account/signup.html:50
+#, fuzzy
+#| msgid "Sign In"
+msgid "Sign in"
+msgstr "Iniciar sesión"
 
-#: .\footycollect\templates\base.html:226
-msgid "Info"
-msgstr "Info"
+#: footycollect/templates/base.html:142
+msgid "Home"
+msgstr "Inicio"
 
-#: .\footycollect\templates\collection\dropzone_test_page.html:11
-msgid "Photo Manager Test"
-msgstr "Prueba del gestor de fotos"
+#: footycollect/templates/base.html:151
+#: footycollect/templates/collection/item_detail.html:938
+msgid "Collection"
+msgstr "Colección"
 
-#: .\footycollect\templates\collection\dropzone_test_page.html:14
-msgid "With Initial Photos"
-msgstr "Con fotos iniciales"
+#: footycollect/templates/base.html:154
+msgid "Add Items"
+msgstr "Añadir artículos"
 
-#: .\footycollect\templates\collection\dropzone_test_page.html:20
-msgid "Empty Manager"
-msgstr "Gestor vacío"
+#: footycollect/templates/base.html:158
+msgid "Add Jersey (Automatic)"
+msgstr "Añadir camiseta (automático)"
 
-#: .\footycollect\templates\collection\feed.html:342
-#: .\footycollect\templates\collection\feed.html:517
+#: footycollect/templates/base.html:159
+msgid "From kit database"
+msgstr "Desde la base de datos de kits"
+
+#: footycollect/templates/base.html:164
+#: footycollect/templates/collection/item_form.html:120
+msgid "Add Jersey (Manual)"
+msgstr "Añadir camiseta (manual)"
+
+#: footycollect/templates/base.html:165
+msgid "Not in database"
+msgstr "No está en la base de datos"
+
+#: footycollect/templates/base.html:170
+msgid "Add Other Item"
+msgstr "Añadir otro tipo de artículos"
+
+#: footycollect/templates/base.html:171
+msgid "Coming Soon"
+msgstr "Próximamente"
+
+#: footycollect/templates/base.html:178
+msgid "Browse"
+msgstr "Explorar"
+
+#: footycollect/templates/base.html:182
+#: footycollect/templates/pages/about.html:110
+msgid "View My Collection"
+msgstr "Ver mi colección"
+
+#: footycollect/templates/base.html:187
+msgid "Browse Kit Database"
+msgstr "Explorar base de datos de kits"
+
+#: footycollect/templates/base.html:188
+msgid "Search available kits"
+msgstr "Buscar kits disponibles"
+
+#: footycollect/templates/base.html:194
+#: footycollect/templates/collection/feed.html:12
+#: footycollect/templates/collection/feed.html:297
 msgid "Discover Kits"
 msgstr "Descubrir kits"
 
-#: .\footycollect\templates\collection\feed.html:351
-#: .\footycollect\templates\collection\feed.html:465
-#: .\footycollect\templates\collection\feed.html:475
+#: footycollect/templates/base.html:198
+#: footycollect/templates/users/user_detail.html:44
+msgid "About"
+msgstr "Sobre"
+
+#: footycollect/templates/base.html:206
+msgid "Language"
+msgstr "Idioma"
+
+#: footycollect/templates/base.html:217
+msgid "My Profile"
+msgstr "Mi perfil"
+
+#: footycollect/templates/base.html:246
+msgid "Error"
+msgstr "Error"
+
+#: footycollect/templates/base.html:250
+msgid "Warning"
+msgstr "Atención"
+
+#: footycollect/templates/base.html:254
+msgid "Success"
+msgstr "Éxito"
+
+#: footycollect/templates/base.html:258
+msgid "Info"
+msgstr "Info"
+
+#: footycollect/templates/collection/dropzone_test_page.html:11
+msgid "Photo Manager Test"
+msgstr "Prueba del gestor de fotos"
+
+#: footycollect/templates/collection/dropzone_test_page.html:14
+msgid "With Initial Photos"
+msgstr "Con fotos iniciales"
+
+#: footycollect/templates/collection/dropzone_test_page.html:20
+msgid "Empty Manager"
+msgstr "Gestor vacío"
+
+#: footycollect/templates/collection/feed.html:21
+#: footycollect/templates/collection/feed.html:163
+#: footycollect/templates/collection/feed.html:170
 msgid "Filters"
 msgstr "Filtros"
 
-#: .\footycollect\templates\collection\feed.html:354
-#: .\footycollect\templates\collection\feed.html:582
+#: footycollect/templates/collection/feed.html:24
+#: footycollect/templates/collection/feed.html:392
 msgid "Clear All"
 msgstr "Limpiar todo"
 
-#: .\footycollect\templates\collection\feed.html:361
-#: .\footycollect\templates\collection\feed.html:481
-#: .\footycollect\templates\collection\feed.html:525
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2718
+#: footycollect/templates/collection/feed.html:31
+#: footycollect/templates/collection/feed.html:176
+#: footycollect/templates/collection/feed.html:304
+#: footycollect/templates/collection/jersey_fkapi_create.html:2565
 msgid "Search"
 msgstr "Búsqueda"
 
-#: .\footycollect\templates\collection\feed.html:365
-#: .\footycollect\templates\collection\feed.html:482
+#: footycollect/templates/collection/feed.html:35
+#: footycollect/templates/collection/feed.html:180
 msgid "Search kits..."
 msgstr "Buscar kits..."
 
-#: .\footycollect\templates\collection\feed.html:371
-#: .\footycollect\templates\collection\feed.html:485
+#: footycollect/templates/collection/feed.html:40
+#: footycollect/templates/collection/feed.html:184
 msgid "Sort By"
 msgstr "Ordenar por"
 
-#: .\footycollect\templates\collection\feed.html:373
-#: .\footycollect\templates\collection\feed.html:487
+#: footycollect/templates/collection/feed.html:42
+#: footycollect/templates/collection/feed.html:186
 msgid "Random"
 msgstr "Aleatorio"
 
-#: .\footycollect\templates\collection\feed.html:374
-#: .\footycollect\templates\collection\feed.html:488
+#: footycollect/templates/collection/feed.html:43
+#: footycollect/templates/collection/feed.html:187
 msgid "Newest"
 msgstr "Más nuevo"
 
-#: .\footycollect\templates\collection\feed.html:375
-#: .\footycollect\templates\collection\feed.html:489
+#: footycollect/templates/collection/feed.html:44
+#: footycollect/templates/collection/feed.html:188
 msgid "Popular"
 msgstr "Popular"
 
-#: .\footycollect\templates\collection\feed.html:385
+#: footycollect/templates/collection/feed.html:53
 msgid "Country code (e.g., ES, GB)"
 msgstr "Código de país(ej., ES GB)"
 
-#: .\footycollect\templates\collection\feed.html:407
-#: .\footycollect\templates\collection\feed.html:506
+#: footycollect/templates/collection/feed.html:62
+#: footycollect/templates/collection/feed.html:204
+#, fuzzy
+#| msgid "Search Club"
+msgid "Search club name..."
+msgstr "Buscar equipo"
+
+#: footycollect/templates/collection/feed.html:71
+#: footycollect/templates/collection/feed.html:212
+#, fuzzy
+#| msgid "Search for competitions..."
+msgid "Search brand name..."
+msgstr "Busca competiciones..."
+
+#: footycollect/templates/collection/feed.html:80
+#: footycollect/templates/collection/feed.html:220
 msgid "e.g., 2020-21"
 msgstr "ej. 2020-21"
 
-#: .\footycollect\templates\collection\feed.html:413
-#: .\footycollect\templates\collection\feed.html:550
-#: .\footycollect\templates\collection\item_detail.html:999
-#: .\footycollect\templates\collection\jersey_details.html:400
+#: footycollect/templates/collection/feed.html:85
+#: footycollect/templates/collection/feed.html:224
+#: footycollect/templates/collection/feed.html:336
+#: footycollect/templates/collection/item_detail.html:1151
+#: footycollect/templates/collection/jersey_details.html:395
 msgid "Competition"
 msgstr "Competición"
 
-#: .\footycollect\templates\collection\feed.html:419
-#: .\footycollect\templates\collection\feed.html:563
+#: footycollect/templates/collection/feed.html:89
+#: footycollect/templates/collection/feed.html:228
+#, fuzzy
+#| msgid "Search for competitions..."
+msgid "Search competition name..."
+msgstr "Busca competiciones..."
+
+#: footycollect/templates/collection/feed.html:94
+#: footycollect/templates/collection/feed.html:232
+#: footycollect/templates/collection/feed.html:352
 msgid "Kit Type"
 msgstr "Tipo de Kit"
 
-#: .\footycollect\templates\collection\feed.html:423
+#: footycollect/templates/collection/feed.html:98
+#: footycollect/templates/collection/feed.html:236
 msgid "e.g., Home, Away"
 msgstr "ej. Local, Visitante"
 
-#: .\footycollect\templates\collection\feed.html:429
-#: .\footycollect\templates\collection\feed.html:569
+#: footycollect/templates/collection/feed.html:103
+#: footycollect/templates/collection/feed.html:240
+#: footycollect/templates/collection/feed.html:360
 msgid "Category"
 msgstr "Categoría"
 
-#: .\footycollect\templates\collection\feed.html:432
+#: footycollect/templates/collection/feed.html:111
+#: footycollect/templates/collection/feed.html:248
 msgid "Match"
 msgstr "De partido"
 
-#: .\footycollect\templates\collection\feed.html:436
+#: footycollect/templates/collection/feed.html:120
+#: footycollect/templates/collection/feed.html:257
 msgid "Training"
 msgstr "Entrenamiento"
 
-#: .\footycollect\templates\collection\feed.html:440
+#: footycollect/templates/collection/feed.html:129
+#: footycollect/templates/collection/feed.html:266
 msgid "Pre-match"
 msgstr "Pre-partido"
 
-#: .\footycollect\templates\collection\feed.html:446
-#: .\footycollect\templates\collection\item_create.html:75
-#: .\footycollect\templates\collection\item_detail.html:1031
-#: .\footycollect\templates\collection\item_form.html:176
-#: .\footycollect\templates\collection\jersey_details.html:405
-#: .\footycollect\templates\collection\jersey_details.html:447
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2857
+#: footycollect/templates/collection/feed.html:134
+#: footycollect/templates/collection/feed.html:270
+#, fuzzy
+#| msgid "Add Nameset"
+msgid "Nameset"
+msgstr "Añadir nombre y número"
+
+#: footycollect/templates/collection/feed.html:147
+#: footycollect/templates/collection/feed.html:282
+#: footycollect/templates/collection/feed.html:376
+#: footycollect/templates/collection/item_create.html:70
+#: footycollect/templates/collection/item_detail.html:1183
+#: footycollect/templates/collection/item_form.html:175
+#: footycollect/templates/collection/jersey_details.html:400
+#: footycollect/templates/collection/jersey_details.html:442
+#: footycollect/templates/collection/jersey_fkapi_create.html:2708
 msgid "Main Color"
 msgstr "Color principal"
 
-#: .\footycollect\templates\collection\feed.html:450
-msgid "Color name"
-msgstr "Nombre de color"
-
-#: .\footycollect\templates\collection\feed.html:454
-msgid "Apply Filters"
-msgstr "Aplicar filtros"
-
-#: .\footycollect\templates\collection\feed.html:494
-msgid "Country code"
-msgstr "Código de país"
-
-#: .\footycollect\templates\collection\feed.html:509
-msgid "Apply"
-msgstr "Aplicar"
-
-#: .\footycollect\templates\collection\feed.html:510
-msgid "Clear"
-msgstr "Limpiar"
-
-#: .\footycollect\templates\collection\feed.html:575
-msgid "Color"
-msgstr "Color"
-
-#: .\footycollect\templates\collection\feed.html:706
-#: .\footycollect\templates\collection\feed.html:707
-#: .\footycollect\templates\collection\item_list.html:395
-#: .\footycollect\templates\cotton\item_card.html:68
-msgid "View Details"
-msgstr "Ver detalles"
-
-#: .\footycollect\templates\collection\feed.html:722
-msgid "Load More"
-msgstr "Cargar más"
-
-#: .\footycollect\templates\collection\feed.html:726
-msgid "Feed pagination"
-msgstr "Paginación de feed"
-
-#: .\footycollect\templates\collection\feed.html:730
-#: .\footycollect\templates\collection\item_list.html:423
-msgid "First"
-msgstr "Primero"
-
-#: .\footycollect\templates\collection\feed.html:733
-#: .\footycollect\templates\collection\item_list.html:426
-msgid "Previous"
-msgstr "Previo"
-
-#: .\footycollect\templates\collection\feed.html:738
-#: .\footycollect\templates\collection\item_list.html:431
-msgid "Page"
-msgstr "Página"
-
-#: .\footycollect\templates\collection\feed.html:738
-#: .\footycollect\templates\collection\item_list.html:431
-msgid "of"
-msgstr "de"
-
-#: .\footycollect\templates\collection\feed.html:743
-#: .\footycollect\templates\collection\item_list.html:436
-msgid "Next"
-msgstr "Siguiente"
-
-#: .\footycollect\templates\collection\feed.html:746
-#: .\footycollect\templates\collection\item_list.html:439
-msgid "Last"
-msgstr "Último"
-
-#: .\footycollect\templates\collection\feed.html:756
-msgid "No kits found"
-msgstr "No se encontraron kits"
-
-#: .\footycollect\templates\collection\feed.html:757
-msgid "Try adjusting your filters to see more results."
-msgstr "Intente ajustar los filtros para ver más resultados."
-
-#: .\footycollect\templates\collection\feed.html:759
-msgid "Clear Filters"
-msgstr "Limpiar filtros"
-
-#: .\footycollect\templates\collection\feed.html:777
-#: .\footycollect\templates\collection\item_list.html:471
-msgid "Quick View"
-msgstr "Vista Rápida"
-
-#: .\footycollect\templates\collection\feed.html:783
-#: .\footycollect\templates\collection\item_list.html:477
-msgid "Loading..."
-msgstr "Cargando..."
-
-#: .\footycollect\templates\collection\item_confirm_delete.html:6
-#: .\footycollect\templates\collection\item_confirm_delete.html:10
-#: .\footycollect\templates\collection\item_form.html:351
-#: .\footycollect\templates\collection\item_list.html:566
-msgid "Delete Item"
-msgstr "Eliminar artículo"
-
-#: .\footycollect\templates\collection\item_confirm_delete.html:13
-#: .\footycollect\templates\collection\item_form.html:356
-msgid "Are you sure you want to delete this item?"
-msgstr "¿Estás seguro de que quieres eliminar este artículo?"
-
-#: .\footycollect\templates\collection\item_confirm_delete.html:14
-#: .\footycollect\templates\collection\item_form.html:357
-#: .\footycollect\templates\collection\item_list.html:574
-msgid "This action cannot be undone."
-msgstr "Esta acción no puede deshacerse."
-
-#: .\footycollect\templates\collection\item_confirm_delete.html:17
-#: .\footycollect\templates\collection\item_form.html:364
-#: .\footycollect\templates\collection\item_list.html:582
-msgid "Yes, delete"
-msgstr "Sí, eliminar"
-
-#: .\footycollect\templates\collection\item_create.html:61
-#: .\footycollect\templates\collection\item_list.html:239
-msgid "Add New Item"
-msgstr "Añadir nuevo artículo"
-
-#: .\footycollect\templates\collection\item_create.html:79
-#: .\footycollect\templates\collection\item_detail.html:1040
-#: .\footycollect\templates\collection\item_form.html:180
-#: .\footycollect\templates\collection\jersey_details.html:415
-#: .\footycollect\templates\collection\jersey_details.html:449
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2861
+#: footycollect/templates/collection/feed.html:152
+#: footycollect/templates/collection/feed.html:286
+#: footycollect/templates/collection/feed.html:384
+#: footycollect/templates/collection/item_create.html:74
+#: footycollect/templates/collection/item_detail.html:1192
+#: footycollect/templates/collection/item_form.html:179
+#: footycollect/templates/collection/jersey_details.html:410
+#: footycollect/templates/collection/jersey_details.html:444
+#: footycollect/templates/collection/jersey_fkapi_create.html:2712
 msgid "Secondary Colors"
 msgstr "Colores Secundarios"
 
-#: .\footycollect\templates\collection\item_create.html:85
-#: .\footycollect\templates\collection\item_form.html:186
-#: .\footycollect\templates\collection\jersey_details.html:451
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2868
-msgid "Design Pattern"
-msgstr "Patrón de diseño"
+#: footycollect/templates/collection/feed.html:155
+msgid "Apply Filters"
+msgstr "Aplicar filtros"
 
-#: .\footycollect\templates\collection\item_create.html:95
-#: .\footycollect\templates\collection\item_form.html:288
-#: .\footycollect\templates\collection\jersey_details.html:528
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:3002
-msgid "Photos"
-msgstr "Fotos"
+#: footycollect/templates/collection/feed.html:196
+msgid "Country code"
+msgstr "Código de país"
 
-#: .\footycollect\templates\collection\item_create.html:102
-msgid "Create Item"
-msgstr "Crear artículo"
+#: footycollect/templates/collection/feed.html:290
+msgid "Apply"
+msgstr "Aplicar"
 
-#: .\footycollect\templates\collection\item_detail.html:945
-msgid "Condition"
-msgstr "Estado"
+#: footycollect/templates/collection/feed.html:291
+msgid "Clear"
+msgstr "Limpiar"
 
-#: .\footycollect\templates\collection\item_detail.html:972
-msgid "Player Name"
-msgstr "Nombre del jugador"
+#: footycollect/templates/collection/feed.html:412
+#: footycollect/templates/cotton/quick_view_modal.html:21
+msgid "Loading..."
+msgstr "Cargando..."
 
-#: .\footycollect\templates\collection\item_detail.html:981
-#: .\footycollect\templates\collection\item_quick_view.html:80
-msgid "Number"
-msgstr "Número"
+#: footycollect/templates/collection/feed.html:420
+msgid "No kits found"
+msgstr "No se encontraron kits"
 
-#: .\footycollect\templates\collection\item_detail.html:990
-#: .\footycollect\templates\collection\jersey_details.html:424
-msgid "Design"
-msgstr "Diseño"
+#: footycollect/templates/collection/feed.html:421
+msgid "Try adjusting your filters to see more results."
+msgstr "Intente ajustar los filtros para ver más resultados."
 
-#: .\footycollect\templates\collection\item_detail.html:1016
-msgid "Sleeve"
-msgstr "Manga"
+#: footycollect/templates/collection/feed.html:422
+msgid "Clear Filters"
+msgstr "Limpiar filtros"
 
-#: .\footycollect\templates\collection\item_detail.html:1074
-msgid "Match Worn"
-msgstr "Usada en partido"
+#: footycollect/templates/collection/feed.html:434
+#: footycollect/templates/collection/item_confirm_delete.html:6
+#: footycollect/templates/collection/item_confirm_delete.html:10
+#: footycollect/templates/collection/item_form.html:350
+#: footycollect/templates/collection/item_list.html:163
+msgid "Delete Item"
+msgstr "Eliminar artículo"
 
-#: .\footycollect\templates\collection\item_detail.html:1078
-msgid "Yes"
-msgstr "Sí"
-
-#: .\footycollect\templates\collection\item_detail.html:1080
-msgid "No"
-msgstr "No"
-
-#: .\footycollect\templates\collection\item_detail.html:1090
-msgid "Added"
-msgstr "Añadido"
-
-#: .\footycollect\templates\collection\item_detail.html:1095
-msgid "Updated"
-msgstr "Actualizado"
-
-#: .\footycollect\templates\collection\item_detail.html:1102
-msgid "Description"
-msgstr "Descripción"
-
-#: .\footycollect\templates\collection\item_form.html:114
-msgid "Edit Jersey"
-msgstr "Editar camiseta"
-
-#: .\footycollect\templates\collection\item_form.html:134
-msgid "Basic Information"
-msgstr "Información básica"
-
-#: .\footycollect\templates\collection\item_form.html:170
-msgid "Appearance"
-msgstr "Apariencia"
-
-#: .\footycollect\templates\collection\item_form.html:199
-msgid "Condition & Details"
-msgstr "Estado y detalles"
-
-#: .\footycollect\templates\collection\item_form.html:214
-msgid "Jersey-Specific Details"
-msgstr "Detalles de la camiseta"
-
-#: .\footycollect\templates\collection\item_form.html:220
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2922
-msgid "Jersey Version"
-msgstr "Versión de camiseta"
-
-#: .\footycollect\templates\collection\item_form.html:233
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2935
-msgid "Sleeve Type"
-msgstr "Tipo de manga"
-
-#: .\footycollect\templates\collection\item_form.html:249
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2951
-msgid "Include Player Signature"
-msgstr "Incluir firma del jugador"
-
-#: .\footycollect\templates\collection\item_form.html:256
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2958
-msgid "Is replica"
-msgstr "Es réplica"
-
-#: .\footycollect\templates\collection\item_form.html:266
-msgid "Add Nameset"
-msgstr "Añadir nombre y número"
-
-#: .\footycollect\templates\collection\item_form.html:269
-msgid "Remove Nameset"
-msgstr "Quitar nombre y número"
-
-#: .\footycollect\templates\collection\item_form.html:298
-#: .\footycollect\templates\collection\item_list.html:403
-msgid "Delete"
-msgstr "Eliminar"
-
-#: .\footycollect\templates\collection\item_form.html:305
-msgid "Save Changes"
-msgstr "Guardar cambios"
-
-#: .\footycollect\templates\collection\item_form.html:307
-msgid "Add Jersey"
-msgstr "Añadir camiseta"
-
-#: .\footycollect\templates\collection\item_form.html:382
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:3066
-msgid "Creating..."
-msgstr "Creando..."
-
-#: .\footycollect\templates\collection\item_list.html:229
-#: .\footycollect\templates\collection\item_list.html:237
-msgid "My Collection"
-msgstr "Mi colección"
-
-#: .\footycollect\templates\collection\item_list.html:249
-msgid "Total Items"
-msgstr "Total de artículos"
-
-#: .\footycollect\templates\collection\item_list.html:257
-msgid "On This Page"
-msgstr "En esta página"
-
-#: .\footycollect\templates\collection\item_list.html:399
-#: .\footycollect\templates\collection\item_quick_view.html:90
-#: .\footycollect\templates\cotton\item_card.html:71
-msgid "Edit"
-msgstr "Editar"
-
-#: .\footycollect\templates\collection\item_list.html:419
-msgid "Collection pagination"
-msgstr "Paginación de colección"
-
-#: .\footycollect\templates\collection\item_list.html:449
-msgid "No items in your collection yet"
-msgstr "Aún no hay artículos en tu colección"
-
-#: .\footycollect\templates\collection\item_list.html:450
-msgid "Start building your collection by adding your first item!"
-msgstr "¡Empieza a crear tu colección añadiendo tu primer artículo!"
-
-#: .\footycollect\templates\collection\item_list.html:452
-#: .\footycollect\templates\pages\about.html:109
-msgid "Add Your First Item"
-msgstr "Añade tu primer artículo"
-
-#: .\footycollect\templates\collection\item_list.html:572
+#: footycollect/templates/collection/feed.html:440
+#: footycollect/templates/collection/item_list.html:169
 msgid "Are you sure you want to delete"
 msgstr "¿Estás seguro de que quieres eliminar"
 
-#: .\footycollect\templates\collection\item_quick_view.html:77
+#: footycollect/templates/collection/feed.html:442
+#: footycollect/templates/collection/item_confirm_delete.html:14
+#: footycollect/templates/collection/item_form.html:356
+#: footycollect/templates/collection/item_list.html:171
+msgid "This action cannot be undone."
+msgstr "Esta acción no puede deshacerse."
+
+#: footycollect/templates/collection/feed.html:450
+#: footycollect/templates/collection/item_confirm_delete.html:17
+#: footycollect/templates/collection/item_form.html:363
+#: footycollect/templates/collection/item_list.html:179
+msgid "Yes, delete"
+msgstr "Sí, eliminar"
+
+#: footycollect/templates/collection/item_confirm_delete.html:13
+#: footycollect/templates/collection/item_form.html:355
+msgid "Are you sure you want to delete this item?"
+msgstr "¿Estás seguro de que quieres eliminar este artículo?"
+
+#: footycollect/templates/collection/item_create.html:61
+#: footycollect/templates/collection/item_list.html:39
+msgid "Add New Item"
+msgstr "Añadir nuevo artículo"
+
+#: footycollect/templates/collection/item_create.html:80
+#: footycollect/templates/collection/item_form.html:185
+#: footycollect/templates/collection/jersey_details.html:446
+#: footycollect/templates/collection/jersey_fkapi_create.html:2719
+msgid "Design Pattern"
+msgstr "Patrón de diseño"
+
+#: footycollect/templates/collection/item_create.html:90
+#: footycollect/templates/collection/item_form.html:287
+#: footycollect/templates/collection/jersey_details.html:523
+#: footycollect/templates/collection/jersey_fkapi_create.html:2853
+msgid "Photos"
+msgstr "Fotos"
+
+#: footycollect/templates/collection/item_create.html:97
+msgid "Create Item"
+msgstr "Crear artículo"
+
+#: footycollect/templates/collection/item_detail.html:954
+#, fuzzy
+#| msgid "Error downloading image"
+msgid "Loading image"
+msgstr "Error al descargar la imagen"
+
+#: footycollect/templates/collection/item_detail.html:956
+#, fuzzy
+#| msgid "Loading..."
+msgid "Loading image..."
+msgstr "Cargando..."
+
+#: footycollect/templates/collection/item_detail.html:960
+msgid "Image could not be loaded."
+msgstr "No se pudo cargar la imagen."
+
+#: footycollect/templates/collection/item_detail.html:961
+msgid "Retry"
+msgstr "Reintentar"
+
+#: footycollect/templates/collection/item_detail.html:975
+#: footycollect/templates/collection/item_detail.html:984
+msgid "Processing photos..."
+msgstr "Procesando fotos..."
+
+#: footycollect/templates/collection/item_detail.html:981
+msgid "No image yet."
+msgstr "Sin imagen aún."
+
+#: footycollect/templates/collection/item_detail.html:986
+#, fuzzy
+#| msgid "Add Items"
+msgid "Add photos"
+msgstr "Añadir artículos"
+
+#: footycollect/templates/collection/item_detail.html:1097
+msgid "Condition"
+msgstr "Estado"
+
+#: footycollect/templates/collection/item_detail.html:1124
+msgid "Player Name"
+msgstr "Nombre del jugador"
+
+#: footycollect/templates/collection/item_detail.html:1133
+#: footycollect/templates/collection/item_quick_view.html:86
+msgid "Number"
+msgstr "Número"
+
+#: footycollect/templates/collection/item_detail.html:1142
+#: footycollect/templates/collection/jersey_details.html:419
+msgid "Design"
+msgstr "Diseño"
+
+#: footycollect/templates/collection/item_detail.html:1168
+msgid "Sleeve"
+msgstr "Manga"
+
+#: footycollect/templates/collection/item_detail.html:1174
+#: footycollect/templates/collection/item_form.html:241
+#: footycollect/templates/collection/jersey_fkapi_create.html:2795
+#: footycollect/templates/cotton/item_card.html:90
+#: footycollect/templates/pages/home.html:750
+msgid "Long Sleeve"
+msgstr "Manga larga"
+
+#: footycollect/templates/collection/item_detail.html:1217
+msgid "Signed"
+msgstr "Firmada"
+
+#: footycollect/templates/collection/item_detail.html:1225
+msgid "Match Worn"
+msgstr "Usada en partido"
+
+#: footycollect/templates/collection/item_detail.html:1229
+msgid "Yes"
+msgstr "Sí"
+
+#: footycollect/templates/collection/item_detail.html:1231
+msgid "No"
+msgstr "No"
+
+#: footycollect/templates/collection/item_detail.html:1241
+msgid "Added"
+msgstr "Añadido"
+
+#: footycollect/templates/collection/item_detail.html:1246
+msgid "Updated"
+msgstr "Actualizado"
+
+#: footycollect/templates/collection/item_detail.html:1253
+msgid "Description"
+msgstr "Descripción"
+
+#: footycollect/templates/collection/item_form.html:118
+msgid "Edit Jersey"
+msgstr "Editar camiseta"
+
+#: footycollect/templates/collection/item_form.html:133
+msgid "Basic Information"
+msgstr "Información básica"
+
+#: footycollect/templates/collection/item_form.html:169
+msgid "Appearance"
+msgstr "Apariencia"
+
+#: footycollect/templates/collection/item_form.html:198
+msgid "Condition & Details"
+msgstr "Estado y detalles"
+
+#: footycollect/templates/collection/item_form.html:213
+msgid "Jersey-Specific Details"
+msgstr "Detalles de la camiseta"
+
+#: footycollect/templates/collection/item_form.html:219
+#: footycollect/templates/collection/jersey_fkapi_create.html:2773
+msgid "Jersey Version"
+msgstr "Versión de camiseta"
+
+#: footycollect/templates/collection/item_form.html:232
+#: footycollect/templates/collection/jersey_fkapi_create.html:2786
+msgid "Sleeve Type"
+msgstr "Tipo de manga"
+
+#: footycollect/templates/collection/item_form.html:248
+#: footycollect/templates/collection/jersey_fkapi_create.html:2802
+msgid "Include Player Signature"
+msgstr "Incluir firma del jugador"
+
+#: footycollect/templates/collection/item_form.html:255
+#: footycollect/templates/collection/jersey_fkapi_create.html:2809
+msgid "Is replica"
+msgstr "Es réplica"
+
+#: footycollect/templates/collection/item_form.html:265
+msgid "Add Nameset"
+msgstr "Añadir nombre y número"
+
+#: footycollect/templates/collection/item_form.html:268
+msgid "Remove Nameset"
+msgstr "Quitar nombre y número"
+
+#: footycollect/templates/collection/item_form.html:297
+#: footycollect/templates/cotton/item_card.html:132
+msgid "Delete"
+msgstr "Eliminar"
+
+#: footycollect/templates/collection/item_form.html:304
+msgid "Save Changes"
+msgstr "Guardar cambios"
+
+#: footycollect/templates/collection/item_form.html:306
+msgid "Add Jersey"
+msgstr "Añadir camiseta"
+
+#: footycollect/templates/collection/item_form.html:381
+#, fuzzy
+#| msgid "Loading..."
+msgid "Saving..."
+msgstr "Cargando..."
+
+#: footycollect/templates/collection/item_form.html:381
+#: footycollect/templates/collection/jersey_fkapi_create.html:2910
+msgid "Creating..."
+msgstr "Creando..."
+
+#: footycollect/templates/collection/item_list.html:14
+#: footycollect/templates/collection/item_list.html:32
+#, python-format
+msgid "Collection of %(username)s"
+msgstr "Colección de %(username)s"
+
+#: footycollect/templates/collection/item_list.html:16
+#: footycollect/templates/collection/item_list.html:34
+msgid "My Collection"
+msgstr "Mi colección"
+
+#: footycollect/templates/collection/item_list.html:50
+#: footycollect/templates/collection/item_list.html:70
+msgid "Total Items"
+msgstr "Total de artículos"
+
+#: footycollect/templates/collection/item_list.html:58
+#: footycollect/templates/collection/item_list.html:78
+msgid "On This Page"
+msgstr "En esta página"
+
+#: footycollect/templates/collection/item_list.html:104
+msgid "Collection pagination"
+msgstr "Paginación de colección"
+
+#: footycollect/templates/collection/item_list.html:108
+msgid "First"
+msgstr "Primero"
+
+#: footycollect/templates/collection/item_list.html:111
+msgid "Previous"
+msgstr "Previo"
+
+#: footycollect/templates/collection/item_list.html:116
+msgid "Page"
+msgstr "Página"
+
+#: footycollect/templates/collection/item_list.html:116
+msgid "of"
+msgstr "de"
+
+#: footycollect/templates/collection/item_list.html:121
+msgid "Next"
+msgstr "Siguiente"
+
+#: footycollect/templates/collection/item_list.html:124
+msgid "Last"
+msgstr "Último"
+
+#: footycollect/templates/collection/item_list.html:135
+msgid "This user has no items yet"
+msgstr "Este usuario aún no tiene artículos"
+
+#: footycollect/templates/collection/item_list.html:137
+#, python-format
+msgid "%(username)s has not added any items to their collection."
+msgstr "%(username)s no ha añadido ningún artículo a su colección."
+
+#: footycollect/templates/collection/item_list.html:141
+#: footycollect/templates/collection/item_list.html:148
+#: footycollect/templates/pages/about.html:112
+msgid "Add Your First Item"
+msgstr "Añade tu primer artículo"
+
+#: footycollect/templates/collection/item_list.html:145
+msgid "No items in your collection yet"
+msgstr "Aún no hay artículos en tu colección"
+
+#: footycollect/templates/collection/item_list.html:146
+msgid "Start building your collection by adding your first item!"
+msgstr "¡Empieza a crear tu colección añadiendo tu primer artículo!"
+
+#: footycollect/templates/collection/item_quick_view.html:81
 msgid "Player"
 msgstr "Jugador"
 
-#: .\footycollect\templates\collection\item_quick_view.html:87
+#: footycollect/templates/collection/item_quick_view.html:93
 msgid "View Full Details"
 msgstr "Ver detalles completos"
 
-#: .\footycollect\templates\collection\jersey_details.html:359
+#: footycollect/templates/collection/item_quick_view.html:96
+#: footycollect/templates/cotton/item_card.html:126
+msgid "Edit"
+msgstr "Editar"
+
+#: footycollect/templates/collection/jersey_details.html:359
 msgid "Add Jersey Details"
 msgstr "Añadir detalles de la camiseta"
 
-#: .\footycollect\templates\collection\jersey_details.html:362
+#: footycollect/templates/collection/jersey_details.html:362
 msgid ""
 "Complete the details for your jersey and add photos. The information from "
 "the database has been pre-filled for you."
@@ -1174,11 +1298,11 @@ msgstr ""
 "Completa los detalles de tu camiseta y añade fotos. La información de la "
 "base de datos se ha rellenado por ti."
 
-#: .\footycollect\templates\collection\jersey_details.html:445
+#: footycollect/templates/collection/jersey_details.html:440
 msgid "Jersey Attributes"
 msgstr "Atributos de la camiseta"
 
-#: .\footycollect\templates\collection\jersey_details.html:533
+#: footycollect/templates/collection/jersey_details.html:528
 msgid ""
 "The main image from the database will be automatically added. You can add "
 "more photos here."
@@ -1186,31 +1310,31 @@ msgstr ""
 "La imagen principal de la base de datos se añadirá automáticamente. Puedes "
 "añadir más fotos aquí."
 
-#: .\footycollect\templates\collection\jersey_details.html:538
+#: footycollect/templates/collection/jersey_details.html:533
 msgid "Main image from kit will be automatically downloaded and attached:"
 msgstr "La imagen principal del kit se descargará y adjuntará automáticamente:"
 
-#: .\footycollect\templates\collection\jersey_details.html:547
+#: footycollect/templates/collection/jersey_details.html:542
 msgid "Save Jersey"
 msgstr "Guardar camiseta"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:669
+#: footycollect/templates/collection/jersey_fkapi_create.html:675
 msgid "No default image available. Please select a kit first."
 msgstr "No hay imagen por defecto. Selecciona primero un kit."
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:680
+#: footycollect/templates/collection/jersey_fkapi_create.html:683
 msgid "This image has already been added."
 msgstr "Esta imagen ya ha sido añadida."
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:716
+#: footycollect/templates/collection/jersey_fkapi_create.html:717
 msgid "Default Image (will be processed on submission)"
 msgstr "Imagen por defecto (se procesará al enviar)"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:730
+#: footycollect/templates/collection/jersey_fkapi_create.html:731
 msgid "Remove"
 msgstr "Quitar"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:760
+#: footycollect/templates/collection/jersey_fkapi_create.html:761
 msgid ""
 "Default image added successfully! It will be processed when you submit the "
 "form."
@@ -1218,71 +1342,73 @@ msgstr ""
 "¡Imagen por defecto añadida correctamente! Se procesará cuando envíes el "
 "formulario."
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:769
+#: footycollect/templates/collection/jersey_fkapi_create.html:769
 msgid "Could not add the default image. Please try adding it manually."
-msgstr "No se pudo añadir la imagen por defecto. Por favor, intenta añadirla manualmente."
+msgstr "No se pudo añadir la imagen por defecto. Intenta añadirla manualmente."
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:772
+#: footycollect/templates/collection/jersey_fkapi_create.html:772
 msgid "Error adding default image. Please try again or add it manually."
-msgstr "Error al añadir la imagen por defecto. Inténtalo de nuevo o añádela manualmente."
+msgstr ""
+"Error al añadir la imagen por defecto. Inténtalo de nuevo o añádela "
+"manualmente."
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2708
-#: .\footycollect\templates\collection\jersey_select.html:558
+#: footycollect/templates/collection/jersey_fkapi_create.html:2560
+#: footycollect/templates/collection/jersey_select.html:514
 msgid "Add Jersey from Database"
 msgstr "Añadir camiseta desde la base de datos"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2723
+#: footycollect/templates/collection/jersey_fkapi_create.html:2570
 msgid "Search for a Kit"
 msgstr "Buscar un kit"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2729
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2772
-#: .\footycollect\templates\collection\jersey_select.html:576
+#: footycollect/templates/collection/jersey_fkapi_create.html:2576
+#: footycollect/templates/collection/jersey_fkapi_create.html:2623
+#: footycollect/templates/collection/jersey_select.html:532
 msgid "Enter at least 3 characters"
 msgstr "Introduce al menos 3 caracteres."
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2740
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2783
+#: footycollect/templates/collection/jersey_fkapi_create.html:2587
+#: footycollect/templates/collection/jersey_fkapi_create.html:2634
 msgid "Results for"
 msgstr "Resultados para"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2765
+#: footycollect/templates/collection/jersey_fkapi_create.html:2616
 msgid "Or"
 msgstr "O"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2766
+#: footycollect/templates/collection/jersey_fkapi_create.html:2617
 msgid "Search for a Club"
 msgstr "Buscar un equipo"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2808
+#: footycollect/templates/collection/jersey_fkapi_create.html:2659
 msgid "Select Season"
 msgstr "Seleccionar temporada"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2816
+#: footycollect/templates/collection/jersey_fkapi_create.html:2667
 msgid "Select a season"
 msgstr "Selecciona una temporada"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:2827
+#: footycollect/templates/collection/jersey_fkapi_create.html:2678
 msgid "Jersey Details"
 msgstr "Detalle de la camiseta"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:3007
+#: footycollect/templates/collection/jersey_fkapi_create.html:2858
 msgid "Add Default Image to Photos"
 msgstr "Añadir imagen por defecto a las fotos"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:3015
+#: footycollect/templates/collection/jersey_fkapi_create.html:2866
 msgid "Verify Form Data"
 msgstr "Verificar datos del formulario"
 
-#: .\footycollect\templates\collection\jersey_fkapi_create.html:3018
+#: footycollect/templates/collection/jersey_fkapi_create.html:2869
 msgid "Create Jersey"
 msgstr "Crear camiseta"
 
-#: .\footycollect\templates\collection\jersey_select.html:546
+#: footycollect/templates/collection/jersey_select.html:512
 msgid "Select Jersey"
 msgstr "Seleccionar camiseta"
 
-#: .\footycollect\templates\collection\jersey_select.html:561
+#: footycollect/templates/collection/jersey_select.html:517
 msgid ""
 "First, select a jersey from our database. You'll be able to add more details "
 "and photos in the next step."
@@ -1290,36 +1416,38 @@ msgstr ""
 "Primero, selecciona una camiseta de nuestra base de datos. Podrás añadir más "
 "detalles y fotos en el siguiente paso."
 
-#: .\footycollect\templates\collection\jersey_select.html:565
+#: footycollect/templates/collection/jersey_select.html:521
 msgid "Search for a Jersey"
 msgstr "Buscar una camiseta"
 
-#: .\footycollect\templates\collection\jersey_select.html:570
+#: footycollect/templates/collection/jersey_select.html:526
 msgid "Search by team, season, or competition"
 msgstr "Buscar por equipo, temporada o competición"
 
-#: .\footycollect\templates\collection\jersey_select.html:592
+#: footycollect/templates/collection/jersey_select.html:548
 msgid "Search Results"
 msgstr "Resultados de búsqueda"
 
-#: .\footycollect\templates\collection\jersey_select.html:594
+#: footycollect/templates/collection/jersey_select.html:550
 msgid "Clear Results"
 msgstr "Limpiar resultados"
 
-#: .\footycollect\templates\collection\jersey_select.html:606
+#: footycollect/templates/collection/jersey_select.html:562
 msgid ""
 "No jerseys found. Try searching for a team name, season, or competition."
-msgstr "No se encontraron camisetas. Prueba a buscar por equipo, temporada o competición."
+msgstr ""
+"No se encontraron camisetas. Prueba a buscar por equipo, temporada o "
+"competición."
 
-#: .\footycollect\templates\collection\jersey_select.html:643
+#: footycollect/templates/collection/jersey_select.html:599
 msgid "Selected Jersey"
 msgstr "Camiseta seleccionada"
 
-#: .\footycollect\templates\collection\jersey_select.html:645
+#: footycollect/templates/collection/jersey_select.html:601
 msgid "Search Again"
 msgstr "Buscar de nuevo"
 
-#: .\footycollect\templates\collection\jersey_select.html:693
+#: footycollect/templates/collection/jersey_select.html:649
 msgid ""
 "In the next step, you'll be able to add more details, specify condition, and "
 "upload additional photos."
@@ -1327,28 +1455,40 @@ msgstr ""
 "En el siguiente paso podrás añadir más detalles, indicar el estado y subir "
 "fotos adicionales."
 
-#: .\footycollect\templates\collection\jersey_select.html:698
+#: footycollect/templates/collection/jersey_select.html:654
 msgid "Continue to Details"
 msgstr "Continuar a detalles"
 
-#: .\footycollect\templates\cotton\collection\photo_manager.html:17
+#: footycollect/templates/cotton/collection/photo_manager.html:21
 msgid "Drag files here or click to select"
 msgstr "Arrastra archivos aquí o haz clic para seleccionar"
 
-#: .\footycollect\templates\cotton\collection\photo_manager.html:18
-msgid "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF"
+#: footycollect/templates/cotton/collection/photo_manager.html:22
+#, fuzzy
+#| msgid "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF"
+msgid "Maximum 15MB per file. Supported formats: JPG, PNG, WebP, GIF, AVIF"
 msgstr "Máximo 15 MB por archivo. Formatos: JPG, PNG, WebP, GIF"
 
-#: .\footycollect\templates\pages\about.html:6
-#: .\footycollect\templates\pages\about.html:12
+#: footycollect/templates/cotton/item_card.html:120
+#: footycollect/templates/cotton/item_card.html:143
+#: footycollect/templates/cotton/item_card.html:144
+msgid "View Details"
+msgstr "Ver detalles"
+
+#: footycollect/templates/cotton/quick_view_modal.html:15
+msgid "Quick View"
+msgstr "Vista Rápida"
+
+#: footycollect/templates/pages/about.html:6
+#: footycollect/templates/pages/about.html:12
 msgid "About FootyCollect"
 msgstr "Sobre FootyCollect"
 
-#: .\footycollect\templates\pages\about.html:15
+#: footycollect/templates/pages/about.html:15
 msgid "What is FootyCollect?"
 msgstr "¿Qué es FootyCollect?"
 
-#: .\footycollect\templates\pages\about.html:19
+#: footycollect/templates/pages/about.html:19
 msgid ""
 "FootyCollect is a comprehensive platform for managing and showcasing your "
 "football memorabilia collection. Whether you collect jerseys, shorts, or "
@@ -1360,46 +1500,46 @@ msgstr ""
 "FootyCollect te ayuda a organizar, seguir y compartir tu colección con "
 "facilidad."
 
-#: .\footycollect\templates\pages\about.html:25
+#: footycollect/templates/pages/about.html:25
 msgid "Key Features"
 msgstr "Características principales"
 
-#: .\footycollect\templates\pages\about.html:31
+#: footycollect/templates/pages/about.html:31
 msgid "Organize Your Collection"
 msgstr "Organiza tu colección"
 
-#: .\footycollect\templates\pages\about.html:33
+#: footycollect/templates/pages/about.html:33
 msgid ""
 "Track jerseys, shorts, and other items by club, season, competition, and "
 "more."
 msgstr ""
 "Organiza camisetas, pantalones y más por equipo, temporada, competición, etc."
 
-#: .\footycollect\templates\pages\about.html:38
+#: footycollect/templates/pages/about.html:38
 msgid "Automatic Kit Detection"
 msgstr "Detección automática de kits"
 
-#: .\footycollect\templates\pages\about.html:40
+#: footycollect/templates/pages/about.html:40
 msgid ""
 "Use our automatic mode to quickly add items from our extensive kit database, "
 "or manually add items not found in the database."
 msgstr ""
-"Usa el modo automático para añadir items de nuestra base de datos de kits "
-"o añade manualmente los que no estén en la base de datos."
+"Usa el modo automático para añadir items de nuestra base de datos de kits o "
+"añade manualmente los que no estén en la base de datos."
 
-#: .\footycollect\templates\pages\about.html:45
+#: footycollect/templates/pages/about.html:45
 msgid "Photo Management"
 msgstr "Gestión de fotos"
 
-#: .\footycollect\templates\pages\about.html:47
+#: footycollect/templates/pages/about.html:47
 msgid "Upload multiple photos of each item to showcase your collection."
 msgstr "Sube varias fotos de cada artículo para mostrar tu colección."
 
-#: .\footycollect\templates\pages\about.html:52
+#: footycollect/templates/pages/about.html:52
 msgid "Detailed Information"
 msgstr "Información detallada"
 
-#: .\footycollect\templates\pages\about.html:54
+#: footycollect/templates/pages/about.html:54
 msgid ""
 "Record condition, size, player names, numbers, and other customizations for "
 "each item."
@@ -1407,11 +1547,11 @@ msgstr ""
 "Registra estado, talla, nombre del jugador, número y otras personalizaciones "
 "de cada artículo."
 
-#: .\footycollect\templates\pages\about.html:59
+#: footycollect/templates/pages/about.html:59
 msgid "Search & Filter"
 msgstr "Buscar y filtrar"
 
-#: .\footycollect\templates\pages\about.html:61
+#: footycollect/templates/pages/about.html:61
 msgid ""
 "Find items in your collection or discover what others have collected by "
 "searching kits, clubs, seasons, and competitions."
@@ -1419,15 +1559,15 @@ msgstr ""
 "Encuentra artículos en tu colección o descubre lo que otros tienen buscando "
 "por kits, equipos, temporadas y competiciones."
 
-#: .\footycollect\templates\pages\about.html:69
+#: footycollect/templates/pages/about.html:69
 msgid "How It Works"
 msgstr "Cómo funciona"
 
-#: .\footycollect\templates\pages\about.html:74
+#: footycollect/templates/pages/about.html:74
 msgid "Adding Items - Automatic Mode"
 msgstr "Añadir artículos - Modo automático"
 
-#: .\footycollect\templates\pages\about.html:76
+#: footycollect/templates/pages/about.html:76
 msgid ""
 "When you own a jersey from a kit in our database, use automatic mode. Select "
 "the kit template (e.g., 'FC Barcelona 2020-21 Home Kit'), then add details "
@@ -1437,11 +1577,11 @@ msgstr ""
 "automático. Selecciona el kit (ej. FC Barcelona 2020-21 Local), luego añade "
 "detalles de tu artículo: talla, estado, nombre del jugador y fotos."
 
-#: .\footycollect\templates\pages\about.html:80
+#: footycollect/templates/pages/about.html:80
 msgid "Adding Items - Manual Mode"
 msgstr "Añadir artículos - Modo manual"
 
-#: .\footycollect\templates\pages\about.html:82
+#: footycollect/templates/pages/about.html:82
 msgid ""
 "For items not in our database (fantasy clubs, custom jerseys, or rare "
 "items), use manual mode. Search for or create the club, select season and "
@@ -1451,11 +1591,11 @@ msgstr ""
 "camisetas personalizadas o piezas raras), usa el modo manual. Busca o crea "
 "el equipo, elige temporada y competición y añade todos los detalles."
 
-#: .\footycollect\templates\pages\about.html:87
+#: footycollect/templates/pages/about.html:87
 msgid "Understanding Kits vs Items"
 msgstr "Entiende la diferencia entre kits y camisetas"
 
-#: .\footycollect\templates\pages\about.html:89
+#: footycollect/templates/pages/about.html:89
 msgid ""
 "A 'Kit' is the template/design (e.g., 'FC Barcelona 2020-21 Home Kit'). An "
 "'Item' is your physical jersey with specific details (e.g., 'My FC Barcelona "
@@ -1467,42 +1607,108 @@ msgstr ""
 "#10, etc.). Varios usuarios pueden tener el mismo kit con distintas "
 "personalizaciones."
 
-#: .\footycollect\templates\pages\about.html:97
+#: footycollect/templates/pages/about.html:97
 msgid "Get Started"
 msgstr "Empezar"
 
-#: .\footycollect\templates\pages\about.html:100
+#: footycollect/templates/pages/about.html:100
 msgid "Ready to start managing your collection?"
 msgstr "¿Listo para gestionar tu colección?"
 
-#: .\footycollect\templates\pages\home.html:565
-#: .\footycollect\templates\pages\home.html:568
+#: footycollect/templates/pages/home.html:545
+msgid "Loading jerseys..."
+msgstr "Cargando camisetas..."
+
+#: footycollect/templates/pages/home.html:553
+msgid "The Ultimate Jersey Collection"
+msgstr "Tu colección de camisetas"
+
+#: footycollect/templates/pages/home.html:555
+msgctxt "home_title"
+msgid "Your Football"
+msgstr "Tu"
+
+#: footycollect/templates/pages/home.html:556
+msgctxt "home_title"
+msgid "Memorabilia"
+msgstr "colección de recuerdos"
+
+#: footycollect/templates/pages/home.html:557
+msgctxt "home_title"
+msgid "Collection"
+msgstr "de fútbol"
+
+#: footycollect/templates/pages/home.html:560
+msgid ""
+"Catalog, organize, and showcase your prized football jerseys. From vintage "
+"classics to modern masterpieces."
+msgstr ""
+"Cataloga, organiza y comparte tus camisetas. Desde clásicos de época hasta "
+"las últimas equipaciones."
+
+#: footycollect/templates/pages/home.html:564
+#: footycollect/templates/pages/home.html:567
 msgid "Start Your Collection"
 msgstr "Empezar tu colección"
 
-#: .\footycollect\templates\pages\home.html:566
-#: .\footycollect\templates\pages\home.html:569
+#: footycollect/templates/pages/home.html:565
+#: footycollect/templates/pages/home.html:568
 msgid "Explore Gallery"
 msgstr "Explorar galería"
 
-#: .\footycollect\templates\users\user_form.html:113
-#: .\footycollect\templates\users\user_form.html:119
+#: footycollect/templates/users/user_detail.html:35
+#: footycollect/templates/users/user_form.html:113
+#: footycollect/templates/users/user_form.html:119
 msgid "Edit Profile"
 msgstr "Editar perfil"
 
-#: .\footycollect\templates\users\user_form.html:120
+#: footycollect/templates/users/user_detail.html:52
+msgid "Favorite Teams"
+msgstr "Equipos favoritos"
+
+#: footycollect/templates/users/user_detail.html:65
+msgid "Items"
+msgstr "Artículos"
+
+#: footycollect/templates/users/user_detail.html:73
+msgid "Teams"
+msgstr "Equipos"
+
+#: footycollect/templates/users/user_detail.html:89
+msgid "Recent Items"
+msgstr "Artículos recientes"
+
+#: footycollect/templates/users/user_detail.html:92
+#: footycollect/templates/users/user_detail.html:103
+#, python-format
+msgid "View full collection (%(counter)s item)"
+msgid_plural "View full collection (%(counter)s items)"
+msgstr[0] "Ver colección completa (%(counter)s artículo)"
+msgstr[1] "Ver colección completa (%(counter)s artículos)"
+msgstr[2] "Ver colección completa (%(counter)s artículos)"
+
+#: footycollect/templates/users/user_detail.html:111
+msgid "This profile is private"
+msgstr "Este perfil es privado"
+
+#: footycollect/templates/users/user_detail.html:113
+#, python-format
+msgid "Only %(username)s can see their collection."
+msgstr "Solo %(username)s puede ver su colección."
+
+#: footycollect/templates/users/user_form.html:120
 msgid "Update your profile information"
 msgstr "Actualiza la información de tu perfil"
 
-#: .\footycollect\templates\users\user_form.html:126
+#: footycollect/templates/users/user_form.html:126
 msgid "Current avatar"
 msgstr "Avatar actual"
 
-#: .\footycollect\templates\users\user_form.html:134
+#: footycollect/templates/users/user_form.html:134
 msgid "Update Profile"
 msgstr "Actualizar perfil"
 
-#: .\footycollect\users\adapters.py:47
+#: footycollect/users/adapters.py:47
 #, python-format
 msgid ""
 "This email is already registered with: %(providers)s. Please login using "
@@ -1511,85 +1717,92 @@ msgstr ""
 "Este correo ya está registrado con: %(providers)s. Inicia sesión con ese "
 "método."
 
-#: .\footycollect\users\adapters.py:53
+#: footycollect/users/adapters.py:53
 msgid ""
 "This email is already registered. Please use a different email or try to "
 "login."
-msgstr "Este correo ya está registrado. Usa otro correo o intenta iniciar sesión."
+msgstr ""
+"Este correo ya está registrado. Usa otro correo o intenta iniciar sesión."
 
-#: .\footycollect\users\adapters.py:71
+#: footycollect/users/adapters.py:71
 #, python-format
 msgid ""
 "This account was created with: %(providers)s. Please use that method to "
 "login."
-msgstr "Esta cuenta se creó con: %(providers)s. Usa ese método para iniciar sesión."
+msgstr ""
+"Esta cuenta se creó con: %(providers)s. Usa ese método para iniciar sesión."
 
-#: .\footycollect\users\adapters.py:110
+#: footycollect/users/adapters.py:110
 #, python-format
 msgid ""
 "Social account linked to %(email)s. You can now login using both methods."
-msgstr "Cuenta social vinculada a %(email)s. Ya puedes iniciar sesión con ambos métodos."
+msgstr ""
+"Cuenta social vinculada a %(email)s. Ya puedes iniciar sesión con ambos "
+"métodos."
 
-#: .\footycollect\users\admin.py:24
+#: footycollect/users/admin.py:24
 msgid "Personal info"
 msgstr "Datos personales"
 
-#: .\footycollect\users\admin.py:26
+#: footycollect/users/admin.py:26
 msgid "Permissions"
 msgstr "Permisos"
 
-#: .\footycollect\users\admin.py:37
+#: footycollect/users/admin.py:37
 msgid "Important dates"
 msgstr "Fechas importantes"
 
-#: .\footycollect\users\apps.py:9
+#: footycollect/users/apps.py:9
 msgid "Users"
 msgstr "Usuarios"
 
-#: .\footycollect\users\forms.py:26
+#: footycollect/users/forms.py:26
 msgid "This username has already been taken."
 msgstr "Este nombre de usuario ya está en uso."
 
-#: .\footycollect\users\models.py:31
+#: footycollect/users/models.py:31
 msgid "email address"
 msgstr "correo electrónico"
 
-#: .\footycollect\users\models.py:33
+#: footycollect/users/models.py:33
 msgid "Name and last name"
 msgstr "Nombre y apellidos"
 
-#: .\footycollect\users\models.py:34
+#: footycollect/users/models.py:34
 msgid "Biography"
 msgstr "Biografía"
 
-#: .\footycollect\users\models.py:35
+#: footycollect/users/models.py:35
 msgid "Location"
 msgstr "Ubicación"
 
-#: .\footycollect\users\models.py:37
+#: footycollect/users/models.py:37
 msgid "Avatar"
 msgstr "Avatar"
 
-#: .\footycollect\users\models.py:46
+#: footycollect/users/models.py:46
 msgid "Created at"
 msgstr "Creado el"
 
-#: .\footycollect\users\models.py:51
+#: footycollect/users/models.py:51
 msgid "Updated at"
 msgstr "Actualizado el"
 
-#: .\footycollect\users\validators.py:10 .\footycollect\users\validators.py:22
+#: footycollect/users/validators.py:10 footycollect/users/validators.py:22
 msgid "File type is not supported"
 msgstr "Tipo de archivo no admitido"
 
-#: .\footycollect\users\validators.py:14
+#: footycollect/users/validators.py:14
 msgid "Image file too large ( > 10mb )"
 msgstr "La imagen es demasiado grande (> 10 MB)"
 
-#: .\footycollect\users\validators.py:27
+#: footycollect/users/validators.py:27
 msgid "Please upload a valid image file (JPG, PNG, GIF)"
 msgstr "Sube un archivo de imagen válido (JPG, PNG, GIF)"
 
-#: .\footycollect\users\views.py:38
+#: footycollect/users/views.py:89
 msgid "Profile updated successfully"
 msgstr "Perfil actualizado correctamente"
+
+#~ msgid "Your Football Memorabilia Collection"
+#~ msgstr "Tu colección de recuerdos de fútbol"

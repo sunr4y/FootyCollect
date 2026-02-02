@@ -87,6 +87,7 @@ class FeedView(ListView):
         context["filter_count"] = filter_count
 
         from footycollect.collection.models import Color
+        from footycollect.collection.utils_i18n import get_color_display_name
         from footycollect.core.models import Brand, Club, TypeK
 
         context["kit_type_choices"] = TypeK.objects.filter(category="match").values_list("name", flat=True).distinct()
@@ -94,7 +95,11 @@ class FeedView(ListView):
 
         colors = Color.objects.all().order_by("name")
         color_choices_list = [
-            {"value": str(color.id), "label": color.name, "hex_value": color.hex_value or "#000000"}
+            {
+                "value": str(color.id),
+                "label": get_color_display_name(color.name),
+                "hex_value": color.hex_value or "#000000",
+            }
             for color in colors
         ]
         import json
@@ -116,7 +121,7 @@ class FeedView(ListView):
                 color_id = int(filters["main_color"])
                 color = Color.objects.filter(id=color_id).first()
                 if color:
-                    filter_display_names["main_color"] = color.name
+                    filter_display_names["main_color"] = get_color_display_name(color.name)
             except (ValueError, TypeError):
                 pass
 
@@ -125,8 +130,10 @@ class FeedView(ListView):
                 if isinstance(filters["secondary_color"], str) and filters["secondary_color"]:
                     color_ids = [int(c.strip()) for c in filters["secondary_color"].split(",") if c.strip().isdigit()]
                     if color_ids:
-                        colors = Color.objects.filter(id__in=color_ids).values_list("name", flat=True)
-                        filter_display_names["secondary_color"] = list(colors)
+                        colors_qs = Color.objects.filter(id__in=color_ids)
+                        filter_display_names["secondary_color"] = [
+                            get_color_display_name(c.name) for c in colors_qs.order_by("name")
+                        ]
             except (ValueError, TypeError):
                 pass
 
