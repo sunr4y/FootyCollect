@@ -45,7 +45,7 @@ def create_jersey_with_mti(user, brand, club, season, size, **kwargs):
         is_signed=kwargs.get("is_signed", False),
         has_nameset=kwargs.get("has_nameset", False),
         player_name=kwargs.get("player_name", ""),
-        number=kwargs.get("number", None),
+        number=kwargs.get("number"),
         is_short_sleeve=kwargs.get("is_short_sleeve", True),
     )
 
@@ -75,7 +75,7 @@ def create_shorts_with_mti(user, brand, club, season, size, **kwargs):
         base_item=base_item,
         size=kwargs.get("size", size),
         is_fan_version=kwargs.get("is_fan_version", True),
-        number=kwargs.get("number", None),
+        number=kwargs.get("number"),
     )
 
 

@@ -320,7 +320,7 @@ class TestItemService(TestCase):
     def test_get_items_by_condition(self):
         """Test getting items by condition."""
         mock_items = Mock()
-        mock_items.values.return_value.annotate.return_value.values_list.return_value = [("new", 5), ("used", 3)]  # noqa: PD011
+        mock_items.values.return_value.annotate.return_value.values_list.return_value = [("new", 5), ("used", 3)]
 
         result = self.service._get_items_by_condition(mock_items)
 
@@ -329,7 +329,10 @@ class TestItemService(TestCase):
     def test_get_items_by_brand(self):
         """Test getting items by brand."""
         mock_items = Mock()
-        mock_items.values.return_value.annotate.return_value.values_list.return_value = [("Nike", 3), ("Adidas", 2)]  # noqa: PD011
+        mock_items.values.return_value.annotate.return_value.values_list.return_value = [
+            ("Nike", 3),
+            ("Adidas", 2),
+        ]
 
         result = self.service._get_items_by_brand(mock_items)
 
@@ -338,7 +341,7 @@ class TestItemService(TestCase):
     def test_get_items_by_club(self):
         """Test getting items by club."""
         mock_items = Mock()
-        mock_items.values.return_value.annotate.return_value.values_list.return_value = [  # noqa: PD011
+        mock_items.values.return_value.annotate.return_value.values_list.return_value = [
             ("Barcelona", 2),
             ("Real Madrid", 1),
         ]

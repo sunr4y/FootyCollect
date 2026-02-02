@@ -24,27 +24,23 @@ from .photo_views import (
 )
 
 __all__ = [
-    # Feed views
     "FeedView",
-    # Item views
-    "ItemListView",
-    "ItemDetailView",
-    "ItemQuickViewView",
     "ItemCreateView",
-    "ItemUpdateView",
     "ItemDeleteView",
-    "JerseyCreateView",
-    "JerseyUpdateView",
-    "JerseySelectView",
-    "JerseyFKAPICreateView",
-    # Photo views
+    "ItemDetailView",
+    "ItemListView",
     "ItemProcessingStatusView",
-    "reorder_photos",
-    "upload_photo",
+    "ItemQuickViewView",
+    "ItemUpdateView",
+    "JerseyCreateView",
+    "JerseyFKAPICreateView",
+    "JerseySelectView",
+    "JerseyUpdateView",
+    "PhotoProcessorMixin",
     "file_upload",
     "handle_dropzone_files",
-    "PhotoProcessorMixin",
-    "proxy_image",
-    # Demo views
     "home",
+    "proxy_image",
+    "reorder_photos",
+    "upload_photo",
 ]

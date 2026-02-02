@@ -79,7 +79,10 @@ class ItemQuickViewView(BaseItemDetailView):
             context["specific_item"] = self.object
 
         photos = photo_service.get_item_photos(base_item)
-        context["photos"] = list(photos)
+        photos_list = list(photos)
+        context["photos"] = photos_list
+        context["has_photos"] = len(photos_list) > 0
+        context["first_photo"] = photos_list[0] if photos_list else None
         context["object"] = base_item
         context["item"] = base_item
 
@@ -158,9 +161,10 @@ class ItemDetailView(BaseItemDetailView):
             context["specific_item"] = self.object
 
         photos = photo_service.get_item_photos(base_item)
-
         photos_list = list(photos)
         context["photos"] = photos_list
+        context["has_photos"] = len(photos_list) > 0
+        context["first_photo"] = photos_list[0] if photos_list else None
 
         context["object"] = base_item
         context["item"] = base_item

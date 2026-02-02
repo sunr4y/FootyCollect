@@ -24,6 +24,42 @@ from footycollect.collection.models import BaseItem, Photo
 from footycollect.collection.services import get_photo_service
 
 PROXY_IMAGE_MAX_SIZE = 10 * 1024 * 1024
+
+
+def check_user_upload_limit(user, new_file_size):
+    """
+    Check if user has exceeded their upload limit.
+    Returns (allowed, error_message).
+    """
+    limit_mb = getattr(django_settings, "DEMO_UPLOAD_LIMIT_MB", 0)
+    if not limit_mb:
+        return True, None
+
+    # Calculate current usage from Photo file sizes
+    # We'll estimate from actual files since file_size field might not exist
+    current_usage = 0
+    for photo in Photo.objects.filter(user=user):
+        try:
+            if photo.image:
+                current_usage += photo.image.size
+            if photo.image_avif:
+                current_usage += photo.image_avif.size
+        except (ValueError, FileNotFoundError, OSError):
+            pass
+
+    limit_bytes = limit_mb * 1024 * 1024
+    available = limit_bytes - current_usage
+
+    if new_file_size > available:
+        used_mb = current_usage / (1024 * 1024)
+        return False, _(
+            "Upload limit exceeded. You have used {used:.1f} MB of {limit} MB. "
+            "Please delete some photos to free up space."
+        ).format(used=used_mb, limit=limit_mb)
+
+    return True, None
+
+
 PROXY_REFERER = "https://www.footballkitarchive.com/"
 
 logger = logging.getLogger(__name__)
@@ -120,6 +156,11 @@ def upload_photo(request):
         if not file:
             return JsonResponse({"error": _("No file received")}, status=400)
 
+        # Check upload limit (demo mode)
+        allowed, error_msg = check_user_upload_limit(request.user, file.size)
+        if not allowed:
+            return JsonResponse({"error": error_msg}, status=403)
+
         # Use service to create photo
         photo = photo_service.create_photo_with_validation(
             file=file,
@@ -180,6 +221,12 @@ def file_upload(request):
     my_file = request.FILES.get("file")
     if not my_file:
         return JsonResponse({"error": _("No file provided")}, status=400)
+
+    # Check upload limit (demo mode)
+    allowed, error_msg = check_user_upload_limit(request.user, my_file.size)
+    if not allowed:
+        return JsonResponse({"error": error_msg}, status=403)
+
     Photo.objects.create(image=my_file, user=request.user)
     return HttpResponse("")
 

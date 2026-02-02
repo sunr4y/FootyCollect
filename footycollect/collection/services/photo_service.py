@@ -209,7 +209,7 @@ class PhotoService:
                 raise ValueError(error_msg)
 
             # Check file type
-            allowed_content_types = ["image/jpeg", "image/png", "image/webp"]
+            allowed_content_types = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
             if photo_file.content_type not in allowed_content_types:
                 error_msg = (
                     f"Photo {photo_file.name} has an invalid format. "

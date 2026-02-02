@@ -174,9 +174,15 @@ ignore-names = ["_meta"]
     "C901",
     "PLR0912",
     "PLR0913",
+    "PLR0915",
+    "PLR2004",
 ]
 # Ignore complexity warnings in checks (acceptable for validation logic)
 "config/checks.py" = [
     "C901",
     "PLR0912",
 ]
+# Ignore complexity in feed_service parse_filters (many GET params)
+"footycollect/collection/services/feed_service.py" = ["PLR0912"]
+# Ignore PD011 in tests that mock Django queryset .values().annotate().values_list()
+"footycollect/collection/tests/test_item_service.py" = ["PD011"]

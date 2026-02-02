@@ -17,6 +17,12 @@ if __name__ == "__main__":
         else:
             sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
+    base_dir = Path(__file__).resolve().parent
+    env_file = base_dir / ".env"
+    if env_file.exists():
+        import environ
+
+        environ.Env.read_env(str(env_file))
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 
     try:

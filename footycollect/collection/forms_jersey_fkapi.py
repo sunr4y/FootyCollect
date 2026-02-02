@@ -71,13 +71,8 @@ class JerseyFKAPIForm(JerseyForm):
             self.instance = BaseItem()
 
         using_api = False
-        if (
-            "data" in kwargs
-            and kwargs["data"]
-            and kwargs["data"].get("brand_name")
-            or "initial" in kwargs
-            and kwargs["initial"]
-            and kwargs["initial"].get("brand_name")
+        if ("data" in kwargs and kwargs["data"] and kwargs["data"].get("brand_name")) or (
+            "initial" in kwargs and kwargs["initial"] and kwargs["initial"].get("brand_name")
         ):
             using_api = True
 

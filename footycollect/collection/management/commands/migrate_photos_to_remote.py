@@ -174,7 +174,7 @@ class Command(BaseCommand):
     def _format_size(self, size_bytes):
         """Format file size in human-readable format."""
         for unit in ["B", "KB", "MB", "GB"]:
-            if size_bytes < 1024.0:  # noqa: PLR2004
+            if size_bytes < 1024.0:
                 return f"{size_bytes:.2f} {unit}"
             size_bytes /= 1024.0
         return f"{size_bytes:.2f} TB"

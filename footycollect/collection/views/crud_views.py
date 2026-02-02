@@ -7,9 +7,9 @@ ItemCreateView, ItemUpdateView, ItemDeleteView with photo and form context handl
 import json
 import logging
 
-from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse_lazy
+from django.utils.translation import gettext as _
 
 from footycollect.collection.cache_utils import invalidate_item_list_cache_for_user
 from footycollect.collection.forms import JerseyForm
@@ -69,7 +69,7 @@ class ItemUpdateView(BaseItemUpdateView):
         if parsed is None:
             return response
 
-        keep_ids, order_map, external_images = self._extract_photo_data(parsed)
+        keep_ids, order_map, _ = self._extract_photo_data(parsed)
 
         self._update_existing_photos(keep_ids, order_map)
         self._remove_deleted_photos(keep_ids)
@@ -317,6 +317,8 @@ class ItemDeleteView(BaseItemDeleteView):
             return f"{base_url}?page={page}"
         return base_url
 
+    success_message = _("Item and associated photos deleted successfully.")
+
     def delete(self, request, *args, **kwargs):
         """Override delete to handle photo cleanup."""
         item = self.get_object()
@@ -324,8 +326,6 @@ class ItemDeleteView(BaseItemDeleteView):
         photos = item.photos.all()
         for photo in photos:
             photo.delete()
-
-        messages.success(request, "Item and associated photos deleted successfully.")
 
         invalidate_item_list_cache_for_user(request.user.pk)
 

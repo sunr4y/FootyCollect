@@ -3,6 +3,7 @@ import logging
 from footycollect.collection.cache_utils import (
     ITEM_LIST_CACHE_TIMEOUT,
     get_item_list_cache_key,
+    get_item_list_fragment_version_key,
     increment_item_list_cache_metric,
     track_item_list_cache_key,
 )
@@ -48,6 +49,17 @@ class ItemListView(BaseItemListView):
                 return True
 
         return False
+
+    def get_context_data(self, **kwargs):
+        from django.core.cache import cache
+
+        context = super().get_context_data(**kwargs)
+        request = getattr(self, "request", None)
+        if request and getattr(request, "user", None) and request.user.is_authenticated:
+            context["fragment_version"] = cache.get(get_item_list_fragment_version_key(request.user.pk)) or 0
+        else:
+            context["fragment_version"] = 0
+        return context
 
     def get(self, request, *args, **kwargs):
         from django.core.cache import cache

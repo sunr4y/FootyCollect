@@ -136,6 +136,6 @@ class ItemTypeForm(forms.Form):
 
 __all__ = [
     "BaseItemForm",
-    "ItemTypeSpecificFormMixin",
     "ItemTypeForm",
+    "ItemTypeSpecificFormMixin",
 ]

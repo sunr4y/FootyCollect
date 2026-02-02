@@ -361,11 +361,6 @@
       <i class="bi bi-info-circle-fill me-2"></i>
       {% trans "Complete the details for your jersey and add photos. The information from the database has been pre-filled for you." %}
     </div>
-    {% if messages %}
-      <div class="messages mb-4">
-        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
-      </div>
-    {% endif %}
     {% if kit_data %}
       <div class="selected-kit">
         <div class="row">

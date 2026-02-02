@@ -154,7 +154,23 @@
   .design-option.selected {
     border: 2px solid hsla(180, 85%, 40%, 1);
     background: linear-gradient(135deg, var(--fc-card) 0%, hsla(180, 85%, 40%, 0.1) 100%);
-    box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.3);
+    box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.6),
+      0 0 40px hsla(180, 85%, 40%, 0.4);
+    animation: design-breathe-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes design-breathe-glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px hsla(180, 85%, 40%, 0.6),
+        0 0 40px hsla(180, 85%, 40%, 0.4);
+    }
+
+    50% {
+      box-shadow: 0 0 30px hsla(180, 85%, 40%, 0.8),
+        0 0 60px hsla(180, 85%, 40%, 0.6);
+    }
   }
 
   .jersey-container {
