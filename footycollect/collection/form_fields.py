@@ -101,9 +101,9 @@ class BrandWidget(select2_widgets.ModelSelect2):
 
 
 __all__ = [
+    "BrandWidget",
     "ColorModelChoiceField",
     "ColorModelMultipleChoiceField",
-    "MultipleFileInput",
     "MultipleFileField",
-    "BrandWidget",
+    "MultipleFileInput",
 ]

@@ -1,12 +1,20 @@
+import time
+
 from django.core.cache import cache
 
 ITEM_LIST_CACHE_TIMEOUT = 60 * 5  # 5 minutes
+ITEM_LIST_CACHE_VERSION = 2
+ITEM_LIST_FRAGMENT_VERSION_TIMEOUT = 86400 * 7  # 7 days
 ITEM_LIST_CACHE_METRICS_HITS_KEY = "cache_metrics:item_list:hits"
 ITEM_LIST_CACHE_METRICS_MISSES_KEY = "cache_metrics:item_list:misses"
 
 
+def get_item_list_fragment_version_key(user_id):
+    return f"item_list_fragment_version:{user_id}"
+
+
 def get_item_list_cache_key(user_id, page):
-    return f"item_list:{user_id}:page:{page}"
+    return f"item_list:v{ITEM_LIST_CACHE_VERSION}:{user_id}:page:{page}"
 
 
 def get_item_list_cache_index_key(user_id):
@@ -40,6 +48,9 @@ def invalidate_item_list_cache_for_user(user_id):
         cache.delete_many(keys)
 
     cache.delete(index_key)
+
+    fragment_version_key = get_item_list_fragment_version_key(user_id)
+    cache.set(fragment_version_key, time.time(), ITEM_LIST_FRAGMENT_VERSION_TIMEOUT)
 
 
 def get_item_list_cache_metrics():

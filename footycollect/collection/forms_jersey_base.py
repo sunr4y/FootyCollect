@@ -660,6 +660,6 @@ class JerseyForm(forms.ModelForm):
 
 
 __all__ = [
-    "JerseyForm",
     "YEAR_LENGTH",
+    "JerseyForm",
 ]

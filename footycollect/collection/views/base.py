@@ -8,7 +8,6 @@ different view types in the collection app.
 import json
 
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse, reverse_lazy
@@ -78,8 +77,10 @@ class BaseItemDetailView(CollectionLoginRequiredMixin, DetailView):
         """Add additional context data."""
         context = super().get_context_data(**kwargs)
         photo_service = get_photo_service()
-        context["photos"] = photo_service.get_item_photos(self.object)
-        # Get the specific item instance (Jersey, Shorts, etc.) for MTI
+        photos = list(photo_service.get_item_photos(self.object))
+        context["photos"] = photos
+        context["has_photos"] = len(photos) > 0
+        context["first_photo"] = photos[0] if photos else None
         context["specific_item"] = self.object.get_specific_item()
         return context
 
@@ -145,6 +146,7 @@ class BaseItemDeleteView(
     model = BaseItem
     template_name = "collection/item_confirm_delete.html"
     success_url = reverse_lazy("collection:item_list")
+    success_message = _("Item deleted successfully.")
 
     def get_queryset(self):
         """Get user's items with optimizations."""
@@ -153,8 +155,3 @@ class BaseItemDeleteView(
             .select_related("user", "club", "season", "brand", "main_color")
             .prefetch_related("competitions", "photos")
         )
-
-    def delete(self, request, *args, **kwargs):
-        """Override delete to add custom success message."""
-        messages.success(request, _("Item deleted successfully."))
-        return super().delete(request, *args, **kwargs)

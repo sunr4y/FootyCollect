@@ -129,6 +129,19 @@
                 <label class="form-check-label" for="cat_prematch">{% trans "Pre-match" %}</label>
               </div>
             </div>
+            <!-- Has nameset -->
+            <div class="filter-section">
+              <h6>{% trans "Nameset" %}</h6>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="has_nameset"
+                       value="1"
+                       id="filter_has_nameset"
+                       {% if active_filters.has_nameset %}checked{% endif %} />
+                <label class="form-check-label" for="filter_has_nameset">{% trans "Has nameset" %}</label>
+              </div>
+            </div>
             <!-- Main Color -->
             <div class="filter-section">
               <h6>{% trans "Main Color" %}</h6>
@@ -208,12 +221,70 @@
                      value="{{ active_filters.season|default:'' }}" />
             </div>
             <div class="filter-section">
+              <h6>{% trans "Competition" %}</h6>
+              <input type="text"
+                     name="competition"
+                     class="form-control"
+                     placeholder="{% trans 'Search competition name...' %}"
+                     value="{{ active_filters.competition|default:'' }}" />
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Kit Type" %}</h6>
+              <input type="text"
+                     name="kit_type"
+                     class="form-control"
+                     placeholder="{% trans 'e.g., Home, Away' %}"
+                     value="{{ active_filters.kit_type|default:'' }}" />
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Category" %}</h6>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="match"
+                       id="cat_match_mobile"
+                       {% if active_filters.category == 'match' %}checked{% endif %} />
+                <label class="form-check-label" for="cat_match_mobile">{% trans "Match" %}</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="training"
+                       id="cat_training_mobile"
+                       {% if active_filters.category == 'training' %}checked{% endif %} />
+                <label class="form-check-label" for="cat_training_mobile">{% trans "Training" %}</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="category"
+                       value="prematch"
+                       id="cat_prematch_mobile"
+                       {% if active_filters.category == 'prematch' %}checked{% endif %} />
+                <label class="form-check-label" for="cat_prematch_mobile">{% trans "Pre-match" %}</label>
+              </div>
+            </div>
+            <div class="filter-section">
+              <h6>{% trans "Nameset" %}</h6>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="has_nameset"
+                       value="1"
+                       id="filter_has_nameset_mobile"
+                       {% if active_filters.has_nameset %}checked{% endif %} />
+                <label class="form-check-label" for="filter_has_nameset_mobile">{% trans "Has nameset" %}</label>
+              </div>
+            </div>
+            <div class="filter-section">
               <h6>{% trans "Main Color" %}</h6>
-              {% include "cotton/color_selector.html" with name="main_color" label="Main Color" color_choices=color_choices_json data_selected=active_filters.main_color|default:'' hide_label=True %}
+              {% include "cotton/color_selector.html" with name="main_color" label="Main Color" color_choices=color_choices_json data_selected=active_filters.main_color|default:'' hide_label=True selector_key="main_color_mobile" %}
             </div>
             <div class="filter-section">
               <h6>{% trans "Secondary Colors" %}</h6>
-              {% include "cotton/color_selector.html" with name="secondary_color" label="Secondary Colors" color_choices=color_choices_json data_multiple="true" data_selected=active_filters.secondary_color|default:'' hide_label=True %}
+              {% include "cotton/color_selector.html" with name="secondary_color" label="Secondary Colors" color_choices=color_choices_json data_multiple="true" data_selected=active_filters.secondary_color|default:'' hide_label=True selector_key="secondary_color_mobile" %}
             </div>
             <div class="d-flex gap-2 mt-3">
               <button type="submit" class="btn btn-primary flex-grow-1">{% trans "Apply" %}</button>
@@ -292,6 +363,14 @@
                 </button>
               </div>
             {% endif %}
+            {% if active_filters.has_nameset %}
+              <div class="filter-chip">
+                <span>{% trans "Has nameset" %}</span>
+                <button type="button" onclick="removeFilter('has_nameset')">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            {% endif %}
             {% if active_filters.main_color %}
               <div class="filter-chip">
                 <span>{% trans "Main Color" %}: {{ filter_display_names.main_color|default:active_filters.main_color }}</span>
@@ -319,7 +398,11 @@
         {% if items %}
           <div class="row" id="items-grid" style="row-gap: 0.75rem;">
             {% for item in items %}
-              {% include "cotton/item_card.html" with item=item show_user=True quick_view_enabled=True %}
+              {% if item.base_item.user == request.user %}
+                {% include "cotton/item_card.html" with item=item show_user=True show_edit=True show_delete=True show_rotate_photos=False show_mass_delete_checkbox=False quick_view_enabled=True %}
+              {% else %}
+                {% include "cotton/item_card.html" with item=item show_user=True show_edit=False show_delete=False show_rotate_photos=False show_mass_delete_checkbox=False quick_view_enabled=True %}
+              {% endif %}
             {% endfor %}
           </div>
           <!-- Infinite Scroll Trigger -->
@@ -343,6 +426,46 @@
     </div>
   </div>
   {% include "cotton/quick_view_modal.html" %}
+  {% if request.user.is_authenticated %}
+    <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-0 shadow-lg">
+          <div class="modal-header border-0">
+            <h5 class="modal-title" id="deleteItemModalLabel">{% trans "Delete Item" %}</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center py-4">
+            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+            <p class="mt-3 mb-1 text-light">
+              {% trans "Are you sure you want to delete" %} <strong id="deleteItemName"></strong>?
+            </p>
+            <p class="text-secondary small">{% trans "This action cannot be undone." %}</p>
+          </div>
+          <div class="modal-footer border-0 justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+            <form id="deleteItemForm" method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="page" id="deletePageInput" value="1" />
+              <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> {% trans "Yes, delete" %}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+  function showDeleteModal(button) {
+    var deleteUrl = button.getAttribute('data-delete-url');
+    var itemName = button.dataset.itemName;
+    document.getElementById('deleteItemName').textContent = itemName || '';
+    document.getElementById('deleteItemForm').action = deleteUrl;
+    var urlParams = new URLSearchParams(window.location.search);
+    document.getElementById('deletePageInput').value = urlParams.get('page') || '1';
+    new bootstrap.Modal(document.getElementById('deleteItemModal')).show();
+  }
+    </script>
+  {% endif %}
   <script>
     function toggleMobileFilters() {
       const overlay = document.getElementById('mobileFilterOverlay');
@@ -494,62 +617,34 @@
       return queryString ? `${baseUrl}?${queryString}` : baseUrl;
     }
 
-    function syncColorSelectors() {
-      const forms = [document.getElementById('filterForm'), document.getElementById('mobileFilterForm')];
+    function syncColorSelectors(form) {
+      if (!form) return;
+      const isMobile = form.id === 'mobileFilterForm';
+      const mainKey = isMobile ? 'main_color_mobile' : 'main_color';
+      const secondaryKey = isMobile ? 'secondary_color_mobile' : 'secondary_color';
 
-      forms.forEach(form => {
-        if (!form) return;
+      const mainInstance = window.colorSelectors && window.colorSelectors[mainKey];
+      if (mainInstance && mainInstance.select) {
+        const mainSelect = form.querySelector('select[name="main_color"]');
+        if (mainSelect) mainSelect.value = mainInstance.select.value || '';
+      }
 
-        const mainColorSelect = document.getElementById('id_main_color');
-        if (mainColorSelect) {
-          const mainColorValue = mainColorSelect.value ? mainColorSelect.value.trim() : '';
-          if (mainColorValue) {
-            let existingInput = form.querySelector('input[name="main_color"]');
-            if (!existingInput) {
-              existingInput = document.createElement('input');
-              existingInput.type = 'hidden';
-              existingInput.name = 'main_color';
-              form.appendChild(existingInput);
-            }
-            existingInput.value = mainColorValue;
+      const secondaryInstance = window.colorSelectors && window.colorSelectors[secondaryKey];
+      if (secondaryInstance && secondaryInstance.select) {
+        const secondarySelect = form.querySelector('select[name="secondary_color"]');
+        if (secondarySelect) {
+          if (secondaryInstance.select.multiple) {
+            Array.from(secondarySelect.options).forEach(opt => { opt.selected = false; });
+            const vals = Array.from(secondaryInstance.select.selectedOptions).map(o => o.value);
+            vals.forEach(v => {
+              const opt = secondarySelect.querySelector('option[value="' + v + '"]');
+              if (opt) opt.selected = true;
+            });
           } else {
-            const existingInput = form.querySelector('input[name="main_color"]');
-            if (existingInput) {
-              existingInput.remove();
-            }
+            secondarySelect.value = secondaryInstance.select.value || '';
           }
         }
-
-        const secondaryColorSelect = document.getElementById('id_secondary_color');
-        if (secondaryColorSelect) {
-          let value = '';
-          if (secondaryColorSelect.multiple) {
-            const selected = Array.from(secondaryColorSelect.selectedOptions)
-              .map(opt => opt.value.trim())
-              .filter(v => v);
-            value = selected.join(',');
-          } else {
-            value = secondaryColorSelect.value ? secondaryColorSelect.value.trim() : '';
-          }
-          if (value) {
-            let existingInput = form.querySelector('input[name="secondary_color"]');
-            if (!existingInput) {
-              existingInput = document.createElement('input');
-              existingInput.type = 'hidden';
-              existingInput.name = 'secondary_color';
-              form.appendChild(existingInput);
-            }
-            existingInput.value = value;
-          } else {
-            const existingInput = form.querySelector('input[name="secondary_color"]');
-            if (existingInput) {
-              existingInput.remove();
-            }
-          }
-        }
-      });
-
-      return true;
+      }
     }
 
     function cleanUrlOnLoad() {
@@ -602,10 +697,45 @@
 
       function handleFormSubmit(e) {
         e.preventDefault();
-        syncColorSelectors();
+        syncColorSelectors(e.target);
 
         const form = e.target;
         const formData = cleanFormData(form);
+
+        var isMobileForm = form.id === 'mobileFilterForm';
+        var mainKey = isMobileForm ? 'main_color_mobile' : 'main_color';
+        var secondaryKey = isMobileForm ? 'secondary_color_mobile' : 'secondary_color';
+        if (window.colorSelectors) {
+          if (window.colorSelectors[mainKey] && window.colorSelectors[mainKey].select) {
+            var mainVal = window.colorSelectors[mainKey].select.value;
+            if (mainVal && mainVal.trim()) {
+              formData.main_color = mainVal.trim();
+            } else {
+              delete formData.main_color;
+            }
+          }
+          var secVals = [];
+          if (window.colorSelectors[secondaryKey] && window.colorSelectors[secondaryKey].select) {
+            var secSel = window.colorSelectors[secondaryKey].select;
+            if (secSel.multiple) {
+              secVals = Array.from(secSel.selectedOptions).map(function(o) { return o.value; }).filter(function(v) { return v && v.trim(); });
+            } else {
+              var sv = secSel.value;
+              if (sv && sv.trim()) secVals = [sv.trim()];
+            }
+          }
+          if (secVals.length === 0) {
+            var hiddenSec = document.getElementById('hidden_' + secondaryKey);
+            if (hiddenSec && form.contains(hiddenSec) && hiddenSec.value) {
+              secVals = hiddenSec.value.split(',').map(function(v) { return v.trim(); }).filter(Boolean);
+            }
+          }
+          if (secVals.length > 0) {
+            formData.secondary_color = secVals;
+          } else {
+            delete formData.secondary_color;
+          }
+        }
 
         const sortSelect = form.querySelector('select[name="sort"]');
         if (sortSelect && sortSelect.value && sortSelect.value.trim() !== '') {

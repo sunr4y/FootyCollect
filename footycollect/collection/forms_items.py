@@ -85,9 +85,9 @@ class OtherItemForm(ItemTypeSpecificFormMixin, forms.ModelForm):
 
 
 __all__ = [
+    "OtherItemForm",
     "OuterwearForm",
+    "PantsForm",
     "ShortsForm",
     "TrackSuitForm",
-    "PantsForm",
-    "OtherItemForm",
 ]

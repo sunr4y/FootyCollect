@@ -1,18 +1,20 @@
 {% load list_filters %}
 
-<c-vars color_choices data_selected data_multiple name label hide_label />
-{% with color_choices_parsed=color_choices|parse_json %}
+<c-vars color_choices data_selected data_multiple name label hide_label selector_key />
+{% with color_choices_parsed=color_choices|parse_json key=selector_key|default:name %}
   <div class="mb-3 color-selector-wrapper"
-       id="color-selector-{{ name }}"
+       id="color-selector-{{ key }}"
+       data-selector-key="{{ key }}"
        data-selector-name="{{ name }}"
        data-selector-multiple="{{ data_multiple|default:'false' }}">
-    {% if not hide_label %}<label for="id_{{ name }}" class="form-label">{{ label }}</label>{% endif %}
+    {% if not hide_label %}<label id="label-{{ key }}" class="form-label">{{ label }}</label>{% endif %}
     {% if data_multiple == "true" %}
-      <select id="id_{{ name }}"
+      <select id="id_{{ key }}_multiple"
               name="{{ name }}"
               multiple
               class="form-control d-none"
-              data-initial-selected="{{ data_selected|default:'' }}">
+              data-initial-selected="{{ data_selected|default:'' }}"
+              {% if not hide_label %}aria-labelledby="label-{{ key }}"{% endif %}>
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
             <option value="{{ color.value }}"
@@ -23,7 +25,11 @@
         {% endif %}
       </select>
     {% else %}
-      <select id="id_{{ name }}" name="{{ name }}" class="form-control d-none" data-initial-selected="{{ data_selected|default:'' }}">
+      <select id="id_{{ key }}_single"
+              name="{{ name }}"
+              class="form-control d-none"
+              data-initial-selected="{{ data_selected|default:'' }}"
+              {% if not hide_label %}aria-labelledby="label-{{ key }}"{% endif %}>
         <option value="">Select color</option>
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
@@ -49,132 +55,125 @@
                    aria-label="Select {{ color.label }}"
                    style="background-color: {{ color.hex_value }};
                           {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 3px solid rgba(0, 0, 0, 0.3);{% endif %}"
-                   onclick="handleColorSelection(event, '{{ name }}')"
-                   onkeypress="handleColorSelectionKeypress(event, '{{ name }}')"></div>
+                   onclick="handleColorSelection(event)"
+                   onkeypress="handleColorSelectionKeypress(event)"></div>
             {% endwith %}
           {% endfor %}
         {% endif %}
       </div>
     </div>
-    <input type="hidden" id="hidden_{{ name }}" class="color-hidden-input" value="{{ data_selected|default:'' }}" />
+    <input type="hidden" id="hidden_{{ key }}" class="color-hidden-input" value="{{ data_selected|default:'' }}" />
   </div>
   {# fmt: off #}
   <script>
-    // prettier-ignore
-    window.colorSelectors = window.colorSelectors || {};
+    (function() {
+      const selectorKey = '{{ key }}';
+      window.colorSelectors = window.colorSelectors || {};
 
-    function initializeColorSelector_{{ name }}() {
-      const container = document.getElementById('color-selector-{{ name }}');
-      const selectElement = document.getElementById('id_{{ name }}');
-      const hiddenInput = document.getElementById('hidden_{{ name }}');
+      function init() {
+        const container = document.getElementById('color-selector-' + selectorKey);
+        const selectElement = document.getElementById('id_' + selectorKey + '_multiple') || document.getElementById('id_' + selectorKey + '_single');
+        const hiddenInput = document.getElementById('hidden_' + selectorKey);
 
-      if (!selectElement || !container) {
-        console.warn('Color selector elements not found: {{ name }}');
-        return;
-      }
+        if (!selectElement || !container) return;
 
-      window.colorSelectors['{{ name }}'] = {
-        select: selectElement,
-        container: container,
-        hidden: hiddenInput,
-        isMultiple: {{ data_multiple|default:'false'|lower }} === true,
-      };
+        var isMultiple = (container.getAttribute('data-selector-multiple') === 'true');
+        window.colorSelectors[selectorKey] = {
+          select: selectElement,
+          container: container,
+          hidden: hiddenInput,
+          isMultiple: isMultiple,
+        };
 
-      const initialSelected = '{{ data_selected|default:"" }}';
-      if (initialSelected) {
-        const isMultiple = {{ data_multiple|default:'false'|lower }} === true;
-        if (isMultiple) {
-          const values = initialSelected.split(',').filter(v => v.trim());
-          values.forEach(value => {
-            const option = selectElement.querySelector(`option[value="${value.trim()}"]`);
-            if (option) {
-              option.selected = true;
-            }
-          });
-        } else {
-          selectElement.value = initialSelected.trim();
+        const initialSelected = '{{ data_selected|default:"" }}';
+        const isMultipleInit = isMultiple;
+        if (initialSelected) {
+          if (isMultipleInit) {
+            const values = initialSelected.split(',').map(function(v) { return v.trim(); }).filter(Boolean);
+            values.forEach(function(value) {
+              const option = selectElement.querySelector('option[value="' + value + '"]');
+              if (option) option.selected = true;
+            });
+          } else {
+            var singleVal = initialSelected.trim();
+            if (singleVal.indexOf(',') !== -1) singleVal = singleVal.split(',')[0].trim();
+            selectElement.value = singleVal;
+            Array.from(selectElement.options).forEach(function(opt) { opt.selected = (opt.value === singleVal); });
+          }
         }
+
+        function syncVisuals() {
+          const instance = window.colorSelectors[selectorKey];
+          if (!instance) return;
+          const sel = instance.select;
+          const box = instance.container.querySelector('.color-selector-container');
+          const colorOptions = box ? box.querySelectorAll('.color-option') : instance.container.querySelectorAll('.color-option');
+          if (instance.isMultiple) {
+            const selectedValues = [];
+            for (var i = 0; i < sel.selectedOptions.length; i++) {
+              selectedValues.push(String(sel.selectedOptions[i].value));
+            }
+            for (var j = 0; j < colorOptions.length; j++) {
+              var opt = colorOptions[j];
+              var val = String(opt.dataset.value || '');
+              var isSelected = selectedValues.indexOf(val) !== -1;
+              if (isSelected) opt.classList.add('selected');
+              else opt.classList.remove('selected');
+            }
+            instance.hidden.value = selectedValues.join(',');
+          } else {
+            var selectedValue = String(sel.value || '');
+            for (var k = 0; k < colorOptions.length; k++) {
+              var o = colorOptions[k];
+              if (String(o.dataset.value || '') === selectedValue) o.classList.add('selected');
+              else o.classList.remove('selected');
+            }
+            instance.hidden.value = selectedValue;
+          }
+        }
+
+        syncVisuals();
+        selectElement.addEventListener('change', syncVisuals);
       }
 
-      syncColorSelectionVisuals_{{ name }}();
-
-      selectElement.addEventListener('change', () => {
-        syncColorSelectionVisuals_{{ name }}();
-      });
-    }
-
-    function syncColorSelectionVisuals_{{ name }}() {
-      const instance = window.colorSelectors['{{ name }}'];
-      if (!instance) return;
-
-      const selectElement = instance.select;
-      const container = instance.container;
-      const colorOptions = container.querySelectorAll('.color-option');
-
-      if (instance.isMultiple) {
-        const selectedValues = Array.from(selectElement.selectedOptions).map(opt => opt.value);
-
-        colorOptions.forEach(option => {
-          const value = option.dataset.value;
-          if (selectedValues.includes(value)) {
-            option.classList.add('selected');
-          } else {
-            option.classList.remove('selected');
-          }
-        });
-
-        instance.hidden.value = selectedValues.join(',');
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
       } else {
-        const selectedValue = selectElement.value;
-
-        colorOptions.forEach(option => {
-          if (String(option.dataset.value) === String(selectedValue)) {
-            option.classList.add('selected');
-          } else {
-            option.classList.remove('selected');
-          }
-        });
-
-        instance.hidden.value = selectedValue;
+        init();
       }
-    }
+    })();
 
-    function handleColorSelection(event, fieldName) {
+    window.handleColorSelection = window.handleColorSelection || function(event) {
       event.preventDefault();
       event.stopPropagation();
-
       const clickedElement = event.currentTarget;
+      if (!clickedElement || !clickedElement.dataset) return;
+      const wrapper = clickedElement.closest && clickedElement.closest('.color-selector-wrapper');
+      const fieldName = wrapper && wrapper.getAttribute('data-selector-key');
+      if (!fieldName) return;
       const value = clickedElement.dataset.value;
-      const instance = window.colorSelectors[fieldName];
-
+      if (value === undefined || value === null) return;
+      const instance = window.colorSelectors && window.colorSelectors[fieldName];
       if (!instance) return;
-
       const selectElement = instance.select;
-
+      if (!selectElement) return;
       if (instance.isMultiple) {
-        const option = selectElement.querySelector(`option[value="${value}"]`);
-        if (option) {
-          option.selected = !option.selected;
-        }
+        const option = selectElement.querySelector('option[value="' + String(value) + '"]');
+        if (option) option.selected = !option.selected;
       } else {
-        selectElement.value = value;
+        Array.from(selectElement.options).forEach(function(opt) { opt.selected = false; });
+        var opt = selectElement.querySelector('option[value="' + String(value) + '"]');
+        if (opt) opt.selected = true;
+        else selectElement.value = value;
       }
-
       selectElement.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    function handleColorSelectionKeypress(event, fieldName) {
+    };
+    window.handleColorSelectionKeypress = window.handleColorSelectionKeypress || function(event) {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        handleColorSelection(event, fieldName);
+        window.handleColorSelection(event);
       }
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeColorSelector_{{ name }});
-    } else {
-      initializeColorSelector_{{ name }}();
-    }
+    };
   </script>
   {# fmt: on #}
   <style>

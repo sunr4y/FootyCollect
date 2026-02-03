@@ -110,28 +110,48 @@ else:
     error_msg = f"Invalid STORAGE_BACKEND: {STORAGE_BACKEND}. Must be 'aws' or 'r2'"
     raise ValueError(error_msg)
 
+# Strip scheme from storage_domain so MEDIA_URL/STATIC_URL and storage .url never get "https://https://..."
+if storage_domain and "://" in storage_domain:
+    storage_domain = storage_domain.split("://", 1)[-1].split("/")[0]
+# Use host-only domain for S3/R2 backend (django-storages builds "https://" + domain + path)
+if STORAGE_BACKEND in {"r2", "aws"}:
+    AWS_S3_CUSTOM_DOMAIN = storage_domain
+
 storage_origin = f"https://{storage_domain}"
 img_src_default = (
     "'self' data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com "
-    "https://www.footballkitarchive.com " + storage_origin
+    "https://www.footballkitarchive.com https://cdn.jsdelivr.net " + storage_origin
 )
+
+
+def _csp_sources_with_storage(name: str, default: str) -> list:
+    sources = _csp_sources(name, default)
+    if storage_origin not in sources:
+        sources.append(storage_origin)
+    return sources
+
+
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
         "default-src": _csp_sources("DJANGO_CSP_DEFAULT_SRC", "'self'"),
-        "script-src": _csp_sources(
+        "script-src": _csp_sources_with_storage(
             "DJANGO_CSP_SCRIPT_SRC",
-            "'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
+            "'self' 'unsafe-inline' 'unsafe-eval' "
+            "https://cdnjs.cloudflare.com https://cdn.jsdelivr.net "
+            "https://code.jquery.com https://unpkg.com " + storage_origin,
         ),
-        "style-src": _csp_sources(
+        "style-src": _csp_sources_with_storage(
             "DJANGO_CSP_STYLE_SRC",
-            "'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            "'self' 'unsafe-inline' "
+            "https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com " + storage_origin,
         ),
-        "font-src": _csp_sources(
+        "font-src": _csp_sources_with_storage(
             "DJANGO_CSP_FONT_SRC",
-            "'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+            "'self' data: "
+            "https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.gstatic.com " + storage_origin,
         ),
         "img-src": _csp_sources("DJANGO_CSP_IMG_SRC", img_src_default),
-        "connect-src": _csp_sources("DJANGO_CSP_CONNECT_SRC", "'self'"),
+        "connect-src": _csp_sources("DJANGO_CSP_CONNECT_SRC", "'self' " + storage_origin),
         "frame-ancestors": _csp_sources("DJANGO_CSP_FRAME_ANCESTORS", "'self'"),
         "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
     },
@@ -188,9 +208,13 @@ INSTALLED_APPS += ["anymail"]
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
 # https://anymail.readthedocs.io/en/stable/installation/#anymail-settings-reference
 # https://anymail.readthedocs.io/en/stable/esps/sendgrid/
-EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
+# Allow DJANGO_EMAIL_BACKEND override (e.g. console for demo) to avoid 500 on login when SendGrid is disabled
+EMAIL_BACKEND = env(
+    "DJANGO_EMAIL_BACKEND",
+    default="anymail.backends.sendgrid.EmailBackend",
+)
 ANYMAIL = {
-    "SENDGRID_API_KEY": env("SENDGRID_API_KEY"),
+    "SENDGRID_API_KEY": env("SENDGRID_API_KEY", default=""),
     "SENDGRID_API_URL": env("SENDGRID_API_URL", default="https://api.sendgrid.com/v3/"),
 }
 
@@ -260,7 +284,7 @@ SENTRY_LOG_LEVEL = env.int("DJANGO_SENTRY_LOG_LEVEL", logging.INFO)
 
 sentry_logging = LoggingIntegration(
     level=SENTRY_LOG_LEVEL,  # Capture info and above as breadcrumbs
-    event_level=logging.EXCEPTION,  # Send errors as events
+    event_level=logging.ERROR,  # Send errors as events
 )
 integrations = [
     sentry_logging,

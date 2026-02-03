@@ -15,6 +15,7 @@ from footycollect.collection.views import home
 from footycollect.core.views import health_check, readiness_check
 
 urlpatterns = [
+    path("i18n/", include("django.conf.urls.i18n")),
     path("", home, name="home"),
     path(
         "about/",

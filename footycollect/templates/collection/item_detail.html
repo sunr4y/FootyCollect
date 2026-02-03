@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% load i18n static cotton cache %}
+{% load i18n static cotton cache list_filters %}
 
 {% block css %}
   {{ block.super }}
@@ -11,6 +11,8 @@
       padding: 3rem 1.5rem 6rem 1.5rem !important;
       min-height: auto;
       overflow: visible;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .fc-breadcrumb {
@@ -436,6 +438,14 @@
       display: grid !important;
       grid-template-columns: 1fr !important;
       gap: 2rem !important;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .fc-main-grid>* {
+      min-width: 0;
+      max-width: 100%;
     }
 
     @media (min-width: 1024px) {
@@ -597,10 +607,110 @@
       aspect-ratio: 4/5;
       border-radius: 1rem;
       overflow: hidden;
-      background: transparent;
+      background: var(--fc-background, #111);
       box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px -10px hsla(180, 85%, 40%, 0.3);
       padding: 0;
       margin: 0;
+    }
+
+    .fc-main-image-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 2;
+      background: #1a1a1a;
+      color: #aaa;
+    }
+
+    .fc-main-image-loading .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border-width: 0.25em;
+      border-color: rgba(34, 211, 238, 0.25);
+      border-top-color: #22d3ee;
+    }
+
+    .fc-main-image-loading.d-none {
+      display: none !important;
+    }
+
+    .fc-main-image-img {
+      opacity: 0;
+      transition: opacity 0.25s ease-in;
+    }
+
+    .fc-main-image-img.loaded {
+      opacity: 1;
+    }
+
+    .fc-main-image-error {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      z-index: 2;
+      background: #1a1a1a;
+      color: #94a3b8;
+      font-size: 0.875rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .fc-main-image-error.show {
+      display: flex !important;
+    }
+
+    .fc-main-image-error .fc-retry-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #475569;
+      background: transparent;
+      color: #e2e8f0;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+
+    .fc-main-image-error .fc-retry-btn:hover {
+      background: #334155;
+    }
+
+    .fc-main-image-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 2;
+      background: #1a1a1a;
+      color: #94a3b8;
+      font-size: 0.875rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .fc-main-image-empty .fc-add-photos-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #22d3ee;
+      background: rgba(34, 211, 238, 0.15);
+      color: #22d3ee;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .fc-main-image-empty .fc-add-photos-btn:hover {
+      background: rgba(34, 211, 238, 0.25);
+      color: #e0f2fe;
     }
 
     .fc-main-image-wrapper img {
@@ -684,6 +794,14 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .fc-club-brand-grid>* {
+      min-width: 0;
+      max-width: 100%;
     }
 
     .fc-separator {
@@ -753,7 +871,46 @@
 
     @media (max-width: 768px) {
       .fc-jersey-detail {
-        padding: 1.5rem 1rem;
+        padding: 1.5rem 1rem !important;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .fc-main-grid,
+      .fc-main-grid>* {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .fc-main-image-wrapper {
+        max-width: 100%;
+      }
+
+      .fc-thumbnails-container {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .fc-club-brand-grid {
+        grid-template-columns: 1fr !important;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .fc-club-brand-grid>* {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .fc-team-card,
+      .fc-club-brand-grid .fc-detail-card {
+        min-width: 0;
+        overflow: hidden;
       }
 
       .fc-title {
@@ -792,90 +949,63 @@
     </div>
     <div class="fc-main-grid" data-responsive-grid>
       <div class="fc-flex-col fc-gap-3">
-        {% if photos|length > 0 or object.photos.exists %}
-          {% if photos|length > 0 %}
-            {% with photos|first as first_photo %}
-              <div class="fc-main-image-wrapper" id="mainImage">
-                {% if first_photo.image_avif.name %}
-                  <img src="{{ first_photo.image.url }}"
-                       data-avif="{{ first_photo.image_avif.url }}"
-                       alt="{{ object.name }}"
-                       id="mainImageSrc"
-                       onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
-                {% else %}
-                  <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
-                {% endif %}
-                <div class="fc-main-image-overlay"></div>
-                {% if object.is_processing_photos %}
-                  <div id="processingBadge" class="fc-processing-badge">
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    {% trans "Processing photos..." %}
-                  </div>
-                {% endif %}
-              </div>
-            {% endwith %}
-            {% if photos|length > 1 %}
-              <div class="fc-thumbnails-container">
-                {% for photo in photos %}
-                  <button type="button"
-                          onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
-                          class="fc-thumbnail {% if forloop.first %}active{% endif %}"
-                          data-image-url="{{ photo.image.url }}"
-                          data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
-                    {% if photo.image_avif.name %}
-                      <img src="{{ photo.image_avif.url }}"
-                           alt="Thumbnail {{ forloop.counter }}"
-                           class="thumbnail-img"
-                           onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
-                    {% else %}
-                      <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
-                    {% endif %}
-                  </button>
-                {% endfor %}
+        <div class="fc-main-image-wrapper" id="mainImage">
+          {% if first_photo %}
+            <div class="fc-main-image-loading" id="mainImageLoading" role="status" aria-label="{% trans 'Loading image' %}">
+              <span class="spinner-border" role="status"></span>
+              <span>{% trans "Loading image..." %}</span>
+            </div>
+            <div class="fc-main-image-error" id="mainImageError">
+              <i class="bi bi-image" style="font-size: 2.5rem; opacity: 0.6;"></i>
+              <span>{% trans "Image could not be loaded." %}</span>
+              <button type="button" class="fc-retry-btn" onclick="fcRetryMainImage()">{% trans "Retry" %}</button>
+            </div>
+            <img src="{{ first_photo.get_image_url }}"
+                 class="fc-main-image-img"
+                 alt="{{ object.name }}"
+                 id="mainImageSrc"
+                 data-src="{{ first_photo.get_image_url }}"
+                 decoding="async"
+                 onload="typeof fcMainImageOnLoad==='function'&&fcMainImageOnLoad(this);"
+                 onerror="typeof fcMainImageOnError==='function'&&fcMainImageOnError(this);" />
+            <div class="fc-main-image-overlay"></div>
+            {% if object.is_processing_photos %}
+              <div id="processingBadge" class="fc-processing-badge">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                {% trans "Processing photos..." %}
               </div>
             {% endif %}
           {% else %}
-            {% with object.photos.all|first as first_photo %}
-              <div class="fc-main-image-wrapper" id="mainImage">
-                {% if first_photo.image_avif.name %}
-                  <img src="{{ first_photo.image.url }}"
-                       data-avif="{{ first_photo.image_avif.url }}"
-                       alt="{{ object.name }}"
-                       id="mainImageSrc"
-                       onerror="this.onerror=null; this.src=this.getAttribute('data-avif') || this.src;" />
-                {% else %}
-                  <img src="{{ first_photo.image.url }}" alt="{{ object.name }}" id="mainImageSrc" />
-                {% endif %}
-                <div class="fc-main-image-overlay"></div>
-                {% if object.is_processing_photos %}
-                  <div id="processingBadge" class="fc-processing-badge">
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    {% trans "Processing photos..." %}
-                  </div>
-                {% endif %}
-              </div>
-            {% endwith %}
-            {% if object.photos.count > 1 %}
-              <div class="fc-thumbnails-container">
-                {% for photo in object.photos.all %}
-                  <button type="button"
-                          onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
-                          class="fc-thumbnail {% if forloop.first %}active{% endif %}"
-                          data-image-url="{{ photo.image.url }}"
-                          data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
-                    {% if photo.image_avif.name %}
-                      <img src="{{ photo.image_avif.url }}"
-                           alt="Thumbnail {{ forloop.counter }}"
-                           class="thumbnail-img"
-                           onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
-                    {% else %}
-                      <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
-                    {% endif %}
-                  </button>
-                {% endfor %}
-              </div>
-            {% endif %}
+            <div class="fc-main-image-empty" id="mainImageEmpty" data-item-id="{{ object.pk }}">
+              <i class="bi bi-image" style="font-size: 2.5rem; opacity: 0.5;"></i>
+              <span id="mainImageEmptyText">{% trans "No image yet." %}</span>
+              {% if object.is_processing_photos %}
+                <span class="spinner-border spinner-border-sm" role="status" style="margin-top: 0.25rem;"></span>
+                <span class="fc-text-sm">{% trans "Processing photos..." %}</span>
+              {% endif %}
+              <a href="{% url 'collection:item_update' object.pk %}" class="fc-add-photos-btn">{% trans "Add photos" %}</a>
+            </div>
           {% endif %}
+        </div>
+        {% if photos|length > 1 %}
+          <div class="fc-thumbnails-container">
+            {% for photo in photos %}
+              <button type="button"
+                      onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
+                      class="fc-thumbnail {% if forloop.first %}active{% endif %}"
+                      data-image-url="{{ photo.image.url }}"
+                      data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
+                {% if photo.image_avif.name %}
+                  <img src="{{ photo.image_avif.url }}"
+                       alt="Thumbnail {{ forloop.counter }}"
+                       class="thumbnail-img"
+                       onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
+                {% else %}
+                  <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
+                {% endif %}
+              </button>
+            {% endfor %}
+          </div>
         {% endif %}
       </div>
       <div class="fc-flex-col fc-gap-4">
@@ -884,9 +1014,7 @@
             {% if object.get_condition_display %}
               <c-badge variant="outline" class="fc-badge-condition">{{ object.get_condition_display }}</c-badge>
             {% endif %}
-            {% if object.main_color and object.get_main_color_display %}
-              <c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>
-            {% endif %}
+            {% if object.main_color %}<c-badge variant="outline">{{ object.main_color.name|color_display }}</c-badge>{% endif %}
             {% if object.jersey.kit and object.jersey.kit.type %}
               {% if object.jersey.kit.type.category != "match" and object.jersey.kit.type.get_category_display_name %}
                 <c-badge variant="filled" class="bg-primary">{{ object.jersey.kit.type.get_category_display_name }}</c-badge>
@@ -1052,7 +1180,7 @@
                 <i class="bi bi-palette fc-icon-sm"></i>
                 <span class="fc-uppercase">{% trans "Main Color" %}</span>
               </div>
-              <p class="fc-detail-value">{{ object.main_color.name }}</p>
+              <p class="fc-detail-value">{{ object.main_color.name|color_display }}</p>
             </div>
           {% endif %}
           {% if object.secondary_colors.exists %}
@@ -1063,7 +1191,7 @@
               </div>
               <p class="fc-detail-value">
                 {% for color in object.secondary_colors.all %}
-                  {{ color.name }}
+                  {{ color.name|color_display }}
                   {% if not forloop.last %},{% endif %}
                 {% endfor %}
               </p>
@@ -1129,6 +1257,77 @@
     </div>
   </div>
   <script>
+    function fcMainImageOnLoad(img) {
+      var loading = document.getElementById('mainImageLoading');
+      var error = document.getElementById('mainImageError');
+      if (loading) loading.classList.add('d-none');
+      if (error) error.classList.remove('show');
+      if (img) img.classList.add('loaded');
+    }
+
+    function fcMainImageOnError(img) {
+      var loading = document.getElementById('mainImageLoading');
+      var error = document.getElementById('mainImageError');
+      if (loading) loading.classList.add('d-none');
+      if (error) error.classList.add('show');
+      if (img) {
+        img.classList.add('loaded');
+        img.style.display = 'none';
+      }
+    }
+
+    function fcRetryMainImage() {
+      var img = document.getElementById('mainImageSrc');
+      var loading = document.getElementById('mainImageLoading');
+      var error = document.getElementById('mainImageError');
+      if (!img) return;
+      var src = img.getAttribute('data-src') || img.src;
+      if (loading) { loading.classList.remove('d-none'); loading.style.display = ''; }
+      if (error) error.classList.remove('show');
+      img.style.display = '';
+      img.classList.remove('loaded');
+      img.src = '';
+      img.src = src.indexOf('?') >= 0 ? src + '&_=' + Date.now() : src + '?_=' + Date.now();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var img = document.getElementById('mainImageSrc');
+      if (img && img.complete) {
+        if (img.naturalWidth && img.naturalHeight) {
+          fcMainImageOnLoad(img);
+        } else {
+          fcMainImageOnError(img);
+        }
+      }
+
+      var emptyEl = document.getElementById('mainImageEmpty');
+      if (emptyEl) {
+        var itemId = emptyEl.getAttribute('data-item-id');
+        if (itemId) {
+          var pollCount = 0;
+          var maxPolls = 120;
+          function pollForPhotos() {
+            pollCount++;
+            if (pollCount > maxPolls) return;
+            fetch('/collection/items/' + itemId + '/processing-status/')
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                if (data.error) return;
+                if (data.has_photos) {
+                  window.location.reload();
+                  return;
+                }
+                setTimeout(pollForPhotos, 2500);
+              })
+              .catch(function() {
+                setTimeout(pollForPhotos, 5000);
+              });
+          }
+          setTimeout(pollForPhotos, 2000);
+        }
+      }
+    });
+
     function changeImage(imageUrl, avifUrl, thumbnail) {
       const mainImage = document.getElementById('mainImageSrc');
       if (!mainImage || !imageUrl) return;

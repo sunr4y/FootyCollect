@@ -16,7 +16,7 @@ from footycollect.collection.models import Jersey
 class FeedFilterService:
     """Service for filtering and sorting the global kits feed."""
 
-    def apply_filters(  # noqa: C901, PLR0912, PLR0915
+    def apply_filters(  # noqa: C901, PLR0915
         self, queryset: QuerySet[Jersey], filters_dict: dict[str, Any]
     ) -> QuerySet[Jersey]:
         """
@@ -82,6 +82,9 @@ class FeedFilterService:
             category = filters_dict["category"]
             if category and str(category).strip():
                 queryset = queryset.filter(kit__type__category=category)
+
+        if filters_dict.get("has_nameset"):
+            queryset = queryset.filter(has_nameset=True)
 
         if "main_color" in filters_dict:
             main_color_value = filters_dict["main_color"]
@@ -199,13 +202,24 @@ class FeedFilterService:
         if category and category.strip():
             filters["category"] = category
 
-        main_color = request.GET.get("main_color")
-        if main_color and main_color.strip():
-            filters["main_color"] = main_color.strip()
+        has_nameset = request.GET.get("has_nameset")
+        if has_nameset and str(has_nameset).lower() in ("1", "true", "on", "yes"):
+            filters["has_nameset"] = True
 
-        secondary_color = request.GET.get("secondary_color")
-        if secondary_color and secondary_color.strip():
-            filters["secondary_color"] = secondary_color.strip()
+        main_color = request.GET.get("main_color")
+        if main_color and str(main_color).strip():
+            main_color = str(main_color).strip()
+            if "," in main_color:
+                main_color = main_color.split(",")[0].strip()
+            filters["main_color"] = main_color
+
+        secondary_color_list = request.GET.getlist("secondary_color")
+        if not secondary_color_list:
+            secondary_color_str = request.GET.get("secondary_color")
+            if secondary_color_str and secondary_color_str.strip():
+                secondary_color_list = [v.strip() for v in secondary_color_str.split(",") if v and v.strip()]
+        if secondary_color_list:
+            filters["secondary_color"] = ",".join(secondary_color_list)
 
         q = request.GET.get("q")
         if q and q.strip():

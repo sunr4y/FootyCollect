@@ -357,6 +357,10 @@ Required environment variables for S3:
 - **AWS S3**: `DJANGO_AWS_ACCESS_KEY_ID`, `DJANGO_AWS_SECRET_ACCESS_KEY`, `DJANGO_AWS_STORAGE_BUCKET_NAME`, and optionally `DJANGO_AWS_S3_REGION_NAME`, `DJANGO_AWS_S3_CUSTOM_DOMAIN`
 - **Cloudflare R2**: `STORAGE_BACKEND=r2`, `CLOUDFLARE_ACCESS_KEY_ID`, `CLOUDFLARE_SECRET_ACCESS_KEY`, `CLOUDFLARE_BUCKET_NAME`, `CLOUDFLARE_R2_ENDPOINT_URL`, and optionally `CLOUDFLARE_R2_CUSTOM_DOMAIN`
 
+### R2 CORS (fonts/static from custom domain)
+
+If admin or static fonts from your R2 custom domain are blocked by CORS, add CORS on the bucket: Dashboard → R2 → bucket → Settings → CORS Policy → Add CORS policy (paste a JSON array). Or with Wrangler: `npx wrangler r2 bucket cors set <BUCKET_NAME> --file deploy/r2-cors-wrangler.json`. After changing CORS, purge cache for the custom domain if using Cloudflare cache.
+
 ### File permissions and CDN
 
 - Static files use `public-read` ACL so they are accessible via the bucket URL or custom domain (CDN).
