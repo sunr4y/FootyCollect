@@ -9,6 +9,7 @@ from django.db.models import QuerySet
 
 from footycollect.collection.models import Color
 from footycollect.collection.repositories import ColorRepository
+from footycollect.collection.utils_i18n import get_color_display_name
 
 
 class ColorService:
@@ -42,10 +43,20 @@ class ColorService:
 
         return {
             "main_colors": [
-                {"value": color.id, "label": color.name, "hex_value": color.hex_value} for color in default_colors
+                {
+                    "value": color.id,
+                    "label": get_color_display_name(color.name),
+                    "hex_value": color.hex_value,
+                }
+                for color in default_colors
             ],
             "secondary_colors": [
-                {"value": color.id, "label": color.name, "hex_value": color.hex_value} for color in default_colors
+                {
+                    "value": color.id,
+                    "label": get_color_display_name(color.name),
+                    "hex_value": color.hex_value,
+                }
+                for color in default_colors
             ],
         }
 
@@ -215,7 +226,7 @@ class ColorService:
         return [
             {
                 "value": color.id,
-                "label": color.name,
+                "label": get_color_display_name(color.name),
                 "hex_value": color.hex_value,
             }
             for color in colors

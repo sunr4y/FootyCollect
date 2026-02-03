@@ -2,7 +2,14 @@ import json
 
 from django import template
 
+from footycollect.collection.utils_i18n import get_color_display_name
+
 register = template.Library()
+
+
+@register.filter
+def color_display(name):
+    return get_color_display_name(name)
 
 
 @register.filter

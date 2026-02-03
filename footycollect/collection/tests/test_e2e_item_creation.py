@@ -12,6 +12,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from footycollect.collection.models import BaseItem, Brand, Club, Color, Jersey, Season, Size
+from footycollect.collection.utils_i18n import get_color_display_name
 from footycollect.core.models import Competition
 
 User = get_user_model()
@@ -552,9 +553,9 @@ class TestE2EItemCreationTests(TestCase):
         self.assertIn("adidas", content.lower())
         self.assertIn("Real Madrid Castilla", content)
         self.assertIn("2023-24", content)
-        self.assertIn("WHITE", content)
-        self.assertIn("NAVY", content)
-        self.assertIn("GOLD", content)
+        self.assertIn(get_color_display_name("WHITE"), content)
+        self.assertIn(get_color_display_name("NAVY"), content)
+        self.assertIn(get_color_display_name("GOLD"), content)
         self.assertIn("Plain", content)
         self.assertIn("10", content)
         self.assertIn("Spain", content)
@@ -858,9 +859,9 @@ class TestE2EItemCreationTests(TestCase):
             "2023-24",
             "adidas",
             "Real Madrid Castilla",
-            "WHITE",
-            "NAVY",
-            "GOLD",
+            get_color_display_name("WHITE"),
+            get_color_display_name("NAVY"),
+            get_color_display_name("GOLD"),
             "Plain",
             "Spain",
             "1ª RFEF",

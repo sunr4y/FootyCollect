@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% load i18n static cotton cache %}
+{% load i18n static cotton cache list_filters %}
 
 {% block css %}
   {{ block.super }}
@@ -1014,9 +1014,7 @@
             {% if object.get_condition_display %}
               <c-badge variant="outline" class="fc-badge-condition">{{ object.get_condition_display }}</c-badge>
             {% endif %}
-            {% if object.main_color and object.get_main_color_display %}
-              <c-badge variant="outline">{{ object.get_main_color_display }}</c-badge>
-            {% endif %}
+            {% if object.main_color %}<c-badge variant="outline">{{ object.main_color.name|color_display }}</c-badge>{% endif %}
             {% if object.jersey.kit and object.jersey.kit.type %}
               {% if object.jersey.kit.type.category != "match" and object.jersey.kit.type.get_category_display_name %}
                 <c-badge variant="filled" class="bg-primary">{{ object.jersey.kit.type.get_category_display_name }}</c-badge>
@@ -1182,7 +1180,7 @@
                 <i class="bi bi-palette fc-icon-sm"></i>
                 <span class="fc-uppercase">{% trans "Main Color" %}</span>
               </div>
-              <p class="fc-detail-value">{{ object.main_color.name }}</p>
+              <p class="fc-detail-value">{{ object.main_color.name|color_display }}</p>
             </div>
           {% endif %}
           {% if object.secondary_colors.exists %}
@@ -1193,7 +1191,7 @@
               </div>
               <p class="fc-detail-value">
                 {% for color in object.secondary_colors.all %}
-                  {{ color.name }}
+                  {{ color.name|color_display }}
                   {% if not forloop.last %},{% endif %}
                 {% endfor %}
               </p>

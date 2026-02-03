@@ -542,7 +542,7 @@
   <!-- Loading overlay -->
   <div class="home-loader" id="homeLoader">
     <div class="home-loader-spinner"></div>
-    <p class="home-loader-text">Loading jerseys...</p>
+    <p class="home-loader-text">{% translate "Loading jerseys..." %}</p>
     <div class="home-loader-progress">
       <div class="home-loader-progress-bar" id="loaderProgress"></div>
     </div>
@@ -550,15 +550,14 @@
   <div class="home-hero">
     <!-- Center content - Load first for faster rendering -->
     <div class="home-content">
-      <p class="home-subtitle">The Ultimate Jersey Collection</p>
+      <p class="home-subtitle">{% translate "The Ultimate Jersey Collection" %}</p>
       <h1 class="home-title">
-        Your Football
-        <span class="home-title-gradient">Memorabilia</span>
-        Collection
+        {% translate "Your Football" context "home_title" %}
+        <span class="home-title-gradient">{% translate "Memorabilia" context "home_title" %}</span>
+        {% translate "Collection" context "home_title" %}
       </h1>
       <p class="home-description">
-        Catalog, organize, and showcase your prized football jerseys.
-        From vintage classics to modern masterpieces.
+        {% translate "Catalog, organize, and showcase your prized football jerseys. From vintage classics to modern masterpieces." %}
       </p>
       <div class="home-buttons">
         {% if request.user.is_authenticated %}
