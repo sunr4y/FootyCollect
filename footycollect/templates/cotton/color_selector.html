@@ -25,7 +25,11 @@
         {% endif %}
       </select>
     {% else %}
-      <select id="id_{{ key }}_single" name="{{ name }}" class="form-control d-none" data-initial-selected="{{ data_selected|default:'' }}" {% if not hide_label %}aria-labelledby="label-{{ key }}"{% endif %}>
+      <select id="id_{{ key }}_single"
+              name="{{ name }}"
+              class="form-control d-none"
+              data-initial-selected="{{ data_selected|default:'' }}"
+              {% if not hide_label %}aria-labelledby="label-{{ key }}"{% endif %}>
         <option value="">Select color</option>
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
