@@ -7,13 +7,14 @@
        data-selector-key="{{ key }}"
        data-selector-name="{{ name }}"
        data-selector-multiple="{{ data_multiple|default:'false' }}">
-    {% if not hide_label %}<label for="id_{{ key }}" class="form-label">{{ label }}</label>{% endif %}
+    {% if not hide_label %}<label id="label-{{ key }}" class="form-label">{{ label }}</label>{% endif %}
     {% if data_multiple == "true" %}
-      <select id="id_{{ key }}"
+      <select id="id_{{ key }}_multiple"
               name="{{ name }}"
               multiple
               class="form-control d-none"
-              data-initial-selected="{{ data_selected|default:'' }}">
+              data-initial-selected="{{ data_selected|default:'' }}"
+              {% if not hide_label %}aria-labelledby="label-{{ key }}"{% endif %}>
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
             <option value="{{ color.value }}"
@@ -24,7 +25,7 @@
         {% endif %}
       </select>
     {% else %}
-      <select id="id_{{ key }}" name="{{ name }}" class="form-control d-none" data-initial-selected="{{ data_selected|default:'' }}">
+      <select id="id_{{ key }}_single" name="{{ name }}" class="form-control d-none" data-initial-selected="{{ data_selected|default:'' }}" {% if not hide_label %}aria-labelledby="label-{{ key }}"{% endif %}>
         <option value="">Select color</option>
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
@@ -67,7 +68,7 @@
 
       function init() {
         const container = document.getElementById('color-selector-' + selectorKey);
-        const selectElement = document.getElementById('id_' + selectorKey);
+        const selectElement = document.getElementById('id_' + selectorKey + '_multiple') || document.getElementById('id_' + selectorKey + '_single');
         const hiddenInput = document.getElementById('hidden_' + selectorKey);
 
         if (!selectElement || !container) return;
