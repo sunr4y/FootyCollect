@@ -1,6 +1,5 @@
 # ruff: noqa
 import os
-from collections.abc import Sequence
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.resolve()
@@ -13,7 +12,6 @@ DOTENV_FILE = BASE_DIR / ".env"
 
 
 def _resolve_under_base(path: Path, base: Path) -> Path:
-    """Resolve path and ensure it is under base to prevent path injection."""
     resolved = path.resolve()
     base_resolved = base.resolve()
     try:
@@ -23,13 +21,10 @@ def _resolve_under_base(path: Path, base: Path) -> Path:
     return resolved
 
 
-def merge(
-    output_file: Path,
-    files_to_merge: Sequence[Path],
-) -> None:
-    out = _resolve_under_base(output_file, BASE_DIR)
+def merge() -> None:
+    out = _resolve_under_base(DOTENV_FILE, BASE_DIR)
     merged_content = ""
-    for merge_file in files_to_merge:
+    for merge_file in PRODUCTION_DOTENV_FILES:
         src = _resolve_under_base(merge_file, BASE_DIR)
         merged_content += src.read_text()
         merged_content += os.linesep
@@ -37,4 +32,4 @@ def merge(
 
 
 if __name__ == "__main__":
-    merge(DOTENV_FILE, PRODUCTION_DOTENV_FILES)
+    merge()
