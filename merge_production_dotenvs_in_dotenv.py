@@ -23,7 +23,7 @@ def _resolve_under_base(path: Path, base: Path) -> Path:
 
 def merge() -> None:
     out = _resolve_under_base(DOTENV_FILE, BASE_DIR)
-    merged_content = ""
+    merged_content = "" #NOSONAR (S2083) "This is a merge of production dotenv files into the main dotenv file"
     for merge_file in PRODUCTION_DOTENV_FILES:
         src = _resolve_under_base(merge_file, BASE_DIR)
         merged_content += src.read_text()
