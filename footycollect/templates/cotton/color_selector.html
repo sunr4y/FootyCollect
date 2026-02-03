@@ -7,7 +7,13 @@
        data-selector-key="{{ key }}"
        data-selector-name="{{ name }}"
        data-selector-multiple="{{ data_multiple|default:'false' }}">
-    {% if not hide_label %}<label id="label-{{ key }}" class="form-label">{{ label }}</label>{% endif %}
+    {% if not hide_label %}
+      <label id="label-{{ key }}"
+             class="form-label"
+             for="id_{{ key }}_{% if data_multiple == 'true' %}multiple{% else %}single{% endif %}">
+        {{ label }}
+      </label>
+    {% endif %}
     {% if data_multiple == "true" %}
       <select id="id_{{ key }}_multiple"
               name="{{ name }}"

@@ -12,15 +12,28 @@ PRODUCTION_DOTENV_FILES = [
 DOTENV_FILE = BASE_DIR / ".env"
 
 
+def _resolve_under_base(path: Path, base: Path) -> Path:
+    """Resolve path and ensure it is under base to prevent path injection."""
+    resolved = path.resolve()
+    base_resolved = base.resolve()
+    try:
+        resolved.relative_to(base_resolved)
+    except ValueError:
+        raise ValueError(f"Path {resolved} is not under {base_resolved}") from None
+    return resolved
+
+
 def merge(
     output_file: Path,
     files_to_merge: Sequence[Path],
 ) -> None:
+    out = _resolve_under_base(output_file, BASE_DIR)
     merged_content = ""
     for merge_file in files_to_merge:
-        merged_content += merge_file.read_text()
+        src = _resolve_under_base(merge_file, BASE_DIR)
+        merged_content += src.read_text()
         merged_content += os.linesep
-    output_file.write_text(merged_content)
+    out.write_text(merged_content)
 
 
 if __name__ == "__main__":
