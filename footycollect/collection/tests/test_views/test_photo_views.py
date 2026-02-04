@@ -15,7 +15,7 @@ from footycollect.collection.models import BaseItem, Brand, Jersey, Photo, Size
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 HTTP_OK = 200
 HTTP_BAD_REQUEST = 400
 HTTP_FOUND = 302

@@ -15,7 +15,7 @@ from footycollect.collection.services.item_fkapi_service import ItemFKAPIService
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 
 
 class TestItemFKAPIService(TestCase):

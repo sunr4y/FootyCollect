@@ -13,7 +13,7 @@ HTTP_OK = 200
 HTTP_REDIRECT = 302
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 
 User = get_user_model()
 fake = Faker()

@@ -15,7 +15,7 @@ from footycollect.core.models import Club
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 EXPECTED_COMPETITIONS_COUNT = 2
 EXPECTED_DOWNLOAD_CALLS = 3  # main_img_url + 2 external_urls
 

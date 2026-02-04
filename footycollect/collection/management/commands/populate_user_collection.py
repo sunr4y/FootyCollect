@@ -25,6 +25,8 @@ from footycollect.core.models import Brand, Club, Competition, Kit, Season, Type
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+LOGO_NOT_FOUND_FILENAME = "not_found.png"
+
 logging.getLogger("PIL.TiffImagePlugin").setLevel(logging.WARNING)
 
 
@@ -70,7 +72,23 @@ class Command(BaseCommand):
             help="Path to JSON file with collection data (for testing)",
         )
 
-    def handle(self, *args, **options):
+    def _load_collection_from_json(self, json_file: str):
+        """Load collection data from a JSON file. Returns (collection_data, user_info, userid)."""
+        import json
+        from pathlib import Path
+
+        self.stdout.write(f"Reading collection data from file: {json_file}")
+        with Path(json_file).open(encoding="utf-8") as f:
+            response_data = json.load(f)
+        collection_data = response_data.get("data", response_data)
+        user_info = response_data.get("user")
+        userid = None
+        entries = collection_data.get("entries", [])
+        if entries:
+            userid = entries[0].get("userid")
+        return collection_data, user_info, userid
+
+    def handle(self, *args, **options):  # NOSONAR (S3776) cognitive complexity
         userid = options.get("userid")
         target_username = options.get("target_username")
         wait_timeout = options["wait_timeout"]
@@ -82,18 +100,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("DRY RUN MODE - No objects will be created"))
 
         if json_file:
-            self.stdout.write(f"Reading collection data from file: {json_file}")
-            import json
-            from pathlib import Path
-
-            with Path(json_file).open(encoding="utf-8") as f:
-                response_data = json.load(f)
-            collection_data = response_data.get("data", response_data)
-            user_info = response_data.get("user")
-            if not userid:
-                entries = collection_data.get("entries", [])
-                if entries:
-                    userid = entries[0].get("userid")
+            collection_data, user_info, userid_from_file = self._load_collection_from_json(json_file)
+            if userid_from_file is not None:
+                userid = userid_from_file
         else:
             if not userid:
                 msg = "userid is required when not using --json-file"
@@ -142,6 +151,77 @@ class Command(BaseCommand):
             self.style.SUCCESS(f"\nCompleted: {created_count} created, {skipped_count} skipped, {error_count} errors")
         )
 
+    def _check_scrape_response(self, scrape_response: dict | None, userid: int) -> None:
+        """Validate scrape response and raise on error."""
+        if not scrape_response:
+            logger.error("scrape_user_collection returned None for userid %s", userid)
+            msg = f"Failed to start scraping: No response from API (userid: {userid})"
+            self._raise_scraping_error(msg)
+        if scrape_response.get("status") == "error" or "error" in scrape_response:
+            error_msg = scrape_response.get("error", "Unknown error")
+            msg = f"Failed to start scraping: {error_msg}"
+            self._raise_scraping_error(msg)
+
+    def _get_cached_entries_if_available(self, scrape_response: dict) -> tuple[dict | None, dict | None]:
+        """If response is cached with entries, return (collection_data, user_info). Else (None, None)."""
+        if scrape_response.get("status") != "cached":
+            return None, None
+        cached_data = scrape_response.get("data", {})
+        if not cached_data.get("entries"):
+            return None, None
+        user_info = cached_data.get("user")
+        return {"entries": cached_data.get("entries", [])}, user_info
+
+    def _wait_for_collection_ready(self, client: FKAPIClient, userid: int, wait_timeout: int, page_size: int) -> None:
+        """Poll until collection has entries or timeout."""
+        start_time = time.time()
+        while time.time() - start_time < wait_timeout:
+            get_response = client.get_user_collection(userid, page=1, page_size=page_size, use_cache=False)
+            if get_response:
+                if get_response.get("status") in ("processing", "pending"):
+                    time.sleep(1)
+                    continue
+                if get_response.get("data", {}).get("entries"):
+                    self.stdout.write("Collection ready")
+                    return
+            time.sleep(1)
+        msg = f"Timeout waiting for scraping to complete after {wait_timeout}s"
+        self._raise_scraping_error(msg)
+
+    def _fetch_all_pages(self, client: FKAPIClient, userid: int, page_size: int) -> tuple[list, dict | None]:
+        """Fetch all paginated entries. Returns (all_entries, user_info)."""
+        all_entries = []
+        user_info = None
+        page = 1
+        while True:
+            self.stdout.write(f"Fetching page {page}...")
+            try:
+                page_response = client.get_user_collection(userid, page=page, page_size=page_size, use_cache=False)
+            except Exception:
+                import traceback
+
+                tb = traceback.format_exc()
+                self.stdout.write(self.style.ERROR(f"Error fetching page {page}:\n{tb}"))
+                logger.exception("Error fetching page %s", page)
+                break
+            if not page_response:
+                self.stdout.write(f"Page {page} returned no data, stopping pagination")
+                break
+            data = page_response.get("data", {})
+            if page == 1:
+                user_info = data.get("user") or page_response.get("user")
+            page_entries = data.get("entries", [])
+            if not page_entries:
+                self.stdout.write(f"No more entries on page {page}, stopping pagination")
+                break
+            all_entries.extend(page_entries)
+            self.stdout.write(f"  Fetched page {page} ({len(page_entries)} entries, total: {len(all_entries)})")
+            pagination = page_response.get("pagination", {})
+            if page >= pagination.get("total_pages", 1):
+                break
+            page += 1
+        return all_entries, user_info
+
     def _fetch_user_collection(
         self,
         userid: int,
@@ -150,107 +230,33 @@ class Command(BaseCommand):
     ) -> tuple[dict | None, dict | None]:
         """Fetch user collection from API with pagination. Returns (collection_data, user_info)."""
         client = FKAPIClient()
-
         self.stdout.write(f"Starting scrape for user {userid}...")
         try:
             try:
                 scrape_response = client.scrape_user_collection(userid)
             except Exception as e:
                 logger.exception("Error calling scrape_user_collection for userid %s", userid)
-                msg = f"Failed to start scraping: {e!s}"
+                msg = "Failed to start scraping: " + str(e)
                 raise CommandError(msg) from e
+            self._check_scrape_response(scrape_response, userid)
+            self.stdout.write(f"Scrape response status: {scrape_response.get('status', 'unknown')}")
 
-            if not scrape_response:
-                logger.error("scrape_user_collection returned None for userid %s", userid)
-                msg = f"Failed to start scraping: No response from API (userid: {userid})"
-                self._raise_scraping_error(msg)
-
-            status = scrape_response.get("status", "unknown")
-            self.stdout.write(f"Scrape response status: {status}")
-
-            if scrape_response.get("status") == "error" or "error" in scrape_response:
-                error_msg = scrape_response.get("error", "Unknown error")
-                msg = f"Failed to start scraping: {error_msg}"
-                self._raise_scraping_error(msg)
-
-            if scrape_response.get("status") == "cached":
-                cached_data = scrape_response.get("data", {})
-                if cached_data.get("entries"):
-                    user_info = cached_data.get("user")
-                    return {"entries": cached_data.get("entries", [])}, user_info
+            cached_data, cached_user = self._get_cached_entries_if_available(scrape_response)
+            if cached_data is not None:
+                return cached_data, cached_user
 
             task_id = scrape_response.get("task_id")
             if task_id:
                 self.stdout.write(f"Scraping started (task_id: {task_id}), waiting...")
             else:
                 self.stdout.write("Scrape request accepted, waiting for completion...")
-
-            start_time = time.time()
-            while time.time() - start_time < wait_timeout:
-                get_response = client.get_user_collection(userid, page=1, page_size=page_size, use_cache=False)
-
-                if get_response:
-                    if get_response.get("status") == "processing" or get_response.get("status") == "pending":
-                        time.sleep(1)
-                        continue
-
-                    data = get_response.get("data", {})
-                    if data.get("entries"):
-                        self.stdout.write("Collection ready")
-                        break
-                else:
-                    time.sleep(1)
-                    continue
-
-            all_entries = []
-            user_info = None
-            page = 1
-
-            if time.time() - start_time >= wait_timeout:
-                msg = f"Timeout waiting for scraping to complete after {wait_timeout}s"
-                self._raise_scraping_error(msg)
-
-            while True:
-                self.stdout.write(f"Fetching page {page}...")
-                try:
-                    page_response = client.get_user_collection(userid, page=page, page_size=page_size, use_cache=False)
-                except Exception:
-                    import traceback
-
-                    tb = traceback.format_exc()
-                    self.stdout.write(self.style.ERROR(f"Error fetching page {page}:\n{tb}"))
-                    logger.exception("Error fetching page %s", page)
-                    break
-                else:
-                    if not page_response:
-                        self.stdout.write(f"Page {page} returned no data, stopping pagination")
-                        break
-
-                    data = page_response.get("data", {})
-                    if page == 1:
-                        user_info = data.get("user") or page_response.get("user")
-
-                    page_entries = data.get("entries", [])
-                    if not page_entries:
-                        self.stdout.write(f"No more entries on page {page}, stopping pagination")
-                        break
-
-                    all_entries.extend(page_entries)
-                    self.stdout.write(
-                        f"  Fetched page {page} ({len(page_entries)} entries, total: {len(all_entries)})"
-                    )
-
-                    pagination = page_response.get("pagination", {})
-                    total_pages = pagination.get("total_pages", 1)
-                    if page >= total_pages:
-                        break
-
-                    page += 1
-
+            self._wait_for_collection_ready(client, userid, wait_timeout, page_size)
+            all_entries, user_info = self._fetch_all_pages(client, userid, page_size)
             if not all_entries:
                 self.stdout.write(self.style.WARNING("No entries found in collection (empty or unavailable)."))
                 return {"entries": []}, user_info
-            return {"entries": all_entries}, user_info  # noqa: TRY300
+        except CommandError:
+            raise
         except Exception:
             import traceback
 
@@ -258,6 +264,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"Error in _fetch_user_collection:\n{tb}"))
             logger.exception("Error in _fetch_user_collection")
             raise
+        else:
+            return {"entries": all_entries}, user_info
 
     def _find_existing_user(self, fka_userid: int) -> User | None:
         """Find existing user by email or username."""
@@ -466,7 +474,21 @@ class Command(BaseCommand):
 
             return True
 
-    def _get_or_create_brand(
+    def _brand_logos_from_kit(self, kit_data: dict | None) -> tuple[str | None, str | None, int | None]:
+        if not kit_data:
+            return None, None, None
+        brand_data = kit_data.get("brand")
+        if not isinstance(brand_data, dict):
+            return None, None, None
+        logo_url = brand_data.get("logo")
+        logo_dark_url = brand_data.get("logo_dark")
+        if logo_url and LOGO_NOT_FOUND_FILENAME in logo_url:
+            logo_url = None
+        if logo_dark_url and LOGO_NOT_FOUND_FILENAME in logo_dark_url:
+            logo_dark_url = None
+        return logo_url, logo_dark_url, brand_data.get("id")
+
+    def _get_or_create_brand(  # NOSONAR (S3776) cognitive complexity
         self,
         brand_name: str | None,
         kit_data: dict | None = None,
@@ -477,21 +499,7 @@ class Command(BaseCommand):
         if not brand_name:
             return None
 
-        logo_url = None
-        logo_dark_url = None
-        brand_id_fka = None
-
-        if kit_data:
-            brand_data = kit_data.get("brand")
-            if isinstance(brand_data, dict):
-                brand_id_fka = brand_data.get("id")
-                logo_url = brand_data.get("logo")
-                logo_dark_url = brand_data.get("logo_dark")
-
-        if logo_url and "not_found.png" in logo_url:
-            logo_url = None
-        if logo_dark_url and "not_found.png" in logo_dark_url:
-            logo_dark_url = None
+        logo_url, logo_dark_url, brand_id_fka = self._brand_logos_from_kit(kit_data)
 
         brand, created = Brand.objects.get_or_create(
             name=brand_name,
@@ -519,33 +527,34 @@ class Command(BaseCommand):
                 brand.save()
         return brand
 
-    def _get_or_create_club(self, kit_data: dict, *, dry_run: bool) -> Club | None:
+    def _club_logos_and_country_from_kit(
+        self, kit_data: dict
+    ) -> tuple[str | None, str | None, int | None, str | None]:
+        club_data = kit_data.get("club")
+        if not isinstance(club_data, dict):
+            league = kit_data.get("league", {})
+            country_name = league.get("country") if isinstance(league, dict) else None
+            return None, None, None, (self._convert_country_name_to_code(country_name) if country_name else None)
+        logo_url = club_data.get("logo")
+        logo_dark_url = club_data.get("logo_dark")
+        if logo_url and LOGO_NOT_FOUND_FILENAME in logo_url:
+            logo_url = None
+        if logo_dark_url and LOGO_NOT_FOUND_FILENAME in logo_dark_url:
+            logo_dark_url = None
+        country_code = club_data.get("country")
+        if not country_code:
+            league = kit_data.get("league", {})
+            country_name = league.get("country") if isinstance(league, dict) else None
+            country_code = self._convert_country_name_to_code(country_name) if country_name else None
+        return logo_url, logo_dark_url, club_data.get("id"), country_code
+
+    def _get_or_create_club(self, kit_data: dict, *, dry_run: bool) -> Club | None:  # NOSONAR (S3776)
         """Get or create Club."""
         team_name = kit_data.get("team_name")
         if not team_name:
             return None
 
-        logo_url = None
-        logo_dark_url = None
-        club_id_fka = None
-        country_code = None
-
-        club_data = kit_data.get("club")
-        if isinstance(club_data, dict):
-            club_id_fka = club_data.get("id")
-            logo_url = club_data.get("logo")
-            logo_dark_url = club_data.get("logo_dark")
-            country_code = club_data.get("country")
-
-        if not country_code:
-            league = kit_data.get("league", {})
-            country_name = league.get("country") if isinstance(league, dict) else None
-            country_code = self._convert_country_name_to_code(country_name) if country_name else None
-
-        if logo_url and "not_found.png" in logo_url:
-            logo_url = None
-        if logo_dark_url and "not_found.png" in logo_dark_url:
-            logo_dark_url = None
+        logo_url, logo_dark_url, club_id_fka, country_code = self._club_logos_and_country_from_kit(kit_data)
 
         club, created = Club.objects.get_or_create(
             name=team_name,
@@ -695,7 +704,7 @@ class Command(BaseCommand):
             if sizes:
                 import random
 
-                random_size = random.choice(sizes)  # noqa: S311
+                random_size = random.choice(sizes)  # noqa: S311 # NOSONAR (S2245) "safe random choice"
                 if not dry_run:
                     logger.info("No size provided, using random size: %s", random_size.name)
                 return random_size
@@ -709,6 +718,66 @@ class Command(BaseCommand):
         if created and not dry_run:
             logger.info("Created size: %s", normalized_name)
         return size
+
+    def _find_existing_jersey_for_user_kit(self, user: User, kit: Kit | None) -> Jersey | None:
+        """Return existing Jersey for user+kit if any."""
+        if kit:
+            return (
+                Jersey.objects.filter(base_item__user=user, kit=kit)
+                .select_related("base_item", "kit")
+                .order_by("-base_item__created_at")
+                .first()
+            )
+        return (
+            Jersey.objects.filter(base_item__user=user, kit__isnull=True)
+            .select_related("base_item")
+            .order_by("-base_item__created_at")
+            .first()
+        )
+
+    def _resolve_base_item_country(self, club: Club | None, kit_data: dict) -> str | None:
+        """Resolve country for base item from club or league."""
+        if club and club.country:
+            return club.country
+        league = kit_data.get("league", {})
+        country_name = league.get("country") if isinstance(league, dict) else None
+        return self._convert_country_name_to_code(country_name) if country_name else None
+
+    _CONDITION_MAP = {"new": 10, "very-good": 9, "good": 8, "fair": 7, "poor": 6}
+    _DETAILED_CONDITION_MAP = {
+        "new": "BNWT",
+        "very-good": "VERY_GOOD",
+        "good": "GOOD",
+        "fair": "FAIR",
+        "poor": "POOR",
+    }
+    _DESIGN_MAP = {
+        "plain": "PLAIN",
+        "stripes": "STRIPES",
+        "graphic": "GRAPHIC",
+        "single stripe": "SINGLE_STRIPE",
+        "hoops": "HOOPS",
+    }
+
+    def _base_item_condition_from_entry(self, entry: dict) -> tuple[int, str]:
+        cond = entry.get("condition", "good")
+        return (
+            self._CONDITION_MAP.get(cond, 8),
+            self._DETAILED_CONDITION_MAP.get(cond, "GOOD") or "GOOD",
+        )
+
+    def _base_item_design_from_kit(self, kit_data: dict) -> str:
+        return self._DESIGN_MAP.get(kit_data.get("design", ""), "")
+
+    def _base_item_colors_from_kit(self, kit_data: dict, *, dry_run: bool) -> tuple[Color | None, list]:
+        main_color = self._get_or_create_color(kit_data.get("kitcolor1"), dry_run=dry_run)
+        secondary_colors = []
+        for color_name in [kit_data.get("kitcolor2"), kit_data.get("kitcolor3")]:
+            if color_name:
+                color = self._get_or_create_color(color_name, dry_run=dry_run)
+                if color:
+                    secondary_colors.append(color)
+        return main_color, secondary_colors
 
     def _create_base_item(
         self,
@@ -729,21 +798,7 @@ class Command(BaseCommand):
             return None
 
         if not dry_run:
-            if kit:
-                existing_jersey = (
-                    Jersey.objects.filter(base_item__user=user, kit=kit)
-                    .select_related("base_item", "kit")
-                    .order_by("-base_item__created_at")
-                    .first()
-                )
-            else:
-                existing_jersey = (
-                    Jersey.objects.filter(base_item__user=user, kit__isnull=True)
-                    .select_related("base_item")
-                    .order_by("-base_item__created_at")
-                    .first()
-                )
-
+            existing_jersey = self._find_existing_jersey_for_user_kit(user, kit)
             if existing_jersey:
                 entry_id = entry.get("id", "unknown")
                 kit_info = f"kit {kit.id}" if kit else "kit=None"
@@ -756,54 +811,13 @@ class Command(BaseCommand):
                 return existing_jersey.base_item
 
         item_name = f"{kit_data.get('team_name', '')} {kit_data.get('type', '')} {kit_data.get('season', '')}".strip()
-
-        condition_map = {
-            "new": 10,
-            "very-good": 9,
-            "good": 8,
-            "fair": 7,
-            "poor": 6,
-        }
-        condition_value = condition_map.get(entry.get("condition", "good"), 8)
-
-        detailed_condition_map = {
-            "new": "BNWT",
-            "very-good": "VERY_GOOD",
-            "good": "GOOD",
-            "fair": "FAIR",
-            "poor": "POOR",
-        }
-        detailed_condition = detailed_condition_map.get(entry.get("condition", "good"), "GOOD") or "GOOD"
-
+        condition_value, detailed_condition = self._base_item_condition_from_entry(entry)
         tags = entry.get("tags", [])
         kit_type = entry.get("kit_type", "")
         is_replica = kit_type in ["replica", "fan-version"] or "replica" in tags
-
-        design_map = {
-            "plain": "PLAIN",
-            "stripes": "STRIPES",
-            "graphic": "GRAPHIC",
-            "single stripe": "SINGLE_STRIPE",
-            "hoops": "HOOPS",
-        }
-        design = design_map.get(kit_data.get("design", ""), "")
-
-        main_color = self._get_or_create_color(kit_data.get("kitcolor1"), dry_run=dry_run)
-        secondary_colors = []
-        for color_name in [kit_data.get("kitcolor2"), kit_data.get("kitcolor3")]:
-            if color_name:
-                color = self._get_or_create_color(color_name, dry_run=dry_run)
-                if color:
-                    secondary_colors.append(color)
-
-        country = None
-        if club and club.country:
-            country = club.country
-        else:
-            league = kit_data.get("league", {})
-            country_name = league.get("country") if isinstance(league, dict) else None
-            if country_name:
-                country = self._convert_country_name_to_code(country_name)
+        design = self._base_item_design_from_kit(kit_data)
+        main_color, secondary_colors = self._base_item_colors_from_kit(kit_data, dry_run=dry_run)
+        country = self._resolve_base_item_country(club, kit_data)
 
         if dry_run:
             return BaseItem(
@@ -968,6 +982,44 @@ class Command(BaseCommand):
             is_short_sleeve=is_short_sleeve,
         )
 
+    def _resolve_photo_url(self, image_url: str) -> str:
+        if not image_url or image_url.startswith("http"):
+            return image_url or ""
+        if image_url.startswith("/"):
+            return f"https://www.footballkitarchive.com{image_url}"
+        return f"https://www.footballkitarchive.com/{image_url}"
+
+    def _create_single_photo(
+        self, image_data: dict, idx: int, base_item: BaseItem, user: User, *, dry_run: bool
+    ) -> None:
+        image_url = image_data.get("url") or image_data.get("preview_url") or image_data.get("thumbnail_url")
+        if not image_url:
+            return
+        image_url = self._resolve_photo_url(image_url)
+        if dry_run:
+            self.stdout.write(f"  Would download photo {idx + 1}: {image_url}")
+            return
+        try:
+            response = requests.get(image_url, timeout=30, stream=True)
+            response.raise_for_status()
+            from django.core.files.base import ContentFile
+
+            photo = Photo(
+                content_object=base_item,
+                user=user,
+                order=image_data.get("order", idx),
+                caption="",
+            )
+            file_extension = image_url.split(".")[-1].split("?")[0] if "." in image_url else "jpg"
+            filename = f"photo_{base_item.id}_{idx}.{file_extension}"
+            photo.image.save(filename, ContentFile(response.content), save=False)
+            photo.save()
+            self.stdout.write(f"  Created photo {idx + 1} for item {base_item.id}")
+            logger.info("Created photo for item %s", base_item.id)
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"  Warning: Could not download image {idx + 1}: {e!s}"))
+            logger.exception("Error downloading image %s", image_url)
+
     def _create_photos(
         self,
         images: list[dict],
@@ -977,49 +1029,5 @@ class Command(BaseCommand):
         dry_run: bool,
     ) -> None:
         """Create Photo objects from entry images."""
-        if not images:
-            return
-
         for idx, image_data in enumerate(images):
-            image_url = image_data.get("url") or image_data.get("preview_url") or image_data.get("thumbnail_url")
-            if not image_url:
-                continue
-
-            if not image_url.startswith("http"):
-                if image_url.startswith("/"):
-                    image_url = f"https://www.footballkitarchive.com{image_url}"
-                else:
-                    image_url = f"https://www.footballkitarchive.com/{image_url}"
-
-            if dry_run:
-                self.stdout.write(f"  Would download photo {idx + 1}: {image_url}")
-                continue
-
-            try:
-                response = requests.get(image_url, timeout=30, stream=True)
-                response.raise_for_status()
-
-                from django.core.files.base import ContentFile
-
-                photo = Photo(
-                    content_object=base_item,
-                    user=user,
-                    order=image_data.get("order", idx),
-                    caption="",
-                )
-
-                file_extension = image_url.split(".")[-1].split("?")[0] if "." in image_url else "jpg"
-                filename = f"photo_{base_item.id}_{idx}.{file_extension}"
-
-                photo.image.save(
-                    filename,
-                    ContentFile(response.content),
-                    save=False,
-                )
-                photo.save()
-                self.stdout.write(f"  Created photo {idx + 1} for item {base_item.id}")
-                logger.info("Created photo for item %s", base_item.id)
-
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f"  Warning: Could not download image {idx + 1}: {e!s}"))
-                logger.exception("Error downloading image %s", image_url)
+            self._create_single_photo(image_data, idx, base_item, user, dry_run=dry_run)

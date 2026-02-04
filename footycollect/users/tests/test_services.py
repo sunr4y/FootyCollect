@@ -13,7 +13,7 @@ from footycollect.users.services import UserService
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 EXPECTED_ITEMS_COUNT_5 = 5
 EXPECTED_ITEMS_COUNT_3 = 3
 EXPECTED_ITEMS_COUNT_10 = 10

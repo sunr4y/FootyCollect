@@ -15,7 +15,7 @@ from footycollect.users.views import UserDetailView, UserRedirectView, UserUpdat
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 HTTP_OK = 200
 HTTP_FOUND = 302
 HTTP_BAD_REQUEST = 400

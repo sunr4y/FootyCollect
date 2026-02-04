@@ -51,7 +51,7 @@ def _distribute_kits_to_columns(kits, num_columns, kits_per_column):
 
     random.seed(42)
     available = kits.copy()
-    random.shuffle(available)
+    random.shuffle(available)  # NOSONAR (S2245) "safe random shuffle"
 
     columns = [[] for _ in range(num_columns)]
     columns_teams = [set() for _ in range(num_columns)]
