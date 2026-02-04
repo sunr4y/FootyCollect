@@ -79,9 +79,9 @@
     }
 
     .btn-outline-primary:hover {
-      background-color: hsla(180, 85%, 40%, 0.1) !important;
-      border-color: hsla(180, 85%, 40%, 1) !important;
-      color: hsla(180, 85%, 40%, 1) !important;
+      background-color: hsla(180, 85%, 40%, 0.18) !important;
+      border-color: hsl(180, 85%, 32%) !important;
+      color: hsl(180, 85%, 18%) !important;
     }
 
     /* Form inputs dark theme */
@@ -216,47 +216,51 @@
           <!-- Version Toggle: Fan vs Player (mutually exclusive) -->
           <div class="row mb-3">
             <div class="col-md-6">
-              <label class="fc-form-label-block">{% trans "Jersey Version" %}</label>
-              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Version toggle">
-                <button type="button"
-                        class="btn fc-btn-group-item"
-                        :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
-                        @click="setVersion('fan')">{% trans "Fan Version" %}</button>
-                <button type="button"
-                        class="btn fc-btn-group-item"
-                        :class="!isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
-                        @click="setVersion('player')">{% trans "Player Version" %}</button>
-              </div>
+              <fieldset class="border-0 p-0 mb-0">
+                <legend class="fc-form-label-block">{% trans "Jersey Version" %}</legend>
+                <div class="btn-group w-100 fc-btn-group">
+                  <button type="button"
+                          class="btn fc-btn-group-item"
+                          :class="isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                          @click="setVersion('fan')">{% trans "Fan Version" %}</button>
+                  <button type="button"
+                          class="btn fc-btn-group-item"
+                          :class="!isFanVersion ? 'btn-primary' : 'btn-outline-primary'"
+                          @click="setVersion('player')">{% trans "Player Version" %}</button>
+                </div>
+              </fieldset>
             </div>
             <div class="col-md-6">
-              <label class="fc-form-label-block">{% trans "Sleeve Type" %}</label>
-              <div class="btn-group w-100 fc-btn-group" role="group" aria-label="Sleeve toggle">
-                <button type="button"
-                        class="btn fc-btn-group-item"
-                        :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
-                        @click="setSleeve('short')">{% trans "Short Sleeve" %}</button>
-                <button type="button"
-                        class="btn fc-btn-group-item"
-                        :class="!isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
-                        @click="setSleeve('long')">{% trans "Long Sleeve" %}</button>
-              </div>
+              <fieldset class="border-0 p-0 mb-0">
+                <legend class="fc-form-label-block">{% trans "Sleeve Type" %}</legend>
+                <div class="btn-group w-100 fc-btn-group">
+                  <button type="button"
+                          class="btn fc-btn-group-item"
+                          :class="isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                          @click="setSleeve('short')">{% trans "Short Sleeve" %}</button>
+                  <button type="button"
+                          class="btn fc-btn-group-item"
+                          :class="!isShortSleeve ? 'btn-primary' : 'btn-outline-primary'"
+                          @click="setSleeve('long')">{% trans "Long Sleeve" %}</button>
+                </div>
+              </fieldset>
             </div>
           </div>
           <!-- Binary options row (clear alignment) - Toggle switches -->
           <div class="row mb-3">
             <div class="col-md-6">
-              <label class="fc-form-label-block">{% trans "Include Player Signature" %}</label>
-              <label class="toggle-switch">
+              <label class="fc-form-label-block" for="id_is_signed">{% trans "Include Player Signature" %}</label>
+              <span class="toggle-switch">
                 <input type="checkbox" id="id_is_signed" name="is_signed" {% if form.is_signed.value %}checked{% endif %} />
-                <span class="toggle-slider"></span>
-              </label>
+                <span class="toggle-slider" aria-hidden="true"></span>
+              </span>
             </div>
             <div class="col-md-6">
-              <label class="fc-form-label-block">{% trans "Is replica" %}</label>
-              <label class="toggle-switch">
+              <label class="fc-form-label-block" for="id_is_replica">{% trans "Is replica" %}</label>
+              <span class="toggle-switch">
                 <input type="checkbox" id="id_is_replica" name="is_replica" {% if form.is_replica.value %}checked{% endif %} />
-                <span class="toggle-slider"></span>
-              </label>
+                <span class="toggle-slider" aria-hidden="true"></span>
+              </span>
             </div>
           </div>
           <!-- Nameset toggle button and fields -->
@@ -306,7 +310,11 @@
               {% trans "Add Jersey" %}
             {% endif %}
           </span>
-          <span id="submit-spinner" class="spinner-border spinner-border-sm ms-2 fc-d-none" role="status" aria-hidden="true"></span>
+          <output id="submit-spinner"
+                  class="spinner-border spinner-border-sm ms-2 fc-d-none"
+                  aria-live="polite"
+                  aria-hidden="true"
+                  for="submit-jersey-btn"></output>
         </button>
       </div>
     </form>

@@ -10,7 +10,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 # Import production checks to register them
 from config import checks  # noqa: F401
 
-from .base import *
+from .base import *  # NOSONAR (S2208) "This is a production settings file"
 from .base import DATABASES, INSTALLED_APPS, MIDDLEWARE, SPECTACULAR_SETTINGS, _csp_sources, env
 
 # GENERAL
@@ -55,7 +55,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_NAME = "__Secure-csrftoken"
 # https://docs.djangoproject.com/en/dev/topics/security/#ssl-https
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-seconds
-# TODO: set this to 60 seconds first and then to 518400 once you prove the former works
+# TODO: set this to 60 seconds first and then to 518400 once you prove the former works #NOSONAR (S1135) "This is a TODO comment"
 SECURE_HSTS_SECONDS = 60
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-include-subdomains
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(

@@ -60,6 +60,7 @@
       background: transparent !important;
       padding: 0 !important;
       margin: 0 !important;
+      position: relative !important;
     }
 
     #mainImageSrc {
@@ -90,10 +91,6 @@
       position: absolute !important;
       top: 0 !important;
       left: 0 !important;
-    }
-
-    #mainImage {
-      position: relative !important;
     }
 
     .fc-main-image:hover img {
@@ -483,15 +480,6 @@
       }
     }
 
-    .fc-signed-card {
-      animation: signedGlow 3s ease-in-out infinite;
-    }
-
-    .fc-signed-icon {
-      animation: signedBreathe 2s ease-in-out infinite;
-      filter: drop-shadow(0 0 8px hsla(180, 85%, 40%, 0.8));
-    }
-
     .fc-season-card:hover {
       border-color: hsla(180, 85%, 40%, 0.3) !important;
       background: linear-gradient(145deg, hsl(220, 18%, 12%) 0%, hsl(220, 18%, 8%) 100%) !important;
@@ -700,17 +688,17 @@
     .fc-main-image-empty .fc-add-photos-btn {
       padding: 0.5rem 1rem;
       border-radius: 0.5rem;
-      border: 1px solid #22d3ee;
-      background: rgba(34, 211, 238, 0.15);
-      color: #22d3ee;
+      border: 1px solid #0e7490;
+      background: rgba(14, 116, 144, 0.25);
+      color: #0c4a6e;
       text-decoration: none;
       font-size: 0.875rem;
       transition: background 0.2s, color 0.2s;
     }
 
     .fc-main-image-empty .fc-add-photos-btn:hover {
-      background: rgba(34, 211, 238, 0.25);
-      color: #e0f2fe;
+      background: rgba(14, 116, 144, 0.4);
+      color: #083344;
     }
 
     .fc-main-image-wrapper img {
@@ -804,13 +792,6 @@
       max-width: 100%;
     }
 
-    .fc-separator {
-      height: 1px;
-      width: 100%;
-      background: var(--fc-border);
-      opacity: 0.5;
-    }
-
     .fc-signed-card {
       padding: 1rem;
       border-radius: var(--fc-radius);
@@ -818,6 +799,7 @@
       background: linear-gradient(145deg, hsla(180, 85%, 40%, 0.15) 0%, hsla(180, 85%, 40%, 0.05) 100%);
       box-shadow: 0 0 30px -5px hsla(180, 85%, 40%, 0.5), inset 0 0 20px -10px hsla(180, 85%, 40%, 0.3);
       transition: all 0.3s ease;
+      animation: signedGlow 3s ease-in-out infinite;
     }
 
     .fc-signed-card:hover {
@@ -828,6 +810,8 @@
     .fc-signed-icon {
       font-size: 1.5rem;
       color: var(--fc-primary);
+      animation: signedBreathe 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 8px hsla(180, 85%, 40%, 0.8));
     }
 
     .fc-signed-text {
@@ -951,36 +935,34 @@
       <div class="fc-flex-col fc-gap-3">
         <div class="fc-main-image-wrapper" id="mainImage">
           {% if first_photo %}
-            <div class="fc-main-image-loading" id="mainImageLoading" role="status" aria-label="{% trans 'Loading image' %}">
-              <span class="spinner-border" role="status"></span>
+            <output class="fc-main-image-loading" id="mainImageLoading" aria-live="polite">
+              <span class="spinner-border" aria-hidden="true"></span>
               <span>{% trans "Loading image..." %}</span>
-            </div>
+            </output>
             <div class="fc-main-image-error" id="mainImageError">
               <i class="bi bi-image" style="font-size: 2.5rem; opacity: 0.6;"></i>
               <span>{% trans "Image could not be loaded." %}</span>
-              <button type="button" class="fc-retry-btn" onclick="fcRetryMainImage()">{% trans "Retry" %}</button>
+              <button type="button" class="fc-retry-btn" id="fcRetryMainImageBtn">{% trans "Retry" %}</button>
             </div>
             <img src="{{ first_photo.get_image_url }}"
                  class="fc-main-image-img"
                  alt="{{ object.name }}"
                  id="mainImageSrc"
                  data-src="{{ first_photo.get_image_url }}"
-                 decoding="async"
-                 onload="typeof fcMainImageOnLoad==='function'&&fcMainImageOnLoad(this);"
-                 onerror="typeof fcMainImageOnError==='function'&&fcMainImageOnError(this);" />
+                 decoding="async" />
             <div class="fc-main-image-overlay"></div>
             {% if object.is_processing_photos %}
-              <div id="processingBadge" class="fc-processing-badge">
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              <output id="processingBadge" class="fc-processing-badge" aria-live="polite">
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                 {% trans "Processing photos..." %}
-              </div>
+              </output>
             {% endif %}
           {% else %}
             <div class="fc-main-image-empty" id="mainImageEmpty" data-item-id="{{ object.pk }}">
               <i class="bi bi-image" style="font-size: 2.5rem; opacity: 0.5;"></i>
               <span id="mainImageEmptyText">{% trans "No image yet." %}</span>
               {% if object.is_processing_photos %}
-                <span class="spinner-border spinner-border-sm" role="status" style="margin-top: 0.25rem;"></span>
+                <span class="spinner-border spinner-border-sm" aria-hidden="true" style="margin-top: 0.25rem;"></span>
                 <span class="fc-text-sm">{% trans "Processing photos..." %}</span>
               {% endif %}
               <a href="{% url 'collection:item_update' object.pk %}" class="fc-add-photos-btn">{% trans "Add photos" %}</a>
@@ -991,7 +973,6 @@
           <div class="fc-thumbnails-container">
             {% for photo in photos %}
               <button type="button"
-                      onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
                       class="fc-thumbnail {% if forloop.first %}active{% endif %}"
                       data-image-url="{{ photo.image.url }}"
                       data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
@@ -999,7 +980,7 @@
                   <img src="{{ photo.image_avif.url }}"
                        alt="Thumbnail {{ forloop.counter }}"
                        class="thumbnail-img"
-                       onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
+                       data-fallback-src="{{ photo.image.url }}" />
                 {% else %}
                   <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
                 {% endif %}
@@ -1049,10 +1030,7 @@
             {% if object.club %}
               <div class="fc-team-card">
                 {% if object.club.logo_display_url and object.club.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                  <img src="{{ object.club.logo_display_url }}"
-                       alt="{{ object.club.name }}"
-                       class="fc-club-logo"
-                       onerror="this.classList.add('fc-d-none');" />
+                  <img src="{{ object.club.logo_display_url }}" alt="{{ object.club.name }}" class="fc-club-logo" data-hide-on-error="true" />
                 {% endif %}
                 <div>
                   <p class="fc-font-semibold fc-text-foreground fc-m-0">{{ object.club.name }}</p>
@@ -1076,7 +1054,7 @@
                     <img src="{{ object.brand.logo_dark_display_url }}"
                          alt="{{ object.brand.name }}"
                          class="fc-brand-logo"
-                         onerror="this.onerror=null; this.src='{{ object.brand.logo_display_url|default:'' }}';" />
+                         data-fallback-src="{{ object.brand.logo_display_url|default:'' }}" />
                   {% elif object.brand.logo_display_url and object.brand.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
                     <img src="{{ object.brand.logo_display_url }}" alt="{{ object.brand.name }}" class="fc-brand-logo" />
                   {% endif %}
@@ -1291,6 +1269,31 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+      var retryBtn = document.getElementById('fcRetryMainImageBtn');
+      if (retryBtn) retryBtn.addEventListener('click', fcRetryMainImage);
+
+      document.querySelectorAll('.fc-thumbnail').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          changeImage(btn.getAttribute('data-image-url') || '', btn.getAttribute('data-avif-url') || '', btn);
+        });
+      });
+
+      var mainImg = document.getElementById('mainImageSrc');
+      if (mainImg) {
+        mainImg.addEventListener('load', function() { fcMainImageOnLoad(mainImg); });
+        mainImg.addEventListener('error', function() { fcMainImageOnError(mainImg); });
+      }
+
+      document.querySelectorAll('img[data-fallback-src]').forEach(function(el) {
+        el.addEventListener('error', function() {
+          var fallback = el.getAttribute('data-fallback-src');
+          if (fallback) { el.onerror = null; el.src = fallback; }
+        });
+      });
+      document.querySelectorAll('img[data-hide-on-error]').forEach(function(el) {
+        el.addEventListener('error', function() { el.classList.add('fc-d-none'); });
+      });
+
       var img = document.getElementById('mainImageSrc');
       if (img && img.complete) {
         if (img.naturalWidth && img.naturalHeight) {

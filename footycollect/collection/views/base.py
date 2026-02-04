@@ -6,6 +6,7 @@ different view types in the collection app.
 """
 
 import json
+import logging
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -15,7 +16,27 @@ from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from footycollect.collection.models import BaseItem
-from footycollect.collection.services import get_item_service, get_photo_service
+from footycollect.collection.services import get_collection_service, get_item_service, get_photo_service
+
+logger = logging.getLogger(__name__)
+
+URL_NAME_ITEM_LIST = "collection:item_list"
+
+
+def get_color_and_design_choices():
+    """Return color_choices and design_choices JSON for Cotton components."""
+    try:
+        collection_service = get_collection_service()
+        form_data = collection_service.get_form_data()
+        return {
+            "color_choices": json.dumps(form_data["colors"]["main_colors"]),
+            "design_choices": json.dumps(
+                [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
+            ),
+        }
+    except (KeyError, AttributeError, ImportError) as e:
+        logger.warning("Error getting form data: %s", type(e).__name__)
+        return {"color_choices": "[]", "design_choices": "[]"}
 
 
 class CollectionLoginRequiredMixin(LoginRequiredMixin):
@@ -94,7 +115,7 @@ class BaseItemCreateView(
 
     model = BaseItem
     template_name = "collection/item_form.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
 
     def get_form_kwargs(self):
         """Add user to form kwargs."""
@@ -119,7 +140,7 @@ class BaseItemUpdateView(
 
     model = BaseItem
     template_name = "collection/item_form.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
 
     def get_queryset(self):
         """Get user's items with optimizations."""
@@ -145,7 +166,7 @@ class BaseItemDeleteView(
 
     model = BaseItem
     template_name = "collection/item_confirm_delete.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
     success_message = _("Item deleted successfully.")
 
     def get_queryset(self):
