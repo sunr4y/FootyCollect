@@ -203,10 +203,8 @@
                   <form action="{% url 'set_language' %}" method="post" class="d-flex align-items-center" id="language-form">
                     {% csrf_token %}
                     <input name="next" type="hidden" value="{{ request.get_full_path }}" />
-                    <select name="language"
-                            class="form-select form-select-sm fc-lang-select"
-                            aria-label="{% translate 'Language' %}"
-                            onchange="this.form.submit()">
+                    <label for="fc-lang-select" class="form-label mb-0 me-1 align-middle">{% translate 'Language' %}</label>
+                    <select name="language" id="fc-lang-select" class="form-select form-select-sm fc-lang-select" onchange="this.form.submit()">
                       {% get_current_language as CURRENT_LANG %}
                       {% get_available_languages as LANG_LIST %}
                       {% for lang_code, lang_name in LANG_LIST %}

@@ -96,11 +96,12 @@ THIRD_PARTY_APPS = [
     "csp",
 ]
 
+APP_COLLECTION = "footycollect.collection"
 LOCAL_APPS = [
     "footycollect.users",
     "footycollect.core",
     "footycollect.api",
-    "footycollect.collection",
+    APP_COLLECTION,
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -265,6 +266,9 @@ PERMISSIONS_POLICY = env.str(
 
 # Content-Security-Policy (django-csp 4.0). Set DJANGO_CSP_ENABLED=True to enable.
 # Use comma-separated values in env vars; CSP keywords must be quoted (e.g. 'self').
+_CSP_SELF = "'self'"
+
+
 def _csp_sources(name: str, default: str) -> list:
     raw = env.str(name, default=default)
     return [s.strip() for s in raw.split(",") if s.strip()]
@@ -275,33 +279,34 @@ if env.bool("DJANGO_CSP_ENABLED", default=False):
         "DIRECTIVES": {
             "default-src": _csp_sources(
                 "DJANGO_CSP_DEFAULT_SRC",
-                "'self'",
+                _CSP_SELF,
             ),
             "script-src": _csp_sources(
                 "DJANGO_CSP_SCRIPT_SRC",
-                "'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
+                _CSP_SELF + " 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
             ),
             "style-src": _csp_sources(
                 "DJANGO_CSP_STYLE_SRC",
-                "'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+                _CSP_SELF + " 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
             ),
             "font-src": _csp_sources(
                 "DJANGO_CSP_FONT_SRC",
-                "'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+                _CSP_SELF + " https://cdnjs.cloudflare.com https://fonts.gstatic.com",
             ),
             "img-src": _csp_sources(
                 "DJANGO_CSP_IMG_SRC",
-                "'self' data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com https://www.footballkitarchive.com",
+                _CSP_SELF
+                + " data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com https://www.footballkitarchive.com",
             ),
             "connect-src": _csp_sources(
                 "DJANGO_CSP_CONNECT_SRC",
-                "'self'",
+                _CSP_SELF,
             ),
             "frame-ancestors": _csp_sources(
                 "DJANGO_CSP_FRAME_ANCESTORS",
-                "'self'",
+                _CSP_SELF,
             ),
-            "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
+            "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", _CSP_SELF),
         },
     }
     MIDDLEWARE.insert(1, "csp.middleware.CSPMiddleware")
@@ -395,22 +400,22 @@ LOGGING = {
             "handlers": ["console"],
             "propagate": False,
         },
-        "footycollect.collection": {
+        APP_COLLECTION: {
             "level": "DEBUG",
             "handlers": ["console"],
             "propagate": False,
         },
-        "footycollect.collection.views": {
+        f"{APP_COLLECTION}.views": {
             "level": "DEBUG",
             "handlers": ["console"],
             "propagate": False,
         },
-        "footycollect.collection.forms": {
+        f"{APP_COLLECTION}.forms": {
             "level": "DEBUG",
             "handlers": ["console"],
             "propagate": False,
         },
-        "footycollect.collection.services": {
+        f"{APP_COLLECTION}.services": {
             "level": "DEBUG",
             "handlers": ["console"],
             "propagate": False,

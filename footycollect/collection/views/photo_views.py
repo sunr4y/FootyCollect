@@ -24,6 +24,7 @@ from footycollect.collection.models import BaseItem, Photo
 from footycollect.collection.services import get_photo_service
 
 PROXY_IMAGE_MAX_SIZE = 10 * 1024 * 1024
+ERROR_ITEM_NOT_FOUND = "Item not found"
 
 
 def check_user_upload_limit(user, new_file_size):
@@ -377,4 +378,4 @@ class ItemProcessingStatusView(View):
             )
             return JsonResponse(payload)
         except BaseItem.DoesNotExist:
-            return JsonResponse({"error": "Item not found"}, status=404)
+            return JsonResponse({"error": ERROR_ITEM_NOT_FOUND}, status=404)
