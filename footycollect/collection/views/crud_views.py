@@ -19,19 +19,17 @@ from footycollect.collection.services import get_collection_service
 from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemUpdateView
 
 logger = logging.getLogger(__name__)
+URL_NAME_ITEM_LIST = "collection:item_list"
 
 
 class ItemCreateView(BaseItemCreateView):
     """Create view for adding new items to the collection."""
 
     template_name = "collection/item_form.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
 
     def get_form_class(self):
         """Return the appropriate form class based on the item type."""
-        item_type = self.request.GET.get("type", "jersey")
-        if item_type == "jersey":
-            return JerseyForm
         return JerseyForm
 
     def get_context_data(self, **kwargs):
@@ -45,7 +43,7 @@ class ItemCreateView(BaseItemCreateView):
                 [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
             )
         except (KeyError, AttributeError, ImportError) as e:
-            logger.warning("Error getting form data: %s", str(e))
+            logger.warning("Error getting form data: %s", type(e).__name__)
             context["color_choices"] = "[]"
             context["design_choices"] = "[]"
         return context
@@ -55,37 +53,30 @@ class ItemUpdateView(BaseItemUpdateView):
     """Update view for editing existing items in the collection."""
 
     template_name = "collection/item_form.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
 
     def form_valid(self, form):
         """Handle form validation for item updates, including photo processing."""
         response = super().form_valid(form)
-
         photo_ids = self.request.POST.get("photo_ids", "")
-        if not photo_ids:
-            return response
-
-        parsed = self._parse_photo_ids(photo_ids)
-        if parsed is None:
-            return response
-
-        keep_ids, order_map, _ = self._extract_photo_data(parsed)
-
-        self._update_existing_photos(keep_ids, order_map)
-        self._remove_deleted_photos(keep_ids)
-
+        if photo_ids:
+            parsed = self._parse_photo_ids(photo_ids)
+            if parsed is not None:
+                keep_ids, order_map, _ = self._extract_photo_data(parsed)
+                self._update_existing_photos(keep_ids, order_map)
+                self._remove_deleted_photos(keep_ids)
         return response
 
     def _parse_photo_ids(self, photo_ids):
         """Parse photo_ids JSON payload."""
         try:
             parsed = json.loads(photo_ids)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            logger.warning("Invalid photo_ids payload for ItemUpdateView: %s", photo_ids)
+        except (TypeError, ValueError):
+            logger.warning("Invalid photo_ids payload for ItemUpdateView (length=%s)", len(photo_ids))
             return None
 
         if not isinstance(parsed, list):
-            logger.warning("Unexpected photo_ids structure for ItemUpdateView: %s", type(parsed))
+            logger.warning("Unexpected photo_ids structure for ItemUpdateView (non-list)")
             return None
 
         return parsed
@@ -170,9 +161,10 @@ class ItemUpdateView(BaseItemUpdateView):
                 [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
             )
         except (KeyError, AttributeError, ImportError) as e:
-            logger.warning("Error getting form data: %s", str(e))
+            logger.warning("Error getting form data: %s", type(e).__name__)
             context["color_choices"] = "[]"
             context["design_choices"] = "[]"
+        return context
 
     def _add_initial_photos(self, context):
         """Pre-load existing photos for the photo manager."""
@@ -181,7 +173,7 @@ class ItemUpdateView(BaseItemUpdateView):
             photo_list = [self._build_photo_dict(photo) for photo in photos]
             context["initial_photos"] = json.dumps(photo_list)
         except (AttributeError, ValueError, TypeError, OSError) as exc:
-            logger.warning("Error building initial_photos for ItemUpdateView: %s", str(exc))
+            logger.warning("Error building initial_photos for ItemUpdateView: %s", type(exc).__name__)
             context["initial_photos"] = "[]"
 
     def _build_photo_dict(self, photo):
@@ -217,7 +209,7 @@ class ItemUpdateView(BaseItemUpdateView):
 
             context["autocomplete_initial_data"] = json.dumps(initial_data)
         except (AttributeError, ValueError, TypeError, KeyError) as e:
-            logger.warning("Error building autocomplete initial data for ItemUpdateView: %s", e)
+            logger.warning("Error building autocomplete initial data for ItemUpdateView: %s", type(e).__name__)
             context["autocomplete_initial_data"] = "{}"
 
     def _get_kit_from_base_item(self, base_item):
@@ -307,12 +299,12 @@ class ItemDeleteView(BaseItemDeleteView):
     """Delete view for removing items from the collection."""
 
     template_name = "collection/item_confirm_delete.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
 
     def get_success_url(self):
         """Return to the same page after deletion."""
         page = self.request.POST.get("page") or self.request.GET.get("page")
-        base_url = reverse_lazy("collection:item_list")
+        base_url = reverse_lazy(URL_NAME_ITEM_LIST)
         if page and page != "1":
             return f"{base_url}?page={page}"
         return base_url

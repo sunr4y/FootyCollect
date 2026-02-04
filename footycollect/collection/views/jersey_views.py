@@ -129,7 +129,6 @@ class JerseyFKAPICreateView(
 
     def _add_color_and_design_choices(self, context):
         """Add color and design choices to context for Cotton components."""
-
         try:
             collection_service = get_collection_service()
             form_data = collection_service.get_form_data()
@@ -138,9 +137,10 @@ class JerseyFKAPICreateView(
                 [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
             )
         except (KeyError, AttributeError, ImportError) as e:
-            logger.warning("Error getting form data: %s", str(e))
+            logger.warning("Error getting form data: %s", type(e).__name__)
             context["color_choices"] = "[]"
             context["design_choices"] = "[]"
+        return context
 
     def form_valid(self, form):
         """
@@ -271,6 +271,6 @@ class JerseyFKAPICreateView(
 
     def form_invalid(self, form):
         """Handle invalid form submission."""
-        logger.warning("Jersey create form invalid: %s", form.errors.as_json())
+        logger.warning("Jersey create form invalid: fields=%s", list(form.errors.keys()))
 
         return super().form_invalid(form)

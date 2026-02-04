@@ -12,6 +12,8 @@ from footycollect.collection.models import BaseItem, Color, Jersey, Size
 
 YEAR_LENGTH = 4
 
+CHECKBOX_TOGGLE_CLASS = "form-check-input fc-toggle-input"
+
 
 class JerseyForm(forms.ModelForm):
     """Form for Jersey items using Service Layer with STI structure."""
@@ -129,7 +131,7 @@ class JerseyForm(forms.ModelForm):
 
     is_replica = forms.BooleanField(
         required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+        widget=forms.CheckboxInput(attrs={"class": CHECKBOX_TOGGLE_CLASS}),
     )
 
     main_color = ColorModelChoiceField(
@@ -171,17 +173,17 @@ class JerseyForm(forms.ModelForm):
     is_fan_version = forms.BooleanField(
         required=False,
         label=_("Fan Version"),
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+        widget=forms.CheckboxInput(attrs={"class": CHECKBOX_TOGGLE_CLASS}),
     )
 
     is_signed = forms.BooleanField(
         required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+        widget=forms.CheckboxInput(attrs={"class": CHECKBOX_TOGGLE_CLASS}),
     )
 
     has_nameset = forms.BooleanField(
         required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+        widget=forms.CheckboxInput(attrs={"class": CHECKBOX_TOGGLE_CLASS}),
     )
 
     player_name = forms.CharField(
@@ -194,7 +196,7 @@ class JerseyForm(forms.ModelForm):
         required=False,
         initial=True,
         label=_("Short Sleeve"),
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input toggle-switch"}),
+        widget=forms.CheckboxInput(attrs={"class": CHECKBOX_TOGGLE_CLASS}),
     )
 
     number = forms.IntegerField(
@@ -227,14 +229,7 @@ class JerseyForm(forms.ModelForm):
 
     def clean_secondary_colors(self):
         """Normalize secondary colors from string names to Color objects."""
-        if hasattr(self.data, "getlist"):
-            secondary_colors_names = self.data.getlist("secondary_colors")
-        else:
-            secondary_colors = self.data.get("secondary_colors")
-            if secondary_colors:
-                secondary_colors_names = [secondary_colors] if isinstance(secondary_colors, str) else secondary_colors
-            else:
-                secondary_colors_names = []
+        secondary_colors_names = self.data.getlist("secondary_colors")
 
         if not secondary_colors_names:
             return []
@@ -352,6 +347,43 @@ class JerseyForm(forms.ModelForm):
             raise ValidationError(_("Club could not be resolved. Please try again."))
         return club
 
+    def _parse_season_years(self, season_name):
+        """Return (first_year, second_year) from season_name (e.g. '2023-24' or '2023')."""
+        if "-" in season_name:
+            parts = season_name.split("-")
+            return parts[0], parts[1] if len(parts) > 1 else ""
+        first = season_name[:YEAR_LENGTH] if len(season_name) >= YEAR_LENGTH else season_name
+        return first, ""
+
+    def _get_or_create_season_by_name(self, season_name):
+        """Create or get Season by name; return Season or None on error."""
+        import logging
+
+        from footycollect.core.models import Season
+
+        logger = logging.getLogger(__name__)
+        try:
+            first_year, second_year = self._parse_season_years(season_name)
+            season, created = Season.objects.get_or_create(
+                year=season_name,
+                defaults={"first_year": first_year, "second_year": second_year},
+            )
+            if created:
+                logger.info(
+                    "Created new season: %s (year=%s, first=%s, second=%s)",
+                    season_name,
+                    season.year,
+                    season.first_year,
+                    season.second_year,
+                )
+            else:
+                logger.info("Found existing season: %s (year=%s)", season_name, season.year)
+        except (ValueError, TypeError):
+            logger.exception("Error creating season %s", season_name)
+            return None
+        else:
+            return season
+
     def _resolve_season(self):
         """Resolve or create season from cleaned_data and request data."""
         import contextlib
@@ -360,47 +392,16 @@ class JerseyForm(forms.ModelForm):
         from footycollect.core.models import Season
 
         logger = logging.getLogger(__name__)
-
         season = None
         season_id = self.cleaned_data.get("season")
         if season_id:
             with contextlib.suppress(Season.DoesNotExist):
                 season = Season.objects.get(id=season_id)
                 logger.info("Found season by ID: %s", season_id)
-
         if not season and self.data.get("season_name"):
             season_name = self.data.get("season_name")
             logger.info("Creating season from year: %s", season_name)
-            try:
-                if "-" in season_name:
-                    parts = season_name.split("-")
-                    first_year = parts[0]
-                    second_year = parts[1] if len(parts) > 1 else ""
-                else:
-                    first_year = season_name[:YEAR_LENGTH] if len(season_name) >= YEAR_LENGTH else season_name
-                    second_year = ""
-
-                season, created = Season.objects.get_or_create(
-                    year=season_name,
-                    defaults={
-                        "first_year": first_year,
-                        "second_year": second_year,
-                    },
-                )
-                if created:
-                    logger.info(
-                        "Created new season: %s (year=%s, first=%s, second=%s)",
-                        season_name,
-                        season.year,
-                        season.first_year,
-                        season.second_year,
-                    )
-                else:
-                    logger.info("Found existing season: %s (year=%s)", season_name, season.year)
-            except (ValueError, TypeError):
-                logger.exception("Error creating season %s", season_name)
-                season = None
-
+            season = self._get_or_create_season_by_name(season_name)
         if not season:
             raise ValidationError(_("Season could not be resolved. Please try again."))
         return season

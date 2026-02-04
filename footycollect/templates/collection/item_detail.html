@@ -951,36 +951,34 @@
       <div class="fc-flex-col fc-gap-3">
         <div class="fc-main-image-wrapper" id="mainImage">
           {% if first_photo %}
-            <div class="fc-main-image-loading" id="mainImageLoading" role="status" aria-label="{% trans 'Loading image' %}">
-              <span class="spinner-border" role="status"></span>
+            <output class="fc-main-image-loading" id="mainImageLoading" aria-live="polite">
+              <span class="spinner-border" aria-hidden="true"></span>
               <span>{% trans "Loading image..." %}</span>
-            </div>
+            </output>
             <div class="fc-main-image-error" id="mainImageError">
               <i class="bi bi-image" style="font-size: 2.5rem; opacity: 0.6;"></i>
               <span>{% trans "Image could not be loaded." %}</span>
-              <button type="button" class="fc-retry-btn" onclick="fcRetryMainImage()">{% trans "Retry" %}</button>
+              <button type="button" class="fc-retry-btn" id="fcRetryMainImageBtn">{% trans "Retry" %}</button>
             </div>
             <img src="{{ first_photo.get_image_url }}"
                  class="fc-main-image-img"
                  alt="{{ object.name }}"
                  id="mainImageSrc"
                  data-src="{{ first_photo.get_image_url }}"
-                 decoding="async"
-                 onload="typeof fcMainImageOnLoad==='function'&&fcMainImageOnLoad(this);"
-                 onerror="typeof fcMainImageOnError==='function'&&fcMainImageOnError(this);" />
+                 decoding="async" />
             <div class="fc-main-image-overlay"></div>
             {% if object.is_processing_photos %}
-              <div id="processingBadge" class="fc-processing-badge">
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              <output id="processingBadge" class="fc-processing-badge" aria-live="polite">
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                 {% trans "Processing photos..." %}
-              </div>
+              </output>
             {% endif %}
           {% else %}
             <div class="fc-main-image-empty" id="mainImageEmpty" data-item-id="{{ object.pk }}">
               <i class="bi bi-image" style="font-size: 2.5rem; opacity: 0.5;"></i>
               <span id="mainImageEmptyText">{% trans "No image yet." %}</span>
               {% if object.is_processing_photos %}
-                <span class="spinner-border spinner-border-sm" role="status" style="margin-top: 0.25rem;"></span>
+                <span class="spinner-border spinner-border-sm" aria-hidden="true" style="margin-top: 0.25rem;"></span>
                 <span class="fc-text-sm">{% trans "Processing photos..." %}</span>
               {% endif %}
               <a href="{% url 'collection:item_update' object.pk %}" class="fc-add-photos-btn">{% trans "Add photos" %}</a>
@@ -991,7 +989,6 @@
           <div class="fc-thumbnails-container">
             {% for photo in photos %}
               <button type="button"
-                      onclick="changeImage('{{ photo.image.url }}', '{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}', this)"
                       class="fc-thumbnail {% if forloop.first %}active{% endif %}"
                       data-image-url="{{ photo.image.url }}"
                       data-avif-url="{% if photo.image_avif.name %}{{ photo.image_avif.url }}{% endif %}">
@@ -999,7 +996,7 @@
                   <img src="{{ photo.image_avif.url }}"
                        alt="Thumbnail {{ forloop.counter }}"
                        class="thumbnail-img"
-                       onerror="this.onerror=null; this.src='{{ photo.image.url }}';" />
+                       data-fallback-src="{{ photo.image.url }}" />
                 {% else %}
                   <img src="{{ photo.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="thumbnail-img" />
                 {% endif %}
@@ -1052,7 +1049,7 @@
                   <img src="{{ object.club.logo_display_url }}"
                        alt="{{ object.club.name }}"
                        class="fc-club-logo"
-                       onerror="this.classList.add('fc-d-none');" />
+                       data-hide-on-error="true" />
                 {% endif %}
                 <div>
                   <p class="fc-font-semibold fc-text-foreground fc-m-0">{{ object.club.name }}</p>
@@ -1076,7 +1073,7 @@
                     <img src="{{ object.brand.logo_dark_display_url }}"
                          alt="{{ object.brand.name }}"
                          class="fc-brand-logo"
-                         onerror="this.onerror=null; this.src='{{ object.brand.logo_display_url|default:'' }}';" />
+                         data-fallback-src="{{ object.brand.logo_display_url|default:'' }}" />
                   {% elif object.brand.logo_display_url and object.brand.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
                     <img src="{{ object.brand.logo_display_url }}" alt="{{ object.brand.name }}" class="fc-brand-logo" />
                   {% endif %}
@@ -1291,6 +1288,31 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+      var retryBtn = document.getElementById('fcRetryMainImageBtn');
+      if (retryBtn) retryBtn.addEventListener('click', fcRetryMainImage);
+
+      document.querySelectorAll('.fc-thumbnail').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          changeImage(btn.getAttribute('data-image-url') || '', btn.getAttribute('data-avif-url') || '', btn);
+        });
+      });
+
+      var mainImg = document.getElementById('mainImageSrc');
+      if (mainImg) {
+        mainImg.addEventListener('load', function() { fcMainImageOnLoad(mainImg); });
+        mainImg.addEventListener('error', function() { fcMainImageOnError(mainImg); });
+      }
+
+      document.querySelectorAll('img[data-fallback-src]').forEach(function(el) {
+        el.addEventListener('error', function() {
+          var fallback = el.getAttribute('data-fallback-src');
+          if (fallback) { el.onerror = null; el.src = fallback; }
+        });
+      });
+      document.querySelectorAll('img[data-hide-on-error]').forEach(function(el) {
+        el.addEventListener('error', function() { el.classList.add('fc-d-none'); });
+      });
+
       var img = document.getElementById('mainImageSrc');
       if (img && img.complete) {
         if (img.naturalWidth && img.naturalHeight) {

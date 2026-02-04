@@ -86,7 +86,7 @@ class TestCleanupOrphanedPhotosCommand:
         out = StringIO()
         call_command("cleanup_orphaned_photos", "--dry-run", stdout=out)
         output = out.getvalue()
-        assert len(output) >= 0
+        assert len(output) > 0
 
 
 @pytest.mark.django_db
@@ -101,7 +101,7 @@ class TestMigratePhotosCommandIntegration:
         out = StringIO()
         call_command("migrate_photos_to_remote", stdout=out, stderr=out)
         output = out.getvalue()
-        assert "local" in output.lower() or "error" in output.lower() or len(output) >= 0
+        assert "local" in output.lower() or "error" in output.lower()
 
     @patch("footycollect.collection.management.commands.migrate_photos_to_remote.default_storage")
     @patch("django.conf.settings")
@@ -113,7 +113,7 @@ class TestMigratePhotosCommandIntegration:
         out = StringIO()
         call_command("migrate_photos_to_remote", "--dry-run", stdout=out)
         output = out.getvalue()
-        assert "dry run" in output.lower() or len(output) >= 0
+        assert "dry run" in output.lower()
 
 
 @pytest.mark.django_db
@@ -131,4 +131,4 @@ class TestFetchHomeKitsCommandIntegration:
         out = StringIO()
         call_command("fetch_home_kits", "--dry-run", stdout=out)
         output = out.getvalue()
-        assert "dry run" in output.lower() or "not found" in output.lower() or len(output) >= 0
+        assert "dry run" in output.lower() or "not found" in output.lower()
