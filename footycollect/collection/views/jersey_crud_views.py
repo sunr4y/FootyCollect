@@ -17,7 +17,7 @@ from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import BaseItem, Jersey
 from footycollect.collection.services import get_collection_service
 
-from .base import BaseItemCreateView, BaseItemUpdateView
+from .base import URL_NAME_ITEM_LIST, BaseItemCreateView, BaseItemUpdateView
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class JerseyCreateView(BaseItemCreateView):
     model = Jersey
     form_class = JerseyForm
     template_name = "collection/item_form.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
 
     def get_context_data(self, **kwargs):
         """Add context data for jersey creation."""
@@ -118,41 +118,52 @@ class JerseyCreateView(BaseItemCreateView):
 
     def _process_post_creation(self):
         """Process any additional data after jersey creation."""
+        self._ensure_brand_from_post()
+        self._ensure_competition_from_post()
+
+    def _ensure_brand_from_post(self):
+        """Create or assign brand from POST brand_name if missing."""
         from django.utils.text import slugify
 
-        from footycollect.core.models import Brand, Competition
+        from footycollect.core.models import Brand
 
         brand_name = self.request.POST.get("brand_name")
-        if brand_name and not self.object.brand:
-            try:
-                brand, created = Brand.objects.get_or_create(
-                    name=brand_name,
-                    defaults={"slug": slugify(brand_name)},
-                )
-                self.object.brand = brand
-                self.object.save()
-                if created:
-                    logger.info("Created new brand %s for jersey", brand.name)
-                else:
-                    logger.info("Found existing brand %s for jersey", brand.name)
-            except (ValueError, TypeError):
-                logger.exception("Error creating brand %s", brand_name)
+        if not brand_name or self.object.brand:
+            return
+        try:
+            brand, created = Brand.objects.get_or_create(
+                name=brand_name,
+                defaults={"slug": slugify(brand_name)},
+            )
+            self.object.brand = brand
+            self.object.save()
+            logger.info("%s brand %s for jersey", "Created new" if created else "Found existing", brand.name)
+        except (ValueError, TypeError):
+            logger.exception("Error creating brand %s", brand_name)
+
+    def _ensure_competition_from_post(self):
+        """Add competition from POST competition_name if present."""
+        from django.utils.text import slugify
+
+        from footycollect.core.models import Competition
 
         competition_name = self.request.POST.get("competition_name")
-        if competition_name:
-            try:
-                competition, created = Competition.objects.get_or_create(
-                    name=competition_name,
-                    defaults={"slug": slugify(competition_name)},
+        if not competition_name:
+            return
+        try:
+            competition, created = Competition.objects.get_or_create(
+                name=competition_name,
+                defaults={"slug": slugify(competition_name)},
+            )
+            if competition not in self.object.competitions.all():
+                self.object.competitions.add(competition)
+                logger.info(
+                    "%s competition %s to jersey",
+                    "Created and added new" if created else "Added existing",
+                    competition.name,
                 )
-                if competition not in self.object.competitions.all():
-                    self.object.competitions.add(competition)
-                    if created:
-                        logger.info("Created and added new competition %s to jersey", competition.name)
-                    else:
-                        logger.info("Added existing competition %s to jersey", competition.name)
-            except (ValueError, TypeError):
-                logger.exception("Error adding competition %s", competition_name)
+        except (ValueError, TypeError):
+            logger.exception("Error adding competition %s", competition_name)
 
 
 class JerseyUpdateView(BaseItemUpdateView):
@@ -161,7 +172,7 @@ class JerseyUpdateView(BaseItemUpdateView):
     model = Jersey
     form_class = JerseyForm
     template_name = "collection/item_form.html"
-    success_url = reverse_lazy("collection:item_list")
+    success_url = reverse_lazy(URL_NAME_ITEM_LIST)
     success_message = _("Jersey updated successfully!")
 
     def get_context_data(self, **kwargs):

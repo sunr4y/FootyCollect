@@ -2,6 +2,7 @@
 Extended tests for jersey views with real functionality testing.
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from django.contrib.auth import get_user_model
@@ -109,7 +110,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
     def test_get_context_data_success(self):
         """Test get_context_data with successful service call."""
-        with patch("footycollect.collection.views.jersey_views.get_collection_service") as mock_get_service:
+        with patch("footycollect.collection.views.base.get_collection_service") as mock_get_service:
             mock_service = MagicMock()
             mock_get_service.return_value = mock_service
             mock_service.get_form_data.return_value = {
@@ -133,7 +134,7 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
 
     def test_get_context_data_error_handling(self):
         """Test get_context_data with service error."""
-        with patch("footycollect.collection.views.jersey_views.get_collection_service") as mock_get_service:
+        with patch("footycollect.collection.views.base.get_collection_service") as mock_get_service:
             mock_get_service.side_effect = KeyError("Service error")
 
             view = JerseyFKAPICreateView()
@@ -644,8 +645,8 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view.request = Mock()
         view.request.user = self.user
 
-        # Mock collection service
-        with patch("footycollect.collection.views.jersey_views.get_collection_service") as mock_get_service:
+        # Mock collection service (used by get_color_and_design_choices in base)
+        with patch("footycollect.collection.views.base.get_collection_service") as mock_get_service:
             mock_service = MagicMock()
             mock_get_service.return_value = mock_service
             mock_service.get_form_data.return_value = {
@@ -688,8 +689,10 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         view.request = Mock()
         view.request.user = self.user
 
+        instance_placeholder = SimpleNamespace(name=None)
         mock_form = Mock()
         mock_form.instance = None
+        mock_form._meta.model.return_value = instance_placeholder
         mock_form.data = {
             "name": "Real Madrid 2023-24 Home",
             "country_code": "ES",
@@ -697,11 +700,9 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             "season_name": "2023-24",
         }
 
-        # Test that the method can be called without errors
-        # This test verifies the method exists and can be called
         view._setup_form_instance(mock_form)
-        # If we get here, the method executed successfully
-        assert True
+        assert mock_form.instance is instance_placeholder
+        assert mock_form.instance.name == "Real Madrid 2023-24 Home"
 
     def test_save_and_finalize_with_competitions(self):
         """Test save and finalize with competition assignments."""

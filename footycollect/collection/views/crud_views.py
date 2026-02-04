@@ -15,10 +15,15 @@ from footycollect.collection.cache_utils import invalidate_item_list_cache_for_u
 from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import Jersey, Photo
 
-from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemUpdateView, get_color_and_design_choices
+from .base import (
+    URL_NAME_ITEM_LIST,
+    BaseItemCreateView,
+    BaseItemDeleteView,
+    BaseItemUpdateView,
+    get_color_and_design_choices,
+)
 
 logger = logging.getLogger(__name__)
-URL_NAME_ITEM_LIST = "collection:item_list"
 
 
 class ItemCreateView(BaseItemCreateView):
