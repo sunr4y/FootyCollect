@@ -13,7 +13,7 @@ from footycollect.users.forms import (
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 
 
 class TestUserAdminChangeForm(TestCase):
@@ -67,8 +67,8 @@ class TestUserAdminCreationForm(TestCase):
         form_data = {
             "username": "testuser",
             "email": "test@example.com",
-            "password1": "testpass123",
-            "password2": "differentpass",
+            "password1": TEST_PASSWORD,  # NOSONAR (S2068) "test fixture only"
+            "password2": "differentpass",  # NOSONAR (S2068) "test fixture only"
         }
         form = UserAdminCreationForm(data=form_data)
         assert not form.is_valid()

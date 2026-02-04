@@ -19,7 +19,7 @@ from footycollect.collection.repositories import (
 EXPECTED_COUNT_2 = 2
 EXPECTED_COUNT_3 = 3
 EXPECTED_COUNT_10 = 10
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 
 User = get_user_model()
 
@@ -665,7 +665,7 @@ class TestBaseRepository(TestCase):
         self.user = User.objects.create_user(
             username="testuser",
             email="test@example.com",
-            password="testpass123",
+            password=TEST_PASSWORD,  # NOSONAR (S2068) "test fixture only"
         )
         self.color = Color.objects.create(name="Red", hex_value="#FF0000")
 

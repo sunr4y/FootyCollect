@@ -12,7 +12,7 @@ from footycollect.collection.services.photo_service import PhotoService
 from footycollect.users.models import User
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 EXPECTED_PHOTOS_COUNT_2 = 2
 EXPECTED_PHOTOS_COUNT_3 = 3
 EXPECTED_PHOTOS_COUNT_5 = 5

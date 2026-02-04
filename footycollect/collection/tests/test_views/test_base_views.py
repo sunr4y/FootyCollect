@@ -27,7 +27,7 @@ from footycollect.collection.views.base import (
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 HTTP_FOUND = 302
 PAGINATE_BY = 20
 

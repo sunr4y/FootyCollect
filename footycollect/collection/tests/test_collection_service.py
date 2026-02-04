@@ -12,7 +12,7 @@ from footycollect.collection.services.collection_service import CollectionServic
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 EXPECTED_ITEMS_COUNT_10 = 10
 EXPECTED_ITEMS_COUNT_8 = 8
 EXPECTED_ITEMS_COUNT_25 = 25

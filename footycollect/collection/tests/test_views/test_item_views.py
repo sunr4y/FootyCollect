@@ -32,7 +32,7 @@ from footycollect.collection.views.list_views import ItemListView
 User = get_user_model()
 
 # Constants for test values
-TEST_PASSWORD = "testpass123"
+TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 HTTP_OK = 200
 HTTP_REDIRECT = 302
 MAX_ITEM_LIST_RESPONSE_MS = 5000

@@ -695,7 +695,7 @@ class Command(BaseCommand):
             if sizes:
                 import random
 
-                random_size = random.choice(sizes)  # noqa: S311
+                random_size = random.choice(sizes)  # noqa: S311 # NOSONAR (S2245) "safe random choice"
                 if not dry_run:
                     logger.info("No size provided, using random size: %s", random_size.name)
                 return random_size
