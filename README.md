@@ -35,7 +35,7 @@ FootyCollect is a comprehensive platform for football memorabilia collectors to 
 ### Key Features
 
 - **Multi-Item Type Support**: Manage jerseys, shorts, outerwear, and tracksuits
-- **External API Integration**: Fetch kit data from Football Kit Archive API
+- **External API Integration**: Fetch kit data from Football Kit Archive API. For automatic kit addition you need [fkapi](https://github.com/sunr4y/fkapi) running.
 - **Photo Management**: Upload and organize photos for each item
 - **Advanced Search**: Filter and search your collection
 - **User Profiles**: Personal collections with privacy controls
@@ -82,6 +82,7 @@ See [Architecture Decision Records](docs/ARCHITECTURE/decisions/) for design rat
 - Python 3.11+
 - PostgreSQL 14+
 - Redis 6+
+- **Optional:** [fkapi](https://github.com/sunr4y/fkapi) — required if you want to use automatic kit addition (lookup and add kits from the Football Kit Archive).
 
 ### Installation
 
