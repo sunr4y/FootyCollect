@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [0.9.1] - 2026-01-31
+## [0.9.1] - 2026-02-04
 
 ### Fixed
 - SonarQube: refactored view methods to return context explicitly (crud_views, jersey_views)

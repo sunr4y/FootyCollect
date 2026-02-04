@@ -1,6 +1,6 @@
 # FootyCollect Release Notes - Version 0.9.1
 
-**Release Date:** January 31, 2026  
+**Release Date:** February 4, 2026  
 **Status:** ✅ Stable Release
 
 ---
