@@ -4,7 +4,7 @@ A Django-based web application for managing your football memorabilia collection
 
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![codecov](https://codecov.io/gh/sunr4y/FootyCollect/branch/main/graph/badge.svg)](https://codecov.io/gh/sunr4y/FootyCollect)
+[![codecov](https://codecov.io/gh/sunr4y/FootyCollect/graph/badge.svg?token=XMYNADVSZZ)](https://codecov.io/gh/sunr4y/FootyCollect)
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=alert_status&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=bugs&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
