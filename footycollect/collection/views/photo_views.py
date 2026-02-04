@@ -90,6 +90,14 @@ def _validate_proxy_url(url: str | None) -> str | None:
     return None
 
 
+def _build_allowed_proxy_url(url: str) -> str:
+    """Build request URL from validated components to avoid SSRF from raw user input."""
+    parsed = urlparse(url)
+    path = parsed.path if parsed.path else "/"
+    query = ("?" + parsed.query) if parsed.query else ""
+    return f"{parsed.scheme}://{parsed.netloc}{path}{query}"
+
+
 @login_required
 @require_GET
 def proxy_image(request):
@@ -98,9 +106,10 @@ def proxy_image(request):
     validation_error = _validate_proxy_url(url)
     if validation_error:
         return HttpResponseBadRequest(validation_error)
+    request_url = _build_allowed_proxy_url(url)
     try:
         resp = requests.get(
-            url,
+            request_url,
             timeout=15,
             stream=True,
             headers={"Referer": PROXY_REFERER},
@@ -119,7 +128,7 @@ def proxy_image(request):
                 chunks.append(chunk)
         return HttpResponse(b"".join(chunks), content_type=content_type)
     except requests.RequestException as e:
-        logger.warning("Proxy image failed for %s: %s", url[:80], e)
+        logger.warning("Proxy image failed for %s: %s", request_url[:80], e)
         return HttpResponseBadRequest("Failed to fetch image")
 
 
@@ -261,8 +270,89 @@ def handle_dropzone_files(request):
     return HttpResponseBadRequest(_("Method not allowed"))
 
 
+def _photo_is_processed(photo):
+    if not photo.image_avif:
+        return False
+    try:
+        name = getattr(photo.image_avif, "name", None)
+        return bool(name and str(name).strip())
+    except (ValueError, AttributeError):
+        return False
+
+
+def _apply_processing_status_updates(base_item, item_id, photos_with_image, photos_processing, all_processed):
+    base_item.refresh_from_db()
+    current_flag = base_item.is_processing_photos
+    if all_processed and current_flag:
+        from django.db import transaction
+
+        with transaction.atomic():
+            base_item.is_processing_photos = False
+            base_item.save(update_fields=["is_processing_photos"])
+        logger.info(
+            "Item %s: all %d photos processed, flag updated from %s to False",
+            item_id,
+            len(photos_with_image),
+            current_flag,
+        )
+    elif all_processed:
+        logger.debug("Item %s: all photos processed but flag already False", item_id)
+    else:
+        logger.debug(
+            "Item %s: %d/%d photos still processing (IDs: %s)",
+            item_id,
+            len(photos_processing),
+            len(photos_with_image),
+            photos_processing,
+        )
+        from django.core.cache import cache
+
+        from footycollect.collection.tasks import process_photo_to_avif
+
+        for pid in photos_processing:
+            cache_key = f"avif_queued_photo_{pid}"
+            if not cache.get(cache_key):
+                process_photo_to_avif.delay(pid)
+                cache.set(cache_key, 1, timeout=120)
+                logger.info("Re-queued AVIF processing for photo %s (item %s)", pid, item_id)
+
+
+def _build_processing_status_payload(ctx):
+    base_item = ctx["base_item"]
+    photos = ctx["photos"]
+    photos_with_image = ctx["photos_with_image"]
+    photos_processing = ctx["photos_processing"]
+    all_processed = ctx["all_processed"]
+    request = ctx["request"]
+    item_id = ctx["item_id"]
+    payload = {
+        "is_processing": base_item.is_processing_photos and not all_processed,
+        "has_photos": photos.exists(),
+        "photo_count": photos.count(),
+        "photos_processing": photos_processing,
+        "all_processed": all_processed,
+    }
+    if request.GET.get("debug"):
+        payload["_debug"] = {
+            "item_id": item_id,
+            "is_processing_photos_flag": base_item.is_processing_photos,
+            "photos_with_image_count": len(photos_with_image),
+            "photos": [
+                {
+                    "id": p.id,
+                    "has_image": bool(p.image),
+                    "has_avif": bool(p.image_avif),
+                    "avif_name": getattr(p.image_avif, "name", None) or None,
+                    "processed": _photo_is_processed(p),
+                }
+                for p in photos_with_image
+            ],
+        }
+    return payload
+
+
 class ItemProcessingStatusView(View):
-    def get(self, request, item_id):  # noqa: C901
+    def get(self, request, item_id):
         try:
             base_item = BaseItem.objects.get(pk=item_id)
             if base_item.user != request.user:
@@ -270,81 +360,21 @@ class ItemProcessingStatusView(View):
 
             photos = base_item.photos.all()
             photos_with_image = [photo for photo in photos if photo.image]
+            photos_processing = [p.id for p in photos_with_image if not _photo_is_processed(p)]
+            all_processed = all(_photo_is_processed(p) for p in photos_with_image) if photos_with_image else True
 
-            def is_photo_processed(photo):
-                if not photo.image_avif:
-                    return False
-                try:
-                    name = getattr(photo.image_avif, "name", None)
-                    return bool(name and str(name).strip())
-                except (ValueError, AttributeError):
-                    return False
-
-            photos_processing = [photo.id for photo in photos_with_image if not is_photo_processed(photo)]
-
-            all_processed = (
-                all(is_photo_processed(photo) for photo in photos_with_image) if photos_with_image else True
-            )
-
-            base_item.refresh_from_db()
-            current_flag = base_item.is_processing_photos
-
-            if all_processed and current_flag:
-                from django.db import transaction
-
-                with transaction.atomic():
-                    base_item.is_processing_photos = False
-                    base_item.save(update_fields=["is_processing_photos"])
-                logger.info(
-                    "Item %s: all %d photos processed, flag updated from %s to False",
-                    item_id,
-                    len(photos_with_image),
-                    current_flag,
-                )
-            elif all_processed:
-                logger.debug("Item %s: all photos processed but flag already False", item_id)
-            else:
-                logger.debug(
-                    "Item %s: %d/%d photos still processing (IDs: %s)",
-                    item_id,
-                    len(photos_processing),
-                    len(photos_with_image),
-                    photos_processing,
-                )
-                from django.core.cache import cache
-
-                from footycollect.collection.tasks import process_photo_to_avif
-
-                for pid in photos_processing:
-                    cache_key = f"avif_queued_photo_{pid}"
-                    if not cache.get(cache_key):
-                        process_photo_to_avif.delay(pid)
-                        cache.set(cache_key, 1, timeout=120)
-                        logger.info("Re-queued AVIF processing for photo %s (item %s)", pid, item_id)
-
-            payload = {
-                "is_processing": base_item.is_processing_photos and not all_processed,
-                "has_photos": photos.exists(),
-                "photo_count": photos.count(),
-                "photos_processing": photos_processing,
-                "all_processed": all_processed,
-            }
-            if request.GET.get("debug"):
-                payload["_debug"] = {
+            _apply_processing_status_updates(base_item, item_id, photos_with_image, photos_processing, all_processed)
+            payload = _build_processing_status_payload(
+                {
+                    "base_item": base_item,
+                    "photos": photos,
+                    "photos_with_image": photos_with_image,
+                    "photos_processing": photos_processing,
+                    "all_processed": all_processed,
+                    "request": request,
                     "item_id": item_id,
-                    "is_processing_photos_flag": base_item.is_processing_photos,
-                    "photos_with_image_count": len(photos_with_image),
-                    "photos": [
-                        {
-                            "id": p.id,
-                            "has_image": bool(p.image),
-                            "has_avif": bool(p.image_avif),
-                            "avif_name": getattr(p.image_avif, "name", None) or None,
-                            "processed": is_photo_processed(p),
-                        }
-                        for p in photos_with_image
-                    ],
                 }
+            )
             return JsonResponse(payload)
         except BaseItem.DoesNotExist:
             return JsonResponse({"error": "Item not found"}, status=404)

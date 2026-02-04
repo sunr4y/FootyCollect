@@ -399,9 +399,9 @@
           <div class="row" id="items-grid" style="row-gap: 0.75rem;">
             {% for item in items %}
               {% if item.base_item.user == request.user %}
-                {% include "cotton/item_card.html" with item=item show_user=True show_edit=True show_delete=True show_rotate_photos=False show_mass_delete_checkbox=False quick_view_enabled=True %}
+                {% include "cotton/item_card.html" with item=item show_user=True show_edit=True show_delete=True quick_view_enabled=True %}
               {% else %}
-                {% include "cotton/item_card.html" with item=item show_user=True show_edit=False show_delete=False show_rotate_photos=False show_mass_delete_checkbox=False quick_view_enabled=True %}
+                {% include "cotton/item_card.html" with item=item show_user=True show_edit=False show_delete=False quick_view_enabled=True %}
               {% endif %}
             {% endfor %}
           </div>

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from merge_production_dotenvs_in_dotenv import merge
+import merge_production_dotenvs_in_dotenv as merge_module
 
 
 @pytest.mark.parametrize(
@@ -17,18 +17,22 @@ from merge_production_dotenvs_in_dotenv import merge
     ],
 )
 def test_merge(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     input_contents: list[str],
     expected_output: str,
 ):
     output_file = tmp_path / ".env"
-
     files_to_merge = []
     for num, input_content in enumerate(input_contents, start=1):
         merge_file = tmp_path / f".service{num}"
         merge_file.write_text(input_content)
         files_to_merge.append(merge_file)
 
-    merge(output_file, files_to_merge)
+    monkeypatch.setattr(merge_module, "DOTENV_FILE", output_file)
+    monkeypatch.setattr(merge_module, "PRODUCTION_DOTENV_FILES", files_to_merge)
+    monkeypatch.setattr(merge_module, "BASE_DIR", tmp_path)
+
+    merge_module.merge()
 
     assert output_file.read_text() == expected_output

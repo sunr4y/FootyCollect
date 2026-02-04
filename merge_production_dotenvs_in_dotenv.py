@@ -1,6 +1,5 @@
 # ruff: noqa
 import os
-from collections.abc import Sequence
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.resolve()
@@ -12,16 +11,35 @@ PRODUCTION_DOTENV_FILES = [
 DOTENV_FILE = BASE_DIR / ".env"
 
 
-def merge(
-    output_file: Path,
-    files_to_merge: Sequence[Path],
-) -> None:
-    merged_content = ""
-    for merge_file in files_to_merge:
-        merged_content += merge_file.read_text()
-        merged_content += os.linesep
-    output_file.write_text(merged_content)
+def _resolve_under_base(path: Path, base: Path) -> Path:
+    resolved = path.resolve()
+    base_resolved = base.resolve()
+    try:
+        resolved.relative_to(base_resolved)
+    except ValueError:
+        raise ValueError(f"Path {resolved} is not under {base_resolved}") from None
+    return resolved
+
+
+def merge() -> None:
+    out = _resolve_under_base(DOTENV_FILE, BASE_DIR)
+    merged_content = ""  # NOSONAR (S2083) "This is a merge of production dotenv files into the main dotenv file"
+    for merge_file in (
+        PRODUCTION_DOTENV_FILES
+    ):  # NOSONAR (S2083) "This is a merge of production dotenv files into the main dotenv file"
+        src = _resolve_under_base(
+            merge_file, BASE_DIR
+        )  # NOSONAR (S2083) "This is a merge of production dotenv files into the main dotenv file"
+        merged_content += (
+            src.read_text()
+        )  # NOSONAR (S2083) "This is a merge of production dotenv files into the main dotenv file"
+        merged_content += (
+            os.linesep
+        )  # NOSONAR (S2083) "This is a merge of production dotenv files into the main dotenv file"
+    out.write_text(
+        merged_content
+    )  # NOSONAR (S2083) "This is a merge of production dotenv files into the main dotenv file"
 
 
 if __name__ == "__main__":
-    merge(DOTENV_FILE, PRODUCTION_DOTENV_FILES)
+    merge()

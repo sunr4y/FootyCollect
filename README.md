@@ -2,9 +2,18 @@
 
 A Django-based web application for managing your football memorabilia collection.
 
-[![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
+
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![codecov](https://codecov.io/gh/sunr4y/FootyCollect/branch/main/graph/badge.svg)](https://codecov.io/gh/sunr4y/FootyCollect)
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=alert_status&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=bugs&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=ncloc&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=reliability_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=security_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=sqale_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=vulnerabilities&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=sunr4y_FootyCollect&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
 
 **License**: MIT
 
@@ -26,7 +35,7 @@ FootyCollect is a comprehensive platform for football memorabilia collectors to 
 ### Key Features
 
 - **Multi-Item Type Support**: Manage jerseys, shorts, outerwear, and tracksuits
-- **External API Integration**: Fetch kit data from Football Kit Archive API
+- **External API Integration**: Fetch kit data from Football Kit Archive API. For automatic kit addition you need [fkapi](https://github.com/sunr4y/fkapi) running.
 - **Photo Management**: Upload and organize photos for each item
 - **Advanced Search**: Filter and search your collection
 - **User Profiles**: Personal collections with privacy controls
@@ -73,6 +82,7 @@ See [Architecture Decision Records](docs/ARCHITECTURE/decisions/) for design rat
 - Python 3.11+
 - PostgreSQL 14+
 - Redis 6+
+- **Optional:** [fkapi](https://github.com/sunr4y/fkapi) — required if you want to use automatic kit addition (lookup and add kits from the Football Kit Archive).
 
 ### Installation
 
@@ -164,6 +174,8 @@ footycollect/
 Run quality checks:
 
 ```bash
+source venv/bin/activate   # or: . venv/bin/activate | Windows: venv\Scripts\activate
+
 # Format code
 ruff format .
 
