@@ -1,5 +1,5 @@
 [run]
-source = collection/repositories
+source = footycollect,config
 omit =
     */migrations/*
     */tests/*
