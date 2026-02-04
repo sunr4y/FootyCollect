@@ -1046,10 +1046,7 @@
             {% if object.club %}
               <div class="fc-team-card">
                 {% if object.club.logo_display_url and object.club.logo_display_url != "https://www.footballkitarchive.com/static/logos/not_found.png" %}
-                  <img src="{{ object.club.logo_display_url }}"
-                       alt="{{ object.club.name }}"
-                       class="fc-club-logo"
-                       data-hide-on-error="true" />
+                  <img src="{{ object.club.logo_display_url }}" alt="{{ object.club.name }}" class="fc-club-logo" data-hide-on-error="true" />
                 {% endif %}
                 <div>
                   <p class="fc-font-semibold fc-text-foreground fc-m-0">{{ object.club.name }}</p>
