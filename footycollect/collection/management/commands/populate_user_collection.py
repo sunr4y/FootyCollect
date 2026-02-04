@@ -548,9 +548,7 @@ class Command(BaseCommand):
             country_code = self._convert_country_name_to_code(country_name) if country_name else None
         return logo_url, logo_dark_url, club_data.get("id"), country_code
 
-    def _get_or_create_club(
-        self, kit_data: dict, *, dry_run: bool
-    ) -> Club | None:  # NOSONAR (S3776) cognitive complexity
+    def _get_or_create_club(self, kit_data: dict, *, dry_run: bool) -> Club | None:  # NOSONAR (S3776)
         """Get or create Club."""
         team_name = kit_data.get("team_name")
         if not team_name:
