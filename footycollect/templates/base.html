@@ -143,12 +143,12 @@
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle fc-nav-link-base"
-                       href="#"
-                       id="itemsDropdown"
-                       role="button"
-                       data-bs-toggle="dropdown"
-                       aria-expanded="false">{% translate "Collection" %}</a>
+                    <button type="button"
+                            class="nav-link dropdown-toggle fc-nav-link-base border-0 bg-transparent"
+                            id="itemsDropdown"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-haspopup="true">{% translate "Collection" %}</button>
                     <ul class="dropdown-menu fc-dropdown-menu-base" aria-labelledby="itemsDropdown">
                       <li>
                         <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Add Items" %}</h6>

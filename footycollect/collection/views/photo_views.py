@@ -45,7 +45,7 @@ def check_user_upload_limit(user, new_file_size):
                 current_usage += photo.image.size
             if photo.image_avif:
                 current_usage += photo.image_avif.size
-        except (ValueError, FileNotFoundError, OSError):
+        except (ValueError, OSError):
             pass
 
     limit_bytes = limit_mb * 1024 * 1024

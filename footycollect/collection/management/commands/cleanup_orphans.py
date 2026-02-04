@@ -53,7 +53,12 @@ def _cleanup_orphan_clubs(command, *, dry_run: bool) -> int:
         baseitem_count=0, kit_count=0
     )
     return _run_cleanup(
-        command.stdout, command.style, qs, "Orphaned Clubs", dry_run, lambda c: f"{c.name} (pk={c.pk})"
+        command.stdout,
+        command.style,
+        qs,
+        "Orphaned Clubs",
+        dry_run=dry_run,
+        item_label_fn=lambda c: f"{c.name} (pk={c.pk})",
     )
 
 

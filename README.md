@@ -19,6 +19,7 @@ A Django-based web application for managing your football memorabilia collection
 
 ## Table of Contents
 
+- [Live Demo](#live-demo)
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
@@ -27,6 +28,13 @@ A Django-based web application for managing your football memorabilia collection
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Documentation](#documentation)
+
+## Live Demo
+
+Try FootyCollect without installing anything: **[https://footycollect-demo.sunr4y.dev/](https://footycollect-demo.sunr4y.dev/)**
+
+- **Registration is disabled.** Use the demo account: you can sign in with the pre-configured demo user (auto-login or use the demo credentials shown on the site).
+- **Safe to experiment.** Create, edit, and delete items and photos as you like—the database is restored from a snapshot every 3 hours, so no changes are permanent.
 
 ## Overview
 

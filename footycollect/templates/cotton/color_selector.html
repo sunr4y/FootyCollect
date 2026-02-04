@@ -52,17 +52,15 @@
         {% if color_choices_parsed %}
           {% for color in color_choices_parsed %}
             {% with color_name=color.label|upper %}
-              <div class="color-option"
-                   data-value="{{ color.value }}"
-                   data-label="{{ color.label }}"
-                   title="{{ color.label }}"
-                   role="button"
-                   tabindex="0"
-                   aria-label="Select {{ color.label }}"
-                   style="background-color: {{ color.hex_value }};
-                          {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 3px solid rgba(0, 0, 0, 0.3);{% endif %}"
-                   onclick="handleColorSelection(event)"
-                   onkeypress="handleColorSelectionKeypress(event)"></div>
+              <button type="button"
+                      class="color-option"
+                      data-value="{{ color.value }}"
+                      data-label="{{ color.label }}"
+                      title="{{ color.label }}"
+                      aria-label="Select {{ color.label }}"
+                      style="background-color: {{ color.hex_value }};
+                             {% if color_name == 'WHITE' or color_name == 'OFF-WHITE' %}border: 3px solid rgba(0, 0, 0, 0.3);{% endif %}"
+                      onclick="handleColorSelection(event)"></button>
             {% endwith %}
           {% endfor %}
         {% endif %}
@@ -245,6 +243,10 @@
       border: 2px solid rgba(0, 0, 0, 0.3);
       box-sizing: border-box;
       flex-shrink: 0;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      appearance: none;
     }
 
     .filter-sidebar .color-option {

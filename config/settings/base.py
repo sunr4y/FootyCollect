@@ -355,15 +355,19 @@ class UTF8StreamHandler(logging.StreamHandler):
             stream = self.stream
             stream.write(msg + self.terminator)
             self.flush()
-        except UnicodeEncodeError:
-            try:
-                msg = self.format(record)
-                stream.write(msg.encode("utf-8", errors="replace").decode("utf-8", errors="replace") + self.terminator)
-                self.flush()
-            except (UnicodeError, OSError, ValueError):
+        except Exception:  # noqa: BLE001 (logging.Handler.emit must not raise; handleError for any error)
+            err = sys.exception()
+            if isinstance(err, UnicodeEncodeError):
+                try:
+                    msg = self.format(record)
+                    stream.write(
+                        msg.encode("utf-8", errors="replace").decode("utf-8", errors="replace") + self.terminator
+                    )
+                    self.flush()
+                except Exception:  # noqa: BLE001 (handler must not raise)
+                    self.handleError(record)
+            else:
                 self.handleError(record)
-        except (UnicodeError, OSError, ValueError):
-            self.handleError(record)
 
 
 LOGGING = {
@@ -423,7 +427,7 @@ LOGGING = {
     },
 }
 
-CELERY_TIMEZONE = TIME_ZONE if USE_TZ else None
+CELERY_TIMEZONE = TIME_ZONE
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default="memory://"))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_RESULT_EXTENDED = True
