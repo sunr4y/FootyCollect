@@ -143,12 +143,12 @@
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle fc-nav-link-base"
-                       href="#"
-                       id="itemsDropdown"
-                       role="button"
-                       data-bs-toggle="dropdown"
-                       aria-expanded="false">{% translate "Collection" %}</a>
+                    <button type="button"
+                            class="nav-link dropdown-toggle fc-nav-link-base border-0 bg-transparent"
+                            id="itemsDropdown"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-haspopup="true">{% translate "Collection" %}</button>
                     <ul class="dropdown-menu fc-dropdown-menu-base" aria-labelledby="itemsDropdown">
                       <li>
                         <h6 class="dropdown-header fc-dropdown-header-base">{% translate "Add Items" %}</h6>
@@ -203,10 +203,8 @@
                   <form action="{% url 'set_language' %}" method="post" class="d-flex align-items-center" id="language-form">
                     {% csrf_token %}
                     <input name="next" type="hidden" value="{{ request.get_full_path }}" />
-                    <select name="language"
-                            class="form-select form-select-sm fc-lang-select"
-                            aria-label="{% translate 'Language' %}"
-                            onchange="this.form.submit()">
+                    <label for="fc-lang-select" class="form-label mb-0 me-1 align-middle">{% translate 'Language' %}</label>
+                    <select name="language" id="fc-lang-select" class="form-select form-select-sm fc-lang-select" onchange="this.form.submit()">
                       {% get_current_language as CURRENT_LANG %}
                       {% get_available_languages as LANG_LIST %}
                       {% for lang_code, lang_name in LANG_LIST %}

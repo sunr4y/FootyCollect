@@ -164,7 +164,11 @@
           {% if filter_count > 0 %}<span class="badge bg-primary ms-2">{{ filter_count }}</span>{% endif %}
         </button>
         <!-- Mobile Filter Overlay -->
-        <div class="filter-mobile-overlay d-lg-none" id="mobileFilterOverlay" onclick="toggleMobileFilters()"></div>
+        <button type="button"
+                class="filter-mobile-overlay d-lg-none border-0 p-0"
+                id="mobileFilterOverlay"
+                onclick="toggleMobileFilters()"
+                aria-label="{% trans 'Close filters' %}"></button>
         <div class="filter-mobile-panel d-lg-none" id="mobileFilterPanel">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">{% trans "Filters" %}</h5>
@@ -408,8 +412,8 @@
           <!-- Infinite Scroll Trigger -->
           {% if page_obj.has_next %}
             <div id="infinite-scroll-trigger" class="text-center py-4" data-page-number="{{ page_obj.number }}" data-has-next="true">
-              <div class="spinner-border text-primary" role="status" id="loading-spinner" style="display: none;">
-                <span class="visually-hidden">{% trans "Loading..." %}</span>
+              <div class="spinner-border text-primary" id="loading-spinner" style="display: none;">
+                <output class="visually-hidden" aria-live="polite">{% trans "Loading..." %}</output>
               </div>
             </div>
           {% endif %}

@@ -118,8 +118,9 @@ if STORAGE_BACKEND in {"r2", "aws"}:
     AWS_S3_CUSTOM_DOMAIN = storage_domain
 
 storage_origin = f"https://{storage_domain}"
+_CSP_SELF = "'self'"
 img_src_default = (
-    "'self' data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com "
+    _CSP_SELF + " data: blob: https://www.gravatar.com https://cdn.footballkitarchive.com "
     "https://www.footballkitarchive.com https://cdn.jsdelivr.net " + storage_origin
 )
 
@@ -133,27 +134,27 @@ def _csp_sources_with_storage(name: str, default: str) -> list:
 
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
-        "default-src": _csp_sources("DJANGO_CSP_DEFAULT_SRC", "'self'"),
+        "default-src": _csp_sources("DJANGO_CSP_DEFAULT_SRC", _CSP_SELF),
         "script-src": _csp_sources_with_storage(
             "DJANGO_CSP_SCRIPT_SRC",
-            "'self' 'unsafe-inline' 'unsafe-eval' "
+            _CSP_SELF + " 'unsafe-inline' 'unsafe-eval' "
             "https://cdnjs.cloudflare.com https://cdn.jsdelivr.net "
             "https://code.jquery.com https://unpkg.com " + storage_origin,
         ),
         "style-src": _csp_sources_with_storage(
             "DJANGO_CSP_STYLE_SRC",
-            "'self' 'unsafe-inline' "
+            _CSP_SELF + " 'unsafe-inline' "
             "https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com " + storage_origin,
         ),
         "font-src": _csp_sources_with_storage(
             "DJANGO_CSP_FONT_SRC",
-            "'self' data: "
+            _CSP_SELF + " data: "
             "https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.gstatic.com " + storage_origin,
         ),
         "img-src": _csp_sources("DJANGO_CSP_IMG_SRC", img_src_default),
-        "connect-src": _csp_sources("DJANGO_CSP_CONNECT_SRC", "'self' " + storage_origin),
-        "frame-ancestors": _csp_sources("DJANGO_CSP_FRAME_ANCESTORS", "'self'"),
-        "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", "'self'"),
+        "connect-src": _csp_sources("DJANGO_CSP_CONNECT_SRC", _CSP_SELF + " " + storage_origin),
+        "frame-ancestors": _csp_sources("DJANGO_CSP_FRAME_ANCESTORS", _CSP_SELF),
+        "form-action": _csp_sources("DJANGO_CSP_FORM_ACTION", _CSP_SELF),
     },
 }
 if "csp.middleware.CSPMiddleware" not in MIDDLEWARE:
