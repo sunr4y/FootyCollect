@@ -1,3 +1,42 @@
+# FootyCollect Release Notes - Version 0.9.1
+
+**Release Date:** January 31, 2026  
+**Status:** ✅ Stable Release
+
+---
+
+## Overview
+
+Patch release focused on code quality (SonarQube findings) and accessibility improvements. No new features or breaking changes.
+
+---
+
+## Code Quality (SonarQube)
+
+- Refactored view methods to return context explicitly and reduce complexity
+- Simplified `get_form_class` and unified `form_valid` return paths in CRUD views
+- Replaced user-controlled data in logs (length/counts and exception type names only)
+- Fixed redundant condition in `clean_secondary_colors` (QueryDict always has `getlist`)
+- Reduced cognitive complexity in `_resolve_season` via extracted helpers
+- Introduced constants for repeated literals (`URL_NAME_ITEM_LIST`, `CHECKBOX_TOGGLE_CLASS`)
+- Corrected test assertions: removed redundant `len(output) >= 0` checks
+
+---
+
+## Accessibility
+
+- **item_detail.html:** Moved inline `onclick` from Retry buttons and thumbnails to `addEventListener`; moved image `onload`/`onerror` to JS with `data-fallback-src` and `data-hide-on-error`
+- **item_detail.html:** Replaced `div` with `role="status"` by `<output>`; spinners use `aria-hidden="true"`
+- **item_form.html:** Associated form labels with controls via `for`; button groups use `<span>` + `aria-labelledby` for correct semantics
+
+---
+
+## Getting Started
+
+No new env vars or commands. Upgrade as usual: pull, migrate if needed, restart app and workers.
+
+---
+
 # FootyCollect Release Notes - Version 0.9.0
 
 **Release Date:** January 30, 2026  

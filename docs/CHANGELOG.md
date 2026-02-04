@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.1] - 2026-01-31
+
+### Fixed
+- SonarQube: refactored view methods to return context explicitly (crud_views, jersey_views)
+- SonarQube: simplified get_form_class and unified form_valid return in crud_views
+- SonarQube: avoid logging user-controlled data (log lengths/keys and exception type name only)
+- SonarQube: removed redundant condition in clean_secondary_colors (QueryDict always has getlist)
+- SonarQube: reduced cognitive complexity in _resolve_season (extracted _parse_season_years, _get_or_create_season_by_name)
+- SonarQube: defined URL_NAME_ITEM_LIST and CHECKBOX_TOGGLE_CLASS constants
+- SonarQube: test assertions corrected (len(output) >= 0 replaced with len(output) > 0 or removed)
+
+### Changed
+- item_detail.html: inline onclick/onload/onerror moved to addEventListener (accessibility)
+- item_detail.html: status feedback uses <output>; spinners use aria-hidden="true"
+- item_form.html: labels associated with controls via for; button groups use span + aria-labelledby
+
 ## [0.9.0] - 2026-01-30
 
 ### Added
