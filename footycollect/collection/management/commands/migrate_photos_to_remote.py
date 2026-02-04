@@ -40,7 +40,10 @@ class Command(BaseCommand):
         verbose = options["verbose"]
         skip_existing = options["skip_existing"]
 
-        self.stdout.write("Starting photo migration to remote storage...")
+        if dry_run:
+            self.stdout.write("Starting photo migration to remote storage (dry run)...")
+        else:
+            self.stdout.write("Starting photo migration to remote storage...")
 
         current_storage = default_storage
         storage_backend = getattr(settings, "STORAGE_BACKEND", "local")

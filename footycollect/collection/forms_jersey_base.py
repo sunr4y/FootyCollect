@@ -227,9 +227,18 @@ class JerseyForm(forms.ModelForm):
         )
         return color_obj
 
+    def _getlist(self, key):
+        """Return list of values for key; works with QueryDict or plain dict."""
+        if hasattr(self.data, "getlist"):
+            return self.data.getlist(key)
+        val = self.data.get(key)
+        if val is None:
+            return []
+        return list(val) if isinstance(val, (list, tuple)) else [val]
+
     def clean_secondary_colors(self):
         """Normalize secondary colors from string names to Color objects."""
-        secondary_colors_names = self.data.getlist("secondary_colors")
+        secondary_colors_names = self._getlist("secondary_colors")
 
         if not secondary_colors_names:
             return []
@@ -492,7 +501,7 @@ class JerseyForm(forms.ModelForm):
                 competition_ids = [int(comp_id) for comp_id in competitions_data if comp_id]
                 logger.debug("_extract_many_to_many_data - parsed competition_ids from list: %s", competition_ids)
             else:
-                competition_ids = [competitions_data] if competitions_data else []
+                competition_ids = [competitions_data]
                 logger.debug("_extract_many_to_many_data - parsed competition_ids from other: %s", competition_ids)
 
             if competition_ids:

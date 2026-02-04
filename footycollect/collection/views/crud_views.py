@@ -13,10 +13,9 @@ from django.utils.translation import gettext as _
 
 from footycollect.collection.cache_utils import invalidate_item_list_cache_for_user
 from footycollect.collection.forms import JerseyForm
-from footycollect.collection.models import BaseItem, Jersey, Photo
-from footycollect.collection.services import get_collection_service
+from footycollect.collection.models import Jersey, Photo
 
-from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemUpdateView
+from .base import BaseItemCreateView, BaseItemDeleteView, BaseItemUpdateView, get_color_and_design_choices
 
 logger = logging.getLogger(__name__)
 URL_NAME_ITEM_LIST = "collection:item_list"
@@ -35,17 +34,7 @@ class ItemCreateView(BaseItemCreateView):
     def get_context_data(self, **kwargs):
         """Add context data for item creation."""
         context = super().get_context_data(**kwargs)
-        try:
-            collection_service = get_collection_service()
-            form_data = collection_service.get_form_data()
-            context["color_choices"] = json.dumps(form_data["colors"]["main_colors"])
-            context["design_choices"] = json.dumps(
-                [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
-            )
-        except (KeyError, AttributeError, ImportError) as e:
-            logger.warning("Error getting form data: %s", type(e).__name__)
-            context["color_choices"] = "[]"
-            context["design_choices"] = "[]"
+        context.update(get_color_and_design_choices())
         return context
 
 
@@ -153,17 +142,7 @@ class ItemUpdateView(BaseItemUpdateView):
 
     def _add_color_and_design_choices(self, context):
         """Add color and design choices for Cotton components."""
-        try:
-            collection_service = get_collection_service()
-            form_data = collection_service.get_form_data()
-            context["color_choices"] = json.dumps(form_data["colors"]["main_colors"])
-            context["design_choices"] = json.dumps(
-                [{"value": d[0], "label": str(d[1])} for d in BaseItem.DESIGN_CHOICES],
-            )
-        except (KeyError, AttributeError, ImportError) as e:
-            logger.warning("Error getting form data: %s", type(e).__name__)
-            context["color_choices"] = "[]"
-            context["design_choices"] = "[]"
+        context.update(get_color_and_design_choices())
         return context
 
     def _add_initial_photos(self, context):
