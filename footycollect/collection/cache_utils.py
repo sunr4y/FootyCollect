@@ -53,6 +53,10 @@ def invalidate_item_list_cache_for_user(user_id):
     cache.set(fragment_version_key, time.time(), ITEM_LIST_FRAGMENT_VERSION_TIMEOUT)
 
 
+def reset_item_list_cache_metrics():
+    cache.delete_many([ITEM_LIST_CACHE_METRICS_HITS_KEY, ITEM_LIST_CACHE_METRICS_MISSES_KEY])
+
+
 def get_item_list_cache_metrics():
     hits = cache.get(ITEM_LIST_CACHE_METRICS_HITS_KEY, 0)
     misses = cache.get(ITEM_LIST_CACHE_METRICS_MISSES_KEY, 0)

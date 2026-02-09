@@ -139,6 +139,13 @@ class CountryAutocomplete(autocomplete.Select2ListView):
             for code, name in countries_list
         ]
 
+    def get_result_value(self, item):
+        """Extract the primary value (country code) from Select2ListView items, which may be
+        (code, html) tuples. Returns the first element for list/tuple, or the item itself."""
+        if isinstance(item, (list, tuple)) and len(item) >= 1:
+            return item[0]
+        return item
+
     def get_results(self, context):
         return super().get_results(context)
 

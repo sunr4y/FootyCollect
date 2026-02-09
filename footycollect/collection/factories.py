@@ -16,6 +16,7 @@ from footycollect.collection.models import (
     Season,
     Size,
 )
+from footycollect.core.models import Kit, TypeK
 
 User = get_user_model()
 
@@ -87,6 +88,32 @@ class SizeFactory(DjangoModelFactory):
 
     name = factory.Iterator(["XS", "S", "M", "L", "XL", "XXL"])
     category = factory.Iterator(["tops", "bottoms", "other"])
+
+
+class TypeKFactory(DjangoModelFactory):
+    """Factory for creating test kit types."""
+
+    class Meta:
+        model = TypeK
+
+    name = factory.Sequence(lambda n: f"TypeK {n}")
+    category = "match"
+    is_goalkeeper = False
+
+
+class KitFactory(DjangoModelFactory):
+    """Factory for creating test kits."""
+
+    class Meta:
+        model = Kit
+
+    name = factory.Sequence(lambda n: f"Kit {n}")
+    slug = factory.Sequence(lambda n: f"kit-{n}")
+    team = factory.SubFactory(ClubFactory)
+    season = factory.SubFactory(SeasonFactory)
+    brand = factory.SubFactory(BrandFactory)
+    type = factory.SubFactory(TypeKFactory)
+    main_img_url = factory.Faker("image_url")
 
 
 class BaseItemFactory(DjangoModelFactory):
