@@ -1,6 +1,6 @@
 # FootyCollect
 
-A Django-based web application for managing your football memorabilia collection.
+A Django-based web application for managing your football memorabilia collection. It integrates with the **Football Kit Archive** via [FKAPI](https://github.com/sunr4y/fkapi) to search and add kits by club, season, and competition—making FKAPI central to discovering and cataloguing items in your collection.
 
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -38,12 +38,14 @@ Try FootyCollect without installing anything: **[https://footycollect-demo.sunr4
 
 ## Overview
 
-FootyCollect is a comprehensive platform for football memorabilia collectors to catalog, organize, and manage their collections. The application supports various item types including jerseys, shorts, outerwear, and tracksuits, with integration to external football kit databases.
+FootyCollect is a comprehensive platform for football memorabilia collectors to catalog, organize, and manage their collections. The application supports various item types including jerseys, shorts, outerwear, and tracksuits.
+
+**FKAPI and the Football Kit Archive.** FootyCollect uses [FKAPI](https://github.com/sunr4y/fkapi) (Football Kit Archive API) as the main source for kit metadata when adding items: you search by club, season, and competition, then create items with pre-filled data (colors, design, competitions, logos). Without FKAPI running, you can still use the app for manual entry and photo management; with FKAPI, you get that search-and-add flow and bulk imports from the archive (e.g. `populate_user_collection`). Deploy or run [fkapi](https://github.com/sunr4y/fkapi) alongside FootyCollect if you want these features.
 
 ### Key Features
 
 - **Multi-Item Type Support**: Manage jerseys, shorts, outerwear, and tracksuits
-- **External API Integration**: Fetch kit data from Football Kit Archive API. For automatic kit addition you need [fkapi](https://github.com/sunr4y/fkapi) running.
+- **FKAPI Integration**: Search and add kits from the Football Kit Archive via [fkapi](https://github.com/sunr4y/fkapi); optional but core to the intended workflow.
 - **Photo Management**: Upload and organize photos for each item
 - **Advanced Search**: Filter and search your collection
 - **User Profiles**: Personal collections with privacy controls

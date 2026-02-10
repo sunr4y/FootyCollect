@@ -10,92 +10,134 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_LOGO_URL = "https://www.footballkitarchive.com/static/logos/not_found.png"
 SEASON_PARTS_LENGTH = 2
+AUTOCOMPLETE_LOGO_IMG = (
+    '<img src="{}" alt="{}" '
+    'style="width: 20px; height: 20px; margin-right: 8px; '
+    'object-fit: contain; vertical-align: middle;" />'
+)
 
 
-class BrandAutocomplete(autocomplete.Select2QuerySetView):
+def _logos_from_api(api_entity):
+    if isinstance(api_entity, dict):
+        logo = api_entity.get("logo") or ""
+        logo_dark = api_entity.get("logo_dark") or ""
+    else:
+        logo = logo_dark = ""
+    return logo or DEFAULT_LOGO_URL, logo_dark or DEFAULT_LOGO_URL
+
+
+def _update_brand_from_api_data(brand, brand_name, slug, logo, logo_dark):
+    """Update all brand fields from API data when the brand already exists."""
+    update_fields = []
+    if not brand.name:
+        brand.name = brand_name
+        update_fields.append("name")
+    if not brand.slug:
+        brand.slug = slug
+        update_fields.append("slug")
+    if not brand.logo or brand.logo == DEFAULT_LOGO_URL:
+        brand.logo = logo
+        update_fields.append("logo")
+    if not brand.logo_dark or brand.logo_dark == DEFAULT_LOGO_URL:
+        brand.logo_dark = logo_dark
+        update_fields.append("logo_dark")
+    if update_fields:
+        brand.save(update_fields=update_fields)
+
+
+def _update_brand_logos_from_api(brand, logo, logo_dark):
+    """Update only logo fields from API data when the brand already exists."""
+    update_fields = []
+    if not brand.logo or brand.logo == DEFAULT_LOGO_URL:
+        brand.logo = logo
+        update_fields.append("logo")
+    if not brand.logo_dark or brand.logo_dark == DEFAULT_LOGO_URL:
+        brand.logo_dark = logo_dark
+        update_fields.append("logo_dark")
+    if update_fields:
+        brand.save(update_fields=update_fields)
+
+
+def _get_or_create_brand_from_api(api_brand):
+    from django.utils.text import slugify
+
+    brand_name = api_brand.get("name") if isinstance(api_brand, dict) else api_brand
+    if not brand_name:
+        return None
+    logo, logo_dark = _logos_from_api(api_brand)
+    id_fka = api_brand.get("id") if isinstance(api_brand, dict) else None
+    slug = slugify(brand_name)
+
+    if id_fka is not None:
+        brand, created = Brand.objects.get_or_create(
+            id_fka=id_fka,
+            defaults={
+                "name": brand_name,
+                "slug": slug,
+                "logo": logo,
+                "logo_dark": logo_dark,
+            },
+        )
+        if not created:
+            _update_brand_from_api_data(brand, brand_name, slug, logo, logo_dark)
+        return brand
+
+    brand, created = Brand.objects.get_or_create(
+        name=brand_name,
+        defaults={
+            "slug": slug,
+            "logo": logo,
+            "logo_dark": logo_dark,
+            "id_fka": id_fka,
+        },
+    )
+    if not created:
+        _update_brand_logos_from_api(brand, logo, logo_dark)
+    return brand
+
+
+class Select2HtmlResultsMixin:
+    def get_results(self, context):
+        results = []
+        for item in context["object_list"]:
+            html_label = self.get_result_label(item)
+            results.append(
+                {
+                    "id": self.get_result_value(item),
+                    "text": str(item),
+                    "html": str(html_label),
+                    "selected_text": str(html_label),
+                },
+            )
+        return results
+
+
+class BrandAutocomplete(Select2HtmlResultsMixin, autocomplete.Select2QuerySetView):
     """Autocomplete for brands using FKAPI external database."""
 
     MIN_QUERY_LENGTH = 2
 
-    def get_queryset(self):  # noqa: C901
-        from django.utils.text import slugify
-
+    def get_queryset(self):
         from footycollect.api.client import FKAPIClient
 
         if not self.q or len(self.q) < self.MIN_QUERY_LENGTH:
             return Brand.objects.none()
-
-        # Search in external FKAPI
         client = FKAPIClient()
         api_results = client.search_brands(self.q)
-
-        # For each result, get or create the brand in local database
         brand_ids = []
         for api_brand in api_results:
-            brand_name = api_brand.get("name") if isinstance(api_brand, dict) else api_brand
-            if not brand_name:
-                continue
-
-            # Get logo from API or use default
-            logo = ""
-            if isinstance(api_brand, dict):
-                logo = api_brand.get("logo") or ""
-            if not logo:
-                logo = DEFAULT_LOGO_URL
-
-            # Get logo_dark from API or use default
-            logo_dark = ""
-            if isinstance(api_brand, dict):
-                logo_dark = api_brand.get("logo_dark") or ""
-            if not logo_dark:
-                logo_dark = DEFAULT_LOGO_URL
-
-            brand, created = Brand.objects.get_or_create(
-                name=brand_name,
-                defaults={
-                    "slug": slugify(brand_name),
-                    "logo": logo,
-                    "logo_dark": logo_dark,
-                    "id_fka": api_brand.get("id") if isinstance(api_brand, dict) else None,
-                },
-            )
-
-            # Update logo if brand already existed but didn't have one
-            updated = False
-            if not created:
-                if not brand.logo or brand.logo == DEFAULT_LOGO_URL:
-                    brand.logo = logo
-                    updated = True
-                if not brand.logo_dark or brand.logo_dark == DEFAULT_LOGO_URL:
-                    brand.logo_dark = logo_dark
-                    updated = True
-                if updated:
-                    brand.save(update_fields=["logo", "logo_dark"])
-
-            brand_ids.append(brand.id)
-
-        # Return queryset with found/created brands
-        if brand_ids:
-            return Brand.objects.filter(id__in=brand_ids).order_by("name")
-        return Brand.objects.none()
+            brand = _get_or_create_brand_from_api(api_brand)
+            if brand:
+                brand_ids.append(brand.id)
+        if not brand_ids:
+            return Brand.objects.none()
+        return Brand.objects.filter(id__in=brand_ids).order_by("name")
 
     def get_result_label(self, item):
         """Return HTML with logo and name."""
         logo_url = getattr(item, "logo_display_url", None) or getattr(item, "logo", "")
-        logo_html = ""
-        if logo_url:
-            logo_html = format_html(
-                '<img src="{}" alt="{}" '
-                'style="width: 20px; height: 20px; margin-right: 8px; '
-                'object-fit: contain; vertical-align: middle;" />',
-                escape(logo_url),
-                escape(item.name),
-            )
-        return format_html(
-            "{}{}",
-            logo_html,
-            escape(item.name),
-        )
+        logo_html = format_html(AUTOCOMPLETE_LOGO_IMG, escape(logo_url), escape(item.name)) if logo_url else ""
+        return format_html("{}{}", logo_html, escape(item.name))
 
     def get_result_value(self, item):
         """Return the value for the result."""
@@ -139,6 +181,13 @@ class CountryAutocomplete(autocomplete.Select2ListView):
             for code, name in countries_list
         ]
 
+    def get_result_value(self, item):
+        """Extract the primary value (country code) from Select2ListView items, which may be
+        (code, html) tuples. Returns the first element for list/tuple, or the item itself."""
+        if isinstance(item, (list, tuple)) and len(item) >= 1:
+            return item[0]
+        return item
+
     def get_results(self, context):
         return super().get_results(context)
 
@@ -146,122 +195,124 @@ class CountryAutocomplete(autocomplete.Select2ListView):
         return super().get(request, *args, **kwargs)
 
 
-class ClubAutocomplete(autocomplete.Select2QuerySetView):
+def _country_code_from_api_club(api_club):
+    if not isinstance(api_club, dict):
+        return None
+    country = api_club.get("country")
+    if isinstance(country, dict):
+        return country.get("code") or country.get("name")
+    if isinstance(country, str):
+        return country
+    return None
+
+
+def _get_or_create_club_from_api(api_club):
+    from django.utils.text import slugify
+
+    club_name = api_club.get("name") if isinstance(api_club, dict) else api_club
+    if not club_name:
+        return None
+    logo, logo_dark = _logos_from_api(api_club)
+    country_code = _country_code_from_api_club(api_club)
+    id_fka = api_club.get("id") if isinstance(api_club, dict) else None
+    club, created = Club.objects.get_or_create(
+        name=club_name,
+        defaults={
+            "slug": slugify(club_name),
+            "logo": logo,
+            "logo_dark": logo_dark,
+            "id_fka": id_fka,
+            "country": country_code,
+        },
+    )
+    if not created:
+        updated = False
+        if not club.logo or club.logo == DEFAULT_LOGO_URL:
+            club.logo = logo
+            updated = True
+        if not club.logo_dark or club.logo_dark == DEFAULT_LOGO_URL:
+            club.logo_dark = logo_dark
+            updated = True
+        if not club.country and country_code:
+            club.country = country_code
+            updated = True
+        if updated:
+            club.save(update_fields=["logo", "logo_dark", "country"])
+    return club
+
+
+class ClubAutocomplete(Select2HtmlResultsMixin, autocomplete.Select2QuerySetView):
     """Autocomplete for clubs using FKAPI external database."""
 
     MIN_QUERY_LENGTH = 2
 
-    def get_queryset(self):  # noqa: C901, PLR0912
-        from django.utils.text import slugify
-
+    def get_queryset(self):
         from footycollect.api.client import FKAPIClient
 
         if not self.q or len(self.q) < self.MIN_QUERY_LENGTH:
             return Club.objects.none()
-
-        # Search in external FKAPI
         client = FKAPIClient()
         api_results = client.search_clubs(self.q)
-
-        # For each result, get or create the club in local database
         club_ids = []
         for api_club in api_results:
-            club_name = api_club.get("name") if isinstance(api_club, dict) else api_club
-            if not club_name:
-                continue
-
-            # Extract country code if available
-            country_code = None
-            if isinstance(api_club, dict):
-                country = api_club.get("country")
-                if isinstance(country, dict):
-                    country_code = country.get("code") or country.get("name")
-                elif isinstance(country, str):
-                    country_code = country
-
-            # Get logo from API or use default
-            logo = ""
-            if isinstance(api_club, dict):
-                logo = api_club.get("logo") or ""
-            if not logo:
-                logo = DEFAULT_LOGO_URL
-
-            # Get logo_dark from API or use default
-            logo_dark = ""
-            if isinstance(api_club, dict):
-                logo_dark = api_club.get("logo_dark") or ""
-            if not logo_dark:
-                logo_dark = DEFAULT_LOGO_URL
-
-            club, created = Club.objects.get_or_create(
-                name=club_name,
-                defaults={
-                    "slug": slugify(club_name),
-                    "logo": logo,
-                    "logo_dark": logo_dark,
-                    "id_fka": api_club.get("id") if isinstance(api_club, dict) else None,
-                    "country": country_code,
-                },
-            )
-
-            # Update logo and country if club already existed but didn't have them
-            updated = False
-            if not created:
-                if not club.logo or club.logo == DEFAULT_LOGO_URL:
-                    club.logo = logo
-                    updated = True
-                if not club.logo_dark or club.logo_dark == DEFAULT_LOGO_URL:
-                    club.logo_dark = logo_dark
-                    updated = True
-                if not club.country and country_code:
-                    club.country = country_code
-                    updated = True
-                if updated:
-                    club.save(update_fields=["logo", "logo_dark", "country"])
-
-            club_ids.append(club.id)
-
-        # Return queryset with found/created clubs
-        if club_ids:
-            return Club.objects.filter(id__in=club_ids).order_by("name")
-        return Club.objects.none()
+            club = _get_or_create_club_from_api(api_club)
+            if club:
+                club_ids.append(club.id)
+        if not club_ids:
+            return Club.objects.none()
+        return Club.objects.filter(id__in=club_ids).order_by("name")
 
     def get_result_label(self, item):
         """Return HTML with logo and name."""
         logo_url = getattr(item, "logo_display_url", None) or getattr(item, "logo", "")
-        logo_html = ""
-        if logo_url:
-            logo_html = format_html(
-                '<img src="{}" alt="{}" '
-                'style="width: 20px; height: 20px; margin-right: 8px; '
-                'object-fit: contain; vertical-align: middle;" />',
-                escape(logo_url),
-                escape(item.name),
-            )
-        return format_html(
-            "{}{}",
-            logo_html,
-            escape(item.name),
-        )
+        logo_html = format_html(AUTOCOMPLETE_LOGO_IMG, escape(logo_url), escape(item.name)) if logo_url else ""
+        return format_html("{}{}", logo_html, escape(item.name))
 
     def get_result_value(self, item):
         """Return the value for the result."""
         return item.id
 
-    def get_results(self, context):
-        """Override to return HTML formatted results for Select2."""
-        results = []
-        for item in context["object_list"]:
-            html_label = self.get_result_label(item)
-            results.append(
-                {
-                    "id": self.get_result_value(item),
-                    "text": str(item),  # Plain text fallback
-                    "html": str(html_label),  # HTML version for dropdown
-                    "selected_text": str(html_label),  # HTML version for selected item
-                },
-            )
-        return results
+
+def _parse_season_year_parts(season_year):
+    parts = season_year.split("-")
+    first_year = parts[0]
+    second_year = parts[1] if len(parts) == SEASON_PARTS_LENGTH else ""
+    return first_year, second_year
+
+
+def _season_info_from_season_data(season_data):
+    if isinstance(season_data, dict):
+        season_year = season_data.get("year")
+        season_id_fka = season_data.get("id")
+    else:
+        season_year = str(season_data) if season_data else None
+        season_id_fka = None
+    if not season_year:
+        return None
+    first_year, second_year = _parse_season_year_parts(season_year)
+    return {"year": season_year, "first_year": first_year, "second_year": second_year, "id_fka": season_id_fka}
+
+
+def _build_seasons_dict_from_kits(api_kits):
+    out = {}
+    for kit in api_kits:
+        season_data = kit.get("season") if isinstance(kit, dict) else None
+        if not season_data:
+            continue
+        info = _season_info_from_season_data(season_data)
+        if info and info["year"] not in out:
+            out[info["year"]] = info
+    return out
+
+
+def _add_club_seasons_to_dict(client, api_clubs, seasons_dict, limit=5):
+    for club in api_clubs[:limit]:
+        if not isinstance(club, dict) or not club.get("id"):
+            continue
+        for season_data in client.get_club_seasons(club.get("id")):
+            info = _season_info_from_season_data(season_data) if isinstance(season_data, dict) else None
+            if info and info["year"] not in seasons_dict:
+                seasons_dict[info["year"]] = info
 
 
 class SeasonAutocomplete(autocomplete.Select2QuerySetView):
@@ -269,154 +320,83 @@ class SeasonAutocomplete(autocomplete.Select2QuerySetView):
 
     MIN_QUERY_LENGTH = 2
 
-    def get_queryset(self):  # noqa: C901, PLR0912
+    def get_queryset(self):
         from footycollect.api.client import FKAPIClient
 
         if not self.q or len(self.q) < self.MIN_QUERY_LENGTH:
             return Season.objects.none()
-
-        # Search kits in external FKAPI to extract seasons
-        client = FKAPIClient()
-        api_kits = client.search_kits(self.q)
-
-        # Extract unique seasons from kits
-        seasons_dict = {}
-        for kit in api_kits:
-            season_data = kit.get("season") if isinstance(kit, dict) else None
-            if not season_data:
-                continue
-
-            if isinstance(season_data, dict):
-                season_year = season_data.get("year")
-                season_id_fka = season_data.get("id")
-            else:
-                season_year = str(season_data)
-                season_id_fka = None
-
-            if season_year and season_year not in seasons_dict:
-                # Parse year format (e.g., "2023-24" or "2023")
-                first_year = season_year.split("-")[0] if "-" in season_year else season_year
-                second_year = ""
-                if "-" in season_year:
-                    parts = season_year.split("-")
-                    if len(parts) == SEASON_PARTS_LENGTH:
-                        second_year = parts[1]
-
-                seasons_dict[season_year] = {
-                    "year": season_year,
-                    "first_year": first_year,
-                    "second_year": second_year,
-                    "id_fka": season_id_fka,
-                }
-
-        # Also try searching clubs and getting their seasons
-        api_clubs = client.search_clubs(self.q)
-        for club in api_clubs[:5]:  # Limit to first 5 clubs to avoid too many requests
-            if isinstance(club, dict) and club.get("id"):
-                club_seasons = client.get_club_seasons(club.get("id"))
-                for season_data in club_seasons:
-                    if isinstance(season_data, dict):
-                        season_year = season_data.get("year")
-                        season_id_fka = season_data.get("id")
-                        if season_year and season_year not in seasons_dict:
-                            first_year = season_year.split("-")[0] if "-" in season_year else season_year
-                            second_year = ""
-                            if "-" in season_year:
-                                parts = season_year.split("-")
-                                if len(parts) == SEASON_PARTS_LENGTH:
-                                    second_year = parts[1]
-
-                            seasons_dict[season_year] = {
-                                "year": season_year,
-                                "first_year": first_year,
-                                "second_year": second_year,
-                                "id_fka": season_id_fka,
-                            }
-
-        # For each season, get or create in local database
-        season_ids = []
-        for season_info in seasons_dict.values():
-            season, created = Season.objects.get_or_create(
-                year=season_info["year"],
-                defaults={
-                    "first_year": season_info["first_year"],
-                    "second_year": season_info["second_year"],
-                    "id_fka": season_info["id_fka"],
-                },
-            )
-            season_ids.append(season.id)
-
-        # Return queryset with found/created seasons
-        if season_ids:
+        try:
+            client = FKAPIClient()
+            seasons_dict = _build_seasons_dict_from_kits(client.search_kits(self.q))
+            _add_club_seasons_to_dict(client, client.search_clubs(self.q), seasons_dict)
+            season_ids = []
+            for season_info in seasons_dict.values():
+                season, _ = Season.objects.get_or_create(
+                    year=season_info["year"],
+                    defaults={
+                        "first_year": season_info["first_year"],
+                        "second_year": season_info["second_year"],
+                        "id_fka": season_info["id_fka"],
+                    },
+                )
+                season_ids.append(season.id)
+            if not season_ids:
+                return Season.objects.none()
             return Season.objects.filter(id__in=season_ids).order_by("-first_year", "-second_year")
-        return Season.objects.none()
+        except Exception as e:
+            logger.exception(
+                "Season autocomplete: FKAPI request failed (%s)",
+                type(e).__name__,
+            )
+            return Season.objects.none()
 
     def get_result_value(self, item):
         """Return the value for the result."""
         return item.id
 
 
-class CompetitionAutocomplete(autocomplete.Select2QuerySetView):
+def _get_or_create_competition_from_api(api_comp):
+    from django.utils.text import slugify
+
+    comp_name = api_comp.get("name") if isinstance(api_comp, dict) else api_comp
+    if not comp_name:
+        return None
+    logo, logo_dark = _logos_from_api(api_comp)
+    id_fka = api_comp.get("id") if isinstance(api_comp, dict) else None
+    competition, created = Competition.objects.get_or_create(
+        name=comp_name,
+        defaults={"slug": slugify(comp_name), "logo": logo, "logo_dark": logo_dark, "id_fka": id_fka},
+    )
+    if not created:
+        updated = False
+        if not competition.logo or competition.logo == DEFAULT_LOGO_URL:
+            competition.logo = logo
+            updated = True
+        if not competition.logo_dark or competition.logo_dark == DEFAULT_LOGO_URL:
+            competition.logo_dark = logo_dark
+            updated = True
+        if updated:
+            competition.save(update_fields=["logo", "logo_dark"])
+    return competition
+
+
+class CompetitionAutocomplete(Select2HtmlResultsMixin, autocomplete.Select2QuerySetView):
     """Autocomplete for competitions using FKAPI external database."""
 
     MIN_QUERY_LENGTH = 2
 
-    def get_queryset(self):  # noqa: C901
-        from django.utils.text import slugify
-
+    def get_queryset(self):
         from footycollect.api.client import FKAPIClient
 
         if not self.q or len(self.q) < self.MIN_QUERY_LENGTH:
             return Competition.objects.none()
-
-        # Search in external FKAPI
         client = FKAPIClient()
         api_results = client.search_competitions(self.q)
-
-        # For each result, get or create the competition in local database
         competition_ids = []
         for api_comp in api_results:
-            comp_name = api_comp.get("name") if isinstance(api_comp, dict) else api_comp
-            if not comp_name:
-                continue
-
-            # Get logo from API or use default
-            logo = ""
-            if isinstance(api_comp, dict):
-                logo = api_comp.get("logo") or ""
-            if not logo:
-                logo = DEFAULT_LOGO_URL
-
-            # Get logo_dark from API or use default
-            logo_dark = ""
-            if isinstance(api_comp, dict):
-                logo_dark = api_comp.get("logo_dark") or ""
-            if not logo_dark:
-                logo_dark = DEFAULT_LOGO_URL
-
-            competition, created = Competition.objects.get_or_create(
-                name=comp_name,
-                defaults={
-                    "slug": slugify(comp_name),
-                    "logo": logo,
-                    "logo_dark": logo_dark,
-                    "id_fka": api_comp.get("id") if isinstance(api_comp, dict) else None,
-                },
-            )
-
-            # Update logo if competition already existed but didn't have one
-            updated = False
-            if not created:
-                if not competition.logo or competition.logo == DEFAULT_LOGO_URL:
-                    competition.logo = logo
-                    updated = True
-                if not competition.logo_dark or competition.logo_dark == DEFAULT_LOGO_URL:
-                    competition.logo_dark = logo_dark
-                    updated = True
-                if updated:
-                    competition.save(update_fields=["logo", "logo_dark"])
-
-            competition_ids.append(competition.id)
+            comp = _get_or_create_competition_from_api(api_comp)
+            if comp:
+                competition_ids.append(comp.id)
 
         # Return queryset with found/created competitions
         if competition_ids:
@@ -425,36 +405,9 @@ class CompetitionAutocomplete(autocomplete.Select2QuerySetView):
 
     def get_result_label(self, item):
         """Return HTML with logo and name."""
-        logo_html = ""
-        if item.logo:
-            logo_html = format_html(
-                '<img src="{}" alt="{}" '
-                'style="width: 20px; height: 20px; margin-right: 8px; '
-                'object-fit: contain; vertical-align: middle;" />',
-                escape(item.logo),
-                escape(item.name),
-            )
-        return format_html(
-            "{}{}",
-            logo_html,
-            escape(item.name),
-        )
+        logo_html = format_html(AUTOCOMPLETE_LOGO_IMG, escape(item.logo), escape(item.name)) if item.logo else ""
+        return format_html("{}{}", logo_html, escape(item.name))
 
     def get_result_value(self, item):
         """Return the value for the result."""
         return item.id
-
-    def get_results(self, context):
-        """Override to return HTML formatted results for Select2."""
-        results = []
-        for item in context["object_list"]:
-            html_label = self.get_result_label(item)
-            results.append(
-                {
-                    "id": self.get_result_value(item),
-                    "text": str(item),  # Plain text fallback
-                    "html": str(html_label),  # HTML version for dropdown
-                    "selected_text": str(html_label),  # HTML version for selected item
-                },
-            )
-        return results
