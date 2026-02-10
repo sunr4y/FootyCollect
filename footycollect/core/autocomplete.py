@@ -26,6 +26,38 @@ def _logos_from_api(api_entity):
     return logo or DEFAULT_LOGO_URL, logo_dark or DEFAULT_LOGO_URL
 
 
+def _update_brand_from_api_data(brand, brand_name, slug, logo, logo_dark):
+    """Update all brand fields from API data when the brand already exists."""
+    update_fields = []
+    if not brand.name:
+        brand.name = brand_name
+        update_fields.append("name")
+    if not brand.slug:
+        brand.slug = slug
+        update_fields.append("slug")
+    if not brand.logo or brand.logo == DEFAULT_LOGO_URL:
+        brand.logo = logo
+        update_fields.append("logo")
+    if not brand.logo_dark or brand.logo_dark == DEFAULT_LOGO_URL:
+        brand.logo_dark = logo_dark
+        update_fields.append("logo_dark")
+    if update_fields:
+        brand.save(update_fields=update_fields)
+
+
+def _update_brand_logos_from_api(brand, logo, logo_dark):
+    """Update only logo fields from API data when the brand already exists."""
+    update_fields = []
+    if not brand.logo or brand.logo == DEFAULT_LOGO_URL:
+        brand.logo = logo
+        update_fields.append("logo")
+    if not brand.logo_dark or brand.logo_dark == DEFAULT_LOGO_URL:
+        brand.logo_dark = logo_dark
+        update_fields.append("logo_dark")
+    if update_fields:
+        brand.save(update_fields=update_fields)
+
+
 def _get_or_create_brand_from_api(api_brand):
     from django.utils.text import slugify
 
@@ -47,21 +79,7 @@ def _get_or_create_brand_from_api(api_brand):
             },
         )
         if not created:
-            update_fields = []
-            if not brand.name:
-                brand.name = brand_name
-                update_fields.append("name")
-            if not brand.slug:
-                brand.slug = slug
-                update_fields.append("slug")
-            if not brand.logo or brand.logo == DEFAULT_LOGO_URL:
-                brand.logo = logo
-                update_fields.append("logo")
-            if not brand.logo_dark or brand.logo_dark == DEFAULT_LOGO_URL:
-                brand.logo_dark = logo_dark
-                update_fields.append("logo_dark")
-            if update_fields:
-                brand.save(update_fields=update_fields)
+            _update_brand_from_api_data(brand, brand_name, slug, logo, logo_dark)
         return brand
 
     brand, created = Brand.objects.get_or_create(
@@ -74,15 +92,7 @@ def _get_or_create_brand_from_api(api_brand):
         },
     )
     if not created:
-        updated = False
-        if not brand.logo or brand.logo == DEFAULT_LOGO_URL:
-            brand.logo = logo
-            updated = True
-        if not brand.logo_dark or brand.logo_dark == DEFAULT_LOGO_URL:
-            brand.logo_dark = logo_dark
-            updated = True
-        if updated:
-            brand.save(update_fields=["logo", "logo_dark"])
+        _update_brand_logos_from_api(brand, logo, logo_dark)
     return brand
 
 
@@ -335,9 +345,8 @@ class SeasonAutocomplete(autocomplete.Select2QuerySetView):
             return Season.objects.filter(id__in=season_ids).order_by("-first_year", "-second_year")
         except Exception as e:
             logger.exception(
-                "Season autocomplete: FKAPI request failed (%s): %s",
+                "Season autocomplete: FKAPI request failed (%s)",
                 type(e).__name__,
-                e,
             )
             return Season.objects.none()
 
