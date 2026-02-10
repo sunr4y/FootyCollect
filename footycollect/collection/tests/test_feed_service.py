@@ -290,7 +290,7 @@ class TestFeedFilterServiceBuildFilterUrl(TestCase):
             return "a, b , c" if k == "secondary_color" else d
 
         request.GET.get.side_effect = get
-        request.GET.getlist.side_effect = lambda k: [] if k != "secondary_color" else []
+        request.GET.getlist.side_effect = lambda k: []
         result = self.service.parse_filters_from_request(request)
         assert "a" in result.get("secondary_color", "")
 

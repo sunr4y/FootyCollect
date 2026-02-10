@@ -7,6 +7,8 @@ and ensure cleaned_data contains required fields.
 
 import logging
 
+from django.db import IntegrityError
+
 from footycollect.collection.models import Color
 
 logger = logging.getLogger(__name__)
@@ -91,9 +93,13 @@ class FormDataMixin:
             main_color_str = form.data.get("main_color")
             if main_color_str:
                 normalized = main_color_str.strip()
-                color_obj = Color.objects.filter(name__iexact=normalized).first()
-                if not color_obj:
-                    color_obj = Color.objects.create(name=normalized.upper())
+                try:
+                    color_obj, _ = Color.objects.get_or_create(
+                        name__iexact=normalized,
+                        defaults={"name": normalized.upper()},
+                    )
+                except IntegrityError:
+                    color_obj = Color.objects.get(name__iexact=normalized)
                 form.cleaned_data["main_color"] = color_obj
                 logger.info(
                     "Set main_color in cleaned_data from form.data: %s -> %s",
@@ -139,9 +145,13 @@ class FormDataMixin:
         for color_str in secondary_colors_raw:
             if isinstance(color_str, str) and color_str.strip():
                 normalized = color_str.strip()
-                color_obj = Color.objects.filter(name__iexact=normalized).first()
-                if not color_obj:
-                    color_obj = Color.objects.create(name=normalized.upper())
+                try:
+                    color_obj, _ = Color.objects.get_or_create(
+                        name__iexact=normalized,
+                        defaults={"name": normalized.upper()},
+                    )
+                except IntegrityError:
+                    color_obj = Color.objects.get(name__iexact=normalized)
                 color_objects.append(color_obj)
         return color_objects
 
@@ -188,12 +198,20 @@ class FormDataMixin:
 
     def _ensure_form_instance(self, form, base_model):
         """Ensure form.instance exists and has a model instance."""
-        if form.instance is not None:
+        if getattr(form, "instance", None) is not None:
             return
-        if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):
-            form.instance = form._meta.model()
+
+        if (
+            hasattr(form, "_meta")
+            and getattr(form, "_meta", None) is not None
+            and hasattr(form._meta, "model")
+            and form._meta.model is not None
+        ):
+            instance = form._meta.model()
         else:
-            form.instance = base_model()
+            instance = base_model()
+
+        form.instance = instance
 
     def _ensure_instance_name(self, form):
         """Ensure the instance has a name derived from form data when missing."""
@@ -214,7 +232,6 @@ class FormDataMixin:
         """Ensure form.data['name'] is populated from instance.name when needed."""
         if form.data.get("name") or not form.instance.name:
             return
-        self._ensure_mutable_form_data(form)
         form.data["name"] = form.instance.name
 
     def _set_instance_user(self, form):
@@ -230,7 +247,12 @@ class FormDataMixin:
             logger.info("Set country to %s", country_code)
 
     def _preprocess_form_data(self, form):
-        """Set up form instance, process kit data if kit_id present, then fill from API."""
+        """
+        Set up form instance, process kit data if kit_id present, then fill from API.
+
+        Relies on _fill_form_with_api_data to ensure form.data is mutable for
+        any subsequent modifications performed by this mixin.
+        """
         self._setup_form_instance(form)
         kit_id = form.data.get("kit_id")
         if kit_id:

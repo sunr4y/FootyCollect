@@ -1119,3 +1119,18 @@ class TestItemQuickViewView(TestCase):
         assert context["photos"] == ["photo1", "photo2"]
         assert context["has_photos"] is True
         assert context["first_photo"] == "photo1"
+
+    def test_get_context_data_handles_no_photos(self):
+        view = ItemQuickViewView()
+        view.object = self.user_jersey
+
+        with patch("footycollect.collection.views.detail_views.get_photo_service") as mock_get_service:
+            mock_service = Mock()
+            mock_get_service.return_value = mock_service
+            mock_service.get_item_photos.return_value = []
+
+            context = view.get_context_data()
+
+        assert context["photos"] == []
+        assert context["has_photos"] is False
+        assert context["first_photo"] is None

@@ -170,6 +170,13 @@ class PhotoService:
         if uploaded_by is None and hasattr(item, "user"):
             uploaded_by = item.user
 
+        if not isinstance(uploaded_by, User):
+            error_msg = (
+                "uploaded_by is required when creating a photo; "
+                "provide an explicit User instance or ensure item.user is set"
+            )
+            raise TypeError(error_msg)
+
         if order is None:
             # Append to the end based on existing photos
             current_max_order = self.photo_repository.get_photos_by_item(item).count()

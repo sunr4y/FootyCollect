@@ -546,7 +546,7 @@ class TestPhotoViews(TestCase):
         )
 
         assert _validate_proxy_url(None) == "Missing url parameter"
-        assert _validate_proxy_url("ftp://example.com") == "Invalid url"
+        assert _validate_proxy_url("foo://example.com") == "Invalid url"
 
         ok = _validate_proxy_url("https://www.footballkitarchive.com/path?x=1")
         assert ok is None

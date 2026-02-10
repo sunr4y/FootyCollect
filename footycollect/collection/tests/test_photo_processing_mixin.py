@@ -4,9 +4,10 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 
 from footycollect.collection.factories import BaseItemFactory, PhotoFactory, UserFactory
-from footycollect.collection.models import BaseItem, Photo
+from footycollect.collection.models import BaseItem
 from footycollect.collection.views.jersey.mixins.photo_processing_mixin import PhotoProcessingMixin
 
 User = get_user_model()
@@ -15,7 +16,8 @@ User = get_user_model()
 NUM_EXTERNAL_IMAGES = 2
 MAIN_IMAGE_ORDER = 5
 START_ORDER = 10
-EXPECTED_FIRST_ORDER = START_ORDER + 2
+FIRST_PHOTO_OFFSET = 2
+EXPECTED_FIRST_ORDER = START_ORDER + FIRST_PHOTO_OFFSET
 MAX_EXPECTED_SECOND_ORDER = START_ORDER + 1
 
 
@@ -53,6 +55,7 @@ def test_parse_photo_ids_parses_json_payload_with_ids_and_urls():
     assert set(photo_ids) == {"1", "2", "3"}
     assert len(external_images) == 1
     assert external_images[0]["url"] == "https://example.com/a.jpg"
+    assert external_images[0]["order"] == 0
     assert order_map == {"2": 7}
 
 
@@ -104,7 +107,7 @@ def test_associate_existing_photos_filters_by_user_and_sets_content_type_and_ord
     other_user_photo = PhotoFactory()
 
     photo_ids = [str(first_photo.id), str(second_photo.id), str(other_user_photo.id)]
-    order_map = {str(first_photo.id): 2}
+    order_map = {str(first_photo.id): FIRST_PHOTO_OFFSET}
     original_object_id = other_user_photo.object_id
 
     view._associate_existing_photos(photo_ids, order_map, base_item=base_item, start_order=10)
@@ -113,7 +116,7 @@ def test_associate_existing_photos_filters_by_user_and_sets_content_type_and_ord
     second_photo.refresh_from_db()
     other_user_photo.refresh_from_db()
 
-    expected_ct = Photo._meta.get_field("content_type").remote_field.model.objects.get_for_model(BaseItem)
+    expected_ct = ContentType.objects.get_for_model(BaseItem)
 
     assert first_photo.content_type == expected_ct
     assert second_photo.content_type == expected_ct

@@ -160,7 +160,7 @@ class TestCleanupOldIncompletePhotos(TestCase):
 
 def test_get_rotating_proxy_config_with_credentials(settings):
     """Test rotating proxy configuration with credentials."""
-    settings.ROTATING_PROXY_URL = "http://proxy.example.com:8080"
+    settings.ROTATING_PROXY_URL = "https://proxy.example.com:8443"
     settings.ROTATING_PROXY_USERNAME = "user"
     settings.ROTATING_PROXY_PASSWORD = "pass"
 
@@ -168,7 +168,7 @@ def test_get_rotating_proxy_config_with_credentials(settings):
 
     assert config is not None
     proxy_url = config["http"]
-    assert proxy_url.startswith("http://user:pass@")
+    assert proxy_url.startswith("https://user:pass@")
 
 
 def test_get_rotating_proxy_config_without_url(settings):
@@ -215,7 +215,7 @@ def test_validate_and_prepare_image_url_rejects_untrusted_host(settings):
 @patch("footycollect.collection.tasks.requests.get")
 def test_download_image_to_temp_uses_proxy(mock_get, settings):
     """Test downloading image to temp file uses proxy when configured."""
-    settings.ROTATING_PROXY_URL = "http://proxy.example.com:8080"
+    settings.ROTATING_PROXY_URL = "https://proxy.example.com:8443"
     settings.ROTATING_PROXY_USERNAME = "user"
     settings.ROTATING_PROXY_PASSWORD = "pass"
 
@@ -227,13 +227,17 @@ def test_download_image_to_temp_uses_proxy(mock_get, settings):
 
     img_temp = _download_image_to_temp("https://cdn.footballkitarchive.com/image.jpg", object_id=1)
 
-    assert img_temp is not None
-    mock_get.assert_called_once()
-    _, kwargs = mock_get.call_args
-    assert "proxies" in kwargs
-    assert "http" in kwargs["proxies"]
-    img_temp.close()
-    Path(img_temp.name).unlink()
+    try:
+        assert img_temp is not None
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        assert "proxies" in kwargs
+        assert "http" in kwargs["proxies"]
+    finally:
+        if img_temp is not None:
+            img_temp.close()
+            if getattr(img_temp, "name", None):
+                Path(img_temp.name).unlink()
 
 
 @patch("footycollect.collection.tasks._create_and_save_photo")
@@ -309,7 +313,7 @@ def test_check_item_photo_processing_no_photos(db):
     assert base_item.is_processing_photos is False
 
 
-def test_check_item_photo_processing_all_processed(db, tmp_path):
+def test_check_item_photo_processing_all_processed(db):
     """Test item photo processing when all photos are processed."""
     from io import BytesIO
 

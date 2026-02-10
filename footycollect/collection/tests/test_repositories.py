@@ -1014,7 +1014,7 @@ class TestPhotoRepository(TestCase):
         assert list(photos) == [third, second]
         assert first not in photos
 
-    def test_get_photos_count_by_user_uses_get_photos_by_user(self):
+    def test_get_photos_count_by_user_returns_correct_count(self):
         """get_photos_count_by_user returns count of photos for a given user."""
         self._create_photo_for_item(order=0, user=self.user)
         self._create_photo_for_item(order=1, user=self.user)

@@ -138,6 +138,7 @@ def test_ensure_country_falls_back_to_form_data():
     mixin = FormDataMixin()
 
     cleaned_data_none = {}
+    mixin.fkapi_data = {}
     mixin._ensure_country_in_cleaned_data(cleaned_data_none, None, form)
     assert cleaned_data_none["country_code"] == "ES"
 
@@ -161,6 +162,7 @@ def test_ensure_country_no_value():
     form = DummyForm(data={})
     cleaned_data = {}
     mixin = FormDataMixin()
+    mixin.fkapi_data = {}
 
     mixin._ensure_country_in_cleaned_data(cleaned_data, None, form)
 

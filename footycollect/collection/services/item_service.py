@@ -32,7 +32,7 @@ class ItemService:
 
     def create_item_with_photos(
         self,
-        user: User,
+        _user: User,
         item_data: dict[str, Any],
         photos: list[Any] | None = None,
     ) -> Jersey:
@@ -40,7 +40,7 @@ class ItemService:
         Create an item with associated photos.
 
         Args:
-            user: User creating the item
+            _user: User creating the item (kept for API consistency; item user comes from item_data).
             item_data: Dictionary containing item data
             photos: List of photo files
 
@@ -62,16 +62,15 @@ class ItemService:
 
     def create_item(
         self,
-        user: User,
+        _user: User,
         item_data: dict[str, Any],
     ) -> Jersey:
         """
         Backwards-compatible wrapper for creating an item.
 
-        The user parameter is accepted for future use but item creation
+        The _user parameter is accepted for future use but item creation
         is currently delegated directly to the repository.
         """
-        del user  # user is not needed for repository-level creation
         return self.item_repository.create(**item_data)
 
     def update_item_with_photos(
@@ -146,6 +145,20 @@ class ItemService:
         """
         return self.item_repository.get_user_items(user)
 
+    def _build_collection_summary(self, user: User) -> dict[str, Any]:
+        """
+        Build the core collection summary analytics for a user.
+        """
+        items = self.item_repository.get_user_items(user)
+
+        return {
+            "total_items": items.count(),
+            "by_type": self.item_repository.get_user_item_count_by_type(user),
+            "by_condition": self._get_items_by_condition(items),
+            "by_brand": self._get_items_by_brand(items),
+            "by_club": self._get_items_by_club(items),
+        }
+
     def get_user_collection_summary(self, user: User) -> dict[str, Any]:
         """
         Get a summary of the user's collection.
@@ -156,14 +169,8 @@ class ItemService:
         Returns:
             Dictionary with collection summary
         """
-        items = self.item_repository.get_user_items(user)
-
         return {
-            "total_items": items.count(),
-            "by_type": self.item_repository.get_user_item_count_by_type(user),
-            "by_condition": self._get_items_by_condition(items),
-            "by_brand": self._get_items_by_brand(items),
-            "by_club": self._get_items_by_club(items),
+            **self._build_collection_summary(user),
             "recent_items": self.item_repository.get_recent_items(limit=5, user=user),
         }
 
@@ -193,29 +200,21 @@ class ItemService:
 
     def get_items_by_club(self, user: User) -> QuerySet[BaseItem]:
         """
-        Get items for a user grouped by club.
+        Get all items for a user ordered by club.
         """
-        return self.item_repository.get_items_by_club(user)
+        return self.item_repository.get_user_items(user).order_by("club__name", "-created_at")
 
     def get_items_by_season(self, user: User) -> QuerySet[BaseItem]:
         """
-        Get items for a user grouped by season.
+        Get all items for a user ordered by season.
         """
-        return self.item_repository.get_items_by_season(user)
+        return self.item_repository.get_user_items(user).order_by("season__name", "-created_at")
 
     def get_item_analytics(self, user: User) -> dict[str, Any]:
         """
         Get analytics for items in a user's collection.
         """
-        items = self.item_repository.get_user_items(user)
-
-        return {
-            "total_items": items.count(),
-            "by_type": self.item_repository.get_user_item_count_by_type(user),
-            "by_condition": self._get_items_by_condition(items),
-            "by_brand": self._get_items_by_brand(items),
-            "by_club": self._get_items_by_club(items),
-        }
+        return self._build_collection_summary(user)
 
     def search_items_advanced(
         self,

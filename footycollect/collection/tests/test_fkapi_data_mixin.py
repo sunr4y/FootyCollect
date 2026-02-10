@@ -58,7 +58,7 @@ def test_process_competitions_from_api_creates_and_updates_competitions():
     assert existing.id_fka == COMP_ID_EXISTING
     assert existing.id in stored_ids
 
-    assert Competition.objects.filter(name="New Competition", id_fka=20).exists()
+    assert Competition.objects.filter(name="New Competition", id_fka=COMP_ID_NEW).exists()
 
 
 def test_extract_secondary_colors_supports_multiple_formats():
