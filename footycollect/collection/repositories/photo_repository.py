@@ -137,7 +137,7 @@ class PhotoRepository(BaseRepository):
         Returns:
             QuerySet of photos uploaded by the user
         """
-        return self.model.objects.filter(uploaded_by=user).order_by("-created_at")
+        return self.model.objects.filter(user=user).order_by("-uploaded_at")
 
     def get_photos_by_type(self, content_type: str) -> QuerySet[Photo]:
         """
@@ -151,7 +151,7 @@ class PhotoRepository(BaseRepository):
         """
         return self.model.objects.filter(
             content_type__model=content_type,
-        ).order_by("-created_at")
+        ).order_by("-uploaded_at")
 
     def get_recent_photos(self, limit: int = 10) -> QuerySet[Photo]:
         """
@@ -163,7 +163,7 @@ class PhotoRepository(BaseRepository):
         Returns:
             QuerySet of recent photos
         """
-        return self.model.objects.all().order_by("-created_at")[:limit]
+        return self.model.objects.all().order_by("-uploaded_at")[:limit]
 
     def get_photos_count_by_item(self, item) -> int:
         """

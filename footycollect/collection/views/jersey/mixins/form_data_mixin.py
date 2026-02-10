@@ -20,6 +20,8 @@ class FormDataMixin:
     _update_club_country and _create_club_from_api_data methods.
     """
 
+    DEFAULT_ITEM_NAME = "Jersey"
+
     def _set_main_color_initial(self, form):
         """Convert main_color name to ID for template."""
         main_color_value = form.data.get("main_color") or (
@@ -39,31 +41,37 @@ class FormDataMixin:
 
     def _set_secondary_colors_initial(self, form):
         """Convert secondary_colors names to IDs for template."""
-        if hasattr(form.data, "getlist"):
-            secondary_colors_value = form.data.getlist("secondary_colors")
-        else:
-            secondary_colors_value = form.data.get("secondary_colors")
-            if secondary_colors_value and not isinstance(secondary_colors_value, list):
-                secondary_colors_value = [secondary_colors_value]
-
+        secondary_colors_value = self._get_secondary_colors_from_data(form)
         if not secondary_colors_value:
             return
 
         color_ids = []
         for color_val in secondary_colors_value:
-            if not color_val:
-                continue
-            if isinstance(color_val, str) and not color_val.isdigit():
-                try:
-                    color_obj = Color.objects.get(name__iexact=color_val.strip())
-                    color_ids.append(color_obj.id)
-                except Color.DoesNotExist:
-                    logger.warning("Secondary color '%s' not found in database", color_val)
-            else:
-                color_ids.append(color_val)
+            color_id = self._resolve_secondary_color_id(color_val)
+            if color_id is not None:
+                color_ids.append(color_id)
 
         if color_ids:
             form.fields["secondary_colors"].initial = color_ids
+
+    def _get_secondary_colors_from_data(self, form):
+        """Return secondary_colors from form.data as a normalized list."""
+        return self._parse_secondary_colors_from_data(form, allow_comma_split=False)
+
+    def _resolve_secondary_color_id(self, color_val):
+        """Resolve a color value (name or ID) to a numeric ID when possible."""
+        if not color_val:
+            return None
+        if isinstance(color_val, str) and not color_val.isdigit():
+            try:
+                color_obj = Color.objects.get(name__iexact=color_val.strip())
+            except Color.DoesNotExist:
+                logger.warning("Secondary color '%s' not found in database", color_val)
+                return None
+            return color_obj.id
+        if isinstance(color_val, str) and color_val.isdigit():
+            return int(color_val)
+        return color_val
 
     def _ensure_country_code_in_cleaned_data(self, form):
         """Ensure country_code is in cleaned_data."""
@@ -82,10 +90,10 @@ class FormDataMixin:
         if not main_color and form.data.get("main_color"):
             main_color_str = form.data.get("main_color")
             if main_color_str:
-                color_obj, _created = Color.objects.get_or_create(
-                    name__iexact=main_color_str.strip(),
-                    defaults={"name": main_color_str.strip().upper()},
-                )
+                normalized = main_color_str.strip()
+                color_obj = Color.objects.filter(name__iexact=normalized).first()
+                if not color_obj:
+                    color_obj = Color.objects.create(name=normalized.upper())
                 form.cleaned_data["main_color"] = color_obj
                 logger.info(
                     "Set main_color in cleaned_data from form.data: %s -> %s",
@@ -97,24 +105,9 @@ class FormDataMixin:
         """Ensure secondary_colors are in cleaned_data."""
         secondary_colors = form.cleaned_data.get("secondary_colors", [])
         if not secondary_colors:
-            if hasattr(form.data, "getlist"):
-                secondary_colors_raw = form.data.getlist("secondary_colors")
-            else:
-                secondary_colors_raw = form.data.get("secondary_colors", [])
-                if isinstance(secondary_colors_raw, str):
-                    secondary_colors_raw = [c.strip() for c in secondary_colors_raw.split(",") if c.strip()]
-                elif not isinstance(secondary_colors_raw, list):
-                    secondary_colors_raw = []
-
+            secondary_colors_raw = self._get_secondary_colors_raw_for_cleaned_data(form)
             if secondary_colors_raw:
-                color_objects = []
-                for color_str in secondary_colors_raw:
-                    if isinstance(color_str, str) and color_str.strip():
-                        color_obj, _created = Color.objects.get_or_create(
-                            name__iexact=color_str.strip(),
-                            defaults={"name": color_str.strip().upper()},
-                        )
-                        color_objects.append(color_obj)
+                color_objects = self._build_secondary_color_objects(secondary_colors_raw)
                 if color_objects:
                     form.cleaned_data["secondary_colors"] = color_objects
                     logger.info(
@@ -122,18 +115,58 @@ class FormDataMixin:
                         [c.name for c in color_objects],
                     )
 
+    def _get_secondary_colors_raw_for_cleaned_data(self, form):
+        """Return secondary_colors from form.data as list of strings for cleaned_data."""
+        return self._parse_secondary_colors_from_data(form, allow_comma_split=True)
+
+    def _parse_secondary_colors_from_data(self, form, *, allow_comma_split: bool):
+        """Internal helper to normalize secondary_colors from form.data."""
+        if hasattr(form.data, "getlist"):
+            values = form.data.getlist("secondary_colors")
+        else:
+            raw_value = form.data.get("secondary_colors")
+            if isinstance(raw_value, str):
+                values = [c.strip() for c in raw_value.split(",") if c.strip()] if allow_comma_split else [raw_value]
+            elif isinstance(raw_value, list):
+                values = raw_value
+            else:
+                values = []
+        return values or []
+
+    def _build_secondary_color_objects(self, secondary_colors_raw):
+        """Create Color objects from the raw secondary color strings."""
+        color_objects = []
+        for color_str in secondary_colors_raw:
+            if isinstance(color_str, str) and color_str.strip():
+                normalized = color_str.strip()
+                color_obj = Color.objects.filter(name__iexact=normalized).first()
+                if not color_obj:
+                    color_obj = Color.objects.create(name=normalized.upper())
+                color_objects.append(color_obj)
+        return color_objects
+
     def _ensure_form_cleaned_data(self, form):
         """Ensure country_code and colors are in cleaned_data before processing."""
         self._ensure_country_code_in_cleaned_data(form)
         self._ensure_main_color_in_cleaned_data(form)
         self._ensure_secondary_colors_in_cleaned_data(form)
 
-    def _fill_form_with_api_data(self, form):
-        """Fill form fields with API data. Makes form.data mutable and sets name if needed."""
+    def _ensure_mutable_form_data(self, form):
+        """
+        Ensure form.data is a mutable mapping.
+
+        Assigns a shallow copy (form.data.copy()). Falls back to dict(form.data)
+        on AttributeError. Mutates the form in-place. Used by FormDataMixin to
+        allow safe modifications of request-bound form data.
+        """
         try:
             form.data = form.data.copy()
         except AttributeError:
             form.data = dict(form.data)
+
+    def _fill_form_with_api_data(self, form):
+        """Fill form fields with API data. Makes form.data mutable and sets name if needed."""
+        self._ensure_mutable_form_data(form)
 
         if not form.data.get("name") and form.instance.name:
             form.data["name"] = form.instance.name
@@ -146,39 +179,55 @@ class FormDataMixin:
         """Set up form instance for jersey creation (STI)."""
         from footycollect.collection.models import BaseItem
 
-        if form.instance is None:
-            if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):
-                form.instance = form._meta.model()
-            else:
-                form.instance = BaseItem()
-
+        self._ensure_form_instance(form, BaseItem)
         form.instance.item_type = "jersey"
+        self._ensure_instance_name(form)
+        self._ensure_form_name_matches_instance(form)
+        self._set_instance_user(form)
+        self._set_instance_country_from_data(form)
 
-        if not form.instance.name:
-            name = form.data.get("name")
-            if not name:
-                club_name = form.data.get("club_name", "")
-                season_name = form.data.get("season_name", "")
-                if club_name and season_name:
-                    form.instance.name = f"{club_name} {season_name}"
-                else:
-                    form.instance.name = "Jersey"
-            else:
-                form.instance.name = name
+    def _ensure_form_instance(self, form, base_model):
+        """Ensure form.instance exists and has a model instance."""
+        if form.instance is not None:
+            return
+        if hasattr(form, "_meta") and form._meta is not None and hasattr(form._meta, "model"):
+            form.instance = form._meta.model()
+        else:
+            form.instance = base_model()
 
-        if not form.data.get("name") and form.instance.name:
-            try:
-                form.data = form.data.copy()
-            except AttributeError:
-                form.data = dict(form.data)
-            form.data["name"] = form.instance.name
+    def _ensure_instance_name(self, form):
+        """Ensure the instance has a name derived from form data when missing."""
+        if form.instance.name:
+            return
+        name = form.data.get("name")
+        if name:
+            form.instance.name = name
+            return
+        club_name = form.data.get("club_name", "")
+        season_name = form.data.get("season_name", "")
+        if club_name and season_name:
+            form.instance.name = f"{club_name} {season_name}"
+        else:
+            form.instance.name = self.DEFAULT_ITEM_NAME
 
+    def _ensure_form_name_matches_instance(self, form):
+        """Ensure form.data['name'] is populated from instance.name when needed."""
+        if form.data.get("name") or not form.instance.name:
+            return
+        self._ensure_mutable_form_data(form)
+        form.data["name"] = form.instance.name
+
+    def _set_instance_user(self, form):
+        """Attach the current request user to the instance when available."""
         if hasattr(self, "request") and self.request and hasattr(self.request, "user"):
             form.instance.user = self.request.user
 
-        if form.data.get("country_code"):
-            form.instance.country = form.data["country_code"]
-            logger.info("Set country to %s", form.data["country_code"])
+    def _set_instance_country_from_data(self, form):
+        """Set instance.country from form data when provided."""
+        country_code = form.data.get("country_code")
+        if country_code:
+            form.instance.country = country_code
+            logger.info("Set country to %s", country_code)
 
     def _preprocess_form_data(self, form):
         """Set up form instance, process kit data if kit_id present, then fill from API."""

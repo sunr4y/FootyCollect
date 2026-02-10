@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from footycollect.collection.models import Brand, Competition, Jersey, Season, Size
+from footycollect.collection.models import Brand, Color, Competition, Jersey, Season, Size
 from footycollect.collection.views.jersey_views import JerseyFKAPICreateView
 from footycollect.core.models import Club
 
@@ -924,3 +924,173 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
             mock_add_id.assert_called_once_with(mock_form, "12345")
             mock_extract.assert_called_once_with(kit_data)
             mock_find.assert_called_once_with(mock_form, "12345")
+
+    def test_get_post_color_values_with_list(self):
+        """Test extracting color values from POST data with getlist."""
+        view = JerseyFKAPICreateView()
+        request = Mock()
+        request.POST.get.return_value = "RED"
+        request.POST.getlist.return_value = ["BLUE", "GREEN"]
+        view.request = request
+
+        main_color, secondary_colors = view._get_post_color_values()
+
+        assert main_color == "RED"
+        assert secondary_colors == ["BLUE", "GREEN"]
+
+    def test_get_post_color_values_with_comma_separated_secondary(self):
+        """Test extracting color values when secondary colors are comma-separated string."""
+        view = JerseyFKAPICreateView()
+        request = Mock()
+        request.POST.getlist.return_value = []
+        request.POST.get.side_effect = lambda key, default=None: "RED" if key == "main_color" else "BLUE, GREEN"
+        view.request = request
+
+        main_color, secondary_colors = view._get_post_color_values()
+
+        assert main_color == "RED"
+        assert secondary_colors == ["BLUE", "GREEN"]
+
+    def test_is_string_list_helper(self):
+        """Test helper that checks for list of strings."""
+        view = JerseyFKAPICreateView()
+
+        assert view._is_string_list(["RED", "BLUE"]) is True
+        assert view._is_string_list([]) is False
+        assert view._is_string_list(None) is False
+        assert view._is_string_list([1, 2]) is False
+
+    def test_get_secondary_colors_from_sources_prefers_post(self):
+        """Test getting secondary colors prefers POST data when provided."""
+        view = JerseyFKAPICreateView()
+        form = Mock()
+        form.data.getlist.return_value = ["FORM_COLOR"]
+
+        result = view._get_secondary_colors_from_sources(["POST_COLOR"], form)
+
+        assert result == ["POST_COLOR"]
+
+    def test_get_secondary_colors_from_sources_falls_back_to_form(self):
+        """Test getting secondary colors falls back to form data."""
+        view = JerseyFKAPICreateView()
+        form = Mock()
+        form.data.getlist.return_value = ["FORM_COLOR_1", "FORM_COLOR_2"]
+
+        result = view._get_secondary_colors_from_sources([], form)
+
+        assert result == ["FORM_COLOR_1", "FORM_COLOR_2"]
+
+    def test_convert_secondary_colors_to_objects_creates_colors(self):
+        """Test converting secondary color names to Color objects."""
+        view = JerseyFKAPICreateView()
+
+        colors = view._convert_secondary_colors_to_objects(["red", "blue"])
+
+        expected_colors_count = 2
+        assert len(colors) == expected_colors_count
+        names = sorted(color.name for color in colors)
+        assert names == ["BLUE", "RED"]
+        assert Color.objects.filter(name="RED").exists()
+        assert Color.objects.filter(name="BLUE").exists()
+
+    def test_convert_secondary_colors_to_objects_handles_instances(self):
+        """Test converting secondary colors when some are already Color instances."""
+        view = JerseyFKAPICreateView()
+        existing = Color.objects.create(name="GREEN", hex_value="#00FF00")
+
+        colors = view._convert_secondary_colors_to_objects([existing])
+
+        assert colors == [existing]
+
+    def test_create_new_club_uses_fkapi_and_fallbacks(self):
+        """Test creating new club with FKAPI data and fallbacks."""
+        from footycollect.collection.models import Club as CollectionClub
+
+        view = JerseyFKAPICreateView()
+        view.fkapi_data = {"team_logo": "https://example.com/logo.png", "team_country": "FR"}
+        view.kit = {"team": {"country": "DE"}}
+
+        cleaned_data = {"id_fka": "123", "slug": "", "logo": "fallback_logo", "logo_dark": ""}
+
+        club = view._create_new_club("Test Club", cleaned_data)
+
+        assert isinstance(club, CollectionClub)
+        assert club.logo == "https://example.com/logo.png"
+        assert club.country == "FR"
+        assert club.slug == "test-club"
+
+    def test_create_new_club_uses_kit_country_and_default(self):
+        """Test creating new club uses kit country and defaults when needed."""
+        from footycollect.collection.models import Club as CollectionClub
+
+        view = JerseyFKAPICreateView()
+        view.fkapi_data = {}
+        view.kit = {"team": {"country": "IT"}}
+
+        cleaned_data = {"id_fka": None, "slug": "", "logo": "", "logo_dark": ""}
+
+        club = view._create_new_club("Another Club", cleaned_data)
+
+        assert isinstance(club, CollectionClub)
+        assert club.country == "IT"
+        assert club.slug == "another-club"
+
+    def test_process_season_entity_creates_and_assigns_season(self):
+        """Test processing season entity from form data."""
+        view = JerseyFKAPICreateView()
+
+        class DummyInstance:
+            season = None
+
+        class DummyForm:
+            cleaned_data = {"season_name": "2023-24"}
+            instance = DummyInstance()
+
+        form = DummyForm()
+
+        view._process_season_entity(form, form.cleaned_data)
+
+        assert form.instance.season is not None
+        assert form.instance.season.year == "2023-24"
+
+    def test_create_club_from_api_data_uses_kit_and_fkapi(self):
+        """Test creating core Club from API data sources."""
+        view = JerseyFKAPICreateView()
+        view.kit = {"team": {"country": "ES", "logo": "https://example.com/kit_logo.png"}}
+        view.fkapi_data = {"team_logo": "https://example.com/fkapi_logo.png"}
+
+        class DummyForm:
+            data = {"club_name": "API Club"}
+
+        form = DummyForm()
+
+        club = view._create_club_from_api_data(form)
+
+        assert club.name == "API Club"
+        assert club.country == "ES"
+        assert club.logo == "https://example.com/fkapi_logo.png"
+
+    def test_update_club_country_from_fkapi_country(self):
+        """Test updating club country from fkapi team_country."""
+        view = JerseyFKAPICreateView()
+        view.fkapi_data = {"team_country": "PT"}
+
+        club = Club.objects.create(name="Country Club", country="ES", slug="country-club-1")
+
+        view._update_club_country(club)
+
+        club.refresh_from_db()
+        assert club.country == "PT"
+
+    def test_update_club_country_from_kit_team(self):
+        """Test updating club country from kit team data."""
+        view = JerseyFKAPICreateView()
+        view.fkapi_data = {}
+        view.kit = {"team": {"country": "GB"}}
+
+        club = Club.objects.create(name="Kit Club", country="ES", slug="kit-club-1")
+
+        view._update_club_country(club)
+
+        club.refresh_from_db()
+        assert club.country == "GB"

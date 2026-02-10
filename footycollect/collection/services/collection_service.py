@@ -93,9 +93,9 @@ class CollectionService:
             Dictionary with search results
         """
         results = {
-            "items": list(self.item_service.search_items(user, query, filters).values()),
-            "colors": list(self.color_service.search_colors(query).values()),
-            "sizes": list(self.size_service.search_sizes(query).values()),
+            "items": list(self.item_service.search_items(user, query, filters)),
+            "colors": list(self.color_service.search_colors(query)),
+            "sizes": list(self.size_service.search_sizes(query)),
         }
 
         # Add result counts

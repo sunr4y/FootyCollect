@@ -62,7 +62,7 @@ class PhotoService:
                     image=photo_file,
                     content_object=item,
                     order=current_max_order + index,
-                    uploaded_by=user,
+                    user=user,
                 )
                 photos.append(photo)
 
@@ -159,6 +159,32 @@ class PhotoService:
         """
         return self.photo_repository.get_recent_photos(limit)
 
+    def create_photo(self, item, photo_file, order: int | None = None, uploaded_by: User | None = None) -> Photo:
+        """
+        Backwards-compatible wrapper to create a photo for an item.
+
+        This method applies the same file validation (size and content type)
+        used by ``upload_photos_for_item`` before delegating to
+        ``photo_repository.create``.
+        """
+        if uploaded_by is None and hasattr(item, "user"):
+            uploaded_by = item.user
+
+        if order is None:
+            # Append to the end based on existing photos
+            current_max_order = self.photo_repository.get_photos_by_item(item).count()
+            order = current_max_order
+
+        # Validate single photo using the shared validator
+        self._validate_photos([photo_file])
+
+        return self.photo_repository.create(
+            image=photo_file,
+            content_object=item,
+            order=order,
+            user=uploaded_by,
+        )
+
     def get_photo_statistics(self, user: User = None) -> dict:
         """
         Get photo statistics.
@@ -181,6 +207,12 @@ class PhotoService:
             "recent_photos": recent_photos,
             "photos_by_month": self._get_photos_by_month(user),
         }
+
+    def get_photo_analytics(self, user: User | None = None) -> dict:
+        """
+        Backwards-compatible analytics wrapper used by CollectionService.
+        """
+        return self.get_photo_statistics(user=user)
 
     def _validate_photos(self, photo_files: list[UploadedFile]) -> None:
         """

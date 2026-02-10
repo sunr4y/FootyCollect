@@ -10,6 +10,7 @@ from footycollect.collection.factories import (
     BaseItemFactory,
     BrandFactory,
     ClubFactory,
+    CompetitionFactory,
     JerseyFactory,
     SeasonFactory,
 )
@@ -72,6 +73,27 @@ class TestKitServiceGetOrCreateKitForJersey(TestCase):
         assert isinstance(kit, Kit)
         assert kit.id_fka is None
 
+    def test_get_or_create_kit_sets_competitions_from_base_item(self):
+        comp = CompetitionFactory()
+        self.base_item.competitions.add(comp)
+        kit = self.service.get_or_create_kit_for_jersey(self.base_item, self.jersey)
+        assert kit.competition.filter(id=comp.id).exists()
+
+    def test_get_or_create_kit_existing_kit_updates_image_when_default(self):
+        Kit.objects.create(
+            name="Existing",
+            slug="nike-barcelona-2023-24",
+            id_fka=None,
+            team=self.club,
+            season=self.season,
+            brand=self.brand,
+            main_img_url="https://www.footballkitarchive.com/static/logos/not_found.png",
+        )
+        fkapi_data = {"main_img_url": "https://api.com/real.png"}
+        kit = self.service.get_or_create_kit_for_jersey(self.base_item, self.jersey, fkapi_data=fkapi_data)
+        kit.refresh_from_db()
+        assert kit.main_img_url == "https://api.com/real.png"
+
 
 class TestKitServiceBuildKitName(TestCase):
     def setUp(self):
@@ -123,6 +145,10 @@ class TestKitServiceBuildKitSlug(TestCase):
         slug = self.service._build_kit_slug(self.base_item, "Nike Barcelona 2024", {})
         assert slug == "nike-barcelona-2024-1"
 
+    def test_build_kit_slug_empty_kit_name_uses_base_item_name(self):
+        slug = self.service._build_kit_slug(self.base_item, "---", {})
+        assert slug == "test-item"
+
 
 class TestKitServiceExtractTypeInfo(TestCase):
     def setUp(self):
@@ -169,6 +195,24 @@ class TestKitServiceGetOrCreateTypeK(TestCase):
         assert TypeK.objects.filter(name="Home").count() == 1
         assert result.name == "Home"
 
+    def test_get_or_create_type_k_updates_existing_when_category_changes(self):
+        TypeK.objects.create(name="Away", category="match", is_goalkeeper=False)
+        result = self.service._get_or_create_type_k(
+            self.base_item, {"type": {"name": "Away", "category": "training", "is_goalkeeper": True}}
+        )
+        type_k = TypeK.objects.get(name="Away")
+        assert type_k.category == "training"
+        assert type_k.is_goalkeeper is True
+        assert result == type_k
+
+    def test_get_or_create_type_k_string_type_creates_with_defaults(self):
+        result = self.service._get_or_create_type_k(self.base_item, {"type": "Goalkeeper"})
+        type_k = TypeK.objects.filter(name="Goalkeeper").first()
+        assert type_k is not None
+        assert type_k.category == "match"
+        assert type_k.is_goalkeeper is False
+        assert result == type_k
+
 
 class TestKitServiceUpdateExistingKitImage(TestCase):
     def setUp(self):
@@ -197,6 +241,18 @@ class TestKitServiceUpdateExistingKitImage(TestCase):
         self.kit.refresh_from_db()
         assert self.kit.main_img_url == "https://example.com/good.png"
 
+    def test_update_existing_kit_image_skips_when_no_url_provided(self):
+        original = self.kit.main_img_url
+        self.service._update_existing_kit_image(self.kit, None)
+        self.kit.refresh_from_db()
+        assert self.kit.main_img_url == original
+
+    def test_update_existing_kit_image_skips_when_empty_url(self):
+        original = self.kit.main_img_url
+        self.service._update_existing_kit_image(self.kit, "")
+        self.kit.refresh_from_db()
+        assert self.kit.main_img_url == original
+
 
 class TestKitServiceGetMainImgUrl(TestCase):
     def setUp(self):
@@ -210,3 +266,11 @@ class TestKitServiceGetMainImgUrl(TestCase):
     def test_get_main_img_url_empty_when_no_fkapi_and_no_photos(self):
         url = self.service._get_main_img_url(self.base_item, {})
         assert url == ""
+
+    def test_get_main_img_url_from_base_item_photos(self):
+        mock_photo = MagicMock()
+        mock_photo.get_image_url.return_value = "https://cdn.example.com/photo.jpg"
+        mock_base = MagicMock()
+        mock_base.photos.order_by.return_value.first.return_value = mock_photo
+        url = self.service._get_main_img_url(mock_base, {})
+        assert url == "https://cdn.example.com/photo.jpg"

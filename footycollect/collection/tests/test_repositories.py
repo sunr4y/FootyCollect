@@ -2,9 +2,12 @@
 Tests for repository classes.
 """
 
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from django.test import TestCase
+from django.utils import timezone
 
 from footycollect.collection.models import BaseItem, Brand, Club, Color, Jersey, Season, Size
 from footycollect.collection.repositories import (
@@ -208,6 +211,63 @@ class TestItemRepositoryClean(TestCase):
         other_items = self.repository.get_user_items(self.other_user)
         assert other_items.count() == 1
         assert other_items.first().user == self.other_user
+
+    def test_get_public_items_unsupported_type_returns_empty_queryset(self):
+        """get_public_items returns empty queryset for unsupported item types."""
+        self.jersey.is_draft = False
+        self.jersey.is_private = False
+        self.jersey.save()
+
+        items = self.repository.get_public_items(item_type="shorts")
+
+        assert items.count() == 0
+
+    def test_search_items_limited_to_user_when_user_provided(self):
+        """search_items restricts results to the given user when provided."""
+        self.jersey.description = "Shared search text"
+        self.jersey.is_draft = False
+        self.jersey.is_private = False
+        self.jersey.save()
+
+        self.other_jersey.description = "Shared search text"
+        self.other_jersey.is_draft = False
+        self.other_jersey.is_private = False
+        self.other_jersey.save()
+
+        items_for_user = self.repository.search_items("Shared", user=self.user)
+
+        assert items_for_user.count() == 1
+        assert items_for_user.first().user == self.user
+
+    def test_get_items_by_club_with_user_filter(self):
+        """get_items_by_club with user parameter only returns that user's items."""
+        self.jersey.is_draft = False
+        self.jersey.is_private = False
+        self.jersey.save()
+
+        self.other_jersey.is_draft = False
+        self.other_jersey.is_private = False
+        self.other_jersey.save()
+
+        items = self.repository.get_items_by_club(self.club.id, user=self.user)
+
+        assert items.count() == 1
+        assert items.first().user == self.user
+
+    def test_get_recent_items_with_user_filter(self):
+        """get_recent_items with user parameter only returns that user's items."""
+        self.jersey.is_draft = False
+        self.jersey.is_private = False
+        self.jersey.save()
+
+        self.other_jersey.is_draft = False
+        self.other_jersey.is_private = False
+        self.other_jersey.save()
+
+        items = self.repository.get_recent_items(limit=5, user=self.user)
+
+        assert items.count() == 1
+        assert items.first().user == self.user
 
 
 class TestColorRepositoryClean(TestCase):
@@ -752,6 +812,24 @@ class TestBaseRepository(TestCase):
         assert self.color.name == "Updated Red"
         assert color2.name == "Updated Blue"
 
+    def test_get_by_field_success_and_not_found(self):
+        """get_by_field returns object when it exists and None otherwise."""
+        result = self.repository.get_by_field("name", self.color.name)
+        assert result == self.color
+
+        missing = self.repository.get_by_field("name", "Nonexistent")
+        assert missing is None
+
+    def test_update_returns_none_when_object_missing(self):
+        """update returns None when target object does not exist."""
+        result = self.repository.update(9999, name="No Color")
+        assert result is None
+
+    def test_delete_returns_false_when_object_missing(self):
+        """delete returns False when target object does not exist."""
+        result = self.repository.delete(9999)
+        assert result is False
+
 
 class TestPhotoRepository(TestCase):
     """Test cases for PhotoRepository."""
@@ -785,32 +863,55 @@ class TestPhotoRepository(TestCase):
             size=self.size,
         )
 
-    def test_photo_repository_integration_with_real_photos(self):
-        """Test photo repository integration with real photo data."""
+    def _create_test_image(self, *, filename="test.jpg", size=(10, 10), color="red"):
         from io import BytesIO
-        from unittest.mock import patch
 
         from django.core.files.uploadedfile import SimpleUploadedFile
         from PIL import Image
 
-        from footycollect.collection.models import Photo
-
-        # Create a valid test image
-        img = Image.new("RGB", (100, 100), color="red")
+        img = Image.new("RGB", size, color=color)
         img_io = BytesIO()
         img.save(img_io, format="JPEG")
         img_io.seek(0)
 
-        test_image1 = SimpleUploadedFile(
-            "test1.jpg",
+        return SimpleUploadedFile(
+            filename,
             img_io.read(),
             content_type="image/jpeg",
         )
-        img_io.seek(0)
-        test_image2 = SimpleUploadedFile(
-            "test2.jpg",
-            img_io.read(),
-            content_type="image/jpeg",
+
+    def _create_photo_for_item(self, *, order: int = 0, user=None):
+        """Helper to create a simple Photo linked to the base item."""
+        from footycollect.collection.models import Photo
+
+        image_file = self._create_test_image(
+            filename="test.jpg",
+            size=(10, 10),
+            color="red",
+        )
+
+        return Photo.objects.create(
+            content_object=self.base_item,
+            image=image_file,
+            order=order,
+            user=user or self.user,
+        )
+
+    def test_photo_repository_integration_with_real_photos(self):
+        """Test photo repository integration with real photo data."""
+        from unittest.mock import patch
+
+        from footycollect.collection.models import Photo
+
+        test_image1 = self._create_test_image(
+            filename="test1.jpg",
+            size=(100, 100),
+            color="red",
+        )
+        test_image2 = self._create_test_image(
+            filename="test2.jpg",
+            size=(100, 100),
+            color="red",
         )
 
         # Mock optimize_image to avoid actual optimization during tests
@@ -865,3 +966,59 @@ class TestPhotoRepository(TestCase):
         # Verify photos were deleted
         remaining_count = self.repository.get_photos_count_by_item(self.jersey)
         assert remaining_count == 0
+
+    def test_get_photos_by_user_orders_by_uploaded_at_desc(self):
+        """get_photos_by_user returns only a user's photos ordered by newest first."""
+        photo_old = self._create_photo_for_item(order=0, user=self.user)
+        photo_new = self._create_photo_for_item(order=1, user=self.user)
+
+        base_time = timezone.now()
+        photo_old.uploaded_at = base_time - timedelta(minutes=2)
+        photo_old.save(update_fields=["uploaded_at"])
+        photo_new.uploaded_at = base_time - timedelta(minutes=1)
+        photo_new.save(update_fields=["uploaded_at"])
+
+        photos = self.repository.get_photos_by_user(self.user)
+
+        assert list(photos) == [photo_new, photo_old]
+
+    def test_get_photos_by_type_filters_by_content_type_model(self):
+        """get_photos_by_type returns photos for a given content type model."""
+        from django.contrib.contenttypes.models import ContentType
+
+        from footycollect.collection.models import BaseItem
+
+        base_item_ct = ContentType.objects.get_for_model(BaseItem)
+        photo = self._create_photo_for_item(order=0, user=self.user)
+
+        photos = self.repository.get_photos_by_type(base_item_ct.model)
+
+        assert list(photos) == [photo]
+
+    def test_get_recent_photos_limits_and_orders_results(self):
+        """get_recent_photos returns the most recent photos first, limited by given size."""
+        first = self._create_photo_for_item(order=0, user=self.user)
+        second = self._create_photo_for_item(order=1, user=self.user)
+        third = self._create_photo_for_item(order=2, user=self.user)
+
+        base_time = timezone.now()
+        first.uploaded_at = base_time - timedelta(minutes=3)
+        first.save(update_fields=["uploaded_at"])
+        second.uploaded_at = base_time - timedelta(minutes=2)
+        second.save(update_fields=["uploaded_at"])
+        third.uploaded_at = base_time - timedelta(minutes=1)
+        third.save(update_fields=["uploaded_at"])
+
+        photos = self.repository.get_recent_photos(limit=2)
+
+        assert list(photos) == [third, second]
+        assert first not in photos
+
+    def test_get_photos_count_by_user_uses_get_photos_by_user(self):
+        """get_photos_count_by_user returns count of photos for a given user."""
+        self._create_photo_for_item(order=0, user=self.user)
+        self._create_photo_for_item(order=1, user=self.user)
+
+        count = self.repository.get_photos_count_by_user(self.user)
+
+        assert count == 2  # noqa: PLR2004

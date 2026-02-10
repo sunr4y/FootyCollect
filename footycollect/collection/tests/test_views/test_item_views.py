@@ -21,7 +21,7 @@ from django.urls import reverse
 from footycollect.collection.forms import JerseyForm
 from footycollect.collection.models import BaseItem, Brand, Club, Color, Jersey, Season, Size
 from footycollect.collection.views.demo_views import home
-from footycollect.collection.views.detail_views import ItemDetailView
+from footycollect.collection.views.detail_views import ItemDetailView, ItemQuickViewView
 from footycollect.collection.views.item_views import JerseySelectView
 from footycollect.collection.views.jersey_crud_views import (
     JerseyCreateView,
@@ -62,6 +62,26 @@ class TestFunctionBasedViews(TestCase):
         if hasattr(response, "context"):
             assert "columns_items" in response.context
             assert "use_cached_kits" in response.context
+
+    def test_load_home_kits_handles_missing_file_and_invalid_json(self):
+        from json import JSONDecodeError
+
+        from footycollect.collection.views.demo_views import _load_home_kits
+
+        with patch("pathlib.Path.open") as mock_open:
+            mock_open.return_value.__enter__.side_effect = FileNotFoundError
+            assert _load_home_kits() == []
+
+        with (
+            patch("pathlib.Path.open") as mock_open,
+            patch(
+                "json.load",
+                side_effect=JSONDecodeError("bad", "doc", 0),
+            ),
+        ):
+            mock_open.return_value.__enter__.return_value = Mock()
+            mock_open.return_value.__exit__.return_value = False
+            assert _load_home_kits() == []
 
 
 class TestItemViews(TestCase):
@@ -281,6 +301,150 @@ class TestItemListView(TestCase):
         assert (
             elapsed_ms < MAX_ITEM_LIST_RESPONSE_MS
         ), f"Item list page took {elapsed_ms:.0f}ms (sanity limit {MAX_ITEM_LIST_RESPONSE_MS}ms)"
+
+    def test_has_messages_detects_storage_and_session(self):
+        from django.test import RequestFactory
+
+        from footycollect.collection.views.list_views import ItemListView
+
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.session = {}
+
+        view = ItemListView()
+
+        storage = Mock()
+        storage._queued_messages = ["m1"]
+        with patch(
+            "django.contrib.messages.get_messages",
+            return_value=storage,
+        ):
+            assert view._has_messages(request) is True
+
+        storage = Mock()
+        storage._queued_messages = []
+        storage._loaded_data = ["m2"]
+        with patch(
+            "django.contrib.messages.get_messages",
+            return_value=storage,
+        ):
+            assert view._has_messages(request) is True
+
+        storage = Mock()
+        storage._queued_messages = []
+        storage._loaded_data = []
+        storage.storage_key = "msgs"
+        request.session = {"msgs": ["m3"]}
+        with patch(
+            "django.contrib.messages.get_messages",
+            return_value=storage,
+        ):
+            assert view._has_messages(request) is True
+
+        storage = Mock()
+        storage._queued_messages = []
+        storage._loaded_data = []
+        storage.storage_key = None
+        request.session = {"django.contrib.messages": ["m4"]}
+        with patch(
+            "django.contrib.messages.get_messages",
+            return_value=storage,
+        ):
+            assert view._has_messages(request) is True
+
+    def test_item_list_view_uses_cache_hit_and_miss_paths(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+
+        from footycollect.collection.views.list_views import ItemListView
+
+        factory = RequestFactory()
+        request = factory.get("/?page=2")
+        request.user = self.user
+        request.session = {}
+
+        view = ItemListView()
+        view.request = request
+
+        cached_response = HttpResponse("cached")
+
+        with (
+            patch.object(ItemListView, "_has_messages", return_value=False),
+            patch("django.core.cache.cache") as mock_cache,
+            patch(
+                "footycollect.collection.views.list_views.track_item_list_cache_key",
+            ) as mock_track,
+            patch(
+                "footycollect.collection.views.list_views.increment_item_list_cache_metric",
+            ) as mock_metric,
+            patch(
+                "footycollect.collection.views.list_views.BaseItemListView.get",
+            ) as mock_super_get,
+        ):
+            mock_cache.get.return_value = cached_response
+
+            response = view.get(request)
+
+            assert response is cached_response
+            mock_super_get.assert_not_called()
+            mock_cache.get.assert_called_once()
+            mock_track.assert_called_once()
+            mock_metric.assert_called_once_with(is_hit=True)
+
+        view = ItemListView()
+        view.request = request
+        fresh_response = HttpResponse("fresh")
+        fresh_response.render = Mock(return_value=fresh_response)
+
+        with (
+            patch.object(ItemListView, "_has_messages", return_value=False),
+            patch("django.core.cache.cache") as mock_cache,
+            patch(
+                "footycollect.collection.views.list_views.track_item_list_cache_key",
+            ) as mock_track,
+            patch(
+                "footycollect.collection.views.list_views.increment_item_list_cache_metric",
+            ) as mock_metric,
+            patch(
+                "footycollect.collection.views.list_views.BaseItemListView.get",
+                return_value=fresh_response,
+            ) as mock_super_get,
+        ):
+            mock_cache.get.return_value = None
+
+            response = view.get(request)
+
+            assert response is fresh_response
+            mock_super_get.assert_called_once()
+            mock_cache.set.assert_called_once()
+            mock_track.assert_called_once()
+            mock_metric.assert_called_once_with(is_hit=False)
+
+        view = ItemListView()
+        view.request = request
+
+        with (
+            patch.object(ItemListView, "_has_messages", return_value=True),
+            patch("django.core.cache.cache") as mock_cache,
+            patch(
+                "footycollect.collection.views.list_views.track_item_list_cache_key",
+            ) as mock_track,
+            patch(
+                "footycollect.collection.views.list_views.increment_item_list_cache_metric",
+            ) as mock_metric,
+            patch(
+                "footycollect.collection.views.list_views.BaseItemListView.get",
+                return_value=fresh_response,
+            ) as mock_super_get,
+        ):
+            response = view.get(request)
+
+            assert response is fresh_response
+            mock_cache.get.assert_not_called()
+            mock_cache.set.assert_not_called()
+            mock_track.assert_not_called()
+            mock_super_get.assert_called_once()
+            mock_metric.assert_called_once_with(is_hit=False)
 
 
 class TestItemDetailView(TestCase):
@@ -844,3 +1008,114 @@ class TestJerseySelectView(TestCase):
         """Test that prefetch_related_fields is configured correctly."""
         view = JerseySelectView()
         assert view.prefetch_related_fields == []
+
+
+class TestItemQuickViewView(TestCase):
+    """Test ItemQuickViewView functionality."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password=TEST_PASSWORD,
+        )
+        self.other_user = User.objects.create_user(
+            username="otheruser",
+            email="other@example.com",
+            password=TEST_PASSWORD,
+        )
+
+        self.brand = Brand.objects.create(name="Nike")
+        self.club = Club.objects.create(name="Barcelona")
+        self.season = Season.objects.create(year=2023)
+        self.size = Size.objects.create(name="M", category="tops")
+
+        self.user_item = BaseItem.objects.create(
+            user=self.user,
+            name="User Jersey",
+            brand=self.brand,
+            club=self.club,
+            season=self.season,
+            is_private=True,
+            is_draft=False,
+        )
+        self.user_jersey = Jersey.objects.create(base_item=self.user_item, size=self.size)
+
+        self.public_item = BaseItem.objects.create(
+            user=self.other_user,
+            name="Public Jersey",
+            brand=self.brand,
+            club=self.club,
+            season=self.season,
+            is_private=False,
+            is_draft=False,
+        )
+        self.public_jersey = Jersey.objects.create(base_item=self.public_item, size=self.size)
+
+        self.private_other_item = BaseItem.objects.create(
+            user=self.other_user,
+            name="Private Other Jersey",
+            brand=self.brand,
+            club=self.club,
+            season=self.season,
+            is_private=True,
+            is_draft=False,
+        )
+        self.private_other_jersey = Jersey.objects.create(base_item=self.private_other_item, size=self.size)
+
+        self.draft_other_item = BaseItem.objects.create(
+            user=self.other_user,
+            name="Draft Other Jersey",
+            brand=self.brand,
+            club=self.club,
+            season=self.season,
+            is_private=False,
+            is_draft=True,
+        )
+        self.draft_other_jersey = Jersey.objects.create(base_item=self.draft_other_item, size=self.size)
+
+    def test_get_queryset_authenticated_includes_user_and_public_items_only(self):
+        """Authenticated users see their own items and public, non-draft items."""
+        view = ItemQuickViewView()
+        view.request = Mock()
+        view.request.user = self.user
+
+        queryset = view.get_queryset()
+
+        assert self.user_jersey in queryset
+        assert self.public_jersey in queryset
+        assert self.private_other_jersey not in queryset
+        assert self.draft_other_jersey not in queryset
+
+    def test_get_queryset_anonymous_only_sees_public_non_draft_items(self):
+        """Anonymous users only see public, non-draft items."""
+        view = ItemQuickViewView()
+        view.request = Mock()
+        view.request.user = Mock(is_authenticated=False)
+
+        queryset = view.get_queryset()
+
+        assert self.public_jersey in queryset
+        assert self.user_jersey not in queryset
+        assert self.private_other_jersey not in queryset
+        assert self.draft_other_jersey not in queryset
+
+    def test_get_context_data_uses_base_item_and_photo_service(self):
+        """Context data exposes base item, specific item and photos."""
+        view = ItemQuickViewView()
+        view.object = self.user_jersey
+
+        with patch("footycollect.collection.views.detail_views.get_photo_service") as mock_get_service:
+            mock_service = Mock()
+            mock_get_service.return_value = mock_service
+            mock_service.get_item_photos.return_value = ["photo1", "photo2"]
+
+            context = view.get_context_data()
+
+        assert context["item"] == self.user_item
+        assert context["object"] == self.user_item
+        assert context["specific_item"] == self.user_jersey
+        assert context["photos"] == ["photo1", "photo2"]
+        assert context["has_photos"] is True
+        assert context["first_photo"] == "photo1"

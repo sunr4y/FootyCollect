@@ -57,3 +57,10 @@ class TestSignalsCacheInvalidation(TestCase):
         mock_invalidate.reset_mock()
         photo.delete()
         mock_invalidate.assert_called_once_with(user_id)
+
+    @patch("footycollect.collection.signals.invalidate_item_list_cache_for_user")
+    def test_photo_without_content_object_does_not_crash(self, mock_invalidate):
+        photo = PhotoFactory(content_object=None, user=None)
+        photo.content_object = None
+        photo.save()
+        mock_invalidate.assert_not_called()

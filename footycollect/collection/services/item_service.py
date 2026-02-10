@@ -60,6 +60,20 @@ class ItemService:
 
             return item
 
+    def create_item(
+        self,
+        user: User,
+        item_data: dict[str, Any],
+    ) -> Jersey:
+        """
+        Backwards-compatible wrapper for creating an item.
+
+        The user parameter is accepted for future use but item creation
+        is currently delegated directly to the repository.
+        """
+        del user  # user is not needed for repository-level creation
+        return self.item_repository.create(**item_data)
+
     def update_item_with_photos(
         self,
         item_id: int,
@@ -88,6 +102,16 @@ class ItemService:
                 self._process_item_photos(item, photos)
 
             return item
+
+    def update_item(
+        self,
+        item: Jersey,
+        item_data: dict[str, Any],
+    ) -> Jersey | None:
+        """
+        Backwards-compatible wrapper for updating an item instance.
+        """
+        return self.item_repository.update(item.pk, **item_data)
 
     def delete_item_with_photos(self, item_id: int) -> bool:
         """
@@ -143,6 +167,56 @@ class ItemService:
             "recent_items": self.item_repository.get_recent_items(limit=5, user=user),
         }
 
+    def get_user_item_count(self, user: User) -> int:
+        """
+        Get total item count for a user.
+        """
+        return self.item_repository.get_user_items(user).count()
+
+    def get_public_items(self) -> QuerySet[BaseItem]:
+        """
+        Get all public items.
+        """
+        return self.item_repository.get_public_items()
+
+    def get_recent_items(self, limit: int = 5, user: User | None = None) -> QuerySet[BaseItem]:
+        """
+        Get recent items, optionally filtered by user.
+        """
+        return self.item_repository.get_recent_items(limit=limit, user=user)
+
+    def get_user_item_count_by_type(self, user: User) -> dict[str, int]:
+        """
+        Get item count by type for a user.
+        """
+        return self.item_repository.get_user_item_count_by_type(user)
+
+    def get_items_by_club(self, user: User) -> QuerySet[BaseItem]:
+        """
+        Get items for a user grouped by club.
+        """
+        return self.item_repository.get_items_by_club(user)
+
+    def get_items_by_season(self, user: User) -> QuerySet[BaseItem]:
+        """
+        Get items for a user grouped by season.
+        """
+        return self.item_repository.get_items_by_season(user)
+
+    def get_item_analytics(self, user: User) -> dict[str, Any]:
+        """
+        Get analytics for items in a user's collection.
+        """
+        items = self.item_repository.get_user_items(user)
+
+        return {
+            "total_items": items.count(),
+            "by_type": self.item_repository.get_user_item_count_by_type(user),
+            "by_condition": self._get_items_by_condition(items),
+            "by_brand": self._get_items_by_brand(items),
+            "by_club": self._get_items_by_club(items),
+        }
+
     def search_items_advanced(
         self,
         query: str,
@@ -171,6 +245,17 @@ class ItemService:
             items = self._apply_filters(items, filters)
 
         return items
+
+    def search_items(
+        self,
+        user: User | None,
+        query: str,
+        filters: dict[str, Any] | None = None,
+    ) -> QuerySet[Jersey]:
+        """
+        Backwards-compatible search wrapper used by CollectionService.
+        """
+        return self.search_items_advanced(query=query, user=user, filters=filters)
 
     def reorder_item_photos(self, item_id: int, photo_orders: list[tuple[int, int]]) -> bool:
         """
