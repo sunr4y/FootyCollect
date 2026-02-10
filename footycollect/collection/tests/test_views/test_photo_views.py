@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from footycollect.collection.models import BaseItem, Brand, Jersey, Photo, Size
@@ -19,6 +19,10 @@ TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a crede
 HTTP_OK = 200
 HTTP_BAD_REQUEST = 400
 HTTP_FOUND = 302
+PHOTO1_EXPECTED_ORDER = 7
+PHOTO2_EXPECTED_ORDER = 3
+PHOTO_PROCESSING_COUNTDOWN = 5
+EXPECTED_START_ORDER = 4
 
 
 class TestPhotoViews(TestCase):
@@ -423,3 +427,155 @@ class TestPhotoViews(TestCase):
             result = view._download_and_attach_image(self.jersey, "https://example.com/bad.jpg")
             assert result is None
             mock_logger.exception.assert_called_once()
+
+    def test_photo_processor_mixin_parse_photo_ids_json_and_csv(self):
+        from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
+
+        class TestView(PhotoProcessorMixin):
+            pass
+
+        view = TestView()
+
+        json_payload = '[{"id": 1, "order": 3}, {"url": "https://example.com/img.jpg"}, "5"]'
+        photo_ids, external_images, order_map = view._parse_photo_ids(json_payload)
+        assert photo_ids == ["1", "5"]
+        assert external_images == [{"url": "https://example.com/img.jpg"}]
+        assert order_map == {"1": 3}
+
+        csv_payload = "10, 11,  12 "
+        photo_ids, external_images, order_map = view._parse_photo_ids(csv_payload)
+        assert photo_ids == ["10", "11", "12"]
+        assert external_images == []
+        assert order_map == {}
+
+    def test_photo_processor_mixin_parse_photo_ids_invalid_or_empty(self):
+        from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
+
+        class TestView(PhotoProcessorMixin):
+            pass
+
+        view = TestView()
+
+        assert view._parse_photo_ids("") is None
+        assert view._parse_photo_ids("   ") is None
+        assert view._parse_photo_ids(None) is None
+        assert view._parse_photo_ids(123) is None
+
+    def test_photo_processor_mixin_process_existing_photos_attaches_and_triggers_processing(self):
+        from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
+
+        class TestView(PhotoProcessorMixin):
+            pass
+
+        view = TestView()
+        view.object = self.base_item
+
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.user = self.user
+        view.request = request
+
+        photo1 = Photo.objects.create(
+            content_object=self.base_item,
+            image=SimpleUploadedFile("p1.jpg", b"1", content_type="image/jpeg"),
+            user=self.user,
+        )
+        photo2 = Photo.objects.create(
+            content_object=self.base_item,
+            image=SimpleUploadedFile("p2.jpg", b"2", content_type="image/jpeg"),
+            user=self.user,
+        )
+
+        photo_ids = [str(photo1.id), str(photo2.id)]
+        order_map = {str(photo1.id): 5}
+
+        with patch(
+            "footycollect.collection.views.photo_processor_mixin.check_item_photo_processing",
+        ) as mock_task:
+            view._process_existing_photos(photo_ids, order_map, start_order=2)
+
+            photo1.refresh_from_db()
+            photo2.refresh_from_db()
+
+            assert photo1.object_id == self.base_item.id
+            assert photo2.object_id == self.base_item.id
+            assert photo1.order == PHOTO1_EXPECTED_ORDER
+            assert photo2.order == PHOTO2_EXPECTED_ORDER
+
+            self.base_item.refresh_from_db()
+            assert self.base_item.is_processing_photos is True
+
+            mock_task.apply_async.assert_called_once()
+            _args, kwargs = mock_task.apply_async.call_args
+            assert kwargs["args"] == [self.base_item.pk]
+            assert kwargs["countdown"] == PHOTO_PROCESSING_COUNTDOWN
+
+    def test_photo_processor_mixin_process_photo_ids_uses_parsed_data(self):
+        from footycollect.collection.views.photo_processor_mixin import PhotoProcessorMixin
+
+        class TestView(PhotoProcessorMixin):
+            pass
+
+        view = TestView()
+        view.object = self.jersey
+
+        with (
+            patch.object(
+                view,
+                "_parse_photo_ids",
+                return_value=(["1"], [{"url": "https://example.com/x.jpg"}], {"1": 2}),
+            ) as mock_parse,
+            patch.object(view, "_process_external_images") as mock_external,
+            patch.object(view, "_process_existing_photos") as mock_existing,
+        ):
+            view._process_photo_ids("ignored", start_order=3)
+
+        mock_parse.assert_called_once_with("ignored")
+        mock_external.assert_called_once_with([{"url": "https://example.com/x.jpg"}])
+        mock_existing.assert_called_once()
+        args, kwargs = mock_existing.call_args
+        assert args[0] == ["1"]
+        assert args[1] == {"1": 2}
+        assert kwargs["start_order"] == EXPECTED_START_ORDER
+
+    def test_proxy_helpers_validate_and_build_url(self):
+        from footycollect.collection.views.photo_views import (
+            _build_allowed_proxy_url,
+            _is_allowed_proxy_host,
+            _validate_proxy_url,
+        )
+
+        assert _validate_proxy_url(None) == "Missing url parameter"
+        assert _validate_proxy_url("foo://example.com") == "Invalid url"
+
+        ok = _validate_proxy_url("https://www.footballkitarchive.com/path?x=1")
+        assert ok is None
+        assert _is_allowed_proxy_host("https://www.footballkitarchive.com/img.png") is True
+
+        built = _build_allowed_proxy_url("https://www.footballkitarchive.com/path?x=1")
+        assert built == "https://www.footballkitarchive.com/path?x=1"
+
+    def test_proxy_image_success_and_invalid_host(self):
+        self.client.force_login(self.user)
+
+        with patch("footycollect.collection.views.photo_views.requests.get") as mock_get:
+            mock_resp = Mock()
+            mock_resp.iter_content.return_value = [b"abc", b"def"]
+            mock_resp.headers = {"Content-Type": "image/jpeg; charset=utf-8"}
+            mock_resp.raise_for_status.return_value = None
+            mock_get.return_value = mock_resp
+
+            response = self.client.get(
+                reverse("collection:proxy_image"),
+                {"url": "https://www.footballkitarchive.com/img.jpg"},
+            )
+            assert response.status_code == HTTP_OK
+            assert response["Content-Type"].startswith("image/")
+            assert response.content == b"abcdef"
+
+        response_invalid = self.client.get(
+            reverse("collection:proxy_image"),
+            {"url": "https://not-allowed-host.com/img.jpg"},
+        )
+        assert response_invalid.status_code == HTTP_BAD_REQUEST
+        assert b"URL host not allowed" in response_invalid.content

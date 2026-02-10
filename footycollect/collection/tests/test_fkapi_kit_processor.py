@@ -4,6 +4,7 @@ Tests for FKAPIKitProcessor.
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 from django.test import TestCase
 
 from footycollect.collection.services.fkapi_kit_processor import FKAPIKitProcessor
@@ -30,6 +31,14 @@ class TestFKAPIKitProcessorProcessKitData(TestCase):
         mock_fetch.assert_called_once_with("123")
         self.processor._add_kit_id_to_description.assert_called_once()
         self.processor._process_kit_information.assert_called_once()
+
+    @patch.object(FKAPIKitProcessor, "fetch_kit_data")
+    def test_process_kit_data_exception_reraises(self, mock_fetch):
+        mock_fetch.side_effect = ValueError("API error")
+        form = MagicMock()
+        form.fkapi_data = {}
+        with pytest.raises(ValueError, match="API error"):
+            self.processor.process_kit_data(form, "123")
 
     @patch.object(FKAPIKitProcessor, "fetch_kit_data")
     def test_process_kit_data_no_kit_data_returns_early(self, mock_fetch):
@@ -142,6 +151,12 @@ class TestFKAPIKitProcessorProcessKitDescription(TestCase):
 
         assert form.cleaned_data["description"] == "Only"
 
+    def test_process_kit_description_skips_duplicate(self):
+        form = MagicMock()
+        form.cleaned_data = {"description": "Current\n\nFrom API"}
+        self.processor._process_kit_description(form, {"description": "From API"})
+        assert form.cleaned_data["description"] == "Current\n\nFrom API"
+
 
 class TestFKAPIKitProcessorProcessKitType(TestCase):
     def setUp(self):
@@ -164,6 +179,13 @@ class TestFKAPIKitProcessorProcessKitType(TestCase):
         kit_data = {"type": {"name": "Jacket", "category": "jacket"}}
         self.processor._process_kit_type(kit_data)
         assert not TypeK.objects.filter(name="Jacket").exists()
+
+    def test_process_kit_type_string_type(self):
+        kit_data = {"type": "Third"}
+        self.processor._process_kit_type(kit_data)
+        type_k = TypeK.objects.filter(name="Third").first()
+        assert type_k is not None
+        assert type_k.category == "match"
 
 
 class TestFKAPIKitProcessorProcessKitColors(TestCase):

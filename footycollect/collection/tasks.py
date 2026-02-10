@@ -154,7 +154,7 @@ def _download_image_to_temp(image_url: str, object_id):
         )
         raise
 
-    img_temp = tempfile.NamedTemporaryFile(delete=True)
+    img_temp = tempfile.NamedTemporaryFile(delete=False)
     for chunk in response.iter_content(chunk_size=1024):
         if chunk:
             img_temp.write(chunk)
@@ -191,13 +191,27 @@ def download_external_image_and_attach(app_label, model_name, object_id, image_u
         model = ContentType.objects.get_by_natural_key(app_label, model_name).model_class()
         instance = model.objects.get(pk=object_id)
 
-        photo = _create_and_save_photo(instance, image_name, img_temp, order)
-        logger.info("Photo %s downloaded and attached to item %s", photo.id, object_id)
+        try:
+            photo = _create_and_save_photo(instance, image_name, img_temp, order)
+            logger.info("Photo %s downloaded and attached to item %s", photo.id, object_id)
 
-        check_item_photo_processing.apply_async(
-            args=[object_id],
-            countdown=3,
-        )
+            check_item_photo_processing.apply_async(
+                args=[object_id],
+                countdown=3,
+            )
+        finally:
+            temp_name = getattr(img_temp, "name", None)
+            close_method = getattr(img_temp, "close", None)
+            if callable(close_method):
+                try:
+                    close_method()
+                except OSError:
+                    logger.warning(
+                        "[download_external_image_and_attach] Failed to close temp file %s",
+                        temp_name,
+                    )
+            if temp_name:
+                Path(temp_name).unlink(missing_ok=True)
     except (ValueError, requests.RequestException, OSError):
         logger.exception(
             "[download_external_image_and_attach] item_id=%s FAILED url=%s",

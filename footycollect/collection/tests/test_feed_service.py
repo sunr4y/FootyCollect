@@ -101,6 +101,69 @@ class TestFeedFilterServiceApplyFilters(TestCase):
         filtered = self.service.apply_filters(self.base_qs, {"q": "UniqueBrandName"})
         assert j in filtered
 
+    def test_apply_filters_competition_single_id(self):
+        from footycollect.core.models import Competition
+
+        comp = Competition.objects.create(name="C", slug="c", logo="")
+        j = JerseyFactory()
+        j.base_item.competitions.add(comp)
+        filtered = self.service.apply_filters(self.base_qs, {"competition": comp.id})
+        assert j in filtered
+
+    def test_apply_filters_main_color_by_id(self):
+        from footycollect.collection.models import Color
+
+        color = Color.objects.create(name="RED", hex_value="#FF0000")
+        j = JerseyFactory(base_item__main_color=color)
+        filtered = self.service.apply_filters(self.base_qs, {"main_color": str(color.id)})
+        assert j in filtered
+
+    def test_apply_filters_secondary_color_list(self):
+        from footycollect.collection.models import Color
+
+        c1 = Color.objects.create(name="RED", hex_value="#FF0000")
+        j = JerseyFactory(base_item__main_color=c1)
+        j.base_item.secondary_colors.add(c1)
+        filtered = self.service.apply_filters(self.base_qs, {"secondary_color": [c1.id]})
+        assert j in filtered
+
+    def test_apply_filters_secondary_color_comma_string(self):
+        from footycollect.collection.models import Color
+
+        c1 = Color.objects.create(name="RED", hex_value="#FF0000")
+        j = JerseyFactory(base_item__main_color=c1)
+        j.base_item.secondary_colors.add(c1)
+        filtered = self.service.apply_filters(self.base_qs, {"secondary_color": f"{c1.id}"})
+        assert j in filtered
+
+    def test_apply_filters_secondary_color_string_invalid_ignored(self):
+        filtered = self.service.apply_filters(self.base_qs, {"secondary_color": "not-a-number"})
+        assert filtered is not None
+
+    def test_apply_filters_kit_type_by_name(self):
+        type_k = TypeKFactory(name="Third", category="match")
+        j = JerseyFactory()
+        kit = KitFactory(
+            team=j.base_item.club,
+            season=j.base_item.season,
+            brand=j.base_item.brand,
+            type=type_k,
+        )
+        j.kit = kit
+        j.save()
+        filtered = self.service.apply_filters(self.base_qs, {"kit_type": "Third"})
+        assert j in filtered
+
+    def test_apply_filters_brand_by_slug(self):
+        brand = BrandFactory(slug="puma")
+        j = JerseyFactory(base_item__brand=brand)
+        filtered = self.service.apply_filters(self.base_qs, {"brand": "puma"})
+        assert j in filtered
+
+    def test_apply_filters_none_returns_queryset(self):
+        result = self.service.apply_filters(self.base_qs, None)
+        assert result is not None
+
 
 class TestFeedFilterServiceApplySorting(TestCase):
     def setUp(self):
@@ -124,6 +187,10 @@ class TestFeedFilterServiceApplySorting(TestCase):
         result = self.service.apply_sorting(self.qs, sort_type="random", seed="not-a-number")
         # Should behave like random without seed
         assert "?" in str(result.query.order_by) or "random" in str(result.query).lower()
+
+    def test_apply_sorting_seed_modulo(self):
+        result = self.service.apply_sorting(self.qs, sort_type="random", seed=99999999999)
+        assert "random_order" in str(result.query) or "?" in str(result.query)
 
 
 class TestFeedFilterServiceParseFiltersFromRequest(TestCase):
@@ -201,3 +268,39 @@ class TestFeedFilterServiceBuildFilterUrl(TestCase):
         )
         assert "country=ES" in result
         assert "season=2024-25" in result
+
+    def test_parse_filters_competition_comma_string(self):
+        request = MagicMock()
+        request.GET.get.side_effect = lambda k, d=None: "1,2,3" if k == "competition" else d
+        request.GET.getlist.side_effect = lambda k: []
+        result = self.service.parse_filters_from_request(request)
+        assert result.get("competition") == [1, 2, 3]
+
+    def test_parse_filters_main_color_comma_takes_first(self):
+        request = MagicMock()
+        request.GET.get.side_effect = lambda k, d=None: "1,2" if k == "main_color" else d
+        request.GET.getlist.side_effect = lambda k: []
+        result = self.service.parse_filters_from_request(request)
+        assert result.get("main_color") == "1"
+
+    def test_parse_filters_secondary_color_comma_string(self):
+        request = MagicMock()
+
+        def get(k, d=None):
+            return "a, b , c" if k == "secondary_color" else d
+
+        request.GET.get.side_effect = get
+        request.GET.getlist.side_effect = lambda k: []
+        result = self.service.parse_filters_from_request(request)
+        assert "a" in result.get("secondary_color", "")
+
+    def test_build_filter_url_with_list_value(self):
+        result = self.service.build_filter_url(
+            "https://example.com/feed/",
+            {"competition": [1, 2]},
+        )
+        assert "competition" in result
+
+    def test_build_filter_url_skips_empty_string(self):
+        result = self.service.build_filter_url("https://example.com/", {"country": "   "})
+        assert result == "https://example.com/"
