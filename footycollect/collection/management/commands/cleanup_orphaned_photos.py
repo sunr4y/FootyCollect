@@ -113,7 +113,10 @@ class Command(BaseCommand):
         """Display list of orphaned files."""
         self.stdout.write("\nOrphaned files:")
         for file_path in orphaned_files:
-            file_size = file_path.stat().st_size if file_path.exists() else 0
+            try:
+                file_size = file_path.stat().st_size
+            except OSError:
+                file_size = 0
             self.stdout.write(f"  {file_path} ({file_size} bytes)")
 
     def _delete_orphaned_files(self, orphaned_files, verbose):
@@ -163,18 +166,15 @@ class Command(BaseCommand):
         return timezone.now() - timedelta(hours=older_than_hours)
 
     def _get_incomplete_photos(self, cutoff_time):
-        """Get incomplete photos older than cutoff time."""
+        """Get incomplete photos older than cutoff time (not attached to any item)."""
         with connection.cursor() as cursor:
             cursor.execute(
                 """
                 SELECT id, image, image_avif, uploaded_at, user_id
                 FROM collection_photo
                 WHERE uploaded_at < %s
-                AND id NOT IN (
-                    SELECT DISTINCT photo_id FROM collection_photo
-                    WHERE photo_id IS NOT NULL
-                )
-            """,
+                AND content_type_id IS NULL
+                """,
                 [cutoff_time],
             )
             return cursor.fetchall()

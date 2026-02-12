@@ -118,6 +118,25 @@ class TestItemService(TestCase):
             assert result is None
             mock_update.assert_called_once_with(1, **item_data)
 
+    def test_update_item_with_photos_calls_process_photos_when_photos_provided(self):
+        """Test update_item_with_photos calls _process_item_photos when photos list is non-empty."""
+        item_data = {"name": "Updated"}
+        mock_photos = [Mock()]
+
+        with (
+            patch.object(self.service.item_repository, "update") as mock_update,
+            patch.object(self.service, "_process_item_photos") as mock_process,
+        ):
+            mock_item = Mock()
+            mock_item.id = 1
+            mock_update.return_value = mock_item
+
+            result = self.service.update_item_with_photos(1, item_data, mock_photos)
+
+            assert result == mock_item
+            mock_update.assert_called_once_with(1, **item_data)
+            mock_process.assert_called_once_with(mock_item, mock_photos)
+
     def test_delete_item_with_photos_success(self):
         """Test successful item deletion with photos."""
         with (

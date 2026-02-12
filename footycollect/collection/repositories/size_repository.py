@@ -5,7 +5,7 @@ This repository handles all database operations related to sizes,
 including tops, bottoms, and other size categories.
 """
 
-from django.db.models import QuerySet
+from django.db.models import Count, QuerySet
 
 from footycollect.collection.models import Size
 
@@ -22,6 +22,10 @@ class SizeRepository(BaseRepository):
 
     def __init__(self):
         super().__init__(Size)
+
+    @staticmethod
+    def _clamp_limit(limit: int, min_val: int = 1, max_val: int = 500) -> int:
+        return max(min_val, min(limit, max_val))
 
     def get_sizes_by_category(self, category: str) -> QuerySet[Size]:
         """
@@ -78,6 +82,45 @@ class SizeRepository(BaseRepository):
         except self.model.DoesNotExist:
             return None
 
+    def get_sizes_by_name(self, query: str) -> QuerySet[Size]:
+        """
+        Get sizes whose name contains the query (case-insensitive).
+
+        Args:
+            query: Search string
+
+        Returns:
+            QuerySet of matching sizes
+        """
+        return self.model.objects.filter(name__icontains=query).order_by("name")
+
+    def get_size_distribution_by_category(self) -> dict[str, int]:
+        """
+        Get count of sizes per category.
+
+        Returns:
+            Dictionary mapping category to count
+        """
+        return {r["category"]: r["count"] for r in self.model.objects.values("category").annotate(count=Count("id"))}
+
+    def get_most_used_sizes_by_category(self, category: str, limit: int = 5) -> QuerySet[Size]:
+        """
+        Get most used sizes in a category (by jersey usage count).
+
+        Args:
+            category: Size category
+            limit: Maximum number of sizes to return
+
+        Returns:
+            QuerySet of Size with usage_count annotated
+        """
+        limit = self._clamp_limit(limit)
+        return (
+            self.model.objects.filter(category=category)
+            .annotate(usage_count=Count("jersey"))
+            .order_by("-usage_count")[:limit]
+        )
+
     def get_popular_sizes(self, category: str | None = None, limit: int = 10) -> QuerySet[Size]:
         """
         Get the most popular sizes based on usage.
@@ -89,7 +132,7 @@ class SizeRepository(BaseRepository):
         Returns:
             QuerySet of popular sizes
         """
-
+        limit = self._clamp_limit(limit)
         queryset = self.model.objects.all()
 
         if category:

@@ -287,3 +287,42 @@ class TestUserFixtures:
         """Test user fixture with club fixture."""
         user.favourite_teams.add(club)
         assert club in user.favourite_teams.all()
+
+
+@pytest.mark.django_db
+class TestUsersAppFactories:
+    """Test footycollect.users.factories (app-level factories)."""
+
+    def test_user_factory_creates_user(self):
+        from footycollect.users.factories import UserFactory
+
+        user = UserFactory()
+        assert user.pk is not None
+        assert user.username.startswith("user")
+        assert user.email == f"{user.username}@example.com"
+        assert user.is_active
+
+    def test_staff_user_factory(self):
+        from footycollect.users.factories import StaffUserFactory
+
+        user = StaffUserFactory()
+        assert user.is_staff
+
+    def test_super_user_factory(self):
+        from footycollect.users.factories import SuperUserFactory
+
+        user = SuperUserFactory()
+        assert user.is_superuser
+
+    def test_inactive_user_factory(self):
+        from footycollect.users.factories import InactiveUserFactory
+
+        user = InactiveUserFactory()
+        assert user.is_active is False
+
+    def test_user_with_profile_factory(self):
+        from footycollect.users.factories import UserWithProfileFactory
+
+        user = UserWithProfileFactory()
+        assert user.pk is not None
+        assert hasattr(user, "biography") or hasattr(user, "location")

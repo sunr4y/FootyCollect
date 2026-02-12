@@ -2,7 +2,7 @@
 Tests for KitService.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
@@ -93,6 +93,23 @@ class TestKitServiceGetOrCreateKitForJersey(TestCase):
         kit = self.service.get_or_create_kit_for_jersey(self.base_item, self.jersey, fkapi_data=fkapi_data)
         kit.refresh_from_db()
         assert kit.main_img_url == "https://api.com/real.png"
+
+    def test_get_or_create_kit_found_existing_by_slug_runs_update_image_path(self):
+        existing = Kit.objects.create(
+            name="Existing",
+            slug="nike-barcelona-2023-24",
+            id_fka=None,
+            team=self.club,
+            season=self.season,
+            brand=self.brand,
+            main_img_url="https://www.footballkitarchive.com/static/logos/not_found.png",
+        )
+        fkapi_data = {"main_img_url": "https://new.com/img.png"}
+        with patch.object(Kit.objects, "get_or_create", return_value=(existing, False)):
+            kit = self.service.get_or_create_kit_for_jersey(self.base_item, self.jersey, fkapi_data=fkapi_data)
+        assert kit.id == existing.id
+        existing.refresh_from_db()
+        assert existing.main_img_url == "https://new.com/img.png"
 
 
 class TestKitServiceBuildKitName(TestCase):
@@ -212,6 +229,13 @@ class TestKitServiceGetOrCreateTypeK(TestCase):
         assert type_k.category == "match"
         assert type_k.is_goalkeeper is False
         assert result == type_k
+
+    def test_get_or_create_type_k_returns_none_when_create_raises(self):
+        with patch.object(TypeK.objects, "create", side_effect=ValueError("bad")):
+            result = self.service._get_or_create_type_k(
+                self.base_item, {"type": {"name": "NewType", "category": "match"}}
+            )
+        assert result is None
 
 
 class TestKitServiceUpdateExistingKitImage(TestCase):

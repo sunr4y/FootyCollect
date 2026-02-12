@@ -2,13 +2,19 @@
 Tests for logo_download service (not the backfill_logos command).
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from django.core.files.base import ContentFile
 from django.test import TestCase
 
 from footycollect.collection.services.logo_download import (
+    MAX_LOGO_SIZE,
     NOT_FOUND_LOGO_URL,
+    _download_logo_as_avif_file,
+    _download_logo_bytes,
+    _ext_from_url_or_content_type,
+    _get_rotating_proxy_config,
     _is_fka_logo_url,
     _is_not_found_url,
     clean_entity_not_found_logos,
@@ -136,7 +142,8 @@ class TestCleanEntityNotFoundLogos(TestCase):
 
 class TestEnsureEntityLogosDownloaded(TestCase):
     def test_none_does_nothing(self):
-        ensure_entity_logos_downloaded(None)
+        result = ensure_entity_logos_downloaded(None)
+        assert result is None
 
     def test_skips_when_logo_file_already_exists(self):
         club = Club.objects.create(
@@ -238,7 +245,8 @@ class TestEnsureItemEntityLogosDownloaded(TestCase):
     EXPECTED_ENSURE_CALLS_FOR_CLUB_AND_BRAND = 2
 
     def test_none_does_nothing(self):
-        ensure_item_entity_logos_downloaded(None)
+        result = ensure_item_entity_logos_downloaded(None)
+        assert result is None
 
     def test_calls_ensure_for_club_and_brand(self):
         brand = Brand.objects.create(name="Nike", slug="nike-test-item")
@@ -255,3 +263,116 @@ class TestEnsureItemEntityLogosDownloaded(TestCase):
             mock_ensure.assert_any_call(brand)
         brand.delete()
         club.delete()
+
+    def test_skips_ensure_when_no_club_or_brand_id(self):
+        item = Mock()
+        item.club_id = None
+        item.brand_id = None
+        with patch("footycollect.collection.services.logo_download.ensure_entity_logos_downloaded") as mock_ensure:
+            ensure_item_entity_logos_downloaded(item)
+            mock_ensure.assert_not_called()
+
+
+class TestLogoDownloadInternals(TestCase):
+    def test_get_rotating_proxy_config_no_url_returns_none(self):
+        with patch("footycollect.collection.services.logo_download.settings") as mock_settings:
+            mock_settings.ROTATING_PROXY_URL = ""
+            assert _get_rotating_proxy_config() is None
+
+    def test_get_rotating_proxy_config_with_url_and_creds(self):
+        with patch("footycollect.collection.services.logo_download.settings") as mock_settings:
+            mock_settings.ROTATING_PROXY_URL = "http://proxy.example:8080"
+            mock_settings.ROTATING_PROXY_USERNAME = "user"
+            mock_settings.ROTATING_PROXY_PASSWORD = "pass"
+            cfg = _get_rotating_proxy_config()
+            assert cfg is not None
+            assert "http" in cfg
+            assert "https" in cfg
+            assert "user:pass@" in cfg["http"]
+
+    def test_ext_from_url_or_content_type_fallbacks(self):
+        assert _ext_from_url_or_content_type("https://x/logo.png", None) == "png"
+        assert _ext_from_url_or_content_type("https://x/logo", "image/jpeg") == "jpg"
+        assert _ext_from_url_or_content_type("https://x/logo", "image/webp") == "webp"
+        assert _ext_from_url_or_content_type("https://x/logo", "image/gif") == "gif"
+        assert _ext_from_url_or_content_type("https://x/logo", None) == "png"
+
+    def test_download_logo_bytes_raises_on_too_large(self):
+        with patch("footycollect.collection.services.logo_download.requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.headers = {"Content-Type": "image/png"}
+
+            big_chunk = b"x" * (MAX_LOGO_SIZE // 2 + 1)
+            mock_resp.iter_content.return_value = [big_chunk, big_chunk]
+            mock_resp.raise_for_status.return_value = None
+            mock_get.return_value = mock_resp
+
+            with pytest.raises(ValueError, match="Logo too large"):
+                _download_logo_bytes(
+                    "https://www.footballkitarchive.com/static/logos/too_big.png",
+                )
+
+    def test_download_logo_bytes_propagates_request_exception(self):
+        import requests
+
+        with patch("footycollect.collection.services.logo_download.requests.get") as mock_get:
+            mock_get.side_effect = requests.RequestException("boom")
+            with pytest.raises(requests.RequestException):
+                _download_logo_bytes(
+                    "https://www.footballkitarchive.com/static/logos/error.png",
+                )
+
+    def test_download_logo_as_avif_file_returns_none_for_svg(self):
+        with patch(
+            "footycollect.collection.services.logo_download._download_logo_bytes",
+            return_value=(b"<svg></svg>", "image/svg+xml"),
+        ):
+            assert _download_logo_as_avif_file("https://www.footballkitarchive.com/static/svg/logo.svg") is None
+
+    def test_ensure_entity_logos_downloaded_handles_request_exception(self):
+        import requests
+
+        club = Club.objects.create(
+            name="LogoError",
+            slug="logo-error",
+            logo="https://www.footballkitarchive.com/static/logos/teams/99.png",
+        )
+        try:
+            with (
+                patch(
+                    "footycollect.collection.services.logo_download._is_fka_logo_url",
+                    return_value=True,
+                ),
+                patch(
+                    "footycollect.collection.services.logo_download._download_logo_as_avif_file",
+                    side_effect=requests.RequestException("fail"),
+                ),
+            ):
+                ensure_entity_logos_downloaded(club)
+        finally:
+            club.delete()
+
+    def test_ensure_entity_logos_downloaded_no_pk_returns_early(self):
+        club = Club()
+        assert club.pk is None
+        ensure_entity_logos_downloaded(club)
+
+    def test_clean_entity_not_found_logos_no_pk_returns_false(self):
+        assert clean_entity_not_found_logos(Club()) is False
+
+    def test_is_fka_logo_url_invalid_url_returns_false(self):
+        with patch("footycollect.collection.services.logo_download.urlparse") as mock_parse:
+            mock_parse.side_effect = ValueError
+            assert _is_fka_logo_url("http://example.com/x.png") is False
+
+    def test_ext_from_url_svg_returns_svg(self):
+        assert _ext_from_url_or_content_type("https://x/logo.svg", None) == "svg"
+
+    def test_get_rotating_proxy_config_no_creds_returns_url_only(self):
+        with patch("footycollect.collection.services.logo_download.settings") as mock_settings:
+            mock_settings.ROTATING_PROXY_URL = "http://proxy.example:8080"
+            mock_settings.ROTATING_PROXY_USERNAME = ""
+            mock_settings.ROTATING_PROXY_PASSWORD = ""
+            cfg = _get_rotating_proxy_config()
+            assert cfg is not None
+            assert cfg["http"] == "http://proxy.example:8080"

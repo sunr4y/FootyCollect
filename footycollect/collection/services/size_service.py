@@ -19,6 +19,8 @@ class SizeService:
     including size creation, statistics, and validation.
     """
 
+    VALID_CATEGORIES = ("tops", "bottoms", "other")
+
     def __init__(self):
         self.size_repository = SizeRepository()
 
@@ -40,14 +42,12 @@ class SizeService:
         """
         tops_sizes = self.size_repository.get_sizes_by_category("tops")
         bottoms_sizes = self.size_repository.get_sizes_by_category("bottoms")
-        accessories_sizes = self.size_repository.get_sizes_by_category("accessories")
+        other_sizes = self.size_repository.get_sizes_by_category("other")
 
         return {
             "tops": [{"id": size.id, "name": size.name, "category": size.category} for size in tops_sizes],
             "bottoms": [{"id": size.id, "name": size.name, "category": size.category} for size in bottoms_sizes],
-            "accessories": [
-                {"id": size.id, "name": size.name, "category": size.category} for size in accessories_sizes
-            ],
+            "other": [{"id": size.id, "name": size.name, "category": size.category} for size in other_sizes],
         }
 
     def get_size_statistics(self) -> dict[str, any]:
@@ -137,19 +137,28 @@ class SizeService:
 
         Raises:
             ValueError: If size data is invalid
+            TypeError: If category is not a string
         """
+        if not isinstance(category, str):
+            msg = "category must be a string, not " + type(category).__name__
+            raise TypeError(msg)
+        if not category.strip():
+            msg = "category must be a non-empty string"
+            raise ValueError(msg)
+        normalized_category = category.lower().strip()
+
         # Validate category
-        if not self._is_valid_category(category):
-            error_msg = "Invalid category"
-            raise ValueError(error_msg)
+        if not self._is_valid_category(normalized_category):
+            msg = "Invalid category value: must be one of " + ", ".join(self.VALID_CATEGORIES)
+            raise ValueError(msg)
 
         # Check if size already exists
-        existing_size = self.get_size_by_name_and_category(name, category)
+        existing_size = self.get_size_by_name_and_category(name, normalized_category)
         if existing_size:
             error_msg = "Size with this name and category already exists"
             raise ValueError(error_msg)
 
-        return self.size_repository.create(name=name, category=category)
+        return self.size_repository.create(name=name, category=normalized_category)
 
     def get_sizes_for_api(self) -> list[dict[str, str]]:
         """
@@ -205,7 +214,7 @@ class SizeService:
         Returns:
             Dictionary with most used sizes per category
         """
-        categories = ["tops", "bottoms", "accessories"]
+        categories = self.VALID_CATEGORIES
         result = {}
 
         for category in categories:
@@ -231,5 +240,5 @@ class SizeService:
         Returns:
             True if valid, False otherwise
         """
-        valid_categories = ["tops", "bottoms", "accessories"]
+        valid_categories = self.VALID_CATEGORIES
         return category.lower() in valid_categories

@@ -166,10 +166,7 @@ class JerseyFactory(DjangoModelFactory):
             # If competitions are provided, use them
             for competition in extracted:
                 self.base_item.competitions.add(competition)
-        else:
-            # Otherwise, add a random competition
-            competition = CompetitionFactory()
-            self.base_item.competitions.add(competition)
+        # When extracted is not provided, do not auto-create competitions (avoids unexpected M2M creation)
 
 
 class PhotoFactory(DjangoModelFactory):
@@ -191,14 +188,13 @@ class CompleteJerseyFactory(JerseyFactory):
 
     @factory.post_generation
     def competitions(self, create, extracted, **kwargs):
-        """Add multiple competitions to the jersey."""
+        """Add competitions when explicitly provided via factory(competitions=[...])."""
         if not create:
             return
 
-        # Add 2-3 random competitions
-        competitions = CompetitionFactory.create_batch(3)
-        for competition in competitions:
-            self.competitions.add(competition)
+        if extracted:
+            for competition in extracted:
+                self.base_item.competitions.add(competition)
 
 
 class UserWithJerseysFactory(UserFactory):
@@ -215,4 +211,4 @@ class UserWithJerseysFactory(UserFactory):
             return
 
         # Create 3 jerseys for the user
-        JerseyFactory.create_batch(3, user=self)
+        JerseyFactory.create_batch(3, base_item__user=self)

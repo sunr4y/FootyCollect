@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -190,3 +190,120 @@ class TestFeedViewHelpers(TestCase):
         assert data["brand"]["id"] == brand.id
         assert data["brand"]["name"] == brand.name
         assert "logo" in data["brand"]
+
+    def test_build_autocomplete_initial_data_ignores_invalid_ids(self):
+        data = _build_autocomplete_initial_data({"club": "x", "brand": "y"})
+        assert data == {}
+
+
+EXPECTED_SECONDARY_COLORS_COUNT = 2
+
+
+class TestFeedViewHelperFunctions(TestCase):
+    def test_get_feed_filter_choices_returns_expected_keys(self):
+        from footycollect.collection.views.feed_views import _get_feed_filter_choices
+
+        choices = _get_feed_filter_choices()
+        assert "kit_type_choices" in choices
+        assert "category_choices" in choices
+        assert "color_choices_json" in choices
+        assert isinstance(choices["kit_type_choices"], list)
+        assert isinstance(choices["category_choices"], list)
+        assert isinstance(choices["color_choices_json"], str)
+
+    def test_main_color_display_returns_name_for_valid_id(self):
+        from footycollect.collection.models import Color
+        from footycollect.collection.views.feed_views import _main_color_display
+
+        color = Color.objects.create(name="RED", hex_value="#FF0000")
+        result = _main_color_display(str(color.id))
+        assert result is not None
+
+    def test_main_color_display_returns_none_for_invalid_id(self):
+        from footycollect.collection.views.feed_views import _main_color_display
+
+        assert _main_color_display("not-a-number") is None
+        assert _main_color_display(None) is None
+
+    def test_secondary_color_display_returns_none_for_empty_or_non_string(self):
+        from footycollect.collection.views.feed_views import _secondary_color_display
+
+        assert _secondary_color_display("") is None
+        assert _secondary_color_display(None) is None
+        assert _secondary_color_display(123) is None
+
+    def test_secondary_color_display_returns_list_for_valid_comma_ids(self):
+        from footycollect.collection.models import Color
+        from footycollect.collection.views.feed_views import _secondary_color_display
+
+        c1 = Color.objects.create(name="RED", hex_value="#FF0000")
+        c2 = Color.objects.create(name="BLUE", hex_value="#0000FF")
+        result = _secondary_color_display(f"{c1.id}, {c2.id}")
+        assert isinstance(result, list)
+        assert len(result) == EXPECTED_SECONDARY_COLORS_COUNT
+
+    def test_secondary_color_display_returns_none_when_no_valid_ids(self):
+        from footycollect.collection.views.feed_views import _secondary_color_display
+
+        assert _secondary_color_display("a, b, c") is None
+
+    def test_secondary_color_display_returns_none_on_valueerror(self):
+        from footycollect.collection.models import Color
+        from footycollect.collection.views.feed_views import _secondary_color_display
+
+        c = Color.objects.create(name="RED", hex_value="#FF0000")
+        with patch("footycollect.collection.utils_i18n.get_color_display_name", side_effect=ValueError):
+            assert _secondary_color_display(f"{c.id}") is None
+
+    def test_secondary_color_display_returns_none_on_typeerror(self):
+        from footycollect.collection.models import Color
+        from footycollect.collection.views.feed_views import _secondary_color_display
+
+        c = Color.objects.create(name="RED", hex_value="#FF0000")
+        with patch("footycollect.collection.utils_i18n.get_color_display_name", side_effect=TypeError):
+            assert _secondary_color_display(f"{c.id}") is None
+
+    def test_feed_random_sort_seed_hash_zero_uses_fallback_seed(self):
+        import hashlib
+
+        self.factory = RequestFactory()
+        self.url = reverse(FEED_URL_NAME)
+        request = self.factory.get(self.url, {"sort": SORT_RANDOM})
+        request.session = {}
+        request.user = None
+        view = FeedView()
+        view.request = request
+        mock_hex = "0" * 8 + "a" * 56
+        mock_sha = Mock()
+        mock_sha.hexdigest.return_value = mock_hex
+
+        with (
+            patch("footycollect.collection.views.feed_views.FeedFilterService") as mock_svc,
+            patch.object(hashlib, "sha256", return_value=mock_sha),
+        ):
+            mock_svc.return_value.parse_filters_from_request.return_value = {}
+            mock_svc.return_value.apply_filters.return_value = Jersey.objects.none()
+            mock_svc.return_value.apply_sorting.return_value = Jersey.objects.none()
+            view.get_queryset()
+        assert request.session["feed_random_seed_00000000"] == 123456789  # noqa: PLR2004
+
+    def test_get_context_data_when_not_ajax(self):
+        self.factory = RequestFactory()
+        self.url = reverse(FEED_URL_NAME)
+        request = self.factory.get(self.url, {"sort": SORT_NEWEST})
+        request.session = {}
+        request.META = {}
+        view = FeedView()
+        view.request = request
+        view.object_list = Jersey.objects.none()
+        view.kwargs = {}
+        with patch("footycollect.collection.views.feed_views.FeedFilterService") as mock_svc:
+            mock_svc.return_value.parse_filters_from_request.return_value = {}
+            with patch("footycollect.collection.views.feed_views._get_feed_filter_choices") as mock_choices:
+                mock_choices.return_value = {
+                    "kit_type_choices": [],
+                    "category_choices": [],
+                    "color_choices_json": "[]",
+                }
+                context = view.get_context_data()
+        assert context.get("is_ajax") is not True

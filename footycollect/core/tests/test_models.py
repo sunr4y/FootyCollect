@@ -384,3 +384,50 @@ class TestKitModel:
                 brand=brand,
                 main_img_url="https://cdn.footballkitarchive.com/2025/08/20/W0Kw7NHhJViCEKR.jpg",
             )
+
+
+@pytest.mark.django_db
+class TestCoreFactories:
+    """Tests for factories defined in footycollect.core.factories."""
+
+    def test_core_factories_import_and_attributes(self):
+        from footycollect.core import factories as core_factories
+
+        assert hasattr(core_factories, "SeasonFactory")
+        assert hasattr(core_factories, "TypeKFactory")
+        assert hasattr(core_factories, "CompetitionFactory")
+        assert hasattr(core_factories, "ClubFactory")
+        assert hasattr(core_factories, "BrandFactory")
+        assert hasattr(core_factories, "KitFactory")
+
+    def test_core_factories_kit_factory_creates_valid_instance(self):
+        from footycollect.core import factories as core_factories
+        from footycollect.core.models import Brand, Club, Competition, Kit, Season, TypeK
+
+        kit = core_factories.KitFactory()
+
+        assert isinstance(kit, Kit)
+        assert kit.pk is not None
+
+        assert isinstance(kit.team, Club)
+        assert isinstance(kit.season, Season)
+        assert isinstance(kit.type, TypeK)
+        assert isinstance(kit.brand, Brand)
+        assert isinstance(kit.main_img_url, str)
+        assert kit.main_img_url != ""
+
+        competitions = list(kit.competition.all())
+        assert len(competitions) >= 1
+        assert all(isinstance(comp, Competition) for comp in competitions)
+
+    def test_kit_factory_create_false_skips_competition_post_generation(self):
+        from footycollect.core import factories as core_factories
+
+        kit = core_factories.KitFactory.build()
+        assert kit is not None
+
+    def test_kit_factory_without_extracted_adds_one_competition(self):
+        from footycollect.core import factories as core_factories
+
+        kit = core_factories.KitFactory()
+        assert kit.competition.count() == 1

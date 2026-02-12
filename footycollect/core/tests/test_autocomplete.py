@@ -4,7 +4,13 @@ from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, TestCase
 
-from footycollect.core.autocomplete import BrandAutocomplete, ClubAutocomplete, CountryAutocomplete
+from footycollect.core.autocomplete import (
+    DEFAULT_LOGO_URL,
+    BrandAutocomplete,
+    ClubAutocomplete,
+    CountryAutocomplete,
+    _logos_from_api,
+)
 from footycollect.core.models import Brand, Club
 
 
@@ -36,6 +42,21 @@ class TestBrandAutocomplete(TestCase):
         view_obj = BrandAutocomplete()
         brand = Brand.objects.create(name="X", slug="x", logo="")
         assert view_obj.get_result_value(brand) == brand.id
+
+    def test_get_result_label_and_results_generate_html(self):
+        view_obj = BrandAutocomplete()
+        brand = Brand.objects.create(name="Nike", slug="nike", logo="https://img.example/logo.png")
+        label = view_obj.get_result_label(brand)
+        assert "Nike" in str(label)
+        assert "img" in str(label)
+
+        context = {"object_list": [brand]}
+        results = view_obj.get_results(context)
+        assert len(results) == 1
+        entry = results[0]
+        assert entry["id"] == brand.id
+        assert "html" in entry
+        assert "Nike" in entry["html"]
 
 
 class TestClubAutocomplete(TestCase):
@@ -102,3 +123,15 @@ class TestCountryAutocomplete(TestCase):
         view_obj = CountryAutocomplete()
         result_item = ("ES", "Spain")
         assert view_obj.get_result_value(result_item) == "ES"
+
+
+class TestLogosFromApi(TestCase):
+    def test_logos_from_api_dict_and_non_dict(self):
+        api_entity = {"logo": "https://logo.png", "logo_dark": ""}
+        logo, logo_dark = _logos_from_api(api_entity)
+        assert logo == "https://logo.png"
+        assert logo_dark == DEFAULT_LOGO_URL
+
+        logo2, logo_dark2 = _logos_from_api("not-a-dict")
+        assert logo2 == DEFAULT_LOGO_URL
+        assert logo_dark2 == DEFAULT_LOGO_URL

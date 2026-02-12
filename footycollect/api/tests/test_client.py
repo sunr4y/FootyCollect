@@ -2,12 +2,17 @@
 Tests for FKAPI client with real data.
 """
 
+import json
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
 import requests
 
 # Test constants
+CIRCUIT_FAILURE_THRESHOLD = 5
+MIN_BULK_SLUGS = 2
+MAX_BULK_SLUGS = 30
 HAMMARBY_CLUB_ID = 893
 HAMMARBY_SEARCH_RESULTS_COUNT = 3
 CLUB_2089_SEASONS_COUNT = 16
@@ -504,3 +509,249 @@ class TestFKAPIClient:
 
         # But requests.get should only be called once due to caching
         assert mock_get.call_count == 1
+
+    @patch("footycollect.api.client.requests.post")
+    def test_post_success_200_returns_normalized_data(self, mock_post):
+        from footycollect.api.client import FKAPIClient
+
+        client = FKAPIClient()
+        client.max_retries = 1
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b"{}"
+        mock_response.json.return_value = {"foo": "bar"}
+        mock_post.return_value = mock_response
+
+        result = client._post("/test-endpoint", data={"payload": 1})
+
+        assert result == {"foo": "bar"}
+        mock_post.assert_called_once()
+
+    @patch("footycollect.api.client.requests.post")
+    def test_post_timeout_calls_retry_logic_and_returns_none(self, mock_post):
+        from footycollect.api.client import FKAPIClient
+
+        client = FKAPIClient()
+        client.max_retries = 1
+
+        mock_post.side_effect = requests.exceptions.Timeout()
+
+        with patch(
+            "footycollect.api.client.FKAPIClient._handle_all_retries_failed",
+        ) as mock_handle_failed:
+            result = client._post("/timeout-endpoint", data={"payload": 1})
+
+        assert result is None
+        mock_handle_failed.assert_called_once()
+
+    @patch("footycollect.api.client.requests.post")
+    def test_post_http_error_calls_handle_all_retries_failed(self, mock_post):
+        from footycollect.api.client import FKAPIClient
+
+        client = FKAPIClient()
+        client.max_retries = 1
+
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_response.text = "Server error"
+        mock_response.reason = "Internal Server Error"
+        mock_response.json.return_value = {"error": "Server error"}
+        mock_post.return_value = mock_response
+
+        with patch(
+            "footycollect.api.client.FKAPIClient._handle_all_retries_failed",
+        ) as mock_handle_failed:
+            result = client._post("/error-endpoint", data={"payload": 1})
+
+        assert result is None
+        mock_handle_failed.assert_called_once()
+
+    @patch("footycollect.api.client.requests.post")
+    def test_post_json_decode_error_stops_retries_and_returns_none(self, mock_post):
+        from footycollect.api.client import FKAPIClient
+
+        client = FKAPIClient()
+        client.max_retries = 1
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b"invalid"
+        mock_response.json.side_effect = json.JSONDecodeError("msg", "doc", 0)
+        mock_post.return_value = mock_response
+
+        with patch(
+            "footycollect.api.client.FKAPIClient._handle_all_retries_failed",
+        ) as mock_handle_failed:
+            result = client._post("/json-error-endpoint", data={"payload": 1})
+
+        assert result is None
+        mock_handle_failed.assert_called_once()
+
+
+class TestCircuitBreaker:
+    """Tests for CircuitBreaker used by FKAPIClient."""
+
+    def test_record_success_resets_state(self):
+        from footycollect.api.client import CircuitBreaker
+
+        cb = CircuitBreaker(failure_threshold=CIRCUIT_FAILURE_THRESHOLD, timeout=60)
+        for _ in range(3):
+            cb.record_failure()
+        cb.record_success()
+        assert cb.failure_count == 0
+        assert cb.state == "closed"
+        assert cb.last_failure_time is None
+
+    def test_record_failure_opens_after_threshold(self):
+        from footycollect.api.client import CircuitBreaker
+
+        cb = CircuitBreaker(failure_threshold=CIRCUIT_FAILURE_THRESHOLD, timeout=60)
+        for _ in range(CIRCUIT_FAILURE_THRESHOLD):
+            cb.record_failure()
+        assert cb.state == "open"
+        assert cb.is_open() is True
+
+    def test_is_open_transitions_to_half_open_after_timeout(self):
+        from footycollect.api.client import CircuitBreaker
+
+        cb = CircuitBreaker(failure_threshold=2, timeout=1)
+        cb.record_failure()
+        cb.record_failure()
+        assert cb.state == "open"
+        cb.last_failure_time = datetime.now(UTC) - timedelta(seconds=2)
+        assert cb.is_open() is False
+        assert cb.state == "half_open"
+
+    def test_allow_request_false_when_open(self):
+        from footycollect.api.client import CircuitBreaker
+
+        cb = CircuitBreaker(failure_threshold=1, timeout=60)
+        cb.record_failure()
+        cb.record_failure()
+        assert cb.allow_request() is False
+
+
+class TestFKAPIClientBranches:
+    """Tests for FKAPIClient branches: circuit breaker, rate limit, stale cache, bulk, extract."""
+
+    @patch("footycollect.api.client.cache")
+    @patch("footycollect.api.client.requests.get")
+    def test_get_returns_stale_cache_when_circuit_breaker_open(self, mock_get, mock_cache):
+        from footycollect.api.client import FKAPIClient
+
+        def cache_get(key):
+            if key == "fkapi_rate_limit":
+                return None
+            if str(key).startswith("fkapi_"):
+                return {"results": [{"id": 1}]}
+            return None
+
+        mock_cache.get.side_effect = cache_get
+        client = FKAPIClient()
+        client.circuit_breaker.state = "open"
+        client.circuit_breaker.last_failure_time = datetime.now(UTC)
+
+        result = client._get("/clubs/search", params={"keyword": "x"}, use_cache=True)
+
+        assert result == {"results": [{"id": 1}]}
+        mock_get.assert_not_called()
+
+    @patch("footycollect.api.client.cache")
+    @patch("footycollect.api.client.requests.get")
+    def test_get_returns_stale_cache_when_rate_limit_exceeded(self, mock_get, mock_cache):
+        from footycollect.api.client import FKAPIClient
+
+        def cache_get(key):
+            if key == "fkapi_rate_limit":
+                return 200
+            return {"results": []} if str(key).startswith("fkapi_") else None
+
+        mock_cache.get.side_effect = cache_get
+        client = FKAPIClient()
+
+        result = client._get("/clubs/search", params={"keyword": "y"}, use_cache=True)
+
+        assert result == {"results": []}
+        mock_get.assert_not_called()
+
+    @patch("footycollect.api.client.cache")
+    @patch("footycollect.api.client.requests.get")
+    def test_execute_request_timeout_returns_request_result(self, mock_get, mock_cache):
+        from footycollect.api.client import FKAPIClient
+
+        mock_cache.get.return_value = None
+        mock_get.side_effect = requests.exceptions.Timeout()
+        client = FKAPIClient()
+        client.max_retries = 1
+
+        result = client.search_clubs("timeout-test")
+
+        assert result == []
+
+    @patch("footycollect.api.client.cache")
+    @patch("footycollect.api.client.requests.get")
+    def test_execute_request_json_decode_error_returns_empty(self, mock_get, mock_cache):
+        from footycollect.api.client import FKAPIClient
+
+        mock_cache.get.return_value = None
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = json.JSONDecodeError("err", "doc", 0)
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        client = FKAPIClient()
+        client.max_retries = 1
+        result = client.search_clubs("json-err-test")
+
+        assert result == []
+
+    @patch("footycollect.api.client.cache")
+    @patch("footycollect.api.client.requests.get")
+    def test_post_http_error_returns_none(self, mock_get, mock_cache):
+        from footycollect.api.client import FKAPIClient
+
+        mock_cache.get.return_value = None
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_response.text = "Error"
+        mock_response.reason = "Server Error"
+        mock_response.json.return_value = {}
+        mock_get.return_value = mock_response
+
+        with patch("footycollect.api.client.requests.post") as mock_post:
+            mock_post.return_value = mock_response
+            client = FKAPIClient()
+            client.max_retries = 1
+            with patch.object(client, "_handle_all_retries_failed") as mock_handle:
+                result = client._post("/user-collection/1/scrape")
+                assert result is None
+                mock_handle.assert_called_once()
+
+    def test_get_kits_bulk_too_few_slugs_returns_empty(self):
+        from footycollect.api.client import FKAPIClient
+
+        client = FKAPIClient()
+        result = client.get_kits_bulk(["one"])
+        assert result == []
+
+    @patch("footycollect.api.client.FKAPIClient._get")
+    def test_get_kits_bulk_truncates_when_more_than_max(self, mock_get):
+        from footycollect.api.client import FKAPIClient
+
+        mock_get.return_value = {"results": []}
+        client = FKAPIClient()
+        slugs = [f"slug-{i}" for i in range(MAX_BULK_SLUGS + 5)]
+        client.get_kits_bulk(slugs)
+        call_args = mock_get.call_args
+        assert call_args[0][0] == "/kits/bulk"
+        param_slugs = call_args[1]["params"]["slugs"].split(",")
+        assert len(param_slugs) == MAX_BULK_SLUGS
+
+    def test_extract_list_from_result_unexpected_type_returns_empty(self):
+        from footycollect.api.client import FKAPIClient
+
+        client = FKAPIClient()
+        result = client._extract_list_from_result("not-dict-or-list")
+        assert result == []

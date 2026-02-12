@@ -11,6 +11,7 @@ This module tests the real functionality of base views including:
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -29,6 +30,8 @@ User = get_user_model()
 # Constants for test values
 TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
 HTTP_FOUND = 302
+HTTP_OK = 200
+HTTP_NOT_FOUND = 404
 PAGINATE_BY = 20
 
 
@@ -160,6 +163,25 @@ class TestBaseItemListView(TestCase):
                 assert "total_items" in context
                 assert context["total_items"] == 1  # We have 1 item for this user
                 mock_super.assert_called_once()
+
+    def test_get_context_data_total_items_uses_len_when_no_count(self):
+        """Test that total_items uses len() when object_list has no .count method."""
+
+        class ListWithoutCount:
+            def __init__(self, items):
+                self._items = list(items)
+
+            def __len__(self):
+                return len(self._items)
+
+        view = BaseItemListView()
+        view.request = Mock()
+        view.request.user = self.user
+        view.object_list = ListWithoutCount([self.user_item])
+        with patch("footycollect.collection.views.base.ListView.get_context_data") as mock_super:
+            mock_super.return_value = {}
+            context = view.get_context_data()
+        assert context["total_items"] == 1
 
     def test_get_context_data_calls_super(self):
         """Test that get_context_data calls super().get_context_data()."""
@@ -501,3 +523,82 @@ class TestBaseItemDeleteView(TestCase):
         # Test template_name configuration
         assert hasattr(view, "template_name")
         assert view.template_name == "collection/item_confirm_delete.html"
+
+
+class TestItemCrudViews(TestCase):
+    """Integration tests for ItemCreateView, ItemUpdateView and ItemDeleteView."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="cruduser",
+            email="crud@example.com",
+            password=TEST_PASSWORD,
+        )
+        self.brand = Brand.objects.create(name="Nike")
+        self.club = Club.objects.create(name="Barcelona")
+        self.season = Season.objects.create(year=2024)
+        self.item = BaseItem.objects.create(
+            user=self.user,
+            name="CRUD Test Item",
+            brand=self.brand,
+            club=self.club,
+            season=self.season,
+        )
+
+    def test_item_create_requires_login(self):
+        url = reverse("collection:item_create")
+        response = self.client.get(url)
+        assert response.status_code == HTTP_FOUND
+
+    def test_item_create_get_authenticated_ok(self):
+        self.client.login(username="cruduser", password=TEST_PASSWORD)
+        url = reverse("collection:item_create")
+        response = self.client.get(url)
+        assert response.status_code == HTTP_OK
+
+    def test_item_update_get_own_item_ok(self):
+        self.client.login(username="cruduser", password=TEST_PASSWORD)
+        url = reverse("collection:item_update", kwargs={"pk": self.item.pk})
+        response = self.client.get(url)
+        assert response.status_code == HTTP_OK
+
+    def test_item_update_get_other_user_404(self):
+        User.objects.create_user(
+            username="othercrud",
+            email="other@example.com",
+            password=TEST_PASSWORD,
+        )
+        self.client.login(username="othercrud", password=TEST_PASSWORD)
+        url = reverse("collection:item_update", kwargs={"pk": self.item.pk})
+        response = self.client.get(url)
+        assert response.status_code == HTTP_NOT_FOUND
+
+    def test_item_delete_requires_login(self):
+        url = reverse("collection:item_delete", kwargs={"pk": self.item.pk})
+        response = self.client.get(url)
+        assert response.status_code == HTTP_FOUND
+
+    def test_item_delete_removes_item_and_photos_and_invalidates_cache(self):
+        from footycollect.collection.models import Photo
+
+        photo = Photo.objects.create(
+            content_object=self.item,
+            image=SimpleUploadedFile("p.jpg", b"x", content_type="image/jpeg"),
+            user=self.user,
+        )
+        assert photo.pk is not None
+
+        self.client.login(username="cruduser", password=TEST_PASSWORD)
+        url = reverse("collection:item_delete", kwargs={"pk": self.item.pk})
+
+        with patch(
+            "footycollect.collection.cache_utils.invalidate_item_list_cache_for_user",
+        ):
+            response = self.client.post(url, {"page": "2"})
+
+        assert response.status_code == HTTP_FOUND
+        # Redirect should keep page parameter for non-first page
+        assert "page=2" in response.url
+        # Item and photo should be gone
+        assert not BaseItem.objects.filter(pk=self.item.pk).exists()
+        assert Photo.objects.filter(pk=photo.pk).count() == 0
