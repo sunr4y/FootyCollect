@@ -25,7 +25,7 @@ LOGO_MAX_DIMENSION = (512, 512)
 BACKFILL_USE_PROXY_ENV = "BACKFILL_LOGS_USE_ROTATING_PROXY"
 
 
-def _is_not_found_url(url: str) -> bool:
+def _is_not_found_url(url: str | None) -> bool:
     return bool(url and url.rstrip("/") == NOT_FOUND_LOGO_URL.rstrip("/"))
 
 
@@ -41,7 +41,7 @@ def _get_rotating_proxy_config() -> dict | None:
     return {"http": proxy_url, "https": proxy_url}
 
 
-def _is_fka_logo_url(url: str) -> bool:
+def _is_fka_logo_url(url: str | None) -> bool:
     if not url or not url.startswith("http"):
         return False
     try:

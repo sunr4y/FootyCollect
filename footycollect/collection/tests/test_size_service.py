@@ -14,6 +14,7 @@ from footycollect.collection.services.size_service import SizeService
 EXPECTED_SIZES_COUNT_4 = 4
 EXPECTED_SIZES_COUNT_6 = 6
 EXPECTED_SIZES_COUNT_8 = 8
+EXPECTED_BOTTOMS_COUNT_2 = 2
 
 
 class TestSizeService(TestCase):
@@ -52,7 +53,7 @@ class TestSizeService(TestCase):
         # Test bottoms category
         bottoms_sizes = self.service.get_sizes_by_category("bottoms")
         assert bottoms_sizes is not None
-        assert bottoms_sizes.count() == 2  # noqa: PLR2004
+        assert bottoms_sizes.count() == EXPECTED_BOTTOMS_COUNT_2
 
         bottoms_names = [size.name for size in bottoms_sizes]
         assert "28" in bottoms_names
@@ -65,7 +66,7 @@ class TestSizeService(TestCase):
         assert isinstance(sizes, dict)
         assert "tops" in sizes
         assert "bottoms" in sizes
-        assert "accessories" in sizes
+        assert "other" in sizes
 
         # Check structure
         for size_list in sizes.values():
@@ -148,7 +149,7 @@ class TestSizeService(TestCase):
         ):
             mock_stats.return_value = {"total_sizes": EXPECTED_SIZES_COUNT_6}
             mock_count.return_value = EXPECTED_SIZES_COUNT_6
-            mock_used.return_value.count.return_value = 4
+            mock_used.return_value.count.return_value = EXPECTED_SIZES_COUNT_4
 
             analytics = self.service.get_size_usage_analytics()
 
@@ -172,7 +173,7 @@ class TestSizeService(TestCase):
         """Test category validation with valid categories."""
         assert self.service._is_valid_category("tops") is True
         assert self.service._is_valid_category("bottoms") is True
-        assert self.service._is_valid_category("accessories") is True
+        assert self.service._is_valid_category("other") is True
         assert self.service._is_valid_category("TOPS") is True  # Case insensitive
 
     def test_is_valid_category_invalid(self):
@@ -180,3 +181,41 @@ class TestSizeService(TestCase):
         assert self.service._is_valid_category("invalid") is False
         assert self.service._is_valid_category("") is False
         assert self.service._is_valid_category("shoes") is False
+
+    def test_search_sizes(self):
+        """Test search_sizes by name and category."""
+        result = self.service.search_sizes("S")
+        names = list(result.values_list("name", flat=True))
+        assert "S" in names
+        assert len(names) == 1
+        result = self.service.search_sizes("tops")
+        assert result.count() >= EXPECTED_SIZES_COUNT_4
+        combined = self.service.search_sizes("L")
+        assert self.large_size in combined
+
+    def test_get_size_distribution_by_category(self):
+        """Test get_size_distribution_by_category."""
+        dist = self.service.get_size_distribution_by_category()
+        assert isinstance(dist, dict)
+        assert "tops" in dist
+        assert dist["tops"] >= EXPECTED_SIZES_COUNT_4
+        assert "bottoms" in dist
+        assert dist["bottoms"] >= EXPECTED_BOTTOMS_COUNT_2
+
+    def test_get_most_used_sizes_by_category(self):
+        """Test get_most_used_sizes_by_category."""
+        result = self.service.get_most_used_sizes_by_category()
+        assert "tops" in result
+        assert "bottoms" in result
+        assert "other" in result
+        for category in result:
+            assert isinstance(result[category], list)
+            for item in result[category]:
+                assert "name" in item
+                assert "usage_count" in item
+                assert "category" in item
+
+    def test_create_custom_size_duplicate_raises(self):
+        """Test create_custom_size raises when name+category already exists."""
+        with pytest.raises(ValueError, match="already exists"):
+            self.service.create_custom_size("S", "tops")

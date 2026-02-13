@@ -13,8 +13,10 @@ from unittest.mock import Mock, patch
 from urllib.parse import urlparse
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.db import connection
-from django.test import TestCase
+from django.http import HttpResponse
+from django.test import RequestFactory, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
@@ -237,6 +239,28 @@ class TestItemListView(TestCase):
         assert queryset.query.select_related
         # prefetch_related is not directly accessible on query, but we can check the queryset
         assert hasattr(queryset, "prefetch_related")
+
+    def test_get_context_data_fragment_version_zero_anonymous(self):
+        view = ItemListView()
+        view.request = RequestFactory().get("/")
+        view.request.user = AnonymousUser()
+        view.object_list = Jersey.objects.none()
+        view.kwargs = {}
+        ctx = view.get_context_data()
+        assert ctx["fragment_version"] == 0
+
+    def test_get_calls_super_get_when_unauthenticated(self):
+        request = RequestFactory().get(reverse("collection:item_list"))
+        request.user = AnonymousUser()
+        request.session = {}
+        view = ItemListView()
+        with patch(
+            "footycollect.collection.views.list_views.BaseItemListView.get",
+            return_value=HttpResponse(b"ok"),
+        ) as mock_super_get:
+            response = view.get(request)
+        assert response.content == b"ok"
+        mock_super_get.assert_called_once()
 
     def test_list_view_integration_with_real_data(self):
         """Test list view integration with real data and user filtering."""
@@ -506,6 +530,14 @@ class TestItemDetailView(TestCase):
         # Should redirect to login
         assert response.status_code == HTTP_REDIRECT
         assert "/accounts/login/" in response.url
+
+    def test_detail_view_returns_404_for_nonexistent_pk(self):
+        """Test detail view returns 404 when item pk does not exist."""
+        self.client.login(username="testuser", password=TEST_PASSWORD)
+        url = reverse("collection:item_detail", kwargs={"pk": 999999})
+        response = self.client.get(url)
+        http_not_found = 404
+        assert response.status_code == http_not_found
 
 
 class TestItemCreateView(TestCase):
@@ -1131,6 +1163,6 @@ class TestItemQuickViewView(TestCase):
 
             context = view.get_context_data()
 
-        assert context["photos"] == []
-        assert context["has_photos"] is False
-        assert context["first_photo"] is None
+            assert context["photos"] == []
+            assert context["has_photos"] is False
+            assert context["first_photo"] is None

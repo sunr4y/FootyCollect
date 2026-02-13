@@ -412,6 +412,11 @@ class TestColorRepositoryClean(TestCase):
 class TestSizeRepositoryClean(TestCase):
     """Tests limpios para SizeRepository."""
 
+    @staticmethod
+    def _ensure_size(name: str, category: str):
+        """Get or create a size to avoid duplicate (name, category) across tests."""
+        return Size.objects.get_or_create(name=name, category=category)[0]
+
     def setUp(self):
         """Set up test data."""
         # Clear existing sizes to avoid conflicts
@@ -444,10 +449,9 @@ class TestSizeRepositoryClean(TestCase):
 
     def test_get_sizes_by_category(self):
         """Test get_sizes_by_category method."""
-        # Create test sizes
-        Size.objects.create(name="S", category="tops")
-        Size.objects.create(name="L", category="tops")
-        Size.objects.create(name="M", category="bottoms")
+        self._ensure_size("S", "tops")
+        self._ensure_size("L", "tops")
+        self._ensure_size("M", "bottoms")
 
         result = self.repository.get_sizes_by_category("tops")
 
@@ -457,10 +461,9 @@ class TestSizeRepositoryClean(TestCase):
 
     def test_get_tops_sizes(self):
         """Test get_tops_sizes method."""
-        # Create test sizes
-        Size.objects.create(name="S", category="tops")
-        Size.objects.create(name="L", category="tops")
-        Size.objects.create(name="M", category="bottoms")
+        self._ensure_size("S", "tops")
+        self._ensure_size("L", "tops")
+        self._ensure_size("M", "bottoms")
 
         result = self.repository.get_tops_sizes()
 
@@ -470,10 +473,9 @@ class TestSizeRepositoryClean(TestCase):
 
     def test_get_bottoms_sizes(self):
         """Test get_bottoms_sizes method."""
-        # Create test sizes
-        Size.objects.create(name="28", category="bottoms")
-        Size.objects.create(name="32", category="bottoms")
-        Size.objects.create(name="M", category="tops")
+        self._ensure_size("28", "bottoms")
+        self._ensure_size("32", "bottoms")
+        self._ensure_size("M", "tops")
 
         result = self.repository.get_bottoms_sizes()
 
@@ -483,10 +485,9 @@ class TestSizeRepositoryClean(TestCase):
 
     def test_get_other_sizes(self):
         """Test get_other_sizes method."""
-        # Create test sizes
-        Size.objects.create(name="One Size", category="other")
-        Size.objects.create(name="Small", category="other")
-        Size.objects.create(name="M", category="tops")
+        self._ensure_size("One Size", "other")
+        self._ensure_size("Small", "other")
+        self._ensure_size("M", "tops")
 
         result = self.repository.get_other_sizes()
 
@@ -507,6 +508,40 @@ class TestSizeRepositoryClean(TestCase):
         result = self.repository.get_size_by_name_and_category("XL", "tops")
 
         assert result is None
+
+    def test_get_sizes_by_name(self):
+        """Test get_sizes_by_name filters by name (icontains)."""
+        Size.objects.create(name="Small", category="other")
+        Size.objects.create(name="Medium", category="other")
+        Size.objects.create(name="Large", category="other")
+        result = self.repository.get_sizes_by_name("Med")
+        assert result.count() == 1
+        assert result.first().name == "Medium"
+
+    def test_get_size_distribution_by_category(self):
+        """Test get_size_distribution_by_category returns counts per category."""
+        Size.objects.create(name="S", category="tops")
+        Size.objects.create(name="28", category="bottoms")
+        result = self.repository.get_size_distribution_by_category()
+        min_tops_count = 2
+        assert result["tops"] >= min_tops_count
+        assert result["bottoms"] >= 1
+
+    def test_get_most_used_sizes_by_category(self):
+        """Test get_most_used_sizes_by_category returns sizes with usage_count."""
+        size = Size.objects.create(name="M", category="tops")
+        base_item = BaseItem.objects.create(
+            user=self.user,
+            name="J",
+            description="",
+            brand=self.brand,
+        )
+        Jersey.objects.create(base_item=base_item, size=size)
+        result = self.repository.get_most_used_sizes_by_category("tops", limit=5)
+        assert result.count() >= 1
+        first = result.first()
+        assert hasattr(first, "usage_count")
+        assert first.usage_count >= 1
 
     def test_get_popular_sizes_no_category(self):
         """Test get_popular_sizes without category filter."""
@@ -959,6 +994,13 @@ class TestPhotoRepository(TestCase):
         first_photo = photos_after.first()
         assert first_photo.id == photo2.id
 
+        # Test reorder_photos with an item that is not Jersey or BaseItem (fallback branch)
+        from types import SimpleNamespace
+
+        fake_item = SimpleNamespace(pk=self.base_item.pk)
+        result_fallback = self.repository.reorder_photos(fake_item, new_order)
+        assert result_fallback is True
+
         # Test delete_photos_by_item with real data
         deleted_count = self.repository.delete_photos_by_item(self.jersey)
         assert deleted_count == 2  # noqa: PLR2004
@@ -1022,3 +1064,39 @@ class TestPhotoRepository(TestCase):
         count = self.repository.get_photos_count_by_user(self.user)
 
         assert count == 2  # noqa: PLR2004
+
+    def test_get_photos_by_item_with_base_item(self):
+        """get_photos_by_item accepts BaseItem and returns its photos."""
+        self._create_photo_for_item(order=0, user=self.user)
+        photos = self.repository.get_photos_by_item(self.base_item)
+        assert photos.count() == 1
+
+    def test_get_photos_by_item_fallback_object_with_pk(self):
+        """get_photos_by_item fallback branch when item has pk but is not BaseItem/Jersey."""
+        self._create_photo_for_item(order=0, user=self.user)
+
+        class ItemLike:
+            pk = None
+
+        item_like = ItemLike()
+        item_like.pk = self.base_item.pk
+        photos = self.repository.get_photos_by_item(item_like)
+        assert photos.count() == 1
+
+    def test_reorder_photos_with_base_item(self):
+        """reorder_photos accepts BaseItem."""
+        photo1 = self._create_photo_for_item(order=0, user=self.user)
+        photo2 = self._create_photo_for_item(order=1, user=self.user)
+        new_order = [(photo2.id, 0), (photo1.id, 1)]
+        result = self.repository.reorder_photos(self.base_item, new_order)
+        assert result is True
+        photos = self.repository.get_photos_by_item(self.base_item)
+        assert photos.first().id == photo2.id
+
+    def test_reorder_photos_returns_false_when_photo_does_not_exist(self):
+        """reorder_photos returns False when a photo id does not exist for the item."""
+        result = self.repository.reorder_photos(
+            self.jersey,
+            [(99999, 0)],
+        )
+        assert result is False

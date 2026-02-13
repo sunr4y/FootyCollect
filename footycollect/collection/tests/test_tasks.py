@@ -11,6 +11,7 @@ from django.test import TestCase
 
 from footycollect.collection.models import Photo
 from footycollect.collection.tasks import (
+    BaseItem,
     _download_image_to_temp,
     _get_rotating_proxy_config,
     _is_allowed_image_url,
@@ -24,10 +25,10 @@ from footycollect.collection.tasks import (
 )
 from footycollect.users.tests.factories import UserFactory
 
-pytestmark = pytest.mark.django_db
 EXPECTED_PHOTO_ID = 123
 
 
+@pytest.mark.django_db
 def test_process_photo_to_avif(settings, tmp_path):
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
@@ -313,6 +314,18 @@ def test_check_item_photo_processing_no_photos(db):
     assert base_item.is_processing_photos is False
 
 
+@pytest.mark.django_db
+def test_process_photo_to_avif_photo_does_not_exist(settings):
+    """Test process_photo_to_avif logs warning when photo pk does not exist."""
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+    with patch("footycollect.collection.tasks.logger") as mock_logger:
+        result = process_photo_to_avif.delay(999999)
+        result.get(timeout=5)
+        mock_logger.warning.assert_called()
+        assert "does not exist" in mock_logger.warning.call_args[0][0]
+
+
 def test_check_item_photo_processing_all_processed(db):
     """Test item photo processing when all photos are processed."""
     from io import BytesIO
@@ -340,3 +353,56 @@ def test_check_item_photo_processing_all_processed(db):
 
     base_item.refresh_from_db()
     assert base_item.is_processing_photos is False
+
+
+@patch("footycollect.collection.tasks.Photo")
+def test_process_photo_to_avif_photo_has_no_image(mock_photo_model, settings):
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+    mock_photo = Mock()
+    mock_photo.image = None
+    mock_photo_model.objects.get.return_value = mock_photo
+    with patch("footycollect.collection.tasks.logger") as mock_logger:
+        result = process_photo_to_avif.delay(1)
+        result.get(timeout=5)
+        mock_logger.warning.assert_called()
+        assert "no image" in mock_logger.warning.call_args[0][0].lower()
+
+
+@patch("footycollect.collection.tasks.optimize_image")
+@patch("footycollect.collection.tasks.Photo")
+def test_process_photo_to_avif_optimize_returns_none(mock_photo_model, mock_optimize, settings):
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+    mock_optimize.return_value = None
+    mock_photo = Mock()
+    mock_photo.image = Mock()
+    mock_photo.content_object = None
+    mock_photo_model.objects.get.return_value = mock_photo
+    with patch("footycollect.collection.tasks.logger") as mock_logger:
+        result = process_photo_to_avif.delay(1)
+        result.get(timeout=5)
+        mock_logger.warning.assert_called()
+        msg = mock_logger.warning.call_args[0][0].lower()
+        assert "no data" in msg or "optimization" in msg
+
+
+@pytest.mark.django_db
+def test_check_item_photo_processing_item_does_not_exist():
+    """Test check_item_photo_processing logs warning when item pk does not exist."""
+    with patch("footycollect.collection.tasks.logger") as mock_logger:
+        check_item_photo_processing(999999)
+        mock_logger.warning.assert_called_once()
+        assert "does not exist" in mock_logger.warning.call_args[0][0]
+
+
+def test_check_item_photo_processing_exception_logged(db):
+    """Test check_item_photo_processing logs exception when repo raises."""
+    with patch("footycollect.collection.tasks.logger") as mock_logger:
+        mock_item = Mock()
+        mock_item.photos.all.return_value.exists.side_effect = RuntimeError("db error")
+        with patch.object(BaseItem, "objects") as mock_objects:
+            mock_objects.get.return_value = mock_item
+            check_item_photo_processing(1)
+        mock_logger.exception.assert_called_once()
+        assert "item" in mock_logger.exception.call_args[0][0].lower()

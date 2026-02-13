@@ -304,3 +304,18 @@ class TestFeedFilterServiceBuildFilterUrl(TestCase):
     def test_build_filter_url_skips_empty_string(self):
         result = self.service.build_filter_url("https://example.com/", {"country": "   "})
         assert result == "https://example.com/"
+
+    def test_build_filter_url_skips_none_value(self):
+        result = self.service.build_filter_url(
+            "https://example.com/",
+            {"country": "ES", "season": None},
+        )
+        assert "country=ES" in result
+        assert "season" not in result
+
+    def test_build_filter_url_with_non_string_non_list_value(self):
+        result = self.service.build_filter_url(
+            "https://example.com/",
+            {"count": 42},
+        )
+        assert "count=42" in result

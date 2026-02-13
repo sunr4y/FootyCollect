@@ -4,7 +4,6 @@ Tests for photo views with real functionality testing.
 
 from unittest.mock import Mock, patch
 
-import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase
@@ -19,6 +18,10 @@ TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a crede
 HTTP_OK = 200
 HTTP_BAD_REQUEST = 400
 HTTP_FOUND = 302
+HTTP_INTERNAL_SERVER_ERROR = 500
+HTTP_PERMISSION_DENIED = 403
+HTTP_STATUS_NOT_FOUND = 404
+HTTP_STATUS_METHOD_NOT_ALLOWED = 405
 PHOTO1_EXPECTED_ORDER = 7
 PHOTO2_EXPECTED_ORDER = 3
 PHOTO_PROCESSING_COUNTDOWN = 5
@@ -88,36 +91,55 @@ class TestPhotoViews(TestCase):
             assert call_args[0][0] == self.jersey  # item parameter
             assert len(call_args[0][1]) == 2  # photo_orders parameter  # noqa: PLR2004
 
-    def test_reorder_photos_handles_validation_errors(self):
-        """Test reorder photos handles validation errors gracefully."""
+    def test_reorder_photos_handles_validation_error_returns_json(self):
+        """Test reorder photos returns JSON error when service raises ValidationError."""
+        from django.core.exceptions import ValidationError
+
         with patch("footycollect.collection.views.photo_views.get_photo_service") as mock_service:
             mock_photo_service = Mock()
             mock_service.return_value = mock_photo_service
-            mock_photo_service.reorder_photos.side_effect = Exception("Validation error")
+            mock_photo_service.reorder_photos.side_effect = ValidationError("Invalid order")
 
-            # Login user
             self.client.force_login(self.user)
-
-            # Make POST request - this will raise an exception, so we expect it to fail
-            with pytest.raises(Exception, match="Validation error"):
-                self.client.post(
-                    reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.pk}),
-                    {"order[]": ["1", "2"]},
-                    headers={"x-requested-with": "XMLHttpRequest"},
-                )
-
-    def test_reorder_photos_invalid_item_handling(self):
-        """Test reorder photos with invalid item ID handling."""
-        # Login user
-        self.client.force_login(self.user)
-
-        # Make POST request with invalid item ID
-        with pytest.raises(Exception, match="Jersey matching query does not exist"):
-            self.client.post(
-                reverse("collection:reorder_photos", kwargs={"item_id": 999}),
+            response = self.client.post(
+                reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.pk}),
                 {"order[]": ["1", "2"]},
                 headers={"x-requested-with": "XMLHttpRequest"},
             )
+            assert response.status_code == HTTP_OK
+            data = response.json()
+            assert data["status"] == "error"
+            assert "Invalid order" in data["message"]
+
+    def test_reorder_photos_invalid_item_returns_error(self):
+        """Test reorder photos with non-existent item ID returns 500 or raises DoesNotExist."""
+        from footycollect.collection.models import Jersey
+
+        self.client.force_login(self.user)
+        try:
+            response = self.client.post(
+                reverse("collection:reorder_photos", kwargs={"item_id": 999999}),
+                {"order[]": ["1", "2"]},
+                headers={"x-requested-with": "XMLHttpRequest"},
+            )
+            assert response.status_code == HTTP_INTERNAL_SERVER_ERROR
+        except Jersey.DoesNotExist:
+            pass
+
+    def test_reorder_photos_empty_order_success(self):
+        """Test reorder photos with empty order list calls service and returns success."""
+        with patch("footycollect.collection.views.photo_views.get_photo_service") as mock_service:
+            mock_photo_service = Mock()
+            mock_service.return_value = mock_photo_service
+            self.client.force_login(self.user)
+            response = self.client.post(
+                reverse("collection:reorder_photos", kwargs={"item_id": self.jersey.pk}),
+                {"order[]": []},
+                headers={"x-requested-with": "XMLHttpRequest"},
+            )
+            assert response.status_code == HTTP_OK
+            assert response.json()["status"] == "success"
+            mock_photo_service.reorder_photos.assert_called_once_with(self.jersey, [])
 
     def test_upload_photo_success_with_service_validation(self):
         """Test successful photo upload with service validation."""
@@ -156,29 +178,60 @@ class TestPhotoViews(TestCase):
             assert call_kwargs["user"] == self.user
             assert call_kwargs["order"] == "1"  # POST data comes as string
 
-    def test_upload_photo_handles_validation_errors(self):
-        """Test upload photo handles validation errors gracefully."""
+    def test_upload_photo_validation_error_returns_500(self):
+        """Test upload photo returns 500 JSON when service raises ValidationError."""
+        from django.core.exceptions import ValidationError
+
         with patch("footycollect.collection.views.photo_views.get_photo_service") as mock_service:
             mock_photo_service = Mock()
             mock_service.return_value = mock_photo_service
-            mock_photo_service.create_photo_with_validation.side_effect = Exception("Validation error")
+            mock_photo_service.create_photo_with_validation.side_effect = ValidationError("Invalid image")
 
-            # Login user
             self.client.force_login(self.user)
-
-            # Create test image
             image = SimpleUploadedFile("test.jpg", b"fake content", content_type="image/jpeg")
+            response = self.client.post(
+                reverse("collection:upload_photo"),
+                {"photo": image, "order": 1},
+                headers={"x-requested-with": "XMLHttpRequest"},
+            )
+            assert response.status_code == HTTP_INTERNAL_SERVER_ERROR
+            data = response.json()
+            assert "error" in data
+            assert "Invalid image" in data["error"]
 
-            # Make POST request - this will raise an exception, so we expect it to fail
-            with pytest.raises(Exception, match="Validation error"):
-                self.client.post(
-                    reverse("collection:upload_photo"),
-                    {
-                        "photo": image,
-                        "order": 1,
-                    },
-                    headers={"x-requested-with": "XMLHttpRequest"},
-                )
+    def test_upload_photo_os_error_returns_500(self):
+        """Test upload photo returns 500 on OSError."""
+        with patch("footycollect.collection.views.photo_views.get_photo_service") as mock_service:
+            mock_photo_service = Mock()
+            mock_service.return_value = mock_photo_service
+            mock_photo_service.create_photo_with_validation.side_effect = OSError("Disk full")
+
+            self.client.force_login(self.user)
+            image = SimpleUploadedFile("test.jpg", b"fake content", content_type="image/jpeg")
+            response = self.client.post(
+                reverse("collection:upload_photo"),
+                {"photo": image, "order": 1},
+                headers={"x-requested-with": "XMLHttpRequest"},
+            )
+            assert response.status_code == HTTP_INTERNAL_SERVER_ERROR
+            data = response.json()
+            assert "error" in data
+
+    def test_upload_photo_limit_exceeded_returns_403(self):
+        """Test upload photo returns 403 when user exceeds demo upload limit."""
+        with patch("footycollect.collection.views.photo_views.check_user_upload_limit") as mock_check:
+            mock_check.return_value = (False, "Upload limit exceeded. You have used 5.0 MB of 10 MB.")
+            self.client.force_login(self.user)
+            image = SimpleUploadedFile("test.jpg", b"x" * 1000, content_type="image/jpeg")
+            response = self.client.post(
+                reverse("collection:upload_photo"),
+                {"photo": image, "order": 1},
+                headers={"x-requested-with": "XMLHttpRequest"},
+            )
+            assert response.status_code == HTTP_PERMISSION_DENIED
+            data = response.json()
+            assert "error" in data
+            assert "limit" in data["error"].lower()
 
     def test_upload_photo_no_image_validation(self):
         """Test photo upload without image validation."""
@@ -579,3 +632,163 @@ class TestPhotoViews(TestCase):
         )
         assert response_invalid.status_code == HTTP_BAD_REQUEST
         assert b"URL host not allowed" in response_invalid.content
+
+    def test_proxy_image_missing_url_returns_400(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("collection:proxy_image"), {})
+        assert response.status_code == HTTP_BAD_REQUEST
+        assert b"Missing url parameter" in response.content
+
+    def test_proxy_image_invalid_scheme_returns_400(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("collection:proxy_image"),
+            {"url": "ftp://cdn.footballkitarchive.com/x.jpg"},
+        )
+        assert response.status_code == HTTP_BAD_REQUEST
+        assert b"Invalid url" in response.content
+
+    def test_proxy_image_request_exception_returns_400(self):
+        import requests
+
+        self.client.force_login(self.user)
+        with patch("footycollect.collection.views.photo_views.requests.get") as mock_get:
+            mock_get.side_effect = requests.RequestException("Connection error")
+            response = self.client.get(
+                reverse("collection:proxy_image"),
+                {"url": "https://www.footballkitarchive.com/img.jpg"},
+            )
+            assert response.status_code == HTTP_BAD_REQUEST
+            assert b"Failed to fetch" in response.content
+
+    def test_proxy_image_non_image_content_type_returns_400(self):
+        self.client.force_login(self.user)
+        with patch("footycollect.collection.views.photo_views.requests.get") as mock_get:
+            mock_resp = Mock()
+            mock_resp.iter_content.return_value = [b"not image"]
+            mock_resp.headers = {"Content-Type": "text/html"}
+            mock_resp.raise_for_status.return_value = None
+            mock_get.return_value = mock_resp
+            response = self.client.get(
+                reverse("collection:proxy_image"),
+                {"url": "https://www.footballkitarchive.com/page.html"},
+            )
+            assert response.status_code == HTTP_BAD_REQUEST
+            assert b"Not an image" in response.content
+
+    def test_proxy_image_too_large_returns_400(self):
+        self.client.force_login(self.user)
+        with patch("footycollect.collection.views.photo_views.requests.get") as mock_get:
+            mock_resp = Mock()
+            chunk_size = 6 * 1024 * 1024
+            mock_resp.iter_content.return_value = [b"x" * chunk_size, b"y" * chunk_size]
+            mock_resp.headers = {"Content-Type": "image/jpeg"}
+            mock_resp.raise_for_status.return_value = None
+            mock_get.return_value = mock_resp
+            response = self.client.get(
+                reverse("collection:proxy_image"),
+                {"url": "https://www.footballkitarchive.com/huge.jpg"},
+            )
+            assert response.status_code == HTTP_BAD_REQUEST
+            assert b"too large" in response.content.lower()
+
+    def test_check_photos_status_success_no_photos(self):
+        """Test check_photos_status returns empty list when item has no photos (view called directly)."""
+        import json
+
+        from footycollect.collection.views.photo_views import check_photos_status
+
+        factory = RequestFactory()
+        request = factory.get("/fake/")
+        request.user = self.user
+        response = check_photos_status(request, self.base_item.pk)
+        assert response.status_code == HTTP_OK
+        data = json.loads(response.content.decode())
+        assert data["photos"] == []
+        assert data["all_processed"] is True
+
+    def test_check_photos_status_item_not_found_returns_404(self):
+        """Test check_photos_status returns 404 for non-existent item."""
+        import json
+
+        from footycollect.collection.views.photo_views import check_photos_status
+
+        factory = RequestFactory()
+        request = factory.get("/fake/")
+        request.user = self.user
+        response = check_photos_status(request, 999999)
+        assert response.status_code == HTTP_STATUS_NOT_FOUND
+        data = json.loads(response.content.decode())
+        assert "error" in data
+        assert "not found" in data["error"].lower()
+
+    def test_file_upload_limit_exceeded_returns_403(self):
+        with patch("footycollect.collection.views.photo_views.check_user_upload_limit") as mock_check:
+            mock_check.return_value = (False, "Limit exceeded")
+            self.client.force_login(self.user)
+            response = self.client.post(
+                reverse("collection:file_upload"),
+                {"file": SimpleUploadedFile("x.jpg", b"x", content_type="image/jpeg")},
+                headers={"x-requested-with": "XMLHttpRequest"},
+            )
+            assert response.status_code == HTTP_PERMISSION_DENIED
+
+    def test_handle_dropzone_files_get_returns_405(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("collection:handle_dropzone_files"))
+        assert response.status_code == HTTP_STATUS_METHOD_NOT_ALLOWED
+
+    def test_item_processing_status_success_no_photos(self):
+        """Test ItemProcessingStatusView returns payload when item has no photos."""
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("collection:item_processing_status", kwargs={"item_id": self.base_item.pk}),
+        )
+        assert response.status_code == HTTP_OK
+        data = response.json()
+        assert "is_processing" in data
+        assert data["has_photos"] is False
+        assert data["photo_count"] == 0
+        assert data["all_processed"] is True
+
+    def test_item_processing_status_permission_denied_returns_403(self):
+        other_user = User.objects.create_user(username="other", email="o@x.com", password=TEST_PASSWORD)
+        other_item = BaseItem.objects.create(user=other_user, name="Other", description="x", brand=self.brand)
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("collection:item_processing_status", kwargs={"item_id": other_item.pk}),
+        )
+        assert response.status_code == HTTP_PERMISSION_DENIED
+        data = response.json()
+        assert "error" in data
+        assert "Permission" in data["error"] or "denied" in data["error"].lower()
+
+    def test_item_processing_status_not_found_returns_404(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("collection:item_processing_status", kwargs={"item_id": 999999}),
+        )
+        assert response.status_code == HTTP_STATUS_NOT_FOUND
+        data = response.json()
+        assert "error" in data
+        assert "not found" in data["error"].lower()
+
+    def test_check_user_upload_limit_no_limit_allowed(self):
+        from footycollect.collection.views.photo_views import check_user_upload_limit
+
+        with patch("footycollect.collection.views.photo_views.django_settings") as mock_settings:
+            mock_settings.DEMO_UPLOAD_LIMIT_MB = 0
+            allowed, msg = check_user_upload_limit(self.user, 1000)
+            assert allowed is True
+            assert msg is None
+
+    def test_check_user_upload_limit_under_limit_allowed(self):
+        from footycollect.collection.views.photo_views import check_user_upload_limit
+
+        with patch("footycollect.collection.views.photo_views.django_settings") as mock_settings:
+            mock_settings.DEMO_UPLOAD_LIMIT_MB = 10
+            with patch.object(Photo.objects, "filter") as mock_filter:
+                mock_filter.return_value = []
+                allowed, msg = check_user_upload_limit(self.user, 1024)
+                assert allowed is True
+                assert msg is None

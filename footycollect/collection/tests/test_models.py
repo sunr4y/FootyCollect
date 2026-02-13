@@ -201,6 +201,7 @@ class TestColorModel:
             hex_value="#0000FF",
         )
 
+        assert color.pk is not None
         assert color.name == "Blue"
         assert color.hex_value == "#0000FF"
         assert str(color) == "Blue"
@@ -210,6 +211,8 @@ class TestColorModel:
         from footycollect.collection.models import Color
 
         color = Color.objects.create(name="Red", hex_value="#FF0000")
+        assert color.pk is not None
+        assert color.name == "Red"
         assert str(color) == "Red"
 
     def test_color_unique_name(self):
@@ -243,6 +246,7 @@ class TestSizeModel:
             category="tops",
         )
 
+        assert size.pk is not None
         assert size.name == "M"
         assert size.category == "tops"
         assert str(size) == "M"
@@ -252,6 +256,9 @@ class TestSizeModel:
         from footycollect.collection.models import Size
 
         size = Size.objects.create(name="L", category="bottoms")
+        assert size.pk is not None
+        assert size.name == "L"
+        assert size.category == "bottoms"
         assert str(size) == "L"
 
     def test_size_category_choices(self):
@@ -447,8 +454,8 @@ class TestJerseyModel:
             condition=10,
         )
 
-        # Verify the jersey was created successfully
-        assert jersey is not None
+        assert jersey.pk is not None
+        assert jersey.base_item.pk is not None
         assert jersey.base_item.user == user
         assert jersey.base_item.brand == brand
         assert jersey.base_item.club == club

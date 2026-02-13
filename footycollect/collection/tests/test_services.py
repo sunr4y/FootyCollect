@@ -96,7 +96,7 @@ class TestSizeService(TestCase):
 
         assert "tops" in result
         assert "bottoms" in result
-        assert "accessories" in result
+        assert "other" in result
         assert len(result["tops"]) == EXPECTED_ITEMS_COUNT_2
         assert len(result["bottoms"]) == 1
-        assert len(result["accessories"]) == 0
+        assert len(result["other"]) == 0
