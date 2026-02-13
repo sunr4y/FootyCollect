@@ -122,8 +122,6 @@ class TestUserModel:
         # Test that the method exists and can be called
         # (without actually having an avatar file)
         user.create_avif_version()
-        # Should not raise an exception
-        assert True
 
     def test_user_password_hashed(self):
         """Test that password is properly hashed."""

@@ -35,7 +35,6 @@ class TestFKAPIClient:
         from footycollect.api.client import FKAPIClient
 
         client = FKAPIClient()
-        assert client is not None
         assert hasattr(client, "base_url")
         assert hasattr(client, "api_key")
         assert hasattr(client, "cache_timeout")
@@ -395,9 +394,9 @@ class TestFKAPIClient:
         mock_get.return_value = mock_response
 
         client = FKAPIClient()
-        results = client.search_kits(None)
+        results = client.search_kits("")
 
-        # Should return empty results for None query
+        # Should return empty results for empty query
         assert results is not None
         assert len(results) == 0
 

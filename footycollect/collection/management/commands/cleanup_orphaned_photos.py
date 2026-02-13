@@ -69,7 +69,6 @@ class Command(BaseCommand):
             )
             return
         self.stdout.write(self.style.SUCCESS("No orphaned files found"))
-        return
 
     def _get_database_files(self):
         """Get all photo files referenced in database."""

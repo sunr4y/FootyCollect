@@ -158,7 +158,7 @@ class SizeRepository(BaseRepository):
         created_count = 0
         for category, sizes in default_sizes.items():
             for size_name in sizes:
-                size, created = self.model.objects.get_or_create(
+                _, created = self.model.objects.get_or_create(
                     name=size_name,
                     category=category,
                 )
