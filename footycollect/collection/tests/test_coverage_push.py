@@ -19,9 +19,7 @@ class TestBaseItemListViewLenBranch(TestCase):
 
     def test_get_context_data_uses_len_when_object_list_has_no_count(self):
         user_model = get_user_model()
-        user = user_model.objects.create_user(
-            username="covuser", email="c@x.com", password="testpass123"
-        )
+        user = user_model.objects.create_user(username="covuser", email="c@x.com", password="testpass123")
         brand = Brand.objects.create(name="B", slug="b")
         club = Club.objects.create(name="C", slug="c")
         season = Season.objects.create(year="2024")
@@ -62,4 +60,3 @@ class TestClubLogoDarkDisplayUrl(TestCase):
         club.logo_dark = "http://example.com/dark.png"
         club.save()
         assert club.logo_dark_display_url == "http://example.com/dark.png"
-

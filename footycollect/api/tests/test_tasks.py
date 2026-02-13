@@ -1,4 +1,5 @@
 """Tests for api Celery tasks."""
+
 from unittest.mock import patch
 
 import pytest

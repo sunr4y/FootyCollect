@@ -11,4 +11,3 @@ class TestToHyphens(SimpleTestCase):
 
     def test_returns_value_unchanged_without_underscores(self):
         assert to_hyphens("home") == "home"
-

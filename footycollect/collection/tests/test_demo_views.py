@@ -50,4 +50,3 @@ class TestDistributeKitsToColumns(SimpleTestCase):
         min_empty_columns = 2
         empty_count = sum(1 for col in result if len(col) == 0)
         assert empty_count >= min_empty_columns
-

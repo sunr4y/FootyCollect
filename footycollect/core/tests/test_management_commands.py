@@ -8,11 +8,14 @@ from footycollect.core.management.commands.setup_beat_schedule import DEFAULTS
 
 @pytest.mark.django_db
 def test_setup_beat_schedule_creates_or_updates_tasks():
-    with patch(
-        "footycollect.core.management.commands.setup_beat_schedule.IntervalSchedule",
-    ) as mock_interval, patch(
-        "footycollect.core.management.commands.setup_beat_schedule.PeriodicTask",
-    ) as mock_periodic_task:
+    with (
+        patch(
+            "footycollect.core.management.commands.setup_beat_schedule.IntervalSchedule",
+        ) as mock_interval,
+        patch(
+            "footycollect.core.management.commands.setup_beat_schedule.PeriodicTask",
+        ) as mock_periodic_task,
+    ):
         mock_interval.objects.get_or_create.return_value = (MagicMock(), True)
         mock_periodic_task.objects.update_or_create.return_value = (MagicMock(), True)
 
@@ -24,11 +27,14 @@ def test_setup_beat_schedule_creates_or_updates_tasks():
 
 @pytest.mark.django_db
 def test_setup_beat_schedule_dry_run_executes_without_persisting(capsys):
-    with patch(
-        "footycollect.core.management.commands.setup_beat_schedule.IntervalSchedule",
-    ) as mock_interval, patch(
-        "footycollect.core.management.commands.setup_beat_schedule.PeriodicTask",
-    ) as mock_periodic_task:
+    with (
+        patch(
+            "footycollect.core.management.commands.setup_beat_schedule.IntervalSchedule",
+        ) as mock_interval,
+        patch(
+            "footycollect.core.management.commands.setup_beat_schedule.PeriodicTask",
+        ) as mock_periodic_task,
+    ):
         mock_interval.objects.get_or_create.return_value = (MagicMock(), True)
         mock_periodic_task.objects.update_or_create.return_value = (MagicMock(), True)
 
@@ -50,4 +56,3 @@ def test_setup_beat_schedule_propagates_errors():
 
         with pytest.raises(RuntimeError, match="db error"):
             call_command("setup_beat_schedule")
-

@@ -121,9 +121,11 @@ class TestItemUpdateViewCrud(TestCase):
         view.request = request
         view.object = self.base_item
         view.setup(request)
-        keep_ids, order_map, external = view._extract_photo_data([
-            {"external": True, "url": "https://example.com/img.jpg", "order": 2},
-        ])
+        keep_ids, order_map, external = view._extract_photo_data(
+            [
+                {"external": True, "url": "https://example.com/img.jpg", "order": 2},
+            ]
+        )
         assert keep_ids == set()
         assert order_map == {}
         assert external == [{"url": "https://example.com/img.jpg", "order": 2}]
@@ -135,9 +137,11 @@ class TestItemUpdateViewCrud(TestCase):
         view.request = request
         view.object = self.base_item
         view.setup(request)
-        keep_ids, order_map, _ = view._extract_photo_data([
-            {"id": "not-an-int", "order": 0},
-        ])
+        keep_ids, order_map, _ = view._extract_photo_data(
+            [
+                {"id": "not-an-int", "order": 0},
+            ]
+        )
         assert keep_ids == set()
         assert order_map == {}
 
@@ -148,10 +152,12 @@ class TestItemUpdateViewCrud(TestCase):
         view.request = request
         view.object = self.base_item
         view.setup(request)
-        keep_ids, order_map, _ = view._extract_photo_data([
-            {"id": 42, "order": 1},
-            {"id": "99", "order": 2},
-        ])
+        keep_ids, order_map, _ = view._extract_photo_data(
+            [
+                {"id": 42, "order": 1},
+                {"id": "99", "order": 2},
+            ]
+        )
         assert keep_ids == {42, 99}
         assert order_map == {42: 1, 99: 2}
 

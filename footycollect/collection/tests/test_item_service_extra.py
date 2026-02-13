@@ -69,9 +69,7 @@ class TestItemServiceWrappers(TestCase):
 
     def test_get_user_item_count_by_type(self):
         """get_user_item_count_by_type returns repository result."""
-        with patch.object(
-            self.service.item_repository, "get_user_item_count_by_type"
-        ) as mock_get:
+        with patch.object(self.service.item_repository, "get_user_item_count_by_type") as mock_get:
             mock_get.return_value = {"jersey": 2, "shorts": 1}
             result = self.service.get_user_item_count_by_type(self.user)
             assert result == {"jersey": 2, "shorts": 1}
@@ -84,9 +82,7 @@ class TestItemServiceWrappers(TestCase):
             mock_get.return_value.order_by.return_value = mock_qs
             result = self.service.get_items_by_club(self.user)
             assert result == mock_qs
-            mock_get.return_value.order_by.assert_called_once_with(
-                "club__name", "-created_at"
-            )
+            mock_get.return_value.order_by.assert_called_once_with("club__name", "-created_at")
 
     def test_get_items_by_season(self):
         """get_items_by_season returns user items ordered by season and created_at."""
@@ -95,15 +91,11 @@ class TestItemServiceWrappers(TestCase):
             mock_get.return_value.order_by.return_value = mock_qs
             result = self.service.get_items_by_season(self.user)
             assert result == mock_qs
-            mock_get.return_value.order_by.assert_called_once_with(
-                "season__name", "-created_at"
-            )
+            mock_get.return_value.order_by.assert_called_once_with("season__name", "-created_at")
 
     def test_get_item_analytics(self):
         """get_item_analytics returns _build_collection_summary."""
-        with patch.object(
-            self.service, "_build_collection_summary"
-        ) as mock_build:
+        with patch.object(self.service, "_build_collection_summary") as mock_build:
             mock_build.return_value = {"total_items": 1, "by_type": {}}
             result = self.service.get_item_analytics(self.user)
             assert result == {"total_items": 1, "by_type": {}}
@@ -112,15 +104,8 @@ class TestItemServiceWrappers(TestCase):
     def test_search_items_wrapper(self):
         """search_items delegates to search_items_advanced."""
         mock_qs = Mock()
-        with patch.object(
-            self.service, "search_items_advanced"
-        ) as mock_advanced:
+        with patch.object(self.service, "search_items_advanced") as mock_advanced:
             mock_advanced.return_value = mock_qs
-            result = self.service.search_items(
-                self.user, "query", filters={"brand": "Nike"}
-            )
+            result = self.service.search_items(self.user, "query", filters={"brand": "Nike"})
             assert result == mock_qs
-            mock_advanced.assert_called_once_with(
-                query="query", user=self.user, filters={"brand": "Nike"}
-            )
-
+            mock_advanced.assert_called_once_with(query="query", user=self.user, filters={"brand": "Nike"})
