@@ -1,0 +1,11 @@
+# Codecov: ensure paths from CI (e.g. /home/runner/work/FootyCollect/FootyCollect/...) map to repo paths
+fixes:
+  - "/home/runner/work/FootyCollect/FootyCollect/::"
+  - "*/FootyCollect/FootyCollect/::"
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
