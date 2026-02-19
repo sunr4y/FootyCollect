@@ -8,7 +8,7 @@
 <p align="center">
     <br>
     <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
-    <a href="https://codecov.io/gh/sunr4y/FootyCollect"><img src="https://codecov.io/gh/sunr4y/FootyCollect/graph/badge.svg?token=XMYNADVSZZ" alt="codecov"></a>
+    <a href="https://codecov.io/gh/sunr4y/FootyCollect"><img src="https://codecov.io/gh/sunr4y/footycollect/graph/badge.svg?token=XMYNADVSZZ" alt="codecov"></a>
     <br><br>
     <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=alert_status&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Quality Gate Status"></a>
     <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=bugs&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Bugs"></a>
