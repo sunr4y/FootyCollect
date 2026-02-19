@@ -97,6 +97,18 @@ class TestSizeService(TestCase):
         with pytest.raises(ValueError, match="Invalid category"):
             self.service.create_custom_size("XXL", "invalid")
 
+    def test_create_custom_size_category_not_string_raises_type_error(self):
+        """Test create_custom_size raises TypeError when category is not a string."""
+        with pytest.raises(TypeError, match="category must be a string"):
+            self.service.create_custom_size("XXL", None)
+
+    def test_create_custom_size_empty_category_raises_value_error(self):
+        """Test create_custom_size raises ValueError when category is empty or whitespace."""
+        with pytest.raises(ValueError, match="non-empty string"):
+            self.service.create_custom_size("XXL", "")
+        with pytest.raises(ValueError, match="non-empty string"):
+            self.service.create_custom_size("XXL", "   ")
+
     def test_get_sizes_for_api(self):
         """Test getting sizes for API."""
         sizes = self.service.get_sizes_for_api()

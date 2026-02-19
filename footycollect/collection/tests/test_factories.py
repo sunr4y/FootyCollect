@@ -15,6 +15,7 @@ from footycollect.collection.factories import (
     SeasonFactory,
     SizeFactory,
     UserFactory,
+    UserWithJerseysFactory,
 )
 
 User = get_user_model()
@@ -167,6 +168,18 @@ class TestJerseyFactory(TestCase):
         assert jersey.base_item == base_item
         assert jersey.base_item.main_color == color
         assert jersey.base_item.design == "HOME"
+
+
+class TestUserWithJerseysFactory(TestCase):
+    """Test UserWithJerseysFactory."""
+
+    def test_user_with_jerseys_creates_three_jerseys(self):
+        """Test that UserWithJerseysFactory creates a user with 3 jerseys."""
+        from footycollect.collection.models import Jersey
+
+        user = UserWithJerseysFactory()
+        jerseys = Jersey.objects.filter(base_item__user=user)
+        assert jerseys.count() == 3
 
 
 class TestPhotoFactory(TestCase):
