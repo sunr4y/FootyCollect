@@ -20,6 +20,8 @@ from footycollect.collection.factories import (
 
 User = get_user_model()
 
+USER_WITH_JERSEYS_FACTORY_JERSEY_COUNT = 3
+
 
 class TestUserFactory(TestCase):
     """Test UserFactory."""
@@ -179,7 +181,7 @@ class TestUserWithJerseysFactory(TestCase):
 
         user = UserWithJerseysFactory()
         jerseys = Jersey.objects.filter(base_item__user=user)
-        assert jerseys.count() == 3
+        assert jerseys.count() == USER_WITH_JERSEYS_FACTORY_JERSEY_COUNT
 
 
 class TestPhotoFactory(TestCase):

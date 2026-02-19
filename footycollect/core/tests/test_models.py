@@ -438,7 +438,8 @@ class TestCoreFactories:
 
         comp1 = core_factories.CompetitionFactory(name="League A")
         comp2 = core_factories.CompetitionFactory(name="League B")
+        expected_competition_count = 2
         kit = core_factories.KitFactory(competition=[comp1, comp2])
         assert isinstance(kit, Kit)
-        assert kit.competition.count() == 2
+        assert kit.competition.count() == expected_competition_count
         assert set(kit.competition.values_list("name", flat=True)) == {"League A", "League B"}
