@@ -80,10 +80,12 @@ jobs:
           CI: "true"
           SELENIUM_URL: http://localhost:4444/wd/hub
         run: |
-          pytest -v --tb=short --cov=footycollect --cov-branch --cov-report=xml
+          pytest -v --tb=short --cov=footycollect --cov-report=xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: sunr4y/FootyCollect
+          files: coverage.xml
+          disable_search: true
