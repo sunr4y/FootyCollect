@@ -431,3 +431,15 @@ class TestCoreFactories:
 
         kit = core_factories.KitFactory()
         assert kit.competition.count() == 1
+
+    def test_kit_factory_with_extracted_competitions_adds_them(self):
+        from footycollect.core import factories as core_factories
+        from footycollect.core.models import Kit
+
+        comp1 = core_factories.CompetitionFactory(name="League A")
+        comp2 = core_factories.CompetitionFactory(name="League B")
+        expected_competition_count = 2
+        kit = core_factories.KitFactory(competition=[comp1, comp2])
+        assert isinstance(kit, Kit)
+        assert kit.competition.count() == expected_competition_count
+        assert set(kit.competition.values_list("name", flat=True)) == {"League A", "League B"}

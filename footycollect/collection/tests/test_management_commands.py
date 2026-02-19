@@ -176,6 +176,19 @@ class TestCleanupOrphanedPhotosCommand:
         output = out.getvalue()
         assert "48" in output or "incomplete" in output.lower() or "Starting" in output
 
+    def test_cleanup_command_incomplete_only_calls_cleanup_incomplete_path(self):
+        """Test that --incomplete-only runs the incomplete-only branch in handle()."""
+        out = StringIO()
+        call_command(
+            "cleanup_orphaned_photos",
+            "--incomplete-only",
+            "--dry-run",
+            stdout=out,
+        )
+        output = out.getvalue()
+        assert "Cleaning up photos from incomplete" in output
+        assert "Starting orphaned photo cleanup" in output
+
 
 class TestCleanupOrphanedPhotosCommandHelpers(TestCase):
     def test_get_database_files_returns_set_of_paths(self):
