@@ -1,19 +1,25 @@
-# FootyCollect
+<h1 align="center">
+    <picture>
+        <source media="(prefers-color-scheme: light)" srcset="media/light_logo_footy_collect.svg">
+        <source media="(prefers-color-scheme: dark)" srcset="media/main_logo_footy_collect.svg">
+        <img width="800" src="media/main_logo_footy_collect.svg" alt="FootyCollect">
+    </picture>
+</h1>
+<p align="center">
+    <br>
+    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+    <a href="https://codecov.io/gh/sunr4y/FootyCollect"><img src="https://codecov.io/gh/sunr4y/FootyCollect/graph/badge.svg?token=XMYNADVSZZ" alt="codecov"></a>
+    <br><br>
+    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=alert_status&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Quality Gate Status"></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=bugs&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Bugs"></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=ncloc&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Lines of Code"></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=reliability_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Reliability Rating"></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=security_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Security Rating"></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=sqale_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Maintainability Rating"></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=vulnerabilities&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Vulnerabilities"></a>
+</p>
 
 A Django-based web application for managing your football memorabilia collection. It integrates with the **Football Kit Archive** via [FKAPI](https://github.com/sunr4y/fkapi) to search and add kits by club, season, and competition—making FKAPI central to discovering and cataloguing items in your collection.
-
-
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![codecov](https://codecov.io/gh/sunr4y/FootyCollect/graph/badge.svg?token=XMYNADVSZZ)](https://codecov.io/gh/sunr4y/FootyCollect)
-
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=alert_status&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=bugs&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=ncloc&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=reliability_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=security_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=sqale_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=vulnerabilities&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=sunr4y_FootyCollect&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9)](https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect)
 
 **License**: MIT
 
@@ -33,8 +39,14 @@ A Django-based web application for managing your football memorabilia collection
 
 Try FootyCollect without installing anything: **[https://footycollect-demo.sunr4y.dev/](https://footycollect-demo.sunr4y.dev/)**
 
-- **Registration is disabled.** Use the demo account: you can sign in with the pre-configured demo user (auto-login or use the demo credentials shown on the site).
-- **Safe to experiment.** Create, edit, and delete items and photos as you like—the database is restored from a snapshot every 3 hours, so no changes are permanent.
+<p align="center">
+  <img src="media/home.webp" alt="FootyCollect Home" width="800">
+</p>
+
+| Feature | Description |
+|---------|-------------|
+| **Registration** | Disabled. Use the demo account: sign in with the pre-configured demo user (auto-login or use the demo credentials shown on the site). |
+| **Safe to experiment** | Create, edit, and delete items and photos as you like—the database is restored from a snapshot every 3 hours, so no changes are permanent. |
 
 ## Overview
 
@@ -42,14 +54,27 @@ FootyCollect is a comprehensive platform for football memorabilia collectors to 
 
 **FKAPI and the Football Kit Archive.** FootyCollect uses [FKAPI](https://github.com/sunr4y/fkapi) (Football Kit Archive API) as the main source for kit metadata when adding items: you search by club, season, and competition, then create items with pre-filled data (colors, design, competitions, logos). Without FKAPI running, you can still use the app for manual entry and photo management; with FKAPI, you get that search-and-add flow and bulk imports from the archive (e.g. `populate_user_collection`). Deploy or run [fkapi](https://github.com/sunr4y/fkapi) alongside FootyCollect if you want these features.
 
+### Screenshots & Demo
+
+<p align="center">
+  <img src="media/create_item.webp" alt="Adding an item with FKAPI" width="800">
+  <br><em>Search and add items from the Football Kit Archive</em>
+</p>
+
 ### Key Features
 
-- **Multi-Item Type Support**: Manage jerseys, shorts, outerwear, and tracksuits
-- **FKAPI Integration**: Search and add kits from the Football Kit Archive via [fkapi](https://github.com/sunr4y/fkapi); optional but core to the intended workflow.
-- **Photo Management**: Upload and organize photos for each item
-- **Advanced Search**: Filter and search your collection
-- **User Profiles**: Personal collections with privacy controls
-- **RESTful API**: Complete API for programmatic access
+<p align="center">
+  <img src="media/feed.webp" alt="FootyCollect Features" width="800">
+</p>
+
+| Feature | Description |
+|---------|-------------|
+| **Multi-Item Type Support** | Manage jerseys, shorts, outerwear, and tracksuits |
+| **FKAPI Integration** | Search and add kits from the Football Kit Archive via [fkapi](https://github.com/sunr4y/fkapi); optional but core to the intended workflow |
+| **Photo Management** | Upload and organize photos for each item |
+| **Advanced Search** | Filter and search your collection |
+| **User Profiles** | Personal collections with privacy controls |
+| **RESTful API** | Complete API for programmatic access |
 
 ## Architecture
 
@@ -78,21 +103,25 @@ See [Architecture Decision Records](docs/ARCHITECTURE/decisions/) for design rat
 
 ### Technology Stack
 
-- **Backend**: Django 5.0+ with Django REST Framework
-- **Database**: PostgreSQL
-- **Cache**: Redis
-- **Task Queue**: Celery
-- **Frontend**: Django Templates with Cotton Components, Bootstrap 5, Alpine.js, HTMX
-- **API Documentation**: drf-spectacular (OpenAPI/Swagger)
+| Layer | Technology |
+|-------|------------|
+| **Backend** | Django 5.0+ with Django REST Framework |
+| **Database** | PostgreSQL |
+| **Cache** | Redis |
+| **Task Queue** | Celery |
+| **Frontend** | Django Templates with Cotton Components, Bootstrap 5, Alpine.js, HTMX |
+| **API Documentation** | drf-spectacular (OpenAPI/Swagger) |
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
-- PostgreSQL 14+
-- Redis 6+
-- **Optional:** [fkapi](https://github.com/sunr4y/fkapi) — required if you want to use automatic kit addition (lookup and add kits from the Football Kit Archive).
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Python** | 3.11+ | Required |
+| **PostgreSQL** | 14+ | Required |
+| **Redis** | 6+ | Required |
+| **fkapi** | Latest | Optional — required if you want to use automatic kit addition (lookup and add kits from the Football Kit Archive). See [fkapi](https://github.com/sunr4y/fkapi) |
 
 ### Installation
 
@@ -150,12 +179,15 @@ docker compose -f docker-compose.local.yml up
 ```
 
 This starts:
-- Django application
-- PostgreSQL database
-- Redis cache
-- Celery worker
-- Celery beat
-- Mailpit (email testing)
+
+| Service | Description |
+|---------|-------------|
+| Django application | Main web server |
+| PostgreSQL database | Data persistence |
+| Redis cache | Caching layer |
+| Celery worker | Background task processing |
+| Celery beat | Scheduled tasks scheduler |
+| Mailpit | Email testing (development) |
 
 ## Development
 
@@ -240,8 +272,10 @@ The API uses OpenAPI 3.0 specification generated by drf-spectacular. All endpoin
 
 ### API Endpoints
 
-- `/api/` - Internal server APIs (DRF)
-- `/fkapi/` - External API proxy endpoints
+| Endpoint | Description |
+|----------|-------------|
+| `/api/` | Internal server APIs (DRF) |
+| `/fkapi/` | External API proxy endpoints |
 
 See [Deployment Guide](deploy/README.md) for environment and endpoint details.
 
@@ -263,10 +297,13 @@ pytest footycollect/collection/tests/test_models.py
 ### Test Structure
 
 Tests are organized by app and functionality:
-- `test_models.py` - Model tests
-- `test_views.py` - View tests
-- `test_services.py` - Service layer tests
-- `test_forms.py` - Form validation tests
+
+| Test File | Purpose |
+|-----------|---------|
+| `test_models.py` | Model tests |
+| `test_views.py` | View tests |
+| `test_services.py` | Service layer tests |
+| `test_forms.py` | Form validation tests |
 
 ## Deployment
 
@@ -289,12 +326,14 @@ FootyCollect can be deployed to any VPS or cloud platform. See the [Deployment G
 
 Required production environment variables:
 
-- `DJANGO_SECRET_KEY` - Django secret key
-- `DATABASE_URL` - PostgreSQL connection string
-- `REDIS_URL` - Redis connection string
-- `DJANGO_ALLOWED_HOSTS` - Comma-separated list of allowed hosts
-- `FKA_API_IP` - Football Kit Archive API IP
-- `API_KEY` - API key for external services
+| Variable | Description |
+|----------|-------------|
+| `DJANGO_SECRET_KEY` | Django secret key |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `REDIS_URL` | Redis connection string |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated list of allowed hosts |
+| `FKA_API_IP` | Football Kit Archive API IP |
+| `API_KEY` | API key for external services |
 
 See `deploy/env.example` for a complete list.
 

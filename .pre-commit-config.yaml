@@ -1,4 +1,4 @@
-exclude: '^docs/|/migrations/|devcontainer.json|\.venv/|venv/|node_modules/'
+exclude: '^docs/|^media/|/migrations/|devcontainer.json|\.venv/|venv/|node_modules/'
 default_stages: [commit]
 
 default_language_version:
