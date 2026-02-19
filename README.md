@@ -40,7 +40,7 @@ A Django-based web application for managing your football memorabilia collection
 Try FootyCollect without installing anything: **[https://footycollect-demo.sunr4y.dev/](https://footycollect-demo.sunr4y.dev/)**
 
 <p align="center">
-  <img src="media/home.webp" alt="FootyCollect Home" width="800" loading="lazy">
+  <img src="media/home.webp" alt="FootyCollect Home" width="800">
 </p>
 
 | Feature | Description |
@@ -57,14 +57,14 @@ FootyCollect is a comprehensive platform for football memorabilia collectors to 
 ### Screenshots & Demo
 
 <p align="center">
-  <img src="media/create_item.webp" alt="Adding an item with FKAPI" width="800" loading="lazy">
+  <img src="media/create_item.webp" alt="Adding an item with FKAPI" width="800">
   <br><em>Search and add items from the Football Kit Archive</em>
 </p>
 
 ### Key Features
 
 <p align="center">
-  <img src="media/feed.webp" alt="FootyCollect Features" width="800" loading="lazy">
+  <img src="media/feed.webp" alt="FootyCollect Features" width="800">
 </p>
 
 | Feature | Description |
