@@ -341,6 +341,7 @@ See `deploy/env.example` for a complete list.
 
 ### Available Documentation
 
+- **Hosted documentation**: [https://docs.footycollect.sunr4y.dev/](https://docs.footycollect.sunr4y.dev/)
 - [Service Layer](docs/ARCHITECTURE/service_layer.md)
 - [Database Schema](docs/ARCHITECTURE/database_schema.md)
 - [Multi-Table Inheritance](docs/ARCHITECTURE/decisions/0001-multi-table-inheritance.md)
@@ -379,4 +380,4 @@ MIT License - see LICENSE file for details.
 
 For issues and questions:
 - GitHub Issues: https://github.com/sunr4y/FootyCollect/issues
-- Documentation: See `docs/` directory
+- Documentation: [Hosted docs](https://docs.footycollect.sunr4y.dev/) or the `docs/` directory
