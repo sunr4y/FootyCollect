@@ -23,7 +23,14 @@ A Django-based web application for managing your football memorabilia collection
 
 **License**: MIT
 
-**Live Demo**: [https://footycollect-demo.sunr4y.dev/](https://footycollect-demo.sunr4y.dev/) • **Documentation**: [https://docs.footycollect.sunr4y.dev/](https://docs.footycollect.sunr4y.dev/)
+<p align="center">
+  <a href="https://footycollect-demo.sunr4y.dev/">
+    <img src="https://img.shields.io/badge/Live%20Demo-footycollect--demo.sunr4y.dev-0d9488?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Live Demo">
+  </a>
+  <a href="https://docs.footycollect.sunr4y.dev/">
+    <img src="https://img.shields.io/badge/Documentation-docs.footycollect.sunr4y.dev-4f46e5?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Documentation">
+  </a>
+</p>
 
 ## Table of Contents
 
