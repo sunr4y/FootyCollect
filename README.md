@@ -263,6 +263,8 @@ Adjust intervals later in Django Admin: **django_celery_beat** → **Periodic ta
 
 ## API Documentation
 
+For an overview of the API and other project docs, see the hosted documentation: **[https://docs.footycollect.sunr4y.dev/](https://docs.footycollect.sunr4y.dev/)**.
+
 Interactive API documentation is available at:
 
 - **Swagger UI**: `/api/docs/` (development only)
