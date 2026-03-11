@@ -277,6 +277,9 @@
             <div class="col-md-6 mb-3">{{ form.player_name|as_crispy_field }}</div>
             <div class="col-md-6 mb-3">{{ form.number|as_crispy_field }}</div>
           </div>
+          <div class="row mb-3">
+            <div class="col-md-6 mb-3">{{ form.fit|as_crispy_field }}</div>
+          </div>
           <!-- Hidden fields for form submission -->
           <div class="d-none">
             {{ form.is_fan_version }}
