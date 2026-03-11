@@ -172,9 +172,7 @@ class UserItemListView(LoginRequiredMixin, ListView):
 
     def _add_filter_options_context(self, context: dict[str, Any]) -> None:
         context["fit_choices"] = [
-            {"slug_or_code": value, "label": label}
-            for value, label in Jersey.FIT_CHOICES
-            if value
+            {"slug_or_code": value, "label": label} for value, label in Jersey.FIT_CHOICES if value
         ]
 
     def _get_current_filters(self) -> dict[str, str]:

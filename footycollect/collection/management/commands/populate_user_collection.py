@@ -322,9 +322,7 @@ class Command(BaseCommand):
     ) -> User:
         """Create or get user. Uses canonical email user_{fka_userid}@... so re-runs find them."""
         user, created = User.objects.get_or_create(username=username)
-        canonical_email = (
-            f"user_{fka_userid}@footballkitarchive.com" if fka_userid is not None else None
-        )
+        canonical_email = f"user_{fka_userid}@footballkitarchive.com" if fka_userid is not None else None
 
         if created and not dry_run:
             user.email = canonical_email or f"{username}@footballkitarchive.com"
@@ -385,9 +383,7 @@ class Command(BaseCommand):
 
         username = self._generate_username_from_name(user_name, fka_userid) if user_name else f"user_{fka_userid}"
 
-        return self._create_new_user(
-            username, user_name, avatar_url, fka_userid=fka_userid, dry_run=dry_run
-        )
+        return self._create_new_user(username, user_name, avatar_url, fka_userid=fka_userid, dry_run=dry_run)
 
     def _download_user_avatar(self, user: User, avatar_url: str, *, dry_run: bool) -> None:
         """Download and set user avatar."""
@@ -428,9 +424,7 @@ class Command(BaseCommand):
                 entry_id = int(entry_id_raw)
             except (TypeError, ValueError):
                 entry_id = None
-            if entry_id is not None and BaseItem.objects.filter(
-                user=user, id_fka_entry=entry_id
-            ).exists():
+            if entry_id is not None and BaseItem.objects.filter(user=user, id_fka_entry=entry_id).exists():
                 logger.info("Entry %s already imported for user %s, skipping", entry_id, user.username)
                 return True, True
 
@@ -499,9 +493,7 @@ class Command(BaseCommand):
                         {**im, "order": im.get("order", i + 1)} for i, im in enumerate(images_to_use)
                     ]
                 else:
-                    images_to_use = [
-                        {**im, "order": im.get("order", i)} for i, im in enumerate(images_to_use)
-                    ]
+                    images_to_use = [{**im, "order": im.get("order", i)} for i, im in enumerate(images_to_use)]
 
             if hasattr(base_item, "jersey") and base_item.jersey:
                 logger.info("Item already exists, checking if photos need to be created")
