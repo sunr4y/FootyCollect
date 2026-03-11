@@ -148,4 +148,3 @@ class TestUserItemListView(TestCase):
         assert response_other.context["profile_user"] == self.user
         active_filters = response_other.context["active_filters_display"]
         assert all(f["type"] != "fit" for f in active_filters)
-

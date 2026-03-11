@@ -2,7 +2,7 @@
 Additional tests for ItemService fit filter behaviour.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -39,4 +39,3 @@ class TestItemServiceFitFilter(TestCase):
 
         items.filter.assert_called_once_with(fit="TRUE_TO_SIZE")
         assert result is filtered
-
