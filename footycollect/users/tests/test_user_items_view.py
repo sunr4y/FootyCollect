@@ -65,7 +65,7 @@ class TestUserItemListView(TestCase):
 
     def test_user_items_view_includes_geo_stats_in_context(self):
         self.client.force_login(self.other_user)
-        response = self.client.get(self._get_url())
+        response = self.client.get(self._get_url(), follow=True)
 
         assert response.status_code == HTTPStatus.OK
         assert response.context["is_user_collection"] is True
@@ -78,7 +78,7 @@ class TestUserItemListView(TestCase):
 
     def test_user_items_view_filters_by_club(self):
         self.client.force_login(self.other_user)
-        response = self.client.get(self._get_url(club=self.club.slug))
+        response = self.client.get(self._get_url(club=self.club.slug), follow=True)
 
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["items"]) == 1
@@ -86,7 +86,7 @@ class TestUserItemListView(TestCase):
 
     def test_user_items_view_filters_by_country(self):
         self.client.force_login(self.other_user)
-        response = self.client.get(self._get_url(country="ES"))
+        response = self.client.get(self._get_url(country="ES"), follow=True)
 
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["items"]) == 1
@@ -94,7 +94,7 @@ class TestUserItemListView(TestCase):
 
     def test_user_items_view_filters_by_competition(self):
         self.client.force_login(self.other_user)
-        response = self.client.get(self._get_url(competition=self.league.slug))
+        response = self.client.get(self._get_url(competition=self.league.slug), follow=True)
 
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["items"]) == 1
@@ -102,7 +102,7 @@ class TestUserItemListView(TestCase):
 
     def test_user_items_view_filters_by_brand(self):
         self.client.force_login(self.other_user)
-        response = self.client.get(self._get_url(brand=self.brand.slug))
+        response = self.client.get(self._get_url(brand=self.brand.slug), follow=True)
 
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["items"]) == 1
@@ -110,7 +110,7 @@ class TestUserItemListView(TestCase):
 
     def test_user_items_view_filters_by_design(self):
         self.client.force_login(self.other_user)
-        response = self.client.get(self._get_url(design="PLAIN"))
+        response = self.client.get(self._get_url(design="PLAIN"), follow=True)
 
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["items"]) == 1
@@ -118,8 +118,34 @@ class TestUserItemListView(TestCase):
 
     def test_user_items_view_filters_by_color(self):
         self.client.force_login(self.other_user)
-        response = self.client.get(self._get_url(color=self.color.id))
+        response = self.client.get(self._get_url(color=self.color.id), follow=True)
 
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["items"]) == 1
         assert str(self.color.id) == response.context["current_filters"]["color"]
+
+    def test_user_items_view_filters_by_fit_for_owner_only(self):
+        """Fit filter is applied but only exposed as 'How it fits' to the owner."""
+        # First, owner with valid fit value
+        self.client.force_login(self.user)
+        Jersey.objects.update(fit="TRUE_TO_SIZE")
+        response = self.client.get(self._get_url(fit="TRUE_TO_SIZE"), follow=True)
+
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.context["items"]) == 1
+        assert response.context["profile_user"] == self.user
+        # Owner should see fit chip in active filters
+        active_filters_owner = response.context["active_filters_display"]
+        assert any(f["type"] == "fit" and f["value"] == "TRUE_TO_SIZE" for f in active_filters_owner)
+
+        # Now, other user hitting the same URL: queryset still filtered,
+        # but active fit filter chip should not be rendered for non-owners.
+        self.client.force_login(self.other_user)
+        response_other = self.client.get(self._get_url(fit="TRUE_TO_SIZE"), follow=True)
+
+        assert response_other.status_code == HTTPStatus.OK
+        assert len(response_other.context["items"]) == 1
+        assert response_other.context["profile_user"] == self.user
+        active_filters = response_other.context["active_filters_display"]
+        assert all(f["type"] != "fit" for f in active_filters)
+
