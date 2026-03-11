@@ -77,6 +77,52 @@ h3 {
   margin-bottom: 2.5rem !important;
 }
 
+.user-geo-top-lists .list-group {
+  background: var(--fc-card) !important;
+  border: 1px solid var(--fc-border) !important;
+  border-radius: var(--bs-border-radius);
+}
+
+.user-geo-top-lists .list-group-item {
+  background: var(--fc-card) !important;
+  color: var(--fc-foreground) !important;
+  border-color: var(--fc-border) !important;
+}
+
+.user-geo-top-lists .list-group-item a {
+  color: var(--fc-foreground) !important;
+}
+
+.user-geo-top-lists .list-group-item a:hover {
+  background: var(--fc-muted, rgba(255, 255, 255, 0.05)) !important;
+  color: var(--fc-foreground) !important;
+}
+
+.user-geo-top-lists .list-group-item.text-muted {
+  color: var(--fc-muted-foreground) !important;
+}
+
+.user-geo-top-lists .badge.bg-secondary {
+  background-color: var(--fc-muted, rgba(255, 255, 255, 0.15)) !important;
+  color: var(--fc-foreground) !important;
+}
+
+.user-geo-top-lists h6.text-muted {
+  color: var(--fc-muted-foreground) !important;
+}
+
+.user-geo-top-lists .fi {
+  font-size: 0.65rem;
+  width: 1.33333em;
+  height: 1em;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+[class*="fc-logo-glow"] {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.35));
+}
+
 [x-cloak] {
   display: none !important;
 }
