@@ -51,7 +51,11 @@ class UserItemListView(LoginRequiredMixin, ListView):
         user_service = UserService()
         if not user_service.can_view_profile(profile_user, self.request.user):
             raise Http404
-        queryset = (
+        queryset = self._build_user_jersey_queryset(profile_user)
+        return self._apply_url_filters(queryset)
+
+    def _build_user_jersey_queryset(self, profile_user: User):
+        return (
             Jersey.objects.filter(base_item__user=profile_user)
             .select_related(
                 "base_item",
@@ -73,47 +77,51 @@ class UserItemListView(LoginRequiredMixin, ListView):
             .order_by("-base_item__created_at")
         )
 
-        club_slug = self.request.GET.get("club")
-        if club_slug:
-            queryset = queryset.filter(base_item__club__slug=club_slug)
-            self.filter_params["club"] = club_slug
+    def _apply_url_filters(self, queryset):
+        simple_filters = {
+            "club": "base_item__club__slug",
+            "country": "base_item__country",
+            "brand": "base_item__brand__slug",
+            "design": "base_item__design",
+        }
+        for param, lookup in simple_filters.items():
+            value = self.request.GET.get(param)
+            if value:
+                queryset = queryset.filter(**{lookup: value})
+                self.filter_params[param] = value
 
         competition_slug = self.request.GET.get("competition")
         if competition_slug:
             queryset = queryset.filter(base_item__competitions__slug=competition_slug).distinct()
             self.filter_params["competition"] = competition_slug
 
-        country_code = self.request.GET.get("country")
-        if country_code:
-            queryset = queryset.filter(base_item__country=country_code)
-            self.filter_params["country"] = country_code
+        color_id = self._get_color_filter_value()
+        if color_id is not None:
+            queryset = queryset.filter(base_item__main_color_id=color_id)
+            self.filter_params["color"] = str(color_id)
 
-        brand_slug = self.request.GET.get("brand")
-        if brand_slug:
-            queryset = queryset.filter(base_item__brand__slug=brand_slug)
-            self.filter_params["brand"] = brand_slug
-
-        design_code = self.request.GET.get("design")
-        if design_code:
-            queryset = queryset.filter(base_item__design=design_code)
-            self.filter_params["design"] = design_code
-
-        color_id = self.request.GET.get("color")
-        if color_id:
-            try:
-                color_id_int = int(color_id)
-            except (TypeError, ValueError):
-                color_id_int = None
-            if color_id_int:
-                queryset = queryset.filter(base_item__main_color_id=color_id_int)
-                self.filter_params["color"] = str(color_id_int)
-
-        fit_value = self.request.GET.get("fit", "").strip()
-        if fit_value and any(fit_value == c[0] for c in Jersey.FIT_CHOICES if c[0]):
+        fit_value = self._get_fit_filter_value()
+        if fit_value:
             queryset = queryset.filter(fit=fit_value)
             self.filter_params["fit"] = fit_value
 
         return queryset
+
+    def _get_color_filter_value(self) -> int | None:
+        color_id = self.request.GET.get("color")
+        if not color_id:
+            return None
+        try:
+            parsed = int(color_id)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed > 0 else None
+
+    def _get_fit_filter_value(self) -> str | None:
+        fit_value = self.request.GET.get("fit", "").strip()
+        if not fit_value:
+            return None
+        return fit_value if any(fit_value == choice[0] for choice in Jersey.FIT_CHOICES if choice[0]) else None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -121,6 +129,7 @@ class UserItemListView(LoginRequiredMixin, ListView):
 
         self._add_profile_context(context, profile_user)
         self._add_geo_stats_context(context, profile_user)
+        self._add_filter_options_context(context)
 
         current_filters = self._get_current_filters()
         self._add_current_filters_context(context, current_filters)
@@ -160,7 +169,13 @@ class UserItemListView(LoginRequiredMixin, ListView):
         context["top_brands"] = geo_stats["top_brands"]
         context["top_designs"] = geo_stats["top_designs"]
         context["top_colors"] = geo_stats["top_colors"]
-        context["fit_choices"] = [(c[0], c[1]) for c in Jersey.FIT_CHOICES if c[0]]
+
+    def _add_filter_options_context(self, context: dict[str, Any]) -> None:
+        context["fit_choices"] = [
+            {"slug_or_code": value, "label": label}
+            for value, label in Jersey.FIT_CHOICES
+            if value
+        ]
 
     def _get_current_filters(self) -> dict[str, str]:
         return getattr(self, "filter_params", {})
@@ -226,11 +241,6 @@ class UserItemListView(LoginRequiredMixin, ListView):
         }
         config = lookup_config.get(filter_type)
         if not config:
-            return None
-        if filter_type == "fit":
-            for choice_value, choice_label in context.get("fit_choices") or []:
-                if choice_value == filter_value:
-                    return str(choice_label)
             return None
 
         items = context.get(config["source"], [])

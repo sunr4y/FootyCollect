@@ -10,6 +10,7 @@ This command:
 
 import logging
 import time
+from contextlib import suppress
 
 import requests
 from django.contrib.auth import get_user_model
@@ -478,10 +479,7 @@ class Command(BaseCommand):
                 or kit_data.get("image_url")
                 or ""
             )
-            if main_url and isinstance(main_url, str):
-                main_url = self._resolve_photo_url(main_url)
-            else:
-                main_url = ""
+            main_url = self._resolve_photo_url(main_url) if main_url and isinstance(main_url, str) else ""
 
             if not user_images and kit_images:
                 logger.info("User has no photos, using kit images as fallback (limited to 2)")
@@ -914,10 +912,8 @@ class Command(BaseCommand):
         entry_id_for_item = None
         raw = entry.get("id")
         if raw is not None:
-            try:
+            with suppress(TypeError, ValueError):
                 entry_id_for_item = int(raw)
-            except (TypeError, ValueError):
-                pass
         base_item = BaseItem.objects.create(
             item_type="jersey",
             name=item_name,

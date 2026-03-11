@@ -19,11 +19,11 @@ msgstr ""
 
 #: config/settings/base.py:36
 msgid "English"
-msgstr ""
+msgstr "Inglés"
 
 #: config/settings/base.py:37
 msgid "Spanish"
-msgstr ""
+msgstr "Español"
 
 #: footycollect/collection/forms.py:37
 msgid "Upload Photos"
@@ -165,14 +165,12 @@ msgid "Or search for a club..."
 msgstr "O busca un equipo..."
 
 #: footycollect/collection/models.py:26
-#, fuzzy
-#| msgid "Hexadecimal color value (e.g., #RRGGBB)."
 msgid "Hexadecimal color value (e.g., #RGB or #RRGGBB)."
-msgstr "Valor de color hexadecimal (ej., #RRGGBB)."
+msgstr "Valor de color hexadecimal (ej., #RGB o #RRGGBB)."
 
 #: footycollect/collection/models.py:30
 msgid "Enter a valid hex color (#RGB or #RRGGBB)."
-msgstr ""
+msgstr "Introduce un color hexadecimal válido (#RGB o #RRGGBB)."
 
 #: footycollect/collection/models.py:191
 msgid "White"
@@ -670,10 +668,13 @@ msgid ""
 "Please confirm that <a href=\"mailto:%(email)s\" class=\"fc-link-"
 "primary\">%(email)s</a> is an email address for user %(user_display)s."
 msgstr ""
+"Confirma que <a href=\"mailto:%(email)s\" class=\"fc-link-primary\">"
+"%(email)s</a> es una dirección de correo válida para el usuario "
+"%(user_display)s."
 
 #: footycollect/templates/account/email_confirm.html:29
 msgid "Confirm"
-msgstr ""
+msgstr "Confirmar"
 
 #: footycollect/templates/account/email_confirm.html:34
 #, python-format
@@ -681,6 +682,7 @@ msgid ""
 "Unable to confirm %(email)s because it is already confirmed by a different "
 "account."
 msgstr ""
+"No se puede confirmar %(email)s porque ya está confirmada por otra cuenta."
 
 #: footycollect/templates/account/email_confirm.html:40
 #, python-format
@@ -689,6 +691,9 @@ msgid ""
 "href=\"%(email_url)s\" class=\"fc-link-primary\">issue a new email "
 "confirmation request</a>."
 msgstr ""
+"Este enlace de confirmación de correo ha caducado o no es válido. Por "
+"favor, <a href=\"%(email_url)s\" class=\"fc-link-primary\">solicita una "
+"nueva confirmación de correo</a>."
 
 #: footycollect/templates/account/login.html:7
 #: footycollect/templates/account/login.html:17
@@ -798,10 +803,14 @@ msgid ""
 "your main inbox, check your spam folder. Please contact us if you do not "
 "receive the verification email within a few minutes."
 msgstr ""
+"Te hemos enviado un correo electrónico para la verificación. Sigue el "
+"enlace proporcionado para finalizar el registro. Si no ves el correo en tu "
+"bandeja de entrada principal, revisa la carpeta de spam. Contáctanos si no "
+"recibes el correo de verificación en unos minutos."
 
 #: footycollect/templates/account/verification_sent.html:20
 msgid "Back to sign in"
-msgstr ""
+msgstr "Volver a iniciar sesión"
 
 #: footycollect/templates/base.html:142
 msgid "Home"
@@ -916,7 +925,7 @@ msgstr "Previo"
 #: footycollect/templates/collection/item_list.html:105
 #, python-format
 msgid "Page %(current)s of %(total)s"
-msgstr ""
+msgstr "Página %(current)s de %(total)s"
 
 #: footycollect/templates/collection/_user_collection_htmx_block.html:39
 #: footycollect/templates/collection/_user_items_section.html:36
@@ -932,7 +941,7 @@ msgstr "Último"
 
 #: footycollect/templates/collection/_user_geo_active_filters.html:5
 msgid "Active filters"
-msgstr ""
+msgstr "Filtros activos"
 
 #: footycollect/templates/collection/_user_geo_active_filters.html:22
 #, fuzzy
@@ -948,7 +957,7 @@ msgstr "País"
 
 #: footycollect/templates/collection/_user_geo_summary.html:22
 msgid "Leagues"
-msgstr ""
+msgstr "Ligas"
 
 #: footycollect/templates/collection/_user_geo_summary.html:33
 #, fuzzy
@@ -993,7 +1002,7 @@ msgstr "Artículos"
 
 #: footycollect/templates/collection/_user_geo_top_cards.html:51
 msgid "Top League"
-msgstr ""
+msgstr "Liga principal"
 
 #: footycollect/templates/collection/_user_geo_top_cards.html:75
 #, fuzzy
@@ -1033,7 +1042,7 @@ msgstr "Sin imagen aún."
 
 #: footycollect/templates/collection/_user_geo_top_lists.html:35
 msgid "Top Leagues"
-msgstr ""
+msgstr "Ligas principales"
 
 #: footycollect/templates/collection/_user_geo_top_lists.html:58
 #, fuzzy
@@ -1079,11 +1088,11 @@ msgstr "No está en la base de datos"
 
 #: footycollect/templates/collection/_user_geo_top_lists.html:180
 msgid "Top Colours"
-msgstr ""
+msgstr "Colores principales"
 
 #: footycollect/templates/collection/_user_geo_top_lists.html:206
 msgid "No colour data yet."
-msgstr ""
+msgstr "Todavía no hay datos de color."
 
 #: footycollect/templates/collection/dropzone_test_page.html:11
 msgid "Photo Manager Test"
@@ -2068,7 +2077,7 @@ msgstr "Sube un archivo de imagen válido (JPG, PNG, GIF)"
 
 #: footycollect/users/views.py:187
 msgid "League"
-msgstr ""
+msgstr "Liga"
 
 #: footycollect/users/views.py:191
 #, fuzzy

@@ -587,7 +587,7 @@ class ItemService:
             items = items.filter(is_draft=filters["is_draft"])
         if "is_private" in filters:
             items = items.filter(is_private=filters["is_private"])
-        if "fit" in filters and filters["fit"]:
+        if filters.get("fit"):
             items = items.filter(fit=filters["fit"])
 
         return items

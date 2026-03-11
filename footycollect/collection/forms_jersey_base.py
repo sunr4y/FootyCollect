@@ -483,7 +483,7 @@ class JerseyForm(forms.ModelForm):
             "player_name": self.cleaned_data.get("player_name", ""),
             "is_short_sleeve": self.cleaned_data.get("is_short_sleeve", False),
             "number": self.cleaned_data.get("number", ""),
-            "fit": self.cleaned_data.get("fit", "") or "",
+            "fit": self.cleaned_data.get("fit", ""),
         }
 
     def _extract_many_to_many_data(self):
@@ -601,7 +601,7 @@ class JerseyForm(forms.ModelForm):
         jersey.player_name = self.cleaned_data.get("player_name", jersey.player_name)
         jersey.is_short_sleeve = self.cleaned_data.get("is_short_sleeve", jersey.is_short_sleeve)
         jersey.number = self.cleaned_data.get("number", jersey.number)
-        jersey.fit = self.cleaned_data.get("fit", "") or ""
+        jersey.fit = self.cleaned_data.get("fit", jersey.fit)
         jersey.save()
 
     def _create_new_item(self, *, commit):
