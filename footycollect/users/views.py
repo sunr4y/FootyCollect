@@ -209,6 +209,8 @@ class UserItemListView(LoginRequiredMixin, ListView):
         base_url = reverse("users:user_items", kwargs={"username": profile_user.username})
         active_filters_display = []
         for filter_type, filter_value in (current_filters or {}).items():
+            if filter_type == "fit" and profile_user != self.request.user:
+                continue
             label = self._get_filter_label(filter_type, filter_value, context)
             other_params = {key: value for key, value in (current_filters or {}).items() if key != filter_type}
             clear_url = self._build_clear_filter_url(base_url, other_params)
