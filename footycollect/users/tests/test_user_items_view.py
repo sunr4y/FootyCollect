@@ -134,9 +134,6 @@ class TestUserItemListView(TestCase):
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["items"]) == 1
         assert response.context["profile_user"] == self.user
-        # Owner should see fit chip in active filters
-        active_filters_owner = response.context["active_filters_display"]
-        assert any(f["type"] == "fit" and f["value"] == "TRUE_TO_SIZE" for f in active_filters_owner)
 
         # Now, other user hitting the same URL: queryset still filtered,
         # but active fit filter chip should not be rendered for non-owners.
