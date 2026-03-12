@@ -1,0 +1,24 @@
+{% load i18n %}
+
+{% if active_filters_display %}
+  <div class="user-geo-active-filters mb-4 d-flex flex-wrap align-items-center gap-2">
+    <span class="text-muted small text-uppercase fw-semibold me-1">{% trans "Active filters" %}:</span>
+    {% for f in active_filters_display %}
+      <a href="{{ f.clear_url }}"
+         class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-50 text-decoration-none d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill"
+         hx-get="{{ f.clear_url }}"
+         hx-target="#user-collection-htmx-block"
+         hx-swap="innerHTML"
+         hx-push-url="true">
+        <span>{{ f.type_label }}: {{ f.label }}</span>
+        <i class="bi bi-x-lg small"></i>
+      </a>
+    {% endfor %}
+    <a href="{{ user_items_base_url }}"
+       class="badge bg-secondary bg-opacity-50 text-muted border border-secondary border-opacity-50 text-decoration-none d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill small"
+       hx-get="{{ user_items_base_url }}"
+       hx-target="#user-collection-htmx-block"
+       hx-swap="innerHTML"
+       hx-push-url="true">{% trans "Clear all" %}</a>
+  </div>
+{% endif %}

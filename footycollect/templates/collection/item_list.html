@@ -42,9 +42,9 @@
         </div>
         <!-- Collection Stats -->
         {% if is_user_collection %}
-          <div class="row mb-4 stats-row" style="margin-bottom: 2.5rem !important;">
+          <div class="row mb-3 stats-row" style="margin-bottom: 1.5rem !important;">
             <div class="col-md-3">
-              <div class="card text-center stats-card">
+              <div class="card text-center stats-card h-100">
                 <div class="card-body">
                   <h5 class="card-title text-primary">{{ total_items }}</h5>
                   <p class="card-text text-muted">{% trans "Total Items" %}</p>
@@ -52,7 +52,7 @@
               </div>
             </div>
             <div class="col-md-3">
-              <div class="card text-center stats-card">
+              <div class="card text-center stats-card h-100">
                 <div class="card-body">
                   <h5 class="card-title text-success">{{ items|length }}</h5>
                   <p class="card-text text-muted">{% trans "On This Page" %}</p>
@@ -60,6 +60,7 @@
               </div>
             </div>
           </div>
+          <div id="user-collection-htmx-block">{% include "collection/_user_collection_htmx_block.html" %}</div>
         {% else %}
           {% cache 600 collection_stats request.user.pk %}
           <div class="row mb-4 stats-row" style="margin-bottom: 2.5rem !important;">
@@ -84,23 +85,12 @@
       {% endif %}
       <!-- Items Grid -->
       {% if items %}
-        {% if is_user_collection %}
-          <div class="row" style="row-gap: 0.75rem;">
-            {% for item in items %}
-              {% include "cotton/item_card.html" with item=item show_user=False show_edit=can_edit_items show_delete=can_edit_items quick_view_enabled=True %}
-            {% endfor %}
-          </div>
-        {% else %}
+        {% if not is_user_collection %}
           {% cache 300 collection_items_grid request.user.pk page_obj.number %}
-          <div class="row" style="row-gap: 0.75rem;">
-            {% for item in items %}
-              {% include "cotton/item_card.html" with item=item show_user=False show_edit=True show_delete=True quick_view_enabled=True %}
-            {% endfor %}
-          </div>
+          {% include "collection/_user_items_grid.html" %}
         {% endcache %}
       {% endif %}
-      <!-- Pagination -->
-      {% if is_paginated %}
+      {% if is_paginated and not is_user_collection %}
         <nav aria-label="{% trans 'Collection pagination' %}">
           <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
@@ -111,10 +101,8 @@
                 <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
               </li>
             {% endif %}
-            <li class="page-item active">
-              <span class="page-link">
-                {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
-              </span>
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">{% blocktrans with current=page_obj.number total=page_obj.paginator.num_pages %}Page {{ current }} of {{ total }}{% endblocktrans %}</span>
             </li>
             {% if page_obj.has_next %}
               <li class="page-item">
