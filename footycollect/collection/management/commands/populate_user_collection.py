@@ -10,6 +10,7 @@ This command:
 
 import logging
 import time
+from contextlib import suppress
 
 import requests
 from django.contrib.auth import get_user_model
@@ -136,7 +137,11 @@ class Command(BaseCommand):
             kit_name = entry.get("kit", {}).get("team_name", "Unknown")
             try:
                 self.stdout.write(f"\n[{idx}/{len(entries)}] Processing entry {entry_id} - {kit_name}...")
-                if self._process_entry(entry, target_user, dry_run=dry_run):
+                success, skipped_duplicate = self._process_entry(entry, target_user, dry_run=dry_run)
+                if success and skipped_duplicate:
+                    skipped_count += 1
+                    self.stdout.write(self.style.WARNING(f"  ⚠ Entry {entry_id} skipped (already exists)"))
+                elif success:
                     created_count += 1
                     self.stdout.write(self.style.SUCCESS(f"  [OK] Entry {entry_id} processed successfully"))
                 else:
@@ -306,12 +311,21 @@ class Command(BaseCommand):
                 f"Updated user {user.username} (name: {user_name or 'unchanged'}, avatar: {avatar_status})"
             )
 
-    def _create_new_user(self, username: str, user_name: str | None, avatar_url: str | None, *, dry_run: bool) -> User:
-        """Create new user with name and avatar."""
+    def _create_new_user(
+        self,
+        username: str,
+        user_name: str | None,
+        avatar_url: str | None,
+        *,
+        fka_userid: int | None = None,
+        dry_run: bool = False,
+    ) -> User:
+        """Create or get user. Uses canonical email user_{fka_userid}@... so re-runs find them."""
         user, created = User.objects.get_or_create(username=username)
+        canonical_email = f"user_{fka_userid}@footballkitarchive.com" if fka_userid is not None else None
 
         if created and not dry_run:
-            user.email = f"{username}@footballkitarchive.com"
+            user.email = canonical_email or f"{username}@footballkitarchive.com"
             if user_name:
                 user.name = user_name
             if avatar_url:
@@ -320,6 +334,9 @@ class Command(BaseCommand):
             self.stdout.write(f"Created user: {username}")
         elif not dry_run:
             updated = False
+            if canonical_email and user.email != canonical_email:
+                user.email = canonical_email
+                updated = True
             if user_name and not user.name:
                 user.name = user_name
                 updated = True
@@ -366,7 +383,7 @@ class Command(BaseCommand):
 
         username = self._generate_username_from_name(user_name, fka_userid) if user_name else f"user_{fka_userid}"
 
-        return self._create_new_user(username, user_name, avatar_url, dry_run=dry_run)
+        return self._create_new_user(username, user_name, avatar_url, fka_userid=fka_userid, dry_run=dry_run)
 
     def _download_user_avatar(self, user: User, avatar_url: str, *, dry_run: bool) -> None:
         """Download and set user avatar."""
@@ -399,12 +416,22 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"  Warning: Could not download avatar: {e!s}"))
             logger.exception("Error downloading avatar %s", avatar_url)
 
-    def _process_entry(self, entry: dict, user: User, *, dry_run: bool) -> bool:
-        """Process a single entry and create corresponding objects."""
+    def _process_entry(self, entry: dict, user: User, *, dry_run: bool) -> tuple[bool, bool]:
+        """Process a single entry. Returns (success, skipped_duplicate)."""
+        entry_id_raw = entry.get("id")
+        if entry_id_raw is not None and not dry_run:
+            try:
+                entry_id = int(entry_id_raw)
+            except (TypeError, ValueError):
+                entry_id = None
+            if entry_id is not None and BaseItem.objects.filter(user=user, id_fka_entry=entry_id).exists():
+                logger.info("Entry %s already imported for user %s, skipping", entry_id, user.username)
+                return True, True
+
         kit_data = entry.get("kit", {})
         if not kit_data:
             logger.warning("Entry %s has no kit data", entry.get("id"))
-            return False
+            return False, False
 
         with transaction.atomic():
             brand = self._get_or_create_brand(kit_data.get("brand_name"), kit_data, dry_run=dry_run)
@@ -423,7 +450,7 @@ class Command(BaseCommand):
             )
             size = self._get_or_create_size(entry.get("size"), dry_run=dry_run)
 
-            base_item = self._create_base_item(
+            base_item, skipped_duplicate = self._create_base_item(
                 entry,
                 kit_data,
                 user,
@@ -435,16 +462,38 @@ class Command(BaseCommand):
                 dry_run=dry_run,
             )
             if not base_item:
-                return False
+                return False, False
 
             user_images = entry.get("images", [])
             kit_images = kit_data.get("images", [])
+            main_url = (
+                entry.get("image_url")
+                or entry.get("image")
+                or entry.get("main_image")
+                or kit_data.get("image_url")
+                or ""
+            )
+            main_url = self._resolve_photo_url(main_url) if main_url and isinstance(main_url, str) else ""
 
             if not user_images and kit_images:
                 logger.info("User has no photos, using kit images as fallback (limited to 2)")
                 images_to_use = kit_images[:2]
             else:
                 images_to_use = user_images
+
+            if main_url:
+                main_entry = {"url": main_url, "order": 0}
+                existing_urls = set()
+                for im in images_to_use:
+                    u = im.get("url") or im.get("preview_url") or im.get("thumbnail_url")
+                    if u:
+                        existing_urls.add(self._resolve_photo_url(u))
+                if main_url not in existing_urls:
+                    images_to_use = [main_entry] + [
+                        {**im, "order": im.get("order", i + 1)} for i, im in enumerate(images_to_use)
+                    ]
+                else:
+                    images_to_use = [{**im, "order": im.get("order", i)} for i, im in enumerate(images_to_use)]
 
             if hasattr(base_item, "jersey") and base_item.jersey:
                 logger.info("Item already exists, checking if photos need to be created")
@@ -454,11 +503,11 @@ class Command(BaseCommand):
                     self._create_photos(images_to_use, base_item, user, dry_run=dry_run)
                 else:
                     logger.info("Item already exists with %d photos, skipping", existing_photos_count)
-                return True
+                return True, skipped_duplicate
 
             jersey = self._create_jersey(entry, base_item, kit, size, dry_run=dry_run)
             if not jersey:
-                return False
+                return False, False
 
             self._create_photos(images_to_use, base_item, user, dry_run=dry_run)
 
@@ -472,7 +521,7 @@ class Command(BaseCommand):
             if dry_run:
                 transaction.set_rollback(True)
 
-            return True
+            return True, False
 
     def _brand_logos_from_kit(self, kit_data: dict | None) -> tuple[str | None, str | None, int | None]:
         if not kit_data:
@@ -607,14 +656,18 @@ class Command(BaseCommand):
         return season
 
     def _get_or_create_type_k(self, type_name: str | None, *, dry_run: bool) -> TypeK | None:
-        """Get or create TypeK."""
+        """Get or create TypeK. If multiple TypeK share the same name, use the first."""
         if not type_name:
             return None
 
-        type_k, created = TypeK.objects.get_or_create(
-            name=type_name,
-            defaults={"category": "match"},
-        )
+        try:
+            type_k, created = TypeK.objects.get_or_create(
+                name=type_name,
+                defaults={"category": "match"},
+            )
+        except TypeK.MultipleObjectsReturned:
+            type_k = TypeK.objects.filter(name=type_name).first()
+            created = False
         if created and not dry_run:
             logger.info("Created TypeK: %s", type_name)
         return type_k
@@ -791,15 +844,23 @@ class Command(BaseCommand):
         kit: Kit | None,
         *,
         dry_run: bool,
-    ) -> BaseItem | None:
-        """Create BaseItem. Checks for duplicates based on user and kit."""
+    ) -> tuple[BaseItem | None, bool]:
+        """Create BaseItem. Checks for duplicates based on user and kit. Returns (base_item, skipped_duplicate)."""
         if not brand:
             logger.warning("Cannot create BaseItem without brand")
-            return None
+            return None, False
 
         if not dry_run:
             existing_jersey = self._find_existing_jersey_for_user_kit(user, kit)
             if existing_jersey:
+                base = existing_jersey.base_item
+                entry_id_val = entry.get("id")
+                if entry_id_val is not None and base.id_fka_entry is None:
+                    try:
+                        base.id_fka_entry = int(entry_id_val)
+                        base.save(update_fields=["id_fka_entry"])
+                    except (TypeError, ValueError):
+                        pass
                 entry_id = entry.get("id", "unknown")
                 kit_info = f"kit {kit.id}" if kit else "kit=None"
                 logger.info(
@@ -808,7 +869,7 @@ class Command(BaseCommand):
                     kit_info,
                     entry_id,
                 )
-                return existing_jersey.base_item
+                return base, True
 
         item_name = f"{kit_data.get('team_name', '')} {kit_data.get('type', '')} {kit_data.get('season', '')}".strip()
         condition_value, detailed_condition = self._base_item_condition_from_entry(entry)
@@ -820,23 +881,31 @@ class Command(BaseCommand):
         country = self._resolve_base_item_country(club, kit_data)
 
         if dry_run:
-            return BaseItem(
-                item_type="jersey",
-                name=item_name,
-                user=user,
-                brand=brand,
-                club=club,
-                season=season,
-                condition=condition_value,
-                detailed_condition=detailed_condition,
-                description=entry.get("notes", ""),
-                is_replica=is_replica,
-                design=design,
-                main_color=main_color,
-                country=country,
-                is_draft=False,
+            return (
+                BaseItem(
+                    item_type="jersey",
+                    name=item_name,
+                    user=user,
+                    brand=brand,
+                    club=club,
+                    season=season,
+                    condition=condition_value,
+                    detailed_condition=detailed_condition,
+                    description=entry.get("notes", ""),
+                    is_replica=is_replica,
+                    design=design,
+                    main_color=main_color,
+                    country=country,
+                    is_draft=False,
+                ),
+                False,
             )
 
+        entry_id_for_item = None
+        raw = entry.get("id")
+        if raw is not None:
+            with suppress(TypeError, ValueError):
+                entry_id_for_item = int(raw)
         base_item = BaseItem.objects.create(
             item_type="jersey",
             name=item_name,
@@ -852,6 +921,7 @@ class Command(BaseCommand):
             main_color=main_color,
             country=country,
             is_draft=False,
+            id_fka_entry=entry_id_for_item,
         )
 
         if competition:
@@ -859,7 +929,7 @@ class Command(BaseCommand):
         if secondary_colors:
             base_item.secondary_colors.set(secondary_colors)
 
-        return base_item
+        return base_item, False
 
     def _convert_country_name_to_code(self, country_name: str | None) -> str | None:
         """Convert country name to ISO 3166-1 alpha-2 code using django-countries."""

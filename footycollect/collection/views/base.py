@@ -70,8 +70,8 @@ class BaseItemListView(CollectionLoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         """Add additional context data."""
         context = super().get_context_data(**kwargs)
-        # Optimized: Use object_list.count() instead of calling get_queryset() again
-        # This avoids executing the queryset twice
+        if "can_edit_items" not in context:
+            context["can_edit_items"] = True
         if hasattr(self, "object_list"):
             if hasattr(self.object_list, "count"):
                 context["total_items"] = self.object_list.count()

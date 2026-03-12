@@ -1,13 +1,17 @@
+from typing import Any
+from urllib.parse import urlencode
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import QuerySet
 from django.http import Http404
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, ListView, RedirectView, UpdateView
 
 from footycollect.collection.models import Jersey
+from footycollect.collection.services.item_service import ItemService
 from footycollect.users.forms import UserUpdateForm
 from footycollect.users.models import User
 from footycollect.users.services import UserService
@@ -42,9 +46,15 @@ class UserItemListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         profile_user = get_object_or_404(User, username=self.kwargs["username"])
+        self.profile_user = profile_user
+        self.filter_params: dict[str, str] = {}
         user_service = UserService()
         if not user_service.can_view_profile(profile_user, self.request.user):
             raise Http404
+        queryset = self._build_user_jersey_queryset(profile_user)
+        return self._apply_url_filters(queryset)
+
+    def _build_user_jersey_queryset(self, profile_user: User):
         return (
             Jersey.objects.filter(base_item__user=profile_user)
             .select_related(
@@ -67,17 +77,218 @@ class UserItemListView(LoginRequiredMixin, ListView):
             .order_by("-base_item__created_at")
         )
 
+    def _apply_url_filters(self, queryset):
+        simple_filters = {
+            "club": "base_item__club__slug",
+            "country": "base_item__country",
+            "brand": "base_item__brand__slug",
+            "design": "base_item__design",
+        }
+        for param, lookup in simple_filters.items():
+            value = self.request.GET.get(param)
+            if value:
+                queryset = queryset.filter(**{lookup: value})
+                self.filter_params[param] = value
+
+        competition_slug = self.request.GET.get("competition")
+        if competition_slug:
+            queryset = queryset.filter(base_item__competitions__slug=competition_slug).distinct()
+            self.filter_params["competition"] = competition_slug
+
+        color_id = self._get_color_filter_value()
+        if color_id is not None:
+            queryset = queryset.filter(base_item__main_color_id=color_id)
+            self.filter_params["color"] = str(color_id)
+
+        fit_value = self._get_fit_filter_value()
+        if fit_value:
+            queryset = queryset.filter(fit=fit_value)
+            self.filter_params["fit"] = fit_value
+
+        return queryset
+
+    def _get_color_filter_value(self) -> int | None:
+        color_id = self.request.GET.get("color")
+        if not color_id:
+            return None
+        try:
+            parsed = int(color_id)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed > 0 else None
+
+    def _get_fit_filter_value(self) -> str | None:
+        fit_value = self.request.GET.get("fit", "").strip()
+        if not fit_value:
+            return None
+        return fit_value if any(fit_value == choice[0] for choice in Jersey.FIT_CHOICES if choice[0]) else None
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        profile_user = get_object_or_404(User, username=self.kwargs["username"])
+        profile_user = self._get_profile_user()
+
+        self._add_profile_context(context, profile_user)
+        self._add_geo_stats_context(context, profile_user)
+        self._add_filter_options_context(context)
+
+        current_filters = self._get_current_filters()
+        self._add_current_filters_context(context, current_filters)
+        self._add_active_filters_context(context, profile_user, current_filters)
+        self._add_pagination_query_string(context)
+
+        return context
+
+    def _get_profile_user(self) -> User:
+        return getattr(self, "profile_user", None) or get_object_or_404(
+            User,
+            username=self.kwargs["username"],
+        )
+
+    def _add_profile_context(self, context: dict[str, Any], profile_user: User) -> None:
         context["profile_user"] = profile_user
         context["is_user_collection"] = True
         context["can_edit_items"] = profile_user == self.request.user
-        if context.get("page_obj"):
-            context["total_items"] = context["page_obj"].paginator.count
-        else:
-            context["total_items"] = 0
-        return context
+        page = context.get("page_obj")
+        context["total_items"] = page.paginator.count if page else 0
+
+    def _add_geo_stats_context(self, context: dict[str, Any], profile_user: User) -> None:
+        item_service = ItemService()
+        geo_stats = item_service.get_user_geo_stats(profile_user)
+        context["geo_summary"] = geo_stats["summary_counts"]
+        context["top_geo_cards"] = {
+            "club": geo_stats["top_club"],
+            "country": geo_stats["top_country"],
+            "competition": geo_stats["top_competition"],
+            "brand": geo_stats["top_brand"],
+            "design": geo_stats["top_design"],
+            "color": geo_stats["top_color"],
+        }
+        context["top_clubs"] = geo_stats["top_clubs"]
+        context["top_countries"] = geo_stats["top_countries"]
+        context["top_competitions"] = geo_stats["top_competitions"]
+        context["top_brands"] = geo_stats["top_brands"]
+        context["top_designs"] = geo_stats["top_designs"]
+        context["top_colors"] = geo_stats["top_colors"]
+
+    def _add_filter_options_context(self, context: dict[str, Any]) -> None:
+        context["fit_choices"] = [
+            {"slug_or_code": value, "label": label} for value, label in Jersey.FIT_CHOICES if value
+        ]
+
+    def _get_current_filters(self) -> dict[str, str]:
+        return getattr(self, "filter_params", {})
+
+    def _add_current_filters_context(
+        self,
+        context: dict[str, Any],
+        current_filters: dict[str, str],
+    ) -> None:
+        context["current_filters"] = current_filters
+        if current_filters:
+            filter_type, filter_value = next(iter(current_filters.items()))
+            context["current_filter_type"] = filter_type
+            context["current_filter_value"] = filter_value
+
+    def _add_active_filters_context(
+        self,
+        context: dict[str, Any],
+        profile_user: User,
+        current_filters: dict[str, str],
+    ) -> None:
+        type_labels = {
+            "club": _("Club"),
+            "competition": _("League"),
+            "country": _("Country"),
+            "brand": _("Brand"),
+            "design": _("Design"),
+            "color": _("Main colour"),
+            "fit": _("How it fits"),
+        }
+        base_url = reverse("users:user_items", kwargs={"username": profile_user.username})
+        active_filters_display = []
+        for filter_type, filter_value in (current_filters or {}).items():
+            if filter_type == "fit" and profile_user != self.request.user:
+                continue
+            label = self._get_filter_label(filter_type, filter_value, context)
+            other_params = {key: value for key, value in (current_filters or {}).items() if key != filter_type}
+            clear_url = self._build_clear_filter_url(base_url, other_params)
+            active_filters_display.append(
+                {
+                    "type": filter_type,
+                    "value": filter_value,
+                    "type_label": type_labels.get(filter_type, filter_type),
+                    "label": label or filter_value,
+                    "clear_url": clear_url,
+                },
+            )
+        context["active_filters_display"] = active_filters_display
+        context["user_items_base_url"] = base_url
+
+    def _get_filter_label(
+        self,
+        filter_type: str,
+        filter_value: str,
+        context: dict[str, Any],
+    ) -> str | None:
+        lookup_config: dict[str, dict[str, Any]] = {
+            "club": {"source": "top_clubs"},
+            "competition": {"source": "top_competitions"},
+            "country": {"source": "top_countries"},
+            "brand": {"source": "top_brands"},
+            "design": {"source": "top_designs", "use_code_fallback": True},
+            "color": {"source": "top_colors", "coerce_to_str": True},
+            "fit": {"source": "fit_choices"},
+        }
+        config = lookup_config.get(filter_type)
+        if not config:
+            return None
+
+        items = context.get(config["source"], [])
+        coerce_to_str = config.get("coerce_to_str", False)
+        use_code_fallback = config.get("use_code_fallback", False)
+
+        for item in items:
+            candidate = item.get("slug_or_code")
+            if use_code_fallback:
+                candidate = candidate or item.get("code")
+            if coerce_to_str:
+                if str(candidate or "") == str(filter_value or ""):
+                    return item.get("label")
+            elif (candidate or "") == (filter_value or ""):
+                return item.get("label")
+
+        return None
+
+    def _build_clear_filter_url(
+        self,
+        base_url: str,
+        other_params: dict[str, str],
+    ) -> str:
+        if not other_params:
+            return base_url
+
+        query_params = dict(other_params)
+        query_params["page"] = 1
+        encoded = urlencode(query_params, doseq=True)
+        return f"{base_url}?{encoded}"
+
+    def _add_pagination_query_string(self, context: dict[str, Any]) -> None:
+        query = self.request.GET.copy()
+        query.pop("page", None)
+        context["query_string"] = query.urlencode()
+
+    def render_to_response(self, context, **response_kwargs):
+        """
+        Return only the items grid when requested via HTMX.
+        """
+        if self.request.headers.get("HX-Request"):
+            return render(
+                self.request,
+                "collection/_user_collection_htmx_block.html",
+                context,
+                **response_kwargs,
+            )
+        return super().render_to_response(context, **response_kwargs)
 
 
 user_item_list_view = UserItemListView.as_view()

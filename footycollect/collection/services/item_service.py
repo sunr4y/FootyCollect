@@ -5,16 +5,21 @@ This service handles complex business operations related to items,
 orchestrating between repositories and implementing business rules.
 """
 
+import re
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import QuerySet
+from django.db.models import Count, QuerySet
+from django_countries import countries
 
 from footycollect.collection.models import BaseItem, Jersey
 from footycollect.collection.repositories import ColorRepository, ItemRepository, PhotoRepository
 
 User = get_user_model()
+
+HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$")
 
 
 class ItemService:
@@ -24,6 +29,9 @@ class ItemService:
     This service handles complex operations that involve multiple repositories
     and implements business rules for item management.
     """
+
+    _COUNTRY_NAME_MAP: dict[str, str] | None = None
+    _DESIGN_LABEL_MAP: dict[str, str] | None = None
 
     def __init__(self):
         self.item_repository = ItemRepository()
@@ -157,6 +165,256 @@ class ItemService:
             "by_condition": self._get_items_by_condition(items),
             "by_brand": self._get_items_by_brand(items),
             "by_club": self._get_items_by_club(items),
+        }
+
+    def get_user_geo_stats(self, user: User, top_limit: int = 10) -> dict[str, Any]:
+        """
+        Get per-user geo/brand/design/color statistics and top lists.
+        """
+        items = self.item_repository.get_user_items(user)
+
+        if not items.exists():
+            return self._build_empty_geo_stats()
+
+        summary_counts = self._build_geo_summary_counts(items)
+        country_name_map = self._build_country_name_map()
+        design_label_map = self._build_design_label_map()
+
+        top_lists = self._build_geo_top_lists(
+            items=items,
+            top_limit=top_limit,
+            country_name_map=country_name_map,
+            design_label_map=design_label_map,
+        )
+
+        return {
+            "summary_counts": summary_counts,
+            **top_lists,
+        }
+
+    def _build_geo_summary_counts(self, items: QuerySet[BaseItem]) -> dict[str, int]:
+        clubs_count = items.filter(club__isnull=False).values("club_id").distinct().count()
+        countries_count = items.exclude(country__isnull=True).exclude(country="").values("country").distinct().count()
+        competitions_count = items.filter(competitions__isnull=False).values("competitions__id").distinct().count()
+        brands_count = items.filter(brand__isnull=False).values("brand_id").distinct().count()
+        designs_count = items.exclude(design="").values("design").distinct().count()
+        colors_count = items.filter(main_color__isnull=False).values("main_color_id").distinct().count()
+
+        return {
+            "clubs": clubs_count,
+            "countries": countries_count,
+            "competitions": competitions_count,
+            "brands": brands_count,
+            "designs": designs_count,
+            "colors": colors_count,
+        }
+
+    def _build_country_name_map(self) -> dict[str, str]:
+        if ItemService._COUNTRY_NAME_MAP is None:
+            ItemService._COUNTRY_NAME_MAP = dict(countries)
+        return ItemService._COUNTRY_NAME_MAP
+
+    def _build_design_label_map(self) -> dict[str, str]:
+        if ItemService._DESIGN_LABEL_MAP is None:
+            ItemService._DESIGN_LABEL_MAP = dict(BaseItem.DESIGN_CHOICES)
+        return ItemService._DESIGN_LABEL_MAP
+
+    def _build_geo_top_lists(
+        self,
+        items: QuerySet,
+        top_limit: int,
+        country_name_map: dict[str, str],
+        design_label_map: dict[str, str],
+    ) -> dict[str, Any]:
+        club_stats = (
+            items.filter(club__isnull=False)
+            .values(
+                "club_id",
+                "club__name",
+                "club__slug",
+                "club__logo_file",
+                "club__logo",
+                "club__logo_dark_file",
+                "club__logo_dark",
+            )
+            .annotate(item_count=Count("id"))
+            .order_by("-item_count", "club__name")[:top_limit]
+        )
+        country_stats = (
+            items.exclude(country__isnull=True)
+            .exclude(country="")
+            .values("country")
+            .annotate(item_count=Count("id"))
+            .order_by("-item_count", "country")[:top_limit]
+        )
+        competition_stats = (
+            items.filter(competitions__isnull=False)
+            .values(
+                "competitions__id",
+                "competitions__name",
+                "competitions__slug",
+                "competitions__logo",
+                "competitions__logo_dark",
+            )
+            .annotate(item_count=Count("id"))
+            .order_by("-item_count", "competitions__name")[:top_limit]
+        )
+        brand_stats = (
+            items.filter(brand__isnull=False)
+            .values(
+                "brand_id",
+                "brand__name",
+                "brand__slug",
+                "brand__logo_file",
+                "brand__logo",
+                "brand__logo_dark_file",
+                "brand__logo_dark",
+            )
+            .annotate(item_count=Count("id"))
+            .order_by("-item_count", "brand__name")[:top_limit]
+        )
+        design_stats = (
+            items.exclude(design="")
+            .values("design")
+            .annotate(item_count=Count("id"))
+            .order_by("-item_count", "design")[:top_limit]
+        )
+        color_stats = (
+            items.filter(main_color__isnull=False)
+            .values(
+                "main_color_id",
+                "main_color__name",
+                "main_color__hex_value",
+            )
+            .annotate(item_count=Count("id"))
+            .order_by("-item_count", "main_color__name")[:top_limit]
+        )
+
+        top_clubs = [self._build_club_entry(row) for row in club_stats]
+        top_countries = [self._build_country_entry(row, country_name_map) for row in country_stats]
+        top_competitions = [self._build_competition_entry(row) for row in competition_stats]
+        top_brands = [self._build_brand_entry(row) for row in brand_stats]
+        top_designs = [self._build_design_entry(row, design_label_map) for row in design_stats]
+        top_colors = [self._build_color_entry(row) for row in color_stats]
+
+        return {
+            "top_club": self._first_or_none(top_clubs),
+            "top_country": self._first_or_none(top_countries),
+            "top_competition": self._first_or_none(top_competitions),
+            "top_brand": self._first_or_none(top_brands),
+            "top_design": self._first_or_none(top_designs),
+            "top_color": self._first_or_none(top_colors),
+            "top_clubs": top_clubs,
+            "top_countries": top_countries,
+            "top_competitions": top_competitions,
+            "top_brands": top_brands,
+            "top_designs": top_designs,
+            "top_colors": top_colors,
+        }
+
+    def _build_club_entry(self, raw: dict[str, Any]) -> dict[str, Any]:
+        path = raw.get("club__logo_file")
+        logo_url = default_storage.url(path) if path else (raw.get("club__logo") or "")
+        path_dark = raw.get("club__logo_dark_file")
+        logo_dark_url = default_storage.url(path_dark) if path_dark else (raw.get("club__logo_dark") or "")
+        return {
+            "label": raw.get("club__name") or "",
+            "slug_or_code": raw.get("club__slug"),
+            "count": raw.get("item_count", 0),
+            "id": raw.get("club_id"),
+            "logo_url": logo_url,
+            "logo_dark_url": logo_dark_url,
+        }
+
+    def _build_country_entry(
+        self,
+        raw: dict[str, Any],
+        country_name_map: dict[str, str],
+    ) -> dict[str, Any]:
+        code = raw.get("country")
+        return {
+            "label": country_name_map.get(code, code or ""),
+            "slug_or_code": code,
+            "count": raw.get("item_count", 0),
+            "code": code,
+        }
+
+    def _build_competition_entry(self, raw: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "label": raw.get("competitions__name") or "",
+            "slug_or_code": raw.get("competitions__slug"),
+            "count": raw.get("item_count", 0),
+            "id": raw.get("competitions__id"),
+            "logo_url": raw.get("competitions__logo") or "",
+            "logo_dark_url": raw.get("competitions__logo_dark") or "",
+        }
+
+    def _build_brand_entry(self, raw: dict[str, Any]) -> dict[str, Any]:
+        path = raw.get("brand__logo_file")
+        logo_url = default_storage.url(path) if path else (raw.get("brand__logo") or "")
+        path_dark = raw.get("brand__logo_dark_file")
+        logo_dark_url = default_storage.url(path_dark) if path_dark else (raw.get("brand__logo_dark") or "")
+        return {
+            "label": raw.get("brand__name") or "",
+            "slug_or_code": raw.get("brand__slug"),
+            "count": raw.get("item_count", 0),
+            "id": raw.get("brand_id"),
+            "logo_url": logo_url,
+            "logo_dark_url": logo_dark_url,
+        }
+
+    def _build_design_entry(
+        self,
+        raw: dict[str, Any],
+        design_label_map: dict[str, str],
+    ) -> dict[str, Any]:
+        code = raw.get("design")
+        return {
+            "label": design_label_map.get(code, code or ""),
+            "slug_or_code": code,
+            "count": raw.get("item_count", 0),
+            "code": code,
+        }
+
+    def _build_color_entry(self, raw: dict[str, Any]) -> dict[str, Any]:
+        hex_val = raw.get("main_color__hex_value")
+        if hex_val and not HEX_COLOR_RE.match(hex_val):
+            hex_val = None
+        return {
+            "label": raw.get("main_color__name") or "",
+            "slug_or_code": raw.get("main_color_id"),
+            "count": raw.get("item_count", 0),
+            "id": raw.get("main_color_id"),
+            "hex_value": hex_val,
+        }
+
+    @staticmethod
+    def _first_or_none(items_list: list[dict[str, Any]]) -> dict[str, Any] | None:
+        return items_list[0] if items_list else None
+
+    def _build_empty_geo_stats(self) -> dict[str, Any]:
+        empty_counts = {
+            "clubs": 0,
+            "countries": 0,
+            "competitions": 0,
+            "brands": 0,
+            "designs": 0,
+            "colors": 0,
+        }
+        return {
+            "summary_counts": empty_counts,
+            "top_club": None,
+            "top_country": None,
+            "top_competition": None,
+            "top_brand": None,
+            "top_design": None,
+            "top_color": None,
+            "top_clubs": [],
+            "top_countries": [],
+            "top_competitions": [],
+            "top_brands": [],
+            "top_designs": [],
+            "top_colors": [],
         }
 
     def get_user_collection_summary(self, user: User) -> dict[str, Any]:
@@ -307,20 +565,14 @@ class ItemService:
 
     def _get_items_by_condition(self, items: QuerySet[Jersey]) -> dict[str, int]:
         """Get count of items by condition."""
-        from django.db.models import Count
-
         return dict(items.values("condition").annotate(count=Count("condition")).values_list("condition", "count"))
 
     def _get_items_by_brand(self, items: QuerySet[Jersey]) -> dict[str, int]:
         """Get count of items by brand."""
-        from django.db.models import Count
-
         return dict(items.values("brand__name").annotate(count=Count("brand")).values_list("brand__name", "count"))
 
     def _get_items_by_club(self, items: QuerySet[Jersey]) -> dict[str, int]:
         """Get count of items by club."""
-        from django.db.models import Count
-
         return dict(items.values("club__name").annotate(count=Count("club")).values_list("club__name", "count"))
 
     def _apply_filters(self, items: QuerySet[Jersey], filters: dict[str, Any]) -> QuerySet[Jersey]:
@@ -335,5 +587,7 @@ class ItemService:
             items = items.filter(is_draft=filters["is_draft"])
         if "is_private" in filters:
             items = items.filter(is_private=filters["is_private"])
+        if filters.get("fit"):
+            items = items.filter(fit=filters["fit"])
 
         return items

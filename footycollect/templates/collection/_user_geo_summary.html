@@ -1,0 +1,72 @@
+{% load i18n %}
+
+{% if geo_summary %}
+  <div class="row mb-3">
+    <div class="col-md-2 mb-3">
+      <div class="card text-center stats-card h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <i class="bi bi-globe2 fs-4 text-primary"></i>
+          </div>
+          <h6 class="card-subtitle text-uppercase text-muted mb-1 small">{% trans "Countries" %}</h6>
+          <div class="fw-bold fs-5">{{ geo_summary.countries|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="card text-center stats-card h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <i class="bi bi-trophy fs-4 text-primary"></i>
+          </div>
+          <h6 class="card-subtitle text-uppercase text-muted mb-1 small">{% trans "Competitions" %}</h6>
+          <div class="fw-bold fs-5">{{ geo_summary.competitions|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="card text-center stats-card h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <i class="bi bi-shield fs-4 text-primary"></i>
+          </div>
+          <h6 class="card-subtitle text-uppercase text-muted mb-1 small">{% trans "Clubs" %}</h6>
+          <div class="fw-bold fs-5">{{ geo_summary.clubs|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="card text-center stats-card h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <i class="bi bi-tag fs-4 text-primary"></i>
+          </div>
+          <h6 class="card-subtitle text-uppercase text-muted mb-1 small">{% trans "Brands" %}</h6>
+          <div class="fw-bold fs-5">{{ geo_summary.brands|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="card text-center stats-card h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <i class="bi bi-brush fs-4 text-primary"></i>
+          </div>
+          <h6 class="card-subtitle text-uppercase text-muted mb-1 small">{% trans "Designs" %}</h6>
+          <div class="fw-bold fs-5">{{ geo_summary.designs|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="card text-center stats-card h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <i class="bi bi-palette fs-4 text-primary"></i>
+          </div>
+          <h6 class="card-subtitle text-uppercase text-muted mb-1 small">{% trans "Main colours" %}</h6>
+          <div class="fw-bold fs-5">{{ geo_summary.colors|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
