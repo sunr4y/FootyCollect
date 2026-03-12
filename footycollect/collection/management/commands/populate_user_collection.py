@@ -844,7 +844,7 @@ class Command(BaseCommand):
         kit: Kit | None,
         *,
         dry_run: bool,
-    ) -> BaseItem | None:
+    ) -> tuple[BaseItem | None, bool]:
         """Create BaseItem. Checks for duplicates based on user and kit. Returns (base_item, skipped_duplicate)."""
         if not brand:
             logger.warning("Cannot create BaseItem without brand")

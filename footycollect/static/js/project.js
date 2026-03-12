@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (dropdown) {
         const isShown = dropdown.classList.contains('show') ||
-          window.getComputedStyle(dropdown).display === 'block';
+          globalThis.getComputedStyle(dropdown).display === 'block';
 
         // Close other dropdowns first
         document.querySelectorAll('.dropdown-menu').forEach(function (menu) {
@@ -53,9 +53,9 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // When HTMX swaps the user collection block, scroll the grid into view
-  if (window.htmx) {
+  if (globalThis.htmx) {
     document.body.addEventListener('htmx:afterSwap', function (evt) {
-      if (evt.detail && evt.detail.target && evt.detail.target.id === 'user-collection-htmx-block') {
+      if (evt.detail?.target?.id === 'user-collection-htmx-block') {
         const grid = document.getElementById('user-items-grid');
         if (grid && typeof grid.scrollIntoView === 'function') {
           grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
