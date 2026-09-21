@@ -10,13 +10,6 @@
     <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
     <a href="https://codecov.io/gh/sunr4y/FootyCollect"><img src="https://codecov.io/gh/sunr4y/footycollect/branch/main/graph/badge.svg?token=XMYNADVSZZ" alt="codecov"></a>
     <br><br>
-    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=alert_status&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Quality Gate Status"></a>
-    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=bugs&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Bugs"></a>
-    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=ncloc&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Lines of Code"></a>
-    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=reliability_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Reliability Rating"></a>
-    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=security_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Security Rating"></a>
-    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=sqale_rating&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Maintainability Rating"></a>
-    <a href="https://sonarcloud.io/summary/new_code?id=sunr4y_FootyCollect"><img src="https://sonarcloud.io/api/project_badges/measure?project=sunr4y_FootyCollect&metric=vulnerabilities&token=d864e5b23c016f8c0448866bce1fcc1d7a6cecd9" alt="Vulnerabilities"></a>
 </p>
 
 A Django-based web application for managing your football memorabilia collection. It integrates with the **Football Kit Archive** via [FKAPI](https://github.com/sunr4y/fkapi) to search and add kits by club, season, and competition—making FKAPI central to discovering and cataloguing items in your collection.
