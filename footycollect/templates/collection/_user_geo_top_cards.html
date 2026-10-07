@@ -1,0 +1,189 @@
+{% load i18n %}
+{% load static %}
+
+{% if top_geo_cards %}
+  <div class="row mb-4">
+    {% with club=top_geo_cards.club country=top_geo_cards.country competition=top_geo_cards.competition brand=top_geo_cards.brand design=top_geo_cards.design color=top_geo_cards.color %}
+      {% if club %}
+        <div class="col-md-2 mb-3">
+          <a href="{% url 'users:user_items' profile_user.username %}?club={{ club.slug_or_code }}&page=1"
+             class="text-decoration-none text-reset"
+             hx-get="{% url 'users:user_items' profile_user.username %}?club={{ club.slug_or_code }}&page=1"
+             hx-target="#user-collection-htmx-block"
+             hx-swap="innerHTML">
+            <div class="card h-100 stats-card text-center{% if current_filter_type == 'club' and current_filter_value == club.slug_or_code %} border-primary border-2 bg-primary bg-opacity-10{% endif %}">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <div class="mb-2">
+                  {% if club.logo_dark_url %}
+                    <img src="{{ club.logo_dark_url }}" alt="{{ club.label }}" class="img-fluid" style="max-height: 32px;" />
+                  {% elif club.logo_url %}
+                    <img src="{{ club.logo_url }}" alt="{{ club.label }}" class="img-fluid" style="max-height: 32px;" />
+                  {% else %}
+                    <i class="bi bi-shield fs-4 text-muted"></i>
+                  {% endif %}
+                </div>
+                <h6 class="card-subtitle text-uppercase text-muted small mb-1">{% trans "Top Club" %}</h6>
+                <div class="fw-bold small text-truncate" title="{{ club.label }}">{{ club.label }}</div>
+                <div class="text-muted small">{{ club.count }} {% trans "items" %}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endif %}
+      {% if competition %}
+        <div class="col-md-2 mb-3">
+          <a href="{% url 'users:user_items' profile_user.username %}?competition={{ competition.slug_or_code }}&page=1"
+             class="text-decoration-none text-reset"
+             hx-get="{% url 'users:user_items' profile_user.username %}?competition={{ competition.slug_or_code }}&page=1"
+             hx-target="#user-collection-htmx-block"
+             hx-swap="innerHTML">
+            <div class="card h-100 stats-card text-center{% if current_filter_type == 'competition' and current_filter_value == competition.slug_or_code %} border-primary border-2 bg-primary bg-opacity-10{% endif %}">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <div class="mb-2">
+                  <i class="bi bi-trophy fs-4 text-muted"></i>
+                </div>
+                <h6 class="card-subtitle text-uppercase text-muted small mb-1">{% trans "Top Competition" %}</h6>
+                <div class="fw-bold small text-truncate" title="{{ competition.label }}">{{ competition.label }}</div>
+                <div class="text-muted small">{{ competition.count }} {% trans "items" %}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endif %}
+      {% if country %}
+        <div class="col-md-2 mb-3">
+          <a href="{% url 'users:user_items' profile_user.username %}?country={{ country.slug_or_code }}&page=1"
+             class="text-decoration-none text-reset"
+             hx-get="{% url 'users:user_items' profile_user.username %}?country={{ country.slug_or_code }}&page=1"
+             hx-target="#user-collection-htmx-block"
+             hx-swap="innerHTML">
+            <div class="card h-100 stats-card text-center{% if current_filter_type == 'country' and current_filter_value == country.slug_or_code %} border-primary border-2 bg-primary bg-opacity-10{% endif %}">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <div class="mb-2">
+                  {% if country.code %}
+                    <span class="fi fi-{{ country.code|lower }}"></span>
+                  {% else %}
+                    <i class="bi bi-globe2 fs-4 text-muted"></i>
+                  {% endif %}
+                </div>
+                <h6 class="card-subtitle text-uppercase text-muted small mb-1">{% trans "Top Nation" %}</h6>
+                <div class="fw-bold small text-truncate" title="{{ country.label }}">{{ country.label }}</div>
+                <div class="text-muted small">{{ country.count }} {% trans "items" %}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endif %}
+      {% if brand %}
+        <div class="col-md-2 mb-3">
+          <a href="{% url 'users:user_items' profile_user.username %}?brand={{ brand.slug_or_code }}&page=1"
+             class="text-decoration-none text-reset"
+             hx-get="{% url 'users:user_items' profile_user.username %}?brand={{ brand.slug_or_code }}&page=1"
+             hx-target="#user-collection-htmx-block"
+             hx-swap="innerHTML">
+            <div class="card h-100 stats-card text-center{% if current_filter_type == 'brand' and current_filter_value == brand.slug_or_code %} border-primary border-2 bg-primary bg-opacity-10{% endif %}">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <div class="mb-2">
+                  {% if brand.logo_dark_url %}
+                    <img src="{{ brand.logo_dark_url }}" alt="{{ brand.label }}" class="img-fluid" style="max-height: 24px;" />
+                  {% elif brand.logo_url %}
+                    <img src="{{ brand.logo_url }}" alt="{{ brand.label }}" class="img-fluid fc-logo-glow" style="max-height: 24px;" />
+                  {% else %}
+                    <span class="badge bg-secondary">{{ brand.label|slice:":2" }}</span>
+                  {% endif %}
+                </div>
+                <h6 class="card-subtitle text-uppercase text-muted small mb-1">{% trans "Top Brand" %}</h6>
+                <div class="fw-bold small text-truncate" title="{{ brand.label }}">{{ brand.label }}</div>
+                <div class="text-muted small">{{ brand.count }} {% trans "items" %}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endif %}
+      {% if design %}
+        <div class="col-md-2 mb-3">
+          <a href="{% url 'users:user_items' profile_user.username %}?design={{ design.slug_or_code }}&page=1"
+             class="text-decoration-none text-reset"
+             hx-get="{% url 'users:user_items' profile_user.username %}?design={{ design.slug_or_code }}&page=1"
+             hx-target="#user-collection-htmx-block"
+             hx-swap="innerHTML">
+            <div class="card h-100 stats-card text-center{% if current_filter_type == 'design' and current_filter_value == design.slug_or_code %} border-primary border-2 bg-primary bg-opacity-10{% endif %}">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <div class="mb-2 d-flex justify-content-center">
+                  {% with code=design.code|default:design.slug_or_code %}
+                    {% if code == "PLAIN" %}
+                      <img src="{% static 'images/design_type/plain.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "STRIPES" %}
+                      <img src="{% static 'images/design_type/stripes.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "GRAPHIC" %}
+                      <img src="{% static 'images/design_type/graphic.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "CHEST_BAND" %}
+                      <img src="{% static 'images/design_type/chest-band.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "CONTRASTING_SLEEVES" %}
+                      <img src="{% static 'images/design_type/contrasting-sleeves.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "PINSTRIPES" %}
+                      <img src="{% static 'images/design_type/pinstripes.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "HOOPS" %}
+                      <img src="{% static 'images/design_type/hoops.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "SINGLE_STRIPE" %}
+                      <img src="{% static 'images/design_type/single-stripe.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "HALF_AND_HALF" %}
+                      <img src="{% static 'images/design_type/half-and-half.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "SASH" %}
+                      <img src="{% static 'images/design_type/sash.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "CHEVRON" %}
+                      <img src="{% static 'images/design_type/chevron.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "CHECKERS" %}
+                      <img src="{% static 'images/design_type/checkers.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "GRADIENT" %}
+                      <img src="{% static 'images/design_type/gradient.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "DIAGONAL" %}
+                      <img src="{% static 'images/design_type/diagonal.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "CROSS" %}
+                      <img src="{% static 'images/design_type/cross.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% elif code == "QUARTERS" %}
+                      <img src="{% static 'images/design_type/quarters.svg' %}" alt="{{ design.label }}" style="height:26px;" />
+                    {% else %}
+                      <i class="bi bi-brush fs-4 text-muted"></i>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+                <h6 class="card-subtitle text-uppercase text-muted small mb-1">{% trans "Top Design" %}</h6>
+                <div class="fw-bold small text-truncate" title="{{ design.label }}">{{ design.label }}</div>
+                <div class="text-muted small">{{ design.count }} {% trans "items" %}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endif %}
+      {% if color %}
+        <div class="col-md-2 mb-3">
+          <a href="{% url 'users:user_items' profile_user.username %}?color={{ color.slug_or_code }}&page=1"
+             class="text-decoration-none text-reset"
+             hx-get="{% url 'users:user_items' profile_user.username %}?color={{ color.slug_or_code }}&page=1"
+             hx-target="#user-collection-htmx-block"
+             hx-swap="innerHTML">
+            <div class="card h-100 stats-card text-center{% if current_filter_type == 'color' and current_filter_value == color.slug_or_code|stringformat:'s' %} border-primary border-2 bg-primary bg-opacity-10{% endif %}">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <div class="mb-2 d-flex justify-content-center">
+                  {% if color.hex_value %}
+                    <span class="rounded-circle border"
+                          style="display:inline-block;
+                                 width:18px;
+                                 height:18px;
+                                 background-color: {{ color.hex_value }}"></span>
+                  {% else %}
+                    <i class="bi bi-palette fs-5 text-muted"></i>
+                  {% endif %}
+                </div>
+                <h6 class="card-subtitle text-uppercase text-muted small mb-1">{% trans "Top Colour" %}</h6>
+                <div class="fw-bold small text-truncate" title="{{ color.label }}">{{ color.label }}</div>
+                <div class="text-muted small">{{ color.count }} {% trans "items" %}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+{% endif %}

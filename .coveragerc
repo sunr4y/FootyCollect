@@ -3,6 +3,7 @@ source = footycollect,config
 omit =
     */migrations/*
     */tests/*
+    footycollect/collection/management/commands/populate_user_collection.py
     */__pycache__/*
     */venv/*
     */env/*

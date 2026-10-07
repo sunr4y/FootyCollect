@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_countries.fields import CountryField
@@ -17,11 +17,20 @@ class Color(models.Model):
     Model to represent colors using hexadecimal values.
     """
 
+    HEX_VALUE_REGEX = r"^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$"
+
     name = models.CharField(max_length=100, unique=True)
     hex_value = models.CharField(
         max_length=7,
         default="#FF0000",
-        help_text=_("Hexadecimal color value (e.g., #RRGGBB)."),
+        help_text=_("Hexadecimal color value (e.g., #RGB or #RRGGBB)."),
+        validators=[
+            RegexValidator(
+                HEX_VALUE_REGEX,
+                message=_("Enter a valid hex color (#RGB or #RRGGBB)."),
+                code="invalid_hex_color",
+            ),
+        ],
     )
 
     # Color map for default colors
@@ -305,6 +314,12 @@ class BaseItem(models.Model):
         null=True,
         help_text="The country associated with this item",
     )
+    id_fka_entry = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="FootballKitArchive user-collection entry id; used to skip duplicates on re-import.",
+    )
 
     photos = GenericRelation(Photo)
 
@@ -324,6 +339,7 @@ class BaseItem(models.Model):
             models.Index(fields=["user", "is_private", "is_draft"], name="baseitem_user_visibility_idx"),
             models.Index(fields=["user", "created_at"], name="baseitem_user_created_idx"),
             models.Index(fields=["club", "season"], name="baseitem_club_season_idx"),
+            models.Index(fields=["user", "id_fka_entry"], name="baseitem_user_id_fka_entry_idx"),
         ]
 
     def __str__(self):
@@ -384,6 +400,16 @@ class Jersey(models.Model):
     containing only Jersey-specific fields.
     """
 
+    FIT_CHOICES = [
+        ("", _("—")),
+        ("too_small", _("Too small")),
+        ("too_big", _("Too big")),
+        ("just_right", _("Just right")),
+        ("perfect", _("Perfect fit")),
+        ("oversized_perfect", _("Oversized, perfect")),
+        ("oversized_ok", _("Slightly oversized but fine")),
+    ]
+
     base_item = models.OneToOneField(
         BaseItem,
         on_delete=models.CASCADE,
@@ -400,6 +426,14 @@ class Jersey(models.Model):
     player_name = models.CharField(max_length=100, blank=True)
     number = models.PositiveIntegerField(null=True, blank=True)
     is_short_sleeve = models.BooleanField(default=True)
+    fit = models.CharField(
+        max_length=20,
+        choices=FIT_CHOICES,
+        blank=True,
+        db_index=True,
+        verbose_name=_("How it fits (private)"),
+        help_text=_("Private note for filtering your collection by fit."),
+    )
 
     objects = MTIManager()
 

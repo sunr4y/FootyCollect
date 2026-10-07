@@ -1195,6 +1195,15 @@
               </div>
             </div>
           {% endif %}
+          {% if user == object.user and object.jersey.fit %}
+            <div class="fc-detail-card">
+              <div class="fc-detail-label">
+                <i class="bi bi-rulers fc-icon-sm"></i>
+                <span class="fc-uppercase">{% trans "How it fits (private)" %}</span>
+              </div>
+              <p class="fc-detail-value">{{ object.jersey.get_fit_display }}</p>
+            </div>
+          {% endif %}
           {% if object.match_worn %}
             <div class="fc-detail-card">
               <div class="fc-detail-label">

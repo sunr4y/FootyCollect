@@ -1,0 +1,7 @@
+{% if items %}
+  <div class="row" style="row-gap: 0.75rem;">
+    {% for item in items %}
+      {% include "cotton/item_card.html" with item=item show_user=False show_edit=can_edit_items show_delete=can_edit_items quick_view_enabled=True %}
+    {% endfor %}
+  </div>
+{% endif %}

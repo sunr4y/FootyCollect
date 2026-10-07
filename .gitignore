@@ -284,6 +284,6 @@ poetry.lock
 
 mailpit.exe
 
-# Django migrations
-**/migrations/*.py
-!**/migrations/__init__.py
+# Django migrations (tracked; uncomment to ignore locally)
+# **/migrations/*.py
+# !**/migrations/__init__.py

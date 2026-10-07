@@ -191,6 +191,17 @@ MEDIA_URL = "/media/"
 # TEMPLATES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#templates
+_template_loaders_list = [
+    "django_cotton.cotton_loader.Loader",
+    "django.template.loaders.filesystem.Loader",
+    "django.template.loaders.app_directories.Loader",
+]
+TEMPLATE_CACHE_ENABLED = env.bool("DJANGO_TEMPLATE_CACHE", default=True)
+_template_loaders = (
+    [("django.template.loaders.cached.Loader", _template_loaders_list)]
+    if TEMPLATE_CACHE_ENABLED
+    else _template_loaders_list
+)
 TEMPLATES = [
     {
         # https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-TEMPLATES-BACKEND
@@ -210,16 +221,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "footycollect.users.context_processors.allauth_settings",
             ],
-            "loaders": [
-                (
-                    "django.template.loaders.cached.Loader",
-                    [
-                        "django_cotton.cotton_loader.Loader",
-                        "django.template.loaders.filesystem.Loader",
-                        "django.template.loaders.app_directories.Loader",
-                    ],
-                ),
-            ],
+            "loaders": _template_loaders,
             "builtins": [
                 "django_cotton.templatetags.cotton",
             ],
@@ -447,8 +449,9 @@ ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_LOGIN_METHODS = {"username"}
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_EMAIL_REQUIRED = True
+# "mandatory" | "optional" | "none"; use "none" for test/demo to skip verification
+ACCOUNT_EMAIL_VERIFICATION = env.str("DJANGO_ACCOUNT_EMAIL_VERIFICATION", default="mandatory")
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 # Account lockout after failed login attempts
 # New format: ACCOUNT_RATE_LIMITS replaces deprecated ACCOUNT_LOGIN_ATTEMPTS_LIMIT/TIMEOUT
 # Format: "attempts/period" where period can be 's' (seconds), 'm' (minutes), 'h' (hours)

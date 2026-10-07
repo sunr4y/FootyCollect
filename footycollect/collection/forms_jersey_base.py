@@ -75,6 +75,7 @@ class JerseyForm(forms.ModelForm):
                 self.fields["player_name"].initial = jersey.player_name
                 self.fields["is_short_sleeve"].initial = jersey.is_short_sleeve
                 self.fields["number"].initial = jersey.number
+                self.fields["fit"].initial = jersey.fit
 
     size = forms.ModelChoiceField(
         queryset=Size.objects.all(),
@@ -204,6 +205,14 @@ class JerseyForm(forms.ModelForm):
         max_value=99,
         required=False,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+
+    fit = forms.ChoiceField(
+        choices=Jersey.FIT_CHOICES,
+        required=False,
+        label=_("How it fits (private)"),
+        help_text=_("Private note for filtering your collection by fit."),
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
     def clean_main_color(self):
@@ -474,6 +483,7 @@ class JerseyForm(forms.ModelForm):
             "player_name": self.cleaned_data.get("player_name", ""),
             "is_short_sleeve": self.cleaned_data.get("is_short_sleeve", False),
             "number": self.cleaned_data.get("number", ""),
+            "fit": self.cleaned_data.get("fit", ""),
         }
 
     def _extract_many_to_many_data(self):
@@ -591,6 +601,7 @@ class JerseyForm(forms.ModelForm):
         jersey.player_name = self.cleaned_data.get("player_name", jersey.player_name)
         jersey.is_short_sleeve = self.cleaned_data.get("is_short_sleeve", jersey.is_short_sleeve)
         jersey.number = self.cleaned_data.get("number", jersey.number)
+        jersey.fit = self.cleaned_data.get("fit", jersey.fit)
         jersey.save()
 
     def _create_new_item(self, *, commit):

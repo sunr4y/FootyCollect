@@ -151,7 +151,8 @@
   color: var(--fc-muted-foreground) !important;
 }
 
-.fc-body .bg-light {
+.fc-body .bg-light,
+.fc-body.bg-light {
   background-color: var(--fc-card) !important;
 }
 

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load account %}
+{% load allauth %}
+
+{% block title %}
+  {% trans "Confirm Email Address" %} - FootyCollect
+{% endblock title %}
+{% block content %}
+  <div class="fc-container-auth">
+    <div class="fc-card">
+      <div class="fc-card-header">
+        <h2 class="text-center mb-0 fc-title-medium">{% trans "Confirm Email Address" %}</h2>
+      </div>
+      <div class="fc-card-body">
+        {% if confirmation %}
+          {% user_display confirmation.email_address.user as user_display %}
+          {% if can_confirm %}
+            <p class="fc-subtitle mb-4">
+              {% blocktrans with confirmation.email_address.email as email %}Please confirm that <a href="mailto:{{ email }}" class="fc-link-primary">{{ email }}</a> is an email address for user {{ user_display }}.{% endblocktrans %}
+            </p>
+            {% url 'account_confirm_email' confirmation.key as action_url %}
+            <form method="post" action="{{ action_url }}">
+              {% csrf_token %}
+              {{ redirect_field }}
+              <div class="d-grid">
+                <button type="submit" class="btn fc-btn-primary">{% trans "Confirm" %}</button>
+              </div>
+            </form>
+          {% else %}
+            <p class="fc-subtitle mb-0">
+              {% blocktrans %}Unable to confirm {{ email }} because it is already confirmed by a different account.{% endblocktrans %}
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="fc-subtitle mb-0">
+            {% url 'account_email' as email_url %}
+            {% blocktrans %}This email confirmation link expired or is invalid. Please <a href="{{ email_url }}" class="fc-link-primary">issue a new email confirmation request</a>.{% endblocktrans %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock content %}
