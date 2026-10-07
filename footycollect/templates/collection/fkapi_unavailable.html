@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Automatic kit search is unavailable" %} · FootyCollect{% endblock %}
+
+{% block css %}
+{{ block.super }}
+<style>
+  .fkapi-unavailable-modal .modal-content {
+    color: #212529 !important;
+    background: #fff !important;
+    opacity: 1 !important;
+  }
+  .fkapi-unavailable-modal .modal-title,
+  .fkapi-unavailable-modal .modal-body,
+  .fkapi-unavailable-modal .modal-body p {
+    color: #212529 !important;
+    opacity: 1 !important;
+  }
+</style>
+{% endblock css %}
+
+{% block content %}
+<main class="container py-5">
+  <div class="alert alert-warning" role="status">
+    <h1 class="h4">{% translate "Automatic kit search is unavailable" %}</h1>
+    <p class="mb-0">{% translate "Since May 2026, Football Kit Archive's stricter Cloudflare anti-bot restrictions have blocked the automated data collection FKAPI depends on. The hosted API is no longer served, so automatic kit search and import are unavailable." %}</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'collection:jersey_create_manual' %}">{% translate "Add a jersey manually" %}</a>
+</main>
+{% endblock content %}
+
+{% block modal %}
+<div class="modal-backdrop fade show"></div>
+<div class="modal fade show d-block fkapi-unavailable-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="fkapi-unavailable-title">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="fkapi-unavailable-title">{% translate "Automatic kit search is unavailable" %}</h2>
+      </div>
+      <div class="modal-body">
+        <p>{% translate "Since May 2026, Football Kit Archive's stricter Cloudflare anti-bot restrictions have blocked the automated data collection FKAPI depends on." %}</p>
+        <p class="mb-0">{% translate "As a result, the hosted API is no longer served and automatic kit search and import are unavailable. This does not affect manual item creation in FootyCollect." %}</p>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-primary" href="{% url 'collection:jersey_create_manual' %}">{% translate "Add a jersey manually" %}</a>
+        <a class="btn btn-outline-secondary" href="{% url 'collection:item_list' %}">{% translate "Back to my collection" %}</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock modal %}
