@@ -145,12 +145,13 @@ class JerseyViewsAdditionalTest(TestCase):
         assert response.status_code in [HTTP_OK, HTTP_FOUND]
 
     def test_jersey_fkapi_create_view_get_context(self):
-        """Test JerseyFKAPICreateView GET method context."""
+        """The automatic FKAPI route renders an outage notice, not a form."""
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
 
         response = self.client.get(reverse("collection:jersey_create_automatic"))
         assert response.status_code == HTTP_OK
-        assert "form" in response.context
+        self.assertContains(response, "Cloudflare")
+        self.assertContains(response, "Add a jersey manually")
 
     def test_jersey_fkapi_create_view_post_with_competitions(self):
         """Test JerseyFKAPICreateView POST with competitions."""
@@ -495,12 +496,13 @@ class JerseyViewsAdditionalTest(TestCase):
         assert response.status_code in [HTTP_OK, HTTP_FOUND, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR]
 
     def test_jersey_fkapi_create_view_post_with_context_data(self):
-        """Test JerseyFKAPICreateView POST with context data."""
+        """The automatic FKAPI route shows its notice even when submitted."""
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
 
-        response = self.client.get(reverse("collection:jersey_create_automatic"))
+        response = self.client.post(reverse("collection:jersey_create_automatic"), {"name": "Ignored"})
         assert response.status_code == HTTP_OK
-        assert "form" in response.context
+        self.assertContains(response, "Cloudflare")
+        self.assertContains(response, "Add a jersey manually")
 
     def test_jersey_fkapi_create_view_post_with_service_error(self):
         """Test JerseyFKAPICreateView POST with service error."""

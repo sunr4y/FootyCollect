@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 
 from footycollect.collection.models import Brand, Color, Competition, Jersey, Season, Size
 from footycollect.collection.views.jersey_views import JerseyFKAPICreateView
@@ -16,6 +16,7 @@ User = get_user_model()
 
 # Constants for test values
 TEST_PASSWORD = "testpass123"  # NOSONAR (S2068) "test fixture only, not a credential"
+HTTP_OK = 200
 EXPECTED_COMPETITIONS_COUNT = 2
 EXPECTED_DOWNLOAD_CALLS = 3  # main_img_url + 2 external_urls
 
@@ -36,37 +37,29 @@ class TestJerseyFKAPICreateViewExtended(TestCase):
         self.competition = Competition.objects.create(name="La Liga")
         self.size = Size.objects.create(name="M", category="tops")
 
-    def test_dispatch_delegates_to_super_for_post(self):
-        """Test that dispatch delegates to CreateView.dispatch for POST requests."""
+    def test_dispatch_shows_outage_notice_for_post(self):
+        """POST requests cannot use the unavailable automatic FKAPI flow."""
         view = JerseyFKAPICreateView()
-        request = Mock()
-        request.method = "POST"
+        request = RequestFactory().post("/collection/jersey/create/automatic/")
         request.user = self.user
 
-        with patch("footycollect.collection.views.jersey_views.CreateView.dispatch") as mock_super:
-            mock_super.return_value = Mock()
+        response = view.dispatch(request)
 
-            view.dispatch(request)
+        assert response.status_code == HTTP_OK
+        self.assertContains(response, "Cloudflare")
+        self.assertContains(response, "Add a jersey manually")
 
-            mock_super.assert_called_once_with(request)
-
-    def test_dispatch_does_not_log_get_requests(self):
-        """Test that dispatch method does not log GET requests."""
+    def test_dispatch_shows_outage_notice_for_get(self):
+        """GET requests explain why automatic FKAPI creation is unavailable."""
         view = JerseyFKAPICreateView()
-        request = Mock()
-        request.method = "GET"
+        request = RequestFactory().get("/collection/jersey/create/automatic/")
         request.user = self.user
 
-        with (
-            patch("footycollect.collection.views.jersey_views.logger") as mock_logger,
-            patch("footycollect.collection.views.jersey_views.CreateView.dispatch") as mock_super,
-        ):
-            mock_super.return_value = Mock()
+        response = view.dispatch(request)
 
-            view.dispatch(request)
-
-            mock_logger.info.assert_not_called()
-            mock_super.assert_called_once_with(request)
+        assert response.status_code == HTTP_OK
+        self.assertContains(response, "Cloudflare")
+        self.assertContains(response, "Add a jersey manually")
 
     def test_post_preprocesses_form_and_calls_form_valid(self):
         """Test that POST preprocesses form data and calls form_valid when form is valid."""

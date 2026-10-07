@@ -103,11 +103,12 @@ class JerseyViewsTest(TestCase):
         assert response.status_code == HTTP_FOUND  # Redirect to login
 
     def test_jersey_fkapi_create_view_authenticated(self):
-        """Test Jersey FKAPI create view for authenticated user."""
+        """Authenticated users see why automatic FKAPI creation is unavailable."""
         self.client.login(username=self.user.username, password=TEST_PASSWORD)
         response = self.client.get(reverse("collection:jersey_create_automatic"))
         assert response.status_code == HTTP_OK
-        self.assertContains(response, "Search for a Kit")
+        self.assertContains(response, "Cloudflare")
+        self.assertContains(response, "Add a jersey manually")
 
     def test_jersey_select_view_requires_login(self):
         """Test Jersey select view requires login."""
