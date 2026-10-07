@@ -1,3 +1,4 @@
+from unittest import skip
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -243,8 +244,9 @@ class FKAPIFormTest(TestCase):
             jersey = jerseys.first()
             assert jersey.name == "Manual Test Jersey"
 
+    @skip("The FKAPI-backed form is no longer served; the automatic route now shows an outage notice.")
     def test_fkapi_form_validation_errors(self):
-        """Test form validation with missing required fields."""
+        """Legacy validation test for the unavailable FKAPI-backed form."""
         form_data = {
             "kit_search": "test",
             # Missing required fields

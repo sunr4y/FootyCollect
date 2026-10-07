@@ -12,7 +12,7 @@
     <br><br>
 </p>
 
-A Django-based web application for managing your football memorabilia collection. It integrates with the **Football Kit Archive** via [FKAPI](https://github.com/sunr4y/fkapi) to search and add kits by club, season, and competition—making FKAPI central to discovering and cataloguing items in your collection.
+A Django-based web application for managing your football memorabilia collection. FootyCollect remains usable for manually creating and managing items. Its optional FKAPI integration for automatic kit search and import is unavailable: since May 2026, Football Kit Archive's stricter Cloudflare anti-bot protections have prevented the automated data collection FKAPI depends on, and the hosted FKAPI API is no longer served. This affects the FKAPI features, not manual collection management.
 
 **License**: MIT
 
@@ -54,13 +54,13 @@ Try FootyCollect without installing anything: **[https://footycollect-demo.sunr4
 
 FootyCollect is a comprehensive platform for football memorabilia collectors to catalog, organize, and manage their collections. The application supports various item types including jerseys, shorts, outerwear, and tracksuits.
 
-**FKAPI and the Football Kit Archive.** FootyCollect uses [FKAPI](https://github.com/sunr4y/fkapi) (Football Kit Archive API) as the main source for kit metadata when adding items: you search by club, season, and competition, then create items with pre-filled data (colors, design, competitions, logos). Without FKAPI running, you can still use the app for manual entry and photo management; with FKAPI, you get that search-and-add flow and bulk imports from the archive (e.g. `populate_user_collection`). Deploy or run [fkapi](https://github.com/sunr4y/fkapi) alongside FootyCollect if you want these features.
+**FKAPI status.** Since May 2026, stricter Cloudflare anti-bot protections on Football Kit Archive have blocked the automated data collection FKAPI depends on. The hosted FKAPI API is no longer served, so automatic kit search and import are unavailable. This is an external service limitation; FootyCollect itself remains available for manual item creation, editing, and photo management.
 
 ### Screenshots & Demo
 
 <p align="center">
-  <img src="media/create_item.webp" alt="Adding an item with FKAPI" width="800">
-  <br><em>Search and add items from the Football Kit Archive</em>
+  <img src="media/create_item.webp" alt="Historical screenshot of adding an item with FKAPI" width="800">
+  <br><em>Historical screenshot: automatic kit search through FKAPI (currently unavailable)</em>
 </p>
 
 ### Key Features
@@ -72,7 +72,7 @@ FootyCollect is a comprehensive platform for football memorabilia collectors to 
 | Feature | Description |
 |---------|-------------|
 | **Multi-Item Type Support** | Manage jerseys, shorts, outerwear, and tracksuits |
-| **FKAPI Integration** | Search and add kits from the Football Kit Archive via [fkapi](https://github.com/sunr4y/fkapi); optional but core to the intended workflow |
+| **FKAPI Integration** | Automatic kit search and import are unavailable because Cloudflare restrictions on the external source stopped collection and the hosted FKAPI API is no longer served |
 | **Photo Management** | Upload and organize photos for each item |
 | **Advanced Search** | Filter and search your collection |
 | **User Profiles** | Personal collections with privacy controls |
@@ -123,7 +123,7 @@ See [Architecture Decision Records](docs/ARCHITECTURE/decisions/) for design rat
 | **Python** | 3.11+ | Required |
 | **PostgreSQL** | 14+ | Required |
 | **Redis** | 6+ | Required |
-| **fkapi** | Latest | Optional — required if you want to use automatic kit addition (lookup and add kits from the Football Kit Archive). See [fkapi](https://github.com/sunr4y/fkapi) |
+| **FKAPI** | Optional integration (currently unavailable) | The hosted API is no longer served, so automatic kit lookup and import are unavailable. Manual item creation does not depend on FKAPI. |
 
 ### Installation
 

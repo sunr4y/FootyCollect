@@ -252,6 +252,7 @@ class TestE2ESeleniumTests(StaticLiveServerTestCase):
         except WebDriverException:
             logging.warning("Could not retrieve browser console logs", exc_info=True)
 
+    @pytest.mark.skip(reason="FKAPI is no longer served; automatic kit import is disabled.")
     @patch("footycollect.api.client.FKAPIClient.get_kit_details")
     @patch("footycollect.api.client.FKAPIClient.search_kits")
     def test_create_item_form_submission(self, mock_search_kits, mock_get_kit_details):

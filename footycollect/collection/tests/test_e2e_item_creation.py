@@ -5,6 +5,7 @@ These tests simulate the complete user flow of creating an item,
 including API integration, form validation, and page rendering.
 """
 
+from unittest import skip
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -107,18 +108,20 @@ class TestE2EItemCreationTests(TestCase):
         )
 
     def test_create_item_page_renders_correctly(self):
-        """Test that the item creation page renders without errors."""
+        """The former automatic entry point explains that FKAPI is unavailable."""
         url = reverse("collection:jersey_create_automatic")
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("form", response.context)
         content = response.content.decode().lower()
+        self.assertIn("automatic kit search is unavailable", content)
+        self.assertIn("cloudflare", content)
         self.assertNotIn("traceback", content)
         self.assertNotIn("django exception", content)
         self.assertNotIn("server error", content)
         self.assertNotIn("internal server error", content)
 
+    @skip("The automatic FKAPI creation flow is disabled; manual-entry coverage belongs to its own route.")
     def test_create_item_without_api_integration(self):
         """Test creating an item without API integration (manual mode)."""
         form_data = {
@@ -172,6 +175,7 @@ class TestE2EItemCreationTests(TestCase):
         self.assertFalse(jersey.has_nameset)
         self.assertTrue(jersey.is_short_sleeve)
 
+    @skip("FKAPI is no longer served; automatic kit import is disabled.")
     @patch("footycollect.api.client.FKAPIClient.get_kit_details")
     def test_create_item_with_api_integration(self, mock_get_kit_details):
         """Test creating an item with API integration using real API data structure."""
@@ -289,6 +293,7 @@ class TestE2EItemCreationTests(TestCase):
         self.assertEqual(jersey.size, self.size)
         self.assertIsNotNone(jersey.kit)
 
+    @skip("The automatic FKAPI creation flow is disabled; manual-entry coverage belongs to its own route.")
     def test_create_item_verifies_all_attributes(self):
         """Test that all item attributes are correctly set after creation."""
         form_data = {
@@ -356,6 +361,7 @@ class TestE2EItemCreationTests(TestCase):
         self.assertEqual(jersey.number, 10)
         self.assertFalse(jersey.is_short_sleeve)
 
+    @skip("The automatic FKAPI creation flow is disabled; manual-entry coverage belongs to its own route.")
     def test_create_item_page_shows_no_errors(self):
         """Test that the item detail page shows no errors after creation."""
         form_data = {
@@ -410,6 +416,7 @@ class TestE2EItemCreationTests(TestCase):
             if item.season:
                 self.assertIn(str(item.season.year), content, f"Season '{item.season.year}' not found in content")
 
+    @skip("The automatic FKAPI creation flow is disabled; manual-entry coverage belongs to its own route.")
     def test_create_item_with_photos(self):
         """Test creating an item with uploaded photos."""
         form_data = {
@@ -442,6 +449,7 @@ class TestE2EItemCreationTests(TestCase):
         self.assertIn(str(self.season.year), item.name)
         self.assertIn(self.size.name, item.name)
 
+    @skip("FKAPI is no longer served; automatic kit import is disabled.")
     @patch("footycollect.api.client.FKAPIClient.get_kit_details")
     def test_create_item_with_api_failure_graceful_degradation(self, mock_get_kit_details):
         """Test that item creation works even when API fails."""
@@ -479,6 +487,7 @@ class TestE2EItemCreationTests(TestCase):
 
         self.assertFalse(item.is_draft)
 
+    @skip("The automatic FKAPI creation flow is disabled; manual-entry coverage belongs to its own route.")
     def test_create_item_form_validation_errors(self):
         """Test that form validation errors are displayed correctly."""
         form_data = {
@@ -565,6 +574,7 @@ class TestE2EItemCreationTests(TestCase):
         self.assertNotIn("server error", content_lower)
         self.assertNotIn("internal server error", content_lower)
 
+    @skip("The automatic FKAPI creation flow is disabled; manual-entry coverage belongs to its own route.")
     def test_create_item_with_competitions(self):
         """Test creating an item with competitions."""
         form_data = {
@@ -599,6 +609,7 @@ class TestE2EItemCreationTests(TestCase):
 
         self.assertIn(self.competition, item.competitions.all())
 
+    @skip("FKAPI is no longer served; automatic kit import is disabled.")
     @patch("footycollect.api.client.FKAPIClient.get_kit_details")
     def test_create_item_with_full_api_data(self, mock_get_kit_details):
         """Test creating an item with complete API data using real API structure."""
@@ -717,6 +728,7 @@ class TestE2EItemCreationTests(TestCase):
         jersey = Jersey.objects.get(base_item=item)
         self.assertIsNotNone(jersey.kit)
 
+    @skip("FKAPI is no longer served; automatic kit import is disabled.")
     @patch("footycollect.api.client.FKAPIClient.get_kit_details")
     def test_complete_flow_real_madrid_castilla_kit(self, mock_get_kit_details):
         """

@@ -11,6 +11,7 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView
@@ -52,7 +53,9 @@ class JerseyFKAPICreateView(
     template_name = "collection/jersey_fkapi_create.html"
 
     def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        return render(request, "collection/fkapi_unavailable.html")
 
     def get(self, request, *args, **kwargs):
         """Optimized GET method that doesn't initialize photo processing."""

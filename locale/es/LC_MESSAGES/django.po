@@ -2075,6 +2075,30 @@ msgstr "La imagen es demasiado grande (> 10 MB)"
 msgid "Please upload a valid image file (JPG, PNG, GIF)"
 msgstr "Sube un archivo de imagen válido (JPG, PNG, GIF)"
 
+#: footycollect/templates/collection/fkapi_unavailable.html
+msgid "Automatic kit search is unavailable"
+msgstr "La búsqueda automática de equipaciones no está disponible"
+
+#: footycollect/templates/collection/fkapi_unavailable.html
+msgid "Since May 2026, Football Kit Archive's stricter Cloudflare anti-bot restrictions have blocked the automated data collection FKAPI depends on. The hosted API is no longer served, so automatic kit search and import are unavailable."
+msgstr "Desde mayo de 2026, las restricciones anti-bots más estrictas de Cloudflare en Football Kit Archive bloquean la recopilación automática de datos de la que depende FKAPI. La API alojada ya no se sirve, por lo que la búsqueda e importación automática de equipaciones no están disponibles."
+
+#: footycollect/templates/collection/fkapi_unavailable.html
+msgid "Since May 2026, Football Kit Archive's stricter Cloudflare anti-bot restrictions have blocked the automated data collection FKAPI depends on."
+msgstr "Desde mayo de 2026, las restricciones anti-bots más estrictas de Cloudflare en Football Kit Archive bloquean la recopilación automática de datos de la que depende FKAPI."
+
+#: footycollect/templates/collection/fkapi_unavailable.html
+msgid "As a result, the hosted API is no longer served and automatic kit search and import are unavailable. This does not affect manual item creation in FootyCollect."
+msgstr "Como consecuencia, la API alojada ya no se sirve y la búsqueda e importación automática de equipaciones no están disponibles. Esto no afecta a la creación manual de artículos en FootyCollect."
+
+#: footycollect/templates/collection/fkapi_unavailable.html
+msgid "Add a jersey manually"
+msgstr "Añadir una camiseta manualmente"
+
+#: footycollect/templates/collection/fkapi_unavailable.html
+msgid "Back to my collection"
+msgstr "Volver a mi colección"
+
 #: footycollect/users/views.py:187
 msgid "League"
 msgstr "Liga"
