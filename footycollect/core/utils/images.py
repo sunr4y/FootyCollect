@@ -13,19 +13,7 @@ logger = logging.getLogger(__name__)
 
 def _check_image_has_transparency(img: Image.Image) -> bool:
     """Check if image has transparency."""
-    if img.mode in ("RGBA", "LA"):
-        return True
-    if img.mode == "P":
-        if img.im is not None:
-            try:
-                palette_mode = img.im.getpalettemode()
-                if "A" in palette_mode:
-                    return True
-            except (AttributeError, TypeError):
-                pass
-        if "transparency" in img.info or img.info.get("transparency") is not None:
-            return True
-    return False
+    return img.has_transparency_data
 
 
 def _convert_image_mode(img: Image.Image, img_format: str, *, has_transparency: bool) -> Image.Image:
