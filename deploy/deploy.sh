@@ -65,7 +65,7 @@ fi
 log_info "Updating dependencies..."
 if [ -f "$VENV_DIR/bin/activate" ]; then
     source "$VENV_DIR/bin/activate"
-    pip install --upgrade pip
+    python -m pip install 'pip==26.2.2'
     pip install -r requirements/production.txt
 else
     log_error "Virtual environment not found at $VENV_DIR"

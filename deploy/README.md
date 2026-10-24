@@ -75,7 +75,7 @@ python3.12 -m venv venv
 source venv/bin/activate
 
 # Install dependencies
-pip install --upgrade pip
+python -m pip install 'pip==26.2.2'
 pip install -r requirements/production.txt
 ```
 
